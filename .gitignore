@@ -1,0 +1,20 @@
+*sublime*
+*.pyc
+build/
+logs/
+node_modules/
+.node-xmlhttprequest-sync*
+*.tgz
+.vscode/
+site/
+coverage/
+coverage.json
+.covera*
+cache/
+yarn*
+
+node_modules
+
+#Hardhat files
+cache
+artifacts

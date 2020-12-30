@@ -1,0 +1,34 @@
+dist: trusty
+
+language: node_js
+
+node_js:
+  - "14.5.0"
+
+before_install:
+
+install:
+  - rm -rf node_modules/ # remove any remaining artifacts from a previous build
+  - npm i
+  - rm -rf build/ # remove any remaining artifacts from a previous build
+  - npx hardhat --version
+  - npx hardhat clean
+
+jobs:
+  include:
+      - stage: tests
+        name: "Unit tests"
+        script: npx hardhat test
+
+      - stage: tests
+        name: "Solidity Lint"
+        script: npx hardhat check
+
+      - stage: tests
+        name: "JS Lint"
+        script: npx eslint .
+
+      - stage: coverage
+        name: "Solidity Test Coverage"
+        if: branch = master
+        script: npm run coveralls
