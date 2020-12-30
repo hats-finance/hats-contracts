@@ -58,6 +58,7 @@
     "smart",
     "contracts",
     "security",
+    "defi"
   ],
   "engines": {
     "node": ">=12.16.1"
