@@ -66,8 +66,11 @@
   "author": "oren.sokolowsky@gmail.com",
   "license": "GPL-3.0",
   "dependencies": {
+    "eth-ecies": "^1.0.5",
+    "ethereumjs-tx": "^2.1.2",
     "math": "0.0.3",
-    "openzeppelin-solidity": "3.3.0",
+    "openzeppelin-solidity": "3.4.0",
+    "strip-hex-prefix": "^1.0.0",
     "truffle-flattener": "^1.4.2"
   }
 }
