@@ -6,13 +6,13 @@ pragma solidity >=0.4.24;
 // https://docs.synthetix.io/contracts/source/interfaces/istakingrewards
 interface IStakingRewards {
     // Mutative
-    function stake(uint256 amount) external;
-
-    function withdraw(uint256 amount) external;
-
-    function getReward() external;
-
-    function exit() external;
+    // function stake(uint256 amount) internal;
+    //
+    // function withdraw(uint256 amount) internal;
+    //
+    // function getReward() internal;
+    //
+    // function exit() internal;
     // Views
     function lastTimeRewardApplicable() external view returns (uint256);
 
