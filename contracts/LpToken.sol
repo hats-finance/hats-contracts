@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Snapshot.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
-contract HATToken is ERC20Snapshot, Ownable {
+contract LpToken is ERC20, Ownable {
     constructor(
         string memory _name,
         string memory _symbol,
@@ -14,10 +14,6 @@ contract HATToken is ERC20Snapshot, Ownable {
     public
     ERC20(_name, _symbol) {
         transferOwnership(_owner);
-    }
-    //todo restrict snapshot role..
-    function snapshot() public returns(uint256) {
-        return _snapshot();
     }
 
     function mint(address _account, uint256 _amount) public onlyOwner {

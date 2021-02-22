@@ -47,7 +47,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     /* ========== VIEWS ========== */
-
     function totalSupply() external view override returns (uint256) {
         return _totalSupply;
     }
@@ -79,8 +78,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-
-    function stake(uint256 amount) external nonReentrant notPaused override updateReward(msg.sender) {
+    function stake(uint256 amount) internal nonReentrant notPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
@@ -88,7 +86,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant override updateReward(msg.sender) {
+    function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
@@ -96,7 +94,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         emit Withdrawn(msg.sender, amount);
     }
 
-    function getReward() public nonReentrant override updateReward(msg.sender) {
+    function getReward() internal nonReentrant updateReward(msg.sender) {
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -105,7 +103,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         }
     }
 
-    function exit() external override {
+    function exit() internal {
         withdraw(_balances[msg.sender]);
         getReward();
     }
