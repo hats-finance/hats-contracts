@@ -2,6 +2,7 @@ pragma solidity ^0.7.6;
 import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./StakingRewards.sol";
 
 
@@ -42,12 +43,11 @@ contract  HATVault is StakingRewards {
         address _rewardsToken,//hat
         address _stakingToken,//e.g sushi
         address _projectsRegistery,//this might be the factory
-        string  memory _vaultName,
         address[] memory _approvers,
         address _governance
     ) public StakingRewards(_owner, _rewardsDistribution, _rewardsToken, _stakingToken) {
         projectsRegistery = _projectsRegistery;
-        vaultName = _vaultName;
+        vaultName = ERC20(_stakingToken).name();
         for (uint256 i=0; i < _approvers.length; i++) {
             claimApprovers[_approvers[i]] = true;
         }

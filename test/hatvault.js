@@ -13,7 +13,6 @@ const setup = async function (accounts) {
                               hatToken.address,
                               stakingToken.address,
                               accounts[0],
-                              "vaultName",
                               [accounts[0]],
                               accounts[0]);
 };
@@ -31,7 +30,7 @@ contract('HatVault',  accounts =>  {
         await setup(accounts);
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVault.governance(), accounts[0]);
-        assert.equal(await hatVault.vaultName(), "vaultName");
+        assert.equal(await hatVault.vaultName(), "Staking");
 
     });
 
