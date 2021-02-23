@@ -1,20 +1,26 @@
 const HATVault = artifacts.require("./HATVault.sol");
 const HATToken = artifacts.require("./HATToken.sol");
+const ProjectsRegistery = artifacts.require("./ProjectsRegistery.sol");
 
 var hatVault;
 var hatToken;
 var stakingToken;
+var projectsRegistery;
 const setup = async function (accounts) {
+  projectsRegistery = await ProjectsRegistery.new();
+  await projectsRegistery.initialize(accounts[0]);
 
   hatToken = await HATToken.new("Hat","HAT",accounts[0]);
   stakingToken = await HATToken.new("Staking","STK",accounts[0]);
-  hatVault = await HATVault.new(accounts[0],
-                              accounts[0],
-                              hatToken.address,
-                              stakingToken.address,
-                              accounts[0],
-                              [accounts[0]],
-                              accounts[0]);
+  let tx = await projectsRegistery.vaultFactory(accounts[0],
+                                                accounts[0],
+                                                hatToken.address,
+                                                stakingToken.address,
+                                                [accounts[0]],
+                                                accounts[0]);
+  assert.equal(tx.logs[2].event,"LogRegister");
+  let hatVaultAddress = tx.logs[2].args._vault;
+  hatVault = await HATVault.at(hatVaultAddress);
 };
 
 function assertVMException(error) {
