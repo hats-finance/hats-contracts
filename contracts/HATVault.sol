@@ -34,7 +34,6 @@ contract  HATVault is StakingRewards {
 
     event SetAppovers(address[] indexed _approvers, bool[] indexed _status);
 
-
     /* ========== CONSTRUCTOR ========== */
     constructor(
         address _owner,
@@ -49,8 +48,8 @@ contract  HATVault is StakingRewards {
     ) public StakingRewards(_owner, _rewardsDistribution, _rewardsToken, _stakingToken) {
         projectsRegistery = _projectsRegistery;
         lpToken = new LpToken(_lpTokenName, _lpTokenSymbol, address(this));
-        for (uint256 i=0;i < _approvers.length;i++) {
-             claimApprovers[_approvers[i]] = true;
+        for (uint256 i=0; i < _approvers.length; i++) {
+            claimApprovers[_approvers[i]] = true;
         }
         governance = _governance;
     }
@@ -94,7 +93,6 @@ contract  HATVault is StakingRewards {
 
     function exitWithLpToken() external {
         uint256 balanceOfLpToken = lpToken.balanceOf(msg.sender);
-        lpToken.burn(msg.sender, balanceOfLpToken);
         withdrawWithLpToken(balanceOfLpToken);
         getReward();
     }
