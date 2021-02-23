@@ -34,7 +34,7 @@ contract  HATVault is StakingRewards {
         _;
     }
 
-    event SetAppovers(address[] indexed _approvers, bool[] indexed _status);
+    event SetApprovers(address[] indexed _approvers, bool[] indexed _status);
 
     /* ========== CONSTRUCTOR ========== */
     constructor(
@@ -70,9 +70,9 @@ contract  HATVault is StakingRewards {
         stakingToken.safeTransfer(projectsRegistery, projectsRegisteryReward);
     }
 
-    function setHackingRewardsSplit(uint256[3][] memory _hackingRewardsSplit) external onlyGovernance {
+    function setHackingRewardsSplit(uint256[] memory _hackingRewardsSplit, uint256 _sevirity) external onlyGovernance {
         //todo : should the hacker split rewards can be updated ?
-        hackingRewardsSplit = _hackingRewardsSplit;
+        hackingRewardsSplit[_sevirity] = _hackingRewardsSplit;
     }
 
     function setApprovers(address[] memory _claimApprovers, bool[] memory _status) external onlyApprover {
@@ -82,7 +82,7 @@ contract  HATVault is StakingRewards {
         for (uint256 i=0; i < _claimApprovers.length; i++) {
             claimApprovers[_claimApprovers[i]] = _status[i];
         }
-        emit SetAppovers(_claimApprovers, _status);
+        emit SetApprovers(_claimApprovers, _status);
     }
 
     function stakeForLpToken(uint256 _amount) external {
