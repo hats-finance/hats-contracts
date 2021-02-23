@@ -1,11 +1,9 @@
 const HATVault = artifacts.require("./HATVault.sol");
 const HATToken = artifacts.require("./HATToken.sol");
-const LpToken = artifacts.require("./LpToken.sol");
 
 var hatVault;
 var hatToken;
 var stakingToken;
-var lpToken;
 const setup = async function (accounts) {
 
   hatToken = await HATToken.new("Hat","HAT",accounts[0]);
@@ -15,12 +13,9 @@ const setup = async function (accounts) {
                               hatToken.address,
                               stakingToken.address,
                               accounts[0],
-                              "lptoken",
-                              "LPT",
+                              "vaultName",
                               [accounts[0]],
                               accounts[0]);
-  let lpTokenAddress = await hatVault.lpToken();
-  lpToken = await LpToken.at(lpTokenAddress);
 };
 
 function assertVMException(error) {
@@ -36,6 +31,8 @@ contract('HatVault',  accounts =>  {
         await setup(accounts);
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVault.governance(), accounts[0]);
+        assert.equal(await hatVault.vaultName(), "vaultName");
+
     });
 
     it("stakeForLpToken", async () => {
@@ -60,11 +57,11 @@ contract('HatVault',  accounts =>  {
         assert.equal(await stakingToken.balanceOf(staker), 0);
         assert.equal(await stakingToken.balanceOf(hatVault.address), 1000);
         //check staker lptoken balance
-        assert.equal(await lpToken.balanceOf(staker), 1000);
+        assert.equal(await hatVault.lpBalances(staker), 1000);
         //withdrawWithLpToken
         await hatVault.withdrawWithLpToken(1000,{from:staker});
         //lptoken burned
-        assert.equal(await lpToken.balanceOf(staker), 0);
+        assert.equal(await hatVault.lpBalances(staker), 0);
         //staker  get stake back
         assert.equal(await stakingToken.balanceOf(staker), 1000);
 
@@ -88,7 +85,7 @@ contract('HatVault',  accounts =>  {
         await hatToken.mint(hatVault.address,rewardTokenAmount);
         await hatVault.notifyRewardAmount(rewardTokenAmount);
         await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker});
-        assert.equal(await lpToken.balanceOf(staker), web3.utils.toWei("1"));
+        assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
       //exitWithLpToken
         assert.equal(await hatToken.balanceOf(staker),0);
         await hatVault.exitWithLpToken({from:staker});

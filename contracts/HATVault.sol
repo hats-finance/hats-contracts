@@ -3,7 +3,6 @@ import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "./StakingRewards.sol";
-import "./LpToken.sol";
 
 
 // WIP WIP WIP
@@ -15,7 +14,9 @@ contract  HATVault is StakingRewards {
     address public governance;
     uint256[][] public hackingRewardsSplit = [[90, 5, 5], [20, 5, 5], [2, 5, 5]];
     address public projectsRegistery;
-    LpToken public lpToken;
+    string public vaultName;
+    mapping (address => uint256) public lpBalances;
+    uint256 public lpTotalSupply;
 
     modifier onlyApprover() {
         require(claimApprovers[msg.sender], "only approver");
@@ -41,13 +42,12 @@ contract  HATVault is StakingRewards {
         address _rewardsToken,//hat
         address _stakingToken,//e.g sushi
         address _projectsRegistery,//this might be the factory
-        string  memory _lpTokenName,
-        string memory _lpTokenSymbol,
+        string  memory _vaultName,
         address[] memory _approvers,
         address _governance
     ) public StakingRewards(_owner, _rewardsDistribution, _rewardsToken, _stakingToken) {
         projectsRegistery = _projectsRegistery;
-        lpToken = new LpToken(_lpTokenName, _lpTokenSymbol, address(this));
+        vaultName = _vaultName;
         for (uint256 i=0; i < _approvers.length; i++) {
             claimApprovers[_approvers[i]] = true;
         }
@@ -88,20 +88,22 @@ contract  HATVault is StakingRewards {
     function stakeForLpToken(uint256 _amount) external {
       //stake on stakingRewards
         stake(_amount);
-        lpToken.mint(msg.sender, _amount);
+        lpBalances[msg.sender] = lpBalances[msg.sender].add(_amount);
+        lpTotalSupply = lpTotalSupply.add(_amount);
     }
 
     function exitWithLpToken() external {
-        uint256 balanceOfLpToken = lpToken.balanceOf(msg.sender);
+        uint256 balanceOfLpToken = lpBalances[msg.sender];
         withdrawWithLpToken(balanceOfLpToken);
         getReward();
     }
 
     function withdrawWithLpToken(uint256 _amount) public {
-        uint256 totalSupplyOfLPToken = lpToken.totalSupply();
-        uint256 balanceOfLpToken = lpToken.balanceOf(msg.sender);
+        uint256 totalSupplyOfLPToken = lpTotalSupply;
+        uint256 balanceOfLpToken = lpBalances[msg.sender];
         // this will make sure that _amount is <= with user balance of lptoken.
-        lpToken.burn(msg.sender, _amount);
+        lpBalances[msg.sender] = lpBalances[msg.sender].sub(_amount);
+        lpTotalSupply = lpTotalSupply.sub(_amount);
         uint256 withdrawAmount = balanceOfLpToken.mul(_totalSupply).div(totalSupplyOfLPToken);
         withdraw(withdrawAmount);
     }
