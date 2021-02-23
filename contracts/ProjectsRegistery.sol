@@ -4,21 +4,26 @@ pragma abicoder v2;
 import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "./HATVault.sol";
 
 
 contract ProjectsRegistery is Initializable, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event LogRegister(RegisteryData indexed _registeryData);
+    event LogRegister(address indexed _vault);
+    event LogUnRegister(address indexed _vault);
 
-    struct RegisteryData {
-        address token;
-        address represntative;
-    }
 
     //vault address to RegisteryData
-    mapping(address => RegisteryData) public registery;
+    mapping(address => bool) public registery;
+
+    function unRegister(address _vault)
+    external
+    onlyOwner {
+        registery[_vault] = false;
+        emit LogUnRegister(_vault);
+    }
 
     /* ========== CONSTRUCTOR ========== */
     /**
@@ -30,16 +35,34 @@ contract ProjectsRegistery is Initializable, Ownable {
         transferOwnership(_owner);
     }
 
-    function register(address _vault, IERC20 _token, address _represntative)
+    function vaultFactory(address _owner,
+                        address _rewardsDistribution,
+                        address _rewardsToken,//hat
+                        address _stakingToken,//e.g sushi
+                        address[] memory _approvers,
+                        address _governance)
     external
     onlyOwner {
-        require(registery[_vault].token != address(0), "msg.sender already register");
-        registery[_vault] = RegisteryData(address(_token), _represntative);
-        emit LogRegister(registery[_vault]);
+        HATVault vault = new HATVault(_owner,
+                                    _rewardsDistribution,
+                                    _rewardsToken,
+                                    _stakingToken,
+                                    address(this),
+                                    _approvers,
+                                    _governance);
+
+        register(address(vault));
     }
 
     function swapAndBurn(address uniswap, address _token, uint256 _amount) external {
         //swap tokens to hats and burn it.
         //any one call it ...
+    }
+
+    function register(address _vault)
+    public
+    onlyOwner {
+        registery[_vault] = true;
+        emit LogRegister(_vault);
     }
 }
