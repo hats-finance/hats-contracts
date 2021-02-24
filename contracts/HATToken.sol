@@ -15,6 +15,7 @@ contract HATToken is ERC20Snapshot, Ownable {
     ERC20(_name, _symbol) {
         transferOwnership(_owner);
     }
+    
     //todo restrict snapshot role..
     function snapshot() public returns(uint256) {
         return _snapshot();
