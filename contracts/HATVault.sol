@@ -13,7 +13,7 @@ contract  HATVault is StakingRewards {
 
     mapping (address => bool) public claimApprovers;
     address public governance;
-    uint256[][] public hackingRewardsSplit = [[90, 5, 5], [20, 5, 5], [2, 5, 5]];
+    uint256[][] public hackingRewardsSplit = [[90, 5, 4], [20, 5, 5], [2, 5, 5]];
     address public projectsRegistery;
     string public vaultName;
     mapping (address => uint256) public lpBalances;
@@ -55,6 +55,7 @@ contract  HATVault is StakingRewards {
     }
 
     function approveClaim(address _beneficiary, uint256 _sevirity) external onlyApprover {
+        require(_totalSupply > 0, "totalSupply is zero");
         uint256 hackingRewardAmount = _totalSupply;
         require(_sevirity < 3, "_sevirity is not in the range");
 
@@ -62,6 +63,7 @@ contract  HATVault is StakingRewards {
         uint256 approverReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][1]).div(100);
         uint256 projectsRegisteryReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][2]).div(100);
         _totalSupply = _totalSupply.sub(hackerReward.add(approverReward).add(projectsRegisteryReward));
+        factor = _totalSupply.mul(1e18).div(hackingRewardAmount);
         //hacker get its reward
         stakingToken.safeTransfer(_beneficiary, hackerReward);
         //approver get its rewards
@@ -72,6 +74,8 @@ contract  HATVault is StakingRewards {
 
     function setHackingRewardsSplit(uint256[] memory _hackingRewardsSplit, uint256 _sevirity) external onlyGovernance {
         //todo : should the hacker split rewards can be updated ?
+        require(_hackingRewardsSplit[0]+_hackingRewardsSplit[1]+_hackingRewardsSplit[2] < 100,
+        "total split % should be less than 100");
         hackingRewardsSplit[_sevirity] = _hackingRewardsSplit;
     }
 

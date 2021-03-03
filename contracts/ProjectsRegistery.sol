@@ -1,5 +1,4 @@
 pragma solidity ^0.7.6;
-pragma abicoder v2;
 
 import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";

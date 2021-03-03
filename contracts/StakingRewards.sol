@@ -27,9 +27,11 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
 
+
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
+    uint256 public factor = 1e18;
     uint256 internal _totalSupply;
     mapping(address => uint256) private _balances;
 
@@ -51,8 +53,8 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         return _totalSupply;
     }
 
-    function balanceOf(address account) external view override returns (uint256) {
-        return _balances[account];
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account].mul(factor).div(1e18);
     }
 
     function lastTimeRewardApplicable() public view override returns (uint256) {
@@ -70,7 +72,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     function earned(address account) public view override returns (uint256) {
-        return _balances[account].mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
+        return balanceOf(account).mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
     }
 
     function getRewardForDuration() external view override returns (uint256) {
@@ -81,7 +83,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     function stake(uint256 amount) internal nonReentrant notPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        _balances[msg.sender] = balanceOf(msg.sender).add(amount);
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
@@ -89,7 +91,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _balances[msg.sender] = balanceOf(msg.sender).sub(amount);
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
@@ -103,10 +105,10 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         }
     }
 
-    function exit() internal {
-        withdraw(_balances[msg.sender]);
-        getReward();
-    }
+    // function exit() internal {
+    //     withdraw(_balances[msg.sender]);
+    //     getReward();
+    // }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
