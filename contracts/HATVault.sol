@@ -63,7 +63,7 @@ contract  HATVault is StakingRewards {
         uint256 approverReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][1]).div(100);
         uint256 projectsRegisteryReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][2]).div(100);
         _totalSupply = _totalSupply.sub(hackerReward.add(approverReward).add(projectsRegisteryReward));
-        factor = _totalSupply.mul(1e18).div(hackingRewardAmount);
+        factor = _totalSupply.mul(factor).div(hackingRewardAmount); 
         //hacker get its reward
         stakingToken.safeTransfer(_beneficiary, hackerReward);
         //approver get its rewards

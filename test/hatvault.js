@@ -128,7 +128,7 @@ contract('HatVault',  accounts =>  {
         assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1000 ,true);
     });
 
-  it("enable farming  + approve+ getReward", async () => {
+  it("enable farming  + approve+ exit", async () => {
     var staker = accounts[1];
     var rewardTokenAmount = web3.utils.toWei("1000");
     await setup(accounts);
@@ -143,6 +143,7 @@ contract('HatVault',  accounts =>  {
   //exitWithLpToken
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
+    await hatVault.approveClaim(accounts[2],1);
     await hatVault.approveClaim(accounts[2],1);
     await hatVault.exitWithLpToken({from:staker});
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
