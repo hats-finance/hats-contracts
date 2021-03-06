@@ -196,13 +196,14 @@ contract('HatVault',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
     await hatVault.approveClaim(accounts[2],0);
+    let totalSupplyBefore = await hatVault.totalSupply();
     await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
     await hatVault.exitWithLpToken({from:staker});
+    assert.equal((await stakingToken.balanceOf(staker)).toString(),totalSupplyBefore);
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) > 999 ,true);
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1000 ,true);
-    let lpBalanceStaker2 = await hatVault.lpBalances(staker2);
     assert.equal(await stakingToken.balanceOf(staker2),0);
     await hatVault.exitWithLpToken({from:staker2});
     assert.equal((await stakingToken.balanceOf(staker2)).toString(),web3.utils.toWei("1"));
