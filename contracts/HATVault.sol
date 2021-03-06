@@ -92,8 +92,9 @@ contract  HATVault is StakingRewards {
     function stakeForLpToken(uint256 _amount) external {
       //stake on stakingRewards
         stake(_amount);
-        lpBalances[msg.sender] = lpBalances[msg.sender].add(_amount);
-        lpTotalSupply = lpTotalSupply.add(_amount);
+        uint256 amount = _amount.mul(1e18).div(factor);
+        lpBalances[msg.sender] = lpBalances[msg.sender].add(amount);
+        lpTotalSupply = lpTotalSupply.add(amount);
     }
 
     function exitWithLpToken() external {
@@ -106,7 +107,7 @@ contract  HATVault is StakingRewards {
         uint256 totalSupplyOfLPToken = lpTotalSupply;
         uint256 balanceOfLpToken = lpBalances[msg.sender];
         // this will make sure that _amount is <= with user balance of lptoken.
-        lpBalances[msg.sender] = lpBalances[msg.sender].sub(_amount);
+        lpBalances[msg.sender] = balanceOfLpToken.sub(_amount);
         lpTotalSupply = lpTotalSupply.sub(_amount);
         uint256 withdrawAmount = balanceOfLpToken.mul(_totalSupply).div(totalSupplyOfLPToken);
         withdraw(withdrawAmount);

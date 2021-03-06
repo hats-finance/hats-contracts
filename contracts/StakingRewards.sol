@@ -83,7 +83,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     function stake(uint256 amount) internal nonReentrant notPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = balanceOf(msg.sender).add(amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
@@ -91,7 +91,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = balanceOf(msg.sender).sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
