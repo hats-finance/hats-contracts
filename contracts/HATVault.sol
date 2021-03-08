@@ -16,8 +16,6 @@ contract  HATVault is StakingRewards {
     uint256[][] public hackingRewardsSplit = [[90, 5, 4], [20, 5, 5], [2, 5, 5]];
     address public projectsRegistery;
     string public vaultName;
-    mapping (address => uint256) public lpBalances;
-    uint256 public lpTotalSupply;
 
     modifier onlyApprover() {
         require(claimApprovers[msg.sender], "only approver");
@@ -63,7 +61,7 @@ contract  HATVault is StakingRewards {
         uint256 approverReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][1]).div(100);
         uint256 projectsRegisteryReward = hackingRewardAmount.mul(hackingRewardsSplit[_sevirity][2]).div(100);
         _totalSupply = _totalSupply.sub(hackerReward.add(approverReward).add(projectsRegisteryReward));
-        factor = _totalSupply.mul(factor).div(hackingRewardAmount); 
+        factor = _totalSupply.mul(factor).div(hackingRewardAmount);
         //hacker get its reward
         stakingToken.safeTransfer(_beneficiary, hackerReward);
         //approver get its rewards
@@ -88,29 +86,4 @@ contract  HATVault is StakingRewards {
         }
         emit SetApprovers(_claimApprovers, _status);
     }
-
-    function stakeForLpToken(uint256 _amount) external {
-      //stake on stakingRewards
-        stake(_amount);
-        uint256 amount = _amount.mul(1e18).div(factor);
-        lpBalances[msg.sender] = lpBalances[msg.sender].add(amount);
-        lpTotalSupply = lpTotalSupply.add(amount);
-    }
-
-    function exitWithLpToken() external {
-        uint256 balanceOfLpToken = lpBalances[msg.sender];
-        withdrawWithLpToken(balanceOfLpToken);
-        getReward();
-    }
-
-    function withdrawWithLpToken(uint256 _amount) public {
-        uint256 totalSupplyOfLPToken = lpTotalSupply;
-        uint256 balanceOfLpToken = lpBalances[msg.sender];
-        // this will make sure that _amount is <= with user balance of lptoken.
-        lpBalances[msg.sender] = balanceOfLpToken.sub(_amount);
-        lpTotalSupply = lpTotalSupply.sub(_amount);
-        uint256 withdrawAmount = balanceOfLpToken.mul(_totalSupply).div(totalSupplyOfLPToken);
-        withdraw(withdrawAmount);
-    }
-
 }

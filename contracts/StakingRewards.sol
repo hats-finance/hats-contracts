@@ -4,7 +4,6 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 // Inheritance
 import "./interfaces/IStakingRewards.sol";
@@ -80,20 +79,22 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    function stake(uint256 amount) internal nonReentrant notPaused updateReward(msg.sender) {
-        require(amount > 0, "Cannot stake 0");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-        emit Staked(msg.sender, amount);
+    function stake(uint256 _amount) external nonReentrant notPaused updateReward(msg.sender) {
+        require(_amount > 0, "Cannot stake 0");
+        uint256 factoredAmount = _amount.mul(1e18).div(factor);
+        _totalSupply = _totalSupply.add(factoredAmount);
+        _balances[msg.sender] = _balances[msg.sender].add(factoredAmount);
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit Staked(msg.sender, _amount);
     }
-
-    function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
+    //withdraw factored amount using balanceOf view function.
+    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
-        _totalSupply = _totalSupply.sub(amount);
+        uint256 factoredAmount = amount.mul(factor).div(1e18);
+        _totalSupply = _totalSupply.sub(factoredAmount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        stakingToken.safeTransfer(msg.sender, amount);
-        emit Withdrawn(msg.sender, amount);
+        stakingToken.safeTransfer(msg.sender, factoredAmount);
+        emit Withdrawn(msg.sender, factoredAmount);
     }
 
     function getReward() public nonReentrant updateReward(msg.sender) {
@@ -105,10 +106,10 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         }
     }
 
-    // function exit() internal {
-    //     withdraw(_balances[msg.sender]);
-    //     getReward();
-    // }
+    function exit() external {
+        withdraw(_balances[msg.sender]);
+        getReward();
+    }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
@@ -155,7 +156,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     /* ========== MODIFIERS ========== */
-
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
@@ -167,7 +167,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     /* ========== EVENTS ========== */
-
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);

@@ -66,33 +66,33 @@ contract('HatVault',  accounts =>  {
 
     });
 
-    it("stakeForLpToken", async () => {
+    it("stake", async () => {
         var staker = accounts[1];
         await setup(accounts);
         try {
-            await hatVault.stakeForLpToken(1000,{from:staker});
+            await hatVault.stake(1000,{from:staker});
             assert(false, 'cannot stake without approve');
         } catch (ex) {
           assertVMException(ex);
         }
         await stakingToken.approve(hatVault.address,10000,{from:staker});
         try {
-            await hatVault.stakeForLpToken(1000,{from:staker});
+            await hatVault.stake(1000,{from:staker});
             assert(false, 'do not have enough tokens to stake');
         } catch (ex) {
           assertVMException(ex);
         }
         await stakingToken.mint(staker,1000);
         assert.equal(await stakingToken.balanceOf(staker), 1000);
-        await hatVault.stakeForLpToken(1000,{from:staker});
+        await hatVault.stake(1000,{from:staker});
         assert.equal(await stakingToken.balanceOf(staker), 0);
         assert.equal(await stakingToken.balanceOf(hatVault.address), 1000);
         //check staker lptoken balance
-        assert.equal(await hatVault.lpBalances(staker), 1000);
-        //withdrawWithLpToken
-        await hatVault.withdrawWithLpToken(1000,{from:staker});
+      //  assert.equal(await hatVault.lpBalances(staker), 1000);
+        //withdraw
+        await hatVault.withdraw(1000,{from:staker});
         //lptoken burned
-        assert.equal(await hatVault.lpBalances(staker), 0);
+      //  assert.equal(await hatVault.lpBalances(staker), 0);
         //staker  get stake back
         assert.equal(await stakingToken.balanceOf(staker), 1000);
 
@@ -117,12 +117,12 @@ contract('HatVault',  accounts =>  {
         //start farming
         await hatVault.notifyRewardAmount(rewardTokenAmount);
         //stake
-        await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker});
-        assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
-      //exitWithLpToken
+        await hatVault.stake(web3.utils.toWei("1"),{from:staker});
+      //  assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
+      //exit
         assert.equal(await hatToken.balanceOf(staker),0);
         await increaseTime(7*24*3600);
-        await hatVault.exitWithLpToken({from:staker});
+        await hatVault.exit({from:staker});
         let balanceOfStakerHats = await hatToken.balanceOf(staker);
         assert.equal(web3.utils.fromWei(balanceOfStakerHats) > 999 ,true);
         assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1000 ,true);
@@ -138,19 +138,20 @@ contract('HatVault',  accounts =>  {
     //start farming
     await hatVault.notifyRewardAmount(rewardTokenAmount);
     //stake
-    await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker});
-    assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
-  //exitWithLpToken
+    await hatVault.stake(web3.utils.toWei("1"),{from:staker});
+    //assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
+  //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
     await hatVault.approveClaim(accounts[2],1);
     await hatVault.approveClaim(accounts[2],1);
-    await hatVault.exitWithLpToken({from:staker});
+    await hatVault.exit({from:staker});
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * await hatVault.factor()
     assert.equal(await stakingToken.balanceOf(staker),expectedBalance)
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) > 999 ,true);
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1000 ,true);
+
   });
 
   it("enable farming  + approve+ getReward", async () => {
@@ -163,9 +164,9 @@ contract('HatVault',  accounts =>  {
     //start farming
     await hatVault.notifyRewardAmount(rewardTokenAmount);
     //stake
-    await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker});
-    assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
-  //exitWithLpToken
+    await hatVault.stake(web3.utils.toWei("1"),{from:staker});
+  //  assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
+  //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
     await hatVault.approveClaim(accounts[2],0);
@@ -190,22 +191,22 @@ contract('HatVault',  accounts =>  {
     //start farming
     await hatVault.notifyRewardAmount(rewardTokenAmount);
     //stake
-    await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker});
-    assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
-  //exitWithLpToken
+    await hatVault.stake(web3.utils.toWei("1"),{from:staker});
+  //  assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
+  //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
     await hatVault.approveClaim(accounts[2],0);
     let totalSupplyBefore = await hatVault.totalSupply();
-    await hatVault.stakeForLpToken(web3.utils.toWei("1"),{from:staker2});
+    await hatVault.stake(web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
-    await hatVault.exitWithLpToken({from:staker});
+    await hatVault.exit({from:staker});
     assert.equal((await stakingToken.balanceOf(staker)).toString(),totalSupplyBefore);
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) > 999 ,true);
     assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1000 ,true);
     assert.equal(await stakingToken.balanceOf(staker2),0);
-    await hatVault.exitWithLpToken({from:staker2});
+    await hatVault.exit({from:staker2});
     assert.equal((await stakingToken.balanceOf(staker2)).toString(),web3.utils.toWei("1"));
   });
 });
