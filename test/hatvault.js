@@ -37,7 +37,9 @@ const setup = async function (accounts) {
   await projectsRegistery.initialize(accounts[0]);
 
   hatToken = await HATToken.new("Hat","HAT",accounts[0]);
+  await hatToken.setMaster(accounts[0]);
   stakingToken = await HATToken.new("Staking","STK",accounts[0]);
+  await stakingToken.setMaster(accounts[0]);
   let tx = await projectsRegistery.vaultFactory(accounts[0],
                                                 accounts[0],
                                                 hatToken.address,
@@ -208,5 +210,34 @@ contract('HatVault',  accounts =>  {
     assert.equal(await stakingToken.balanceOf(staker2),0);
     await hatVault.exit({from:staker2});
     assert.equal((await stakingToken.balanceOf(staker2)).toString(),web3.utils.toWei("1"));
+  });
+
+  it("enable farming  + enable farming+ getReward", async () => {
+    var staker = accounts[1];
+    var rewardTokenAmount = web3.utils.toWei("1000");
+    await setup(accounts);
+    await stakingToken.approve(hatVault.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await hatToken.mint(hatVault.address,rewardTokenAmount);
+    //start farming
+    await hatVault.notifyRewardAmount(rewardTokenAmount);
+    //stake
+    await hatVault.stake(web3.utils.toWei("1"),{from:staker});
+  //  assert.equal(await hatVault.lpBalances(staker), web3.utils.toWei("1"));
+  //exit
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await increaseTime(8*24*3600);
+    await hatVault.notifyRewardAmount(web3.utils.toWei("500"));
+    await increaseTime(8*24*3600);
+    await hatToken.mint(hatVault.address,rewardTokenAmount);
+
+
+    //await hatVault.approveClaim(accounts[2],0);
+    await hatVault.getReward({from:staker});
+    let balanceOfStakerHats = await hatToken.balanceOf(staker);
+    assert.equal(await stakingToken.balanceOf(staker),0);
+    assert.equal(web3.utils.fromWei(balanceOfStakerHats) > 1499 ,true);
+    assert.equal(web3.utils.fromWei(balanceOfStakerHats) <= 1500 ,true);
+
   });
 });
