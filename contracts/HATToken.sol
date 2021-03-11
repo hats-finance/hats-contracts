@@ -9,18 +9,17 @@ contract HATToken is ERC20Snapshot, Ownable {
     using SafeMath for uint256;
 
     uint256 public constant NUMBER_BLOCKS_PER_DAY = 6000;
-    uint256 public seedPoolAmount = 100000000e18;
-    address public HATMaster;
-    address public HATMasterPending;
-    uint256 public setHATMasterPendingAtBlock;
+    uint256 public seedPoolAmount = 175000e18;
+    address public hatMaster;
+    address public hatMasterPending;
+    uint256 public sethatMasterPendingAtBlock;
+    uint256 public cap = 500000e18;
 
     constructor(
-        string memory _name,
-        string memory _symbol,
         address _owner
     )
-    public
-    ERC20(_name, _symbol) {
+    ERC20("HATToken", "HAT")
+    public {
         transferOwnership(_owner);
     }
 
@@ -30,7 +29,7 @@ contract HATToken is ERC20Snapshot, Ownable {
     }
 
     function mint(address _to, uint256 _amount) public {
-        require(msg.sender == HATMaster, "HATToken: only master farmer can mint");
+        require(msg.sender == hatMaster, "HATToken: only master farmer can mint");
         require(seedPoolAmount > 0, "HATToken: cannot mint for pool");
         require(seedPoolAmount >= _amount, "HATToken: amount greater than limitation");
         seedPoolAmount = seedPoolAmount.sub(_amount);
@@ -45,19 +44,19 @@ contract HATToken is ERC20Snapshot, Ownable {
         return _burn(_account, _amount);
     }
 
-    function setPendingMaster(address _HATMaster) public onlyOwner {
-        HATMasterPending = _HATMaster;
-        setHATMasterPendingAtBlock = block.number;
+    function setPendingMaster(address _hatMaster) public onlyOwner {
+        hatMasterPending = _hatMaster;
+        sethatMasterPendingAtBlock = block.number;
     }
 
     function confirmMaster() public onlyOwner {
-        require(block.number - setHATMasterPendingAtBlock > 2 * NUMBER_BLOCKS_PER_DAY,
+        require(block.number - sethatMasterPendingAtBlock > 2 * NUMBER_BLOCKS_PER_DAY,
         "HATToken: cannot confirm at this time");
-        HATMaster = HATMasterPending;
+        hatMaster = hatMasterPending;
     }
 
-    function setMaster(address _HATMaster) public onlyOwner {
-        require(HATMaster == address(0x0), "HATToken: Cannot set master");
-        HATMaster = _HATMaster;
+    function setMaster(address _hatMaster) public onlyOwner {
+        require(hatMaster == address(0x0), "HATToken: Cannot set master");
+        hatMaster = _hatMaster;
     }
 }

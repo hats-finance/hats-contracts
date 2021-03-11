@@ -35,7 +35,7 @@ const increaseTime = async function(duration) {
 };
 
 const setup = async function (accounts) {
-  hatToken = await HATToken.new("Hat","HAT",accounts[0]);
+  hatToken = await HATToken.new(accounts[0]);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   hatVaults = await HATVaults.new(hatToken.address,
@@ -89,6 +89,7 @@ contract('HatVault',  accounts =>  {
         //withdraw
         assert.equal(await hatToken.balanceOf(staker), 0);
         let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+
         let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
         let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
         let onee12 = new web3.utils.BN("1000000000000")
@@ -168,6 +169,6 @@ contract('HatVault',  accounts =>  {
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     assert.equal(balanceOfStakerHats.toString(),
                   expectedReward);
-
+  
   });
 });
