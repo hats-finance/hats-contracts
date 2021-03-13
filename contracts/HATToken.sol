@@ -75,7 +75,7 @@ contract HATToken {
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     /**
-     * @notice Construct a new Uni token
+     * @notice Construct a new HAT token
      * @param minter_ The account with minting ability
      */
     constructor(address minter_) public {
@@ -92,7 +92,7 @@ contract HATToken {
     }
 
     function mintFromOwner(address _account, uint256 _amount) public {
-        require(msg.sender == minter, "Uni::mint: only the minter can mint");
+        require(msg.sender == minter, "HAT::mint: only the minter can mint");
         return _mint(_account, _amount);
     }
 
@@ -101,20 +101,20 @@ contract HATToken {
     }
 
     function setPendingMaster(address _hatMaster) public {
-        require(msg.sender == minter, "Uni::mint: only the minter can set pending master");
+        require(msg.sender == minter, "HAT::mint: only the minter can set pending master");
         hatMasterPending = _hatMaster;
         sethatMasterPendingAtBlock = block.number;
     }
 
     function confirmMaster() public {
-        require(msg.sender == minter, "Uni::mint: only the minter can confirm master");
+        require(msg.sender == minter, "HAT::mint: only the minter can confirm master");
         require(block.number - sethatMasterPendingAtBlock > 2 * NUMBER_BLOCKS_PER_DAY,
         "HATToken: cannot confirm at this time");
         hatMaster = hatMasterPending;
     }
 
     function setMaster(address _hatMaster) public  {
-        require(msg.sender == minter, "Uni::setMinter: only the minter can set the master address");
+        require(msg.sender == minter, "HAT::setMinter: only the minter can set the master address");
         require(hatMaster == address(0x0), "HATToken: Cannot set master");
         hatMaster = _hatMaster;
     }
@@ -124,7 +124,7 @@ contract HATToken {
      * @param minter_ The address of the new minter
      */
     function setMinter(address minter_) external {
-        require(msg.sender == minter, "Uni::setMinter: only the minter can set the minter address");
+        require(msg.sender == minter, "HAT::setMinter: only the minter can set the minter address");
         emit MinterChanged(minter, minter_);
         minter = minter_;
     }
@@ -152,7 +152,7 @@ contract HATToken {
         if (rawAmount == uint(-1)) {
             amount = uint96(-1);
         } else {
-            amount = safe96(rawAmount, "Uni::approve: amount exceeds 96 bits");
+            amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
         }
 
         allowances[msg.sender][spender] = amount;
@@ -176,16 +176,16 @@ contract HATToken {
         if (rawAmount == uint(-1)) {
             amount = uint96(-1);
         } else {
-            amount = safe96(rawAmount, "Uni::permit: amount exceeds 96 bits");
+            amount = safe96(rawAmount, "HAT::permit: amount exceeds 96 bits");
         }
 
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Uni::permit: invalid signature");
-        require(signatory == owner, "Uni::permit: unauthorized");
-        require(block.timestamp <= deadline, "Uni::permit: signature expired");
+        require(signatory != address(0), "HAT::permit: invalid signature");
+        require(signatory == owner, "HAT::permit: unauthorized");
+        require(block.timestamp <= deadline, "HAT::permit: signature expired");
 
         allowances[owner][spender] = amount;
 
@@ -208,7 +208,7 @@ contract HATToken {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint rawAmount) external returns (bool) {
-        uint96 amount = safe96(rawAmount, "Uni::transfer: amount exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "HAT::transfer: amount exceeds 96 bits");
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -223,10 +223,10 @@ contract HATToken {
     function transferFrom(address src, address dst, uint rawAmount) external returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, "Uni::approve: amount exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
 
         if (spender != src && spenderAllowance != uint96(-1)) {
-            uint96 newAllowance = sub96(spenderAllowance, amount, "Uni::transferFrom: transfer amount exceeds spender allowance");
+            uint96 newAllowance = sub96(spenderAllowance, amount, "HAT::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -258,9 +258,9 @@ contract HATToken {
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Uni::delegateBySig: invalid signature");
-        require(nonce == nonces[signatory]++, "Uni::delegateBySig: invalid nonce");
-        require(block.timestamp <= expiry, "Uni::delegateBySig: signature expired");
+        require(signatory != address(0), "HAT::delegateBySig: invalid signature");
+        require(nonce == nonces[signatory]++, "HAT::delegateBySig: invalid nonce");
+        require(block.timestamp <= expiry, "HAT::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -282,7 +282,7 @@ contract HATToken {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
-        require(blockNumber < block.number, "Uni::getPriorVotes: not yet determined");
+        require(blockNumber < block.number, "HAT::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -324,15 +324,15 @@ contract HATToken {
      * @param rawAmount The number of tokens to be minted
      */
     function _mint(address dst, uint rawAmount) internal {
-        require(dst != address(0), "Uni::mint: cannot transfer to the zero address");
+        require(dst != address(0), "HAT::mint: cannot transfer to the zero address");
         require(SafeMath.add(totalSupply, rawAmount) <= cap, "ERC20Capped: cap exceeded");
 
         // mint the amount
-        uint96 amount = safe96(rawAmount, "Uni::mint: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.add(totalSupply, amount), "Uni::mint: totalSupply exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "HAT::mint: amount exceeds 96 bits");
+        totalSupply = safe96(SafeMath.add(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
 
         // transfer the amount to the recipient
-        balances[dst] = add96(balances[dst], amount, "Uni::mint: transfer amount overflows");
+        balances[dst] = add96(balances[dst], amount, "HAT::mint: transfer amount overflows");
         emit Transfer(address(0), dst, amount);
 
         // move delegates
@@ -345,14 +345,14 @@ contract HATToken {
      * @param rawAmount The number of tokens to be burned
      */
     function _burn(address src, uint rawAmount) internal {
-        require(src != address(0), "Uni::burn: cannot burn to the zero address");
+        require(src != address(0), "HAT::burn: cannot burn to the zero address");
 
         // mint the amount
-        uint96 amount = safe96(rawAmount, "Uni::burn: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.sub(totalSupply, amount), "Uni::mint: totalSupply exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "HAT::burn: amount exceeds 96 bits");
+        totalSupply = safe96(SafeMath.sub(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
 
         // transfer the amount to the recipient
-        balances[src] = sub96(balances[src], amount, "Uni::burn: burn amount exceeds balance");
+        balances[src] = sub96(balances[src], amount, "HAT::burn: burn amount exceeds balance");
         emit Transfer(src, address(0), amount);
 
         // move delegates
@@ -370,11 +370,11 @@ contract HATToken {
     }
 
     function _transferTokens(address src, address dst, uint96 amount) internal {
-        require(src != address(0), "Uni::_transferTokens: cannot transfer from the zero address");
-        require(dst != address(0), "Uni::_transferTokens: cannot transfer to the zero address");
+        require(src != address(0), "HAT::_transferTokens: cannot transfer from the zero address");
+        require(dst != address(0), "HAT::_transferTokens: cannot transfer to the zero address");
 
-        balances[src] = sub96(balances[src], amount, "Uni::_transferTokens: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "Uni::_transferTokens: transfer amount overflows");
+        balances[src] = sub96(balances[src], amount, "HAT::_transferTokens: transfer amount exceeds balance");
+        balances[dst] = add96(balances[dst], amount, "HAT::_transferTokens: transfer amount overflows");
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
@@ -385,21 +385,21 @@ contract HATToken {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint96 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint96 srcRepNew = sub96(srcRepOld, amount, "Uni::_moveVotes: vote amount underflows");
+                uint96 srcRepNew = sub96(srcRepOld, amount, "HAT::_moveVotes: vote amount underflows");
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, "Uni::_moveVotes: vote amount overflows");
+                uint96 dstRepNew = add96(dstRepOld, amount, "HAT::_moveVotes: vote amount overflows");
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
     }
 
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
-      uint32 blockNumber = safe32(block.number, "Uni::_writeCheckpoint: block number exceeds 32 bits");
+      uint32 blockNumber = safe32(block.number, "HAT::_writeCheckpoint: block number exceeds 32 bits");
 
       if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
           checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
