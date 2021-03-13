@@ -6,7 +6,6 @@ const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 var hatVaults;
 var hatToken;
 var stakingToken;
-var projectsRegistery;
 var REWARD_PER_BLOCK = "100";
 // Increases testrpc time by the passed duration in seconds
 const increaseTime = async function(duration) {
@@ -54,7 +53,7 @@ function assertVMException(error) {
     assert.isTrue(condition, 'Expected a VM Exception, got this instead:' + error.message);
 }
 
-contract('HatVault',  accounts =>  {
+contract('HatVaults',  accounts =>  {
 
     it("constructor", async () => {
         await setup(accounts);
@@ -92,12 +91,11 @@ contract('HatVault',  accounts =>  {
 
         let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
         let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
-        let onee12 = new web3.utils.BN("1000000000000")
-        let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"))
-        let pendingReward = await hatVaults.pendingReward(0,staker);
+        let onee12 = new web3.utils.BN("1000000000000");
+        let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
         let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100);
-        rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule))
-        let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12)
+        rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
+        let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
 
         await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
         //staker  get stake back
@@ -123,8 +121,6 @@ contract('HatVault',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await increaseTime(7*24*3600);
     await hatVaults.approveClaim(0,accounts[2],0);
-
-    let totalSupplyBefore = await stakingToken.balanceOf(hatVaults.address);
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
@@ -155,20 +151,19 @@ contract('HatVault',  accounts =>  {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
     let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
-    let onee12 = new web3.utils.BN("1000000000000")
-    let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"))
-    let pendingReward = await hatVaults.pendingReward(0,staker);
+    let onee12 = new web3.utils.BN("1000000000000");
+    let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
     let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100);
-    rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule))
-    let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12)
+    rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
+    let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
 
     await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
-    let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * await hatVaults.factor()
-    assert.equal(await stakingToken.balanceOf(staker),expectedBalance)
+    let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * await hatVaults.factor();
+    assert.equal(await stakingToken.balanceOf(staker),expectedBalance);
 
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     assert.equal(balanceOfStakerHats.toString(),
                   expectedReward);
-  
+
   });
 });

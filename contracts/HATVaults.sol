@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
@@ -33,7 +34,11 @@ contract  HATVaults is HATMaster {
     }
 
     event SetApprovers(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
-    event AddPool(uint256 indexed _pid, address[] indexed _approvers);
+    event AddPool(uint256 indexed _pid,
+                uint256 indexed _allocPoint,
+                address indexed _lpToken,
+                string _name,
+                address[] _approvers);
 
     /* ========== CONSTRUCTOR ========== */
     constructor(
@@ -86,16 +91,17 @@ contract  HATVaults is HATMaster {
     }
 
     function addPool(uint256 _allocPoint,
-                    IERC20 _lpToken,
+                    address _lpToken,
                     bool _withUpdate,
                     address[] memory _approvers)
     external onlyOwner {
-        add(_allocPoint, _lpToken, _withUpdate);
+        add(_allocPoint, IERC20(_lpToken), _withUpdate);
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _approvers.length; i++) {
             claimApprovers[poolId][_approvers[i]] = true;
         }
-        emit AddPool(poolId, _approvers);
+        string memory name = ERC20(_lpToken).name();
+        emit AddPool(poolId, _allocPoint, address(_lpToken), name, _approvers);
     }
 
     function swapAndBurn(address uniswap, IERC20 _token, uint256 _amount) internal {
