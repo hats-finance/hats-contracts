@@ -34,11 +34,14 @@ contract  HATVaults is HATMaster {
     }
 
     event SetApprovers(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
+
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
                 string _name,
                 address[] _approvers);
+
+    event Claim(string _descriptionHash);
 
     /* ========== CONSTRUCTOR ========== */
     constructor(
@@ -48,7 +51,6 @@ contract  HATVaults is HATMaster {
         uint256 _halvingAfterBlock,
         address _governance
     ) public HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
-        //projectsRegistery = _projectsRegistery;
         governance = _governance;
     }
 
@@ -70,8 +72,14 @@ contract  HATVaults is HATMaster {
         lpToken.safeTransfer(msg.sender, approverReward);
         //other projects get its reward ??
         swapAndBurn(address(0), lpToken, projectsRegisteryReward);
-      //  poolInfo[poolId].lpToken.safeTransfer(projectsRegistery, projectsRegisteryReward);
     }
+
+    //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
+    // this can be use later on by the claimer to prove her claim
+    function claim(string memory _descriptionHash) external {
+        emit Claim(_descriptionHash);
+    }
+
 
     function setHackingRewardsSplit(uint256[] memory _hackingRewardsSplit, uint256 _sevirity) external onlyGovernance {
         //todo : should the hacker split rewards can be updated ?
