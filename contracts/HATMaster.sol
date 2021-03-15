@@ -111,8 +111,11 @@ contract HATMaster is Ownable {
             return;
         }
         uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
+        //the original BDPMaster was reverted if the reward is zero to to the cap check of at the BDP token.
+        if (reward > 0) {
+            HAT.mint(address(this), reward);
+        }
 
-        HAT.mint(address(this), reward);
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
     }

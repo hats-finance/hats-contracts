@@ -1,4 +1,5 @@
 const HATToken = artifacts.require("./HATToken.sol");
+const utils = require("./utils.js");
 
 function assertVMException(error) {
     let condition = (
@@ -123,6 +124,13 @@ contract('HATToken', accounts => {
         const totalSupply = await token.totalSupply();
 
         assert.equal(totalSupply.toNumber(), 900);
+
+        try {
+            await token.burn(901,{from:accounts[1]});
+            throw 'an error';
+        } catch (error) {
+            assertVMException(error);
+        }
     });
 
     it("getPriorVotes ", async () => {
@@ -135,13 +143,13 @@ contract('HATToken', accounts => {
         assert.equal(currentVote , 100);
         let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
         //increment block number
-        await token.delegate(accounts[1],{from:accounts[1]});
+        utils.increaseTime(40);
         currentVote = await token.getPriorVotes(accounts[1],currentBlockNumber);
         assert.equal(currentVote , 100);
         await token.burn(50,{ from: accounts[1]});
         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
         //increment block number
-        await token.delegate(accounts[1],{from:accounts[1]});
+        utils.increaseTime(40);
         currentVote = await token.getPriorVotes(accounts[1],currentBlockNumber);
         assert.equal(currentVote , 50);
     });
