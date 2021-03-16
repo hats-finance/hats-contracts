@@ -111,8 +111,11 @@ contract HATMaster is Ownable {
             return;
         }
         uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
+        //the original BDPMaster was reverted if the reward is zero to to the cap check of at the BDP token.
+        if (reward > 0) {
+            HAT.mint(address(this), reward);
+        }
 
-        HAT.mint(address(this), reward);
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
     }
@@ -163,10 +166,11 @@ contract HATMaster is Ownable {
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        pool.lpToken.safeTransfer(address(msg.sender), user.amount);
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+        uint256 amount = user.amount;
         user.amount = 0;
         user.rewardDebt = 0;
+        pool.lpToken.safeTransfer(address(msg.sender), amount);
+        emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
     // -----------------------------
@@ -205,7 +209,7 @@ contract HATMaster is Ownable {
     function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint) public view returns (uint) {
         uint256 multiplier = getMultiplier(_from, _to);
         uint256 amount = (multiplier.mul(REWARD_PER_BLOCK).mul(_allocPoint).div(totalAllocPoint)).div(100);
-        uint256 amountCanMint = HAT.seedPoolAmount();
+        uint256 amountCanMint = HAT.minters(address(this));
         return amountCanMint < amount ? amountCanMint : amount;
     }
 
