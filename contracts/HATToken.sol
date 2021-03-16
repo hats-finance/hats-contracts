@@ -16,14 +16,24 @@ contract HATToken {
     /// @notice Total number of tokens in circulation
     uint public totalSupply;
 
-    /// @notice Address which may mint new tokens
-    address public minter;
+    address public governance;
+    address public governancePending;
+    uint256 public setGovernancePendingAtBlock;
 
-    uint256 public constant NUMBER_BLOCKS_PER_DAY = 6000;
-    uint256 public seedPoolAmount = 175000e18;
-    address public hatMaster;
-    address public hatMasterPending;
-    uint256 public sethatMasterPendingAtBlock;
+    /// @notice Address which may mint new tokens
+    /// minter -> minting seedAmount
+    mapping (address => uint256) public minters;
+
+    struct PendingMinter {
+        uint256 seedAmount;
+        uint256 setMinterPendingAtBlock;
+    }
+
+    /// @notice Address which may mint new tokens
+    /// minter -> minting seedAmount
+    mapping (address => PendingMinter) public pendingMinters;
+
+    uint256 public  timeLockDelayInBlocksUnits;
     uint256 public cap = 500000e18;
 
     // @notice Allowance amounts on behalf of others
@@ -76,57 +86,51 @@ contract HATToken {
 
     /**
      * @notice Construct a new HAT token
-     * @param minter_ The account with minting ability
      */
-    constructor(address minter_) public {
-        minter = minter_;
-        emit MinterChanged(address(0), minter);
+    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits) public {
+        governance = _governance;
+        timeLockDelayInBlocksUnits = _timeLockDelayInBlocksUnits;
     }
 
-    function mint(address _to, uint256 _amount) public {
-        require(msg.sender == hatMaster, "HATToken: only master farmer can mint");
-        require(seedPoolAmount > 0, "HATToken: cannot mint for pool");
-        require(seedPoolAmount >= _amount, "HATToken: amount greater than limitation");
-        seedPoolAmount = SafeMath.sub(seedPoolAmount, _amount);
-        _mint(_to, _amount);
+    function setPendingGovernance(address _governance) public {
+        require(msg.sender == governance, "HAT:!governance");
+        require(_governance != address(0), "HAT:!_governance");
+        governancePending = _governance;
+        setGovernancePendingAtBlock = block.number;
     }
 
-    function mintFromOwner(address _account, uint256 _amount) public {
-        require(msg.sender == minter, "HAT::mint: only the minter can mint");
-        return _mint(_account, _amount);
+    function confirmGovernance() public {
+        require(msg.sender == governance, "HAT:!governance");
+        require(setGovernancePendingAtBlock > 0, "HAT:!governancePending");
+        require(block.number - setGovernancePendingAtBlock > timeLockDelayInBlocksUnits,
+        "HAT: cannot confirm governance at this time");
+        governance = governancePending;
+        setGovernancePendingAtBlock = 0;
+    }
+
+    function setPendingMinter(address _minter, uint256 _cap) public {
+        require(msg.sender == governance, "HAT::!governance");
+        pendingMinters[_minter].seedAmount = _cap;
+        pendingMinters[_minter].setMinterPendingAtBlock = block.number;
+    }
+
+    function confirmMinter(address _minter) public {
+        require(msg.sender == governance, "HAT::mint: only the governance can confirm minter");
+        require(pendingMinters[_minter].setMinterPendingAtBlock > 0, "HAT:: no pending minter was set");
+        require(block.number - pendingMinters[_minter].setMinterPendingAtBlock > timeLockDelayInBlocksUnits,
+        "HATToken: cannot confirm at this time");
+        minters[_minter] = pendingMinters[_minter].seedAmount;
+        pendingMinters[_minter].setMinterPendingAtBlock = 0;
     }
 
     function burn(uint256 _amount) public {
         return _burn(msg.sender, _amount);
     }
 
-    function setPendingMaster(address _hatMaster) public {
-        require(msg.sender == minter, "HAT::mint: only the minter can set pending master");
-        hatMasterPending = _hatMaster;
-        sethatMasterPendingAtBlock = block.number;
-    }
-
-    function confirmMaster() public {
-        require(msg.sender == minter, "HAT::mint: only the minter can confirm master");
-        require(block.number - sethatMasterPendingAtBlock > 2 * NUMBER_BLOCKS_PER_DAY,
-        "HATToken: cannot confirm at this time");
-        hatMaster = hatMasterPending;
-    }
-
-    function setMaster(address _hatMaster) public  {
-        require(msg.sender == minter, "HAT::setMinter: only the minter can set the master address");
-        require(hatMaster == address(0x0), "HATToken: Cannot set master");
-        hatMaster = _hatMaster;
-    }
-
-    /**
-     * @notice Change the minter address
-     * @param minter_ The address of the new minter
-     */
-    function setMinter(address minter_) external {
-        require(msg.sender == minter, "HAT::setMinter: only the minter can set the minter address");
-        emit MinterChanged(minter, minter_);
-        minter = minter_;
+    function mint(address _account, uint _amount) public {
+        require(minters[msg.sender] >= _amount, "HATToken: amount greater than limitation");
+        minters[msg.sender] = SafeMath.sub(minters[msg.sender], _amount);
+        _mint(_account, _amount);
     }
 
     /**
@@ -314,9 +318,6 @@ contract HATToken {
         }
         return checkpoints[account][lower].votes;
     }
-
-
-
 
     /**
      * @notice Mint new tokens

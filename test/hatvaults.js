@@ -9,7 +9,7 @@ var stakingToken;
 var REWARD_PER_BLOCK = "100";
 
 const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
-  hatToken = await HATToken.new(accounts[0]);
+  hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   hatVaults = await HATVaults.new(hatToken.address,
@@ -17,7 +17,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
                                   0,
                                   10,
                                   accounts[0]);
-  await hatToken.setMaster(hatVaults.address);
+  await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]]);
 };
 
