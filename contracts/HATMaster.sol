@@ -56,7 +56,7 @@ contract HATMaster is Ownable {
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _halvingAfterBlock
-    ) public {
+    ) {
         HAT = _HAT;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;

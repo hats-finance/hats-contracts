@@ -87,7 +87,7 @@ contract HATToken {
     /**
      * @notice Construct a new HAT token
      */
-    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits) public {
+    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits) {
         governance = _governance;
         timeLockDelayInBlocksUnits = _timeLockDelayInBlocksUnits;
     }

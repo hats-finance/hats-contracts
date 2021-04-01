@@ -12,7 +12,6 @@ contract ERC20Mock is ERC20, Ownable {
         string memory _symbol,
         address _owner
     )
-    public
     ERC20(_name, _symbol) {
         transferOwnership(_owner);
     }

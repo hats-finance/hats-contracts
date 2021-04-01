@@ -1,6 +1,7 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
 const HATToken = artifacts.require("./HATToken.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
+const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -12,12 +13,17 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
   hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
+  var router =  await UniSwapV2RouterMock.new();
+
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   0,
                                   10,
-                                  accounts[0]);
+                                  accounts[0],
+                                  router.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
+  await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
+  await hatToken.mint(router.address, web3.utils.toWei("175000"));
   await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]]);
 };
 
@@ -30,13 +36,13 @@ function assertVMException(error) {
 
 contract('HatVaults',  accounts =>  {
 
-  //   it("constructor", async () => {
-  //       await setup(accounts);
-  //       assert.equal(await stakingToken.name(), "Staking");
-  //       assert.equal(await hatVaults.governance(), accounts[0]);
-  //       assert.equal(await hatVaults.owner(), accounts[0]);
-  //
-  //   });
+    it("constructor", async () => {
+        await setup(accounts);
+        assert.equal(await stakingToken.name(), "Staking");
+        assert.equal(await hatVaults.governance(), accounts[0]);
+        assert.equal(await hatVaults.owner(), accounts[0]);
+
+    });
   //
     it("stake", async () => {
         await setup(accounts);

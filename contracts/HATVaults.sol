@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
+import "./interfaces/IUniswapV2Router01.sol";
 import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
@@ -43,15 +44,19 @@ contract  HATVaults is HATMaster {
 
     event Claim(string _descriptionHash);
 
+    IUniswapV2Router01 public immutable uniSwapRouter;
+
     /* ========== CONSTRUCTOR ========== */
     constructor(
         address _rewardsToken,//hat
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _halvingAfterBlock,
-        address _governance
-    ) public HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+        address _governance,
+        IUniswapV2Router01 _uniSwapRouter
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         governance = _governance;
+        uniSwapRouter = _uniSwapRouter;
     }
 
     function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyApprover(_poolId) {
@@ -71,7 +76,7 @@ contract  HATVaults is HATMaster {
         //approver get its rewards
         lpToken.safeTransfer(msg.sender, approverReward);
         //other projects get its reward ??
-        swapAndBurn(address(0), lpToken, projectsRegisteryReward);
+        swapAndBurn(lpToken, projectsRegisteryReward);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -80,7 +85,6 @@ contract  HATVaults is HATMaster {
         emit Claim(_descriptionHash);
     }
 
-
     function setHackingRewardsSplit(uint256[] memory _hackingRewardsSplit, uint256 _sevirity) external onlyGovernance {
         //todo : should the hacker split rewards can be updated ?
         require(_hackingRewardsSplit[0]+_hackingRewardsSplit[1]+_hackingRewardsSplit[2] < 100,
@@ -88,7 +92,9 @@ contract  HATVaults is HATMaster {
         hackingRewardsSplit[_sevirity] = _hackingRewardsSplit;
     }
 
-    function setApprovers(uint256 _pid, address[] memory _claimApprovers, bool[] memory _status) external onlyApprover(_pid) {
+    function setApprovers(uint256 _pid, address[] memory _claimApprovers, bool[] memory _status)
+    external
+    onlyApprover(_pid) {
         require(_claimApprovers.length == _status.length, "wrong length");
         require(_claimApprovers.length != 0);
 
@@ -112,11 +118,18 @@ contract  HATVaults is HATMaster {
         emit AddPool(poolId, _allocPoint, address(_lpToken), name, _approvers);
     }
 
-    function swapAndBurn(address uniswap, IERC20 _token, uint256 _amount) internal {
-        //swap tokens to hats and burn it.
-        //any one call it ...
-        //for now just send it to the owner
-        _token.safeTransfer(owner(), _amount);
-
+    //swap tokens to hats and burn it.
+    function swapAndBurn(IERC20 _token, uint256 _amount) private {
+        require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
+        address[] memory path = new address[](2);
+        path[0] = address(_token);
+        path[1] = address(HAT);
+       //Swaps an exact amount of input tokens for as many output tokens as possible,
+       //along the route determined by the path.
+        uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        uint256 hatsRecieved =
+        uniSwapRouter.swapExactTokensForTokens(_amount, 0, path, address(this), block.timestamp)[1];
+        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
+        HAT.burn(hatsRecieved);
     }
 }

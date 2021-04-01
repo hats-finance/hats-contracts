@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 import "./HATToken.sol";
 
@@ -38,9 +39,7 @@ contract Disbursement {
     /// @param _disbursementPeriod Vesting period in seconds
     /// @param _startDate Start date of disbursement period (cliff)
     /// @param _token ERC20 token used for the vesting
-    constructor(address _receiver, address _wallet, uint _disbursementPeriod, uint _startDate, HATToken _token)
-        public
-    {
+    constructor(address _receiver, address _wallet, uint _disbursementPeriod, uint _startDate, HATToken _token) {
         require(_receiver != address(0) &&
                 _wallet != address(0) &&
                 _disbursementPeriod != 0 &&
