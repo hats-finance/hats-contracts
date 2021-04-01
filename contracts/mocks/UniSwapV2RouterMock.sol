@@ -14,6 +14,7 @@ contract UniSwapV2RouterMock {
         uint
     ) external returns (uint[] memory amounts) {
         uint256 amountToSendBack =  ERC20(path[1]).balanceOf(address(this));
+        ERC20(path[0]).transferFrom(msg.sender, address(this), amountIn);
         //swap 1 to 1...
         IERC20(path[1]).transfer(to, amountToSendBack);
         amounts = new uint[](2);
