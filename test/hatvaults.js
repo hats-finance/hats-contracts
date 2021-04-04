@@ -40,8 +40,6 @@ contract('HatVaults',  accounts =>  {
         await setup(accounts);
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVaults.governance(), accounts[0]);
-        assert.equal(await hatVaults.owner(), accounts[0]);
-
     });
   //
     it("stake", async () => {

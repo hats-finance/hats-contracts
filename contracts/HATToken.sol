@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+pragma solidity ^0.8.3;
+import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 
 
 contract HATToken {
@@ -153,8 +153,8 @@ contract HATToken {
      */
     function approve(address spender, uint rawAmount) external returns (bool) {
         uint96 amount;
-        if (rawAmount == uint(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
             amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
         }
@@ -177,8 +177,8 @@ contract HATToken {
      */
     function permit(address owner, address spender, uint rawAmount, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
         uint96 amount;
-        if (rawAmount == uint(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
             amount = safe96(rawAmount, "HAT::permit: amount exceeds 96 bits");
         }
@@ -229,7 +229,7 @@ contract HATToken {
         uint96 spenderAllowance = allowances[src][spender];
         uint96 amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
 
-        if (spender != src && spenderAllowance != uint96(-1)) {
+        if (spender != src && spenderAllowance != type(uint96).max) {
             uint96 newAllowance = sub96(spenderAllowance, amount, "HAT::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 
@@ -433,7 +433,7 @@ contract HATToken {
         return a - b;
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal view returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;

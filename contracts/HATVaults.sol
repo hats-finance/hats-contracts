@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.3;
 import "./interfaces/IUniswapV2Router01.sol";
-import "openzeppelin-solidity/contracts/proxy/Initializable.sol";
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
 
@@ -14,6 +12,7 @@ contract  HATVaults is HATMaster {
     using SafeERC20 for IERC20;
 
     mapping (uint256=>mapping(address => bool)) public claimApprovers;
+    mapping(address => uint256) public swapAndBurns;
     address public governance;
     uint256[][] public hackingRewardsSplit = [[90, 5, 4], [20, 5, 5], [2, 5, 5]];
     address public projectsRegistery;
@@ -41,6 +40,9 @@ contract  HATVaults is HATMaster {
                 address indexed _lpToken,
                 string _name,
                 address[] _approvers);
+
+    event SetPool(uint256 indexed _pid,
+                uint256 indexed _allocPoint);
 
     event Claim(string _descriptionHash);
 
@@ -75,8 +77,9 @@ contract  HATVaults is HATMaster {
         lpToken.safeTransfer(_beneficiary, hackerReward);
         //approver get its rewards
         lpToken.safeTransfer(msg.sender, approverReward);
-        //other projects get its reward ??
-        swapAndBurn(lpToken, projectsRegisteryReward);
+        //storing the amount of token which can be swap and burned
+        //so it could be swapAndBurn by any one in a seperate tx.
+        swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(approverReward);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -108,7 +111,7 @@ contract  HATVaults is HATMaster {
                     address _lpToken,
                     bool _withUpdate,
                     address[] memory _approvers)
-    external onlyOwner {
+    external onlyGovernance {
         add(_allocPoint, IERC20(_lpToken), _withUpdate);
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _approvers.length; i++) {
@@ -118,9 +121,16 @@ contract  HATVaults is HATMaster {
         emit AddPool(poolId, _allocPoint, address(_lpToken), name, _approvers);
     }
 
+    function setPool(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external onlyGovernance {
+        set(_pid, _allocPoint, _withUpdate);
+        emit SetPool(_pid, _allocPoint);
+    }
+
     //swap tokens to hats and burn it.
-    function swapAndBurn(IERC20 _token, uint256 _amount) private {
-        require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
+    function swapAndBurn(IERC20 _token) external {
+        uint256 amount = swapAndBurns[address(_token)];
+        swapAndBurns[address(_token)] = 0;
+        require(_token.approve(address(uniSwapRouter), amount), "token approve failed");
         address[] memory path = new address[](2);
         path[0] = address(_token);
         path[1] = address(HAT);
@@ -128,7 +138,7 @@ contract  HATVaults is HATMaster {
        //along the route determined by the path.
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
         uint256 hatsRecieved =
-        uniSwapRouter.swapExactTokensForTokens(_amount, 0, path, address(this), block.timestamp)[1];
+        uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         HAT.burn(hatsRecieved);
     }

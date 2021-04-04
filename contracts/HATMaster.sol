@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.7.6;
+pragma solidity 0.8.3;
 
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/utils/EnumerableSet.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 
 
-contract HATMaster is Ownable {
+contract HATMaster {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -65,11 +63,11 @@ contract HATMaster is Ownable {
             HALVING_AT_BLOCK.push(halvingAtBlock);
         }
         FINISH_BONUS_AT_BLOCK = _halvingAfterBlock.mul(REWARD_MULTIPLIER.length - 1).add(_startBlock);
-        HALVING_AT_BLOCK.push(uint256(-1));
+        HALVING_AT_BLOCK.push(type(uint256).max);
     }
 
     // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal onlyOwner {
+    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
         if (_withUpdate) {
             massUpdatePools();
@@ -85,7 +83,7 @@ contract HATMaster is Ownable {
         }));
     }
 
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
         if (_withUpdate) {
             massUpdatePools();
         }
