@@ -27,9 +27,13 @@ contract HATMaster {
 
     // Info of each pool.
     struct PoolReward {
-        uint256[4] rewardsSplit;
-        uint256[]  rewardsLevels;
         uint256 pendingLpTokenRewards;
+        uint256 hackerRewardSplit;
+        uint256 approverRewardSplit;
+        uint256 swapAndBurnSplit;
+        uint256 hackerHatRewardSplit;
+        uint256 factor;
+        uint256[]  rewardsLevels;
     }
 
     HATToken public HAT;
@@ -40,8 +44,6 @@ contract HATMaster {
     uint256 public FINISH_BONUS_AT_BLOCK;
 
     uint256 public START_BLOCK;
-
-    uint256 public factor = 1e18;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -141,7 +143,7 @@ contract HATMaster {
         }
         if(_amount > 0) {
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            user.amount = user.amount.add(_amount.mul(1e18).div(factor));
+            user.amount = user.amount.add(_amount.mul(1e18).div(poolsRewards[_pid].factor));
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
@@ -158,7 +160,7 @@ contract HATMaster {
         }
         uint256 factoredAmount = _amount;
         if(_amount > 0) {
-            factoredAmount = factoredAmount.mul(factor).div(1e18);
+            factoredAmount = factoredAmount.mul(poolsRewards[_pid].factor).div(1e18);
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), factoredAmount);
         }

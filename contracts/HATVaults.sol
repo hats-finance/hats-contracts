@@ -17,10 +17,19 @@ contract  HATVaults is HATMaster {
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
     address public governance;
-    uint256[4] public defaultRewardsSplit = [8500, 500, 500, 400];
-    uint256[] public defaultRewardsLevels = [2000, 4000, 6000, 8000, 10000];
+    uint256[4] public DEFAULT_REWARDS_SPLIT = [8500, 500, 500, 400];
+    uint256[] public DEFAULT_REWARD_LEVEL = [2000, 4000, 6000, 8000, 10000];
     address public projectsRegistery;
     string public vaultName;
+
+    // Info of each pool.
+    struct ClaimReward {
+        uint256 hackerReward;
+        uint256 approverReward;
+        uint256 swapAndBurn;
+        uint256 hackerHatReward;
+        uint256 factor;
+    }
 
     modifier onlyApprover(uint256 _pid) {
         require(claimApprovers[_pid][msg.sender], "only approver");
@@ -72,21 +81,23 @@ contract  HATVaults is HATMaster {
 
     function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyApprover(_poolId) {
         IERC20 lpToken = poolInfo[_poolId].lpToken;
-        uint256[5] memory claimRewards = calcClaimRewards(_poolId, _sevirity);
-        factor = claimRewards[4];
+        ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
+        poolsRewards[_poolId].factor = claimRewards.factor;
 
         //hacker get its reward
-        lpToken.safeTransfer(_beneficiary, claimRewards[0]);
+        lpToken.safeTransfer(_beneficiary, claimRewards.hackerReward);
         //approver get its rewards
-        lpToken.safeTransfer(msg.sender, claimRewards[1]);
+        lpToken.safeTransfer(msg.sender, claimRewards.approverReward);
         //storing the amount of token which can be swap and burned
         //so it could be swapAndBurn by any one in a seperate tx.
 
-        swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards[2]);
+        swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
         hackersHatRewards[_beneficiary][address(lpToken)] =
-        hackersHatRewards[_beneficiary][address(lpToken)].add(claimRewards[3]);
+        hackersHatRewards[_beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
         poolsRewards[_poolId].pendingLpTokenRewards =
-        poolsRewards[_poolId].pendingLpTokenRewards.add(claimRewards[2]).add(claimRewards[3]);
+        poolsRewards[_poolId].pendingLpTokenRewards
+        .add(claimRewards.swapAndBurn)
+        .add(claimRewards.hackerHatReward);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -99,9 +110,16 @@ contract  HATVaults is HATMaster {
     external
     onlyGovernance {
         //todo : should the hacker split rewards can be updated ?
-        require(_rewardsSplit[0]+_rewardsSplit[1]+_rewardsSplit[2]+_rewardsSplit[3] < 10000,
+        require(
+            _rewardsSplit[0]+
+            _rewardsSplit[1]+
+            _rewardsSplit[2]+
+            _rewardsSplit[3] < 10000,
         "total split % should be less than 10000");
-        poolsRewards[_pid].rewardsSplit = _rewardsSplit;
+        poolsRewards[_pid].hackerRewardSplit = _rewardsSplit[0];
+        poolsRewards[_pid].approverRewardSplit = _rewardsSplit[1];
+        poolsRewards[_pid].swapAndBurnSplit = _rewardsSplit[2];
+        poolsRewards[_pid].hackerHatRewardSplit = _rewardsSplit[3];
         emit SetRewardsSplit(_pid, _rewardsSplit);
     }
 
@@ -138,13 +156,13 @@ contract  HATVaults is HATMaster {
         }
         uint256[] memory rewardsLevels;
         if (_rewardsLevels.length == 0) {
-            rewardsLevels = defaultRewardsLevels;
+            rewardsLevels = DEFAULT_REWARD_LEVEL;
         } else {
             rewardsLevels = _rewardsLevels;
         }
         uint256[4] memory rewardsSplit;
         if (_rewardsSplit[0] == 0) {
-            rewardsSplit = defaultRewardsSplit;
+            rewardsSplit = DEFAULT_REWARDS_SPLIT;
         } else {
             rewardsSplit = _rewardsSplit;
         }
@@ -152,8 +170,15 @@ contract  HATVaults is HATMaster {
         require(rewardsSplit[0]+rewardsSplit[1]+rewardsSplit[2]+rewardsSplit[3] < 10000,
         "total split % should be less than 10000");
 
-        poolsRewards[poolId].rewardsLevels = rewardsLevels;
-        poolsRewards[poolId].rewardsSplit = rewardsSplit;
+        poolsRewards[poolId] = PoolReward({
+            rewardsLevels: rewardsLevels,
+            pendingLpTokenRewards: 0,
+            hackerRewardSplit: rewardsSplit[0],
+            approverRewardSplit :rewardsSplit[1],
+            swapAndBurnSplit: rewardsSplit[2],
+            hackerHatRewardSplit: rewardsSplit[3],
+            factor: 1e18
+        });
 
         string memory name = ERC20(_lpToken).name();
 
@@ -204,10 +229,6 @@ contract  HATVaults is HATMaster {
         HAT.transfer(msg.sender, hatsRecieved);
     }
 
-    function getPoolRewardsSplit(uint256 _poolId) external view returns(uint256[4] memory) {
-        return poolsRewards[_poolId].rewardsSplit;
-    }
-
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
         return poolsRewards[_poolId].rewardsLevels;
     }
@@ -216,7 +237,11 @@ contract  HATVaults is HATMaster {
         return poolsRewards[_poolId].pendingLpTokenRewards;
     }
 
-    function calcClaimRewards(uint256 _poolId, uint256 _sevirity) public view returns(uint256[5] memory rewards) {
+    function getPoolRewards(uint256 _poolId) external view returns(PoolReward memory) {
+        return poolsRewards[_poolId];
+    }
+
+    function calcClaimRewards(uint256 _poolId, uint256 _sevirity) public view returns(ClaimReward memory claimRewards) {
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         uint256 totalSupply = lpToken.balanceOf(address(this)).sub(poolsRewards[_poolId].pendingLpTokenRewards);
         require(totalSupply > 0, "totalSupply is zero");
@@ -224,16 +249,24 @@ contract  HATVaults is HATMaster {
         //hackingRewardAmount
         uint256 claimRewardAmount = totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(10000);
         //hackerReward
-        rewards[0] = claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit[0]).div(10000);
+        claimRewards.hackerReward =
+        claimRewardAmount.mul(poolsRewards[_poolId].hackerRewardSplit).div(10000);
         //approverReward
-        rewards[1] = claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit[1]).div(10000);
+        claimRewards.approverReward =
+        claimRewardAmount.mul(poolsRewards[_poolId].approverRewardSplit).div(10000);
         //swapAndBurnAmount
-        rewards[2] = claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit[2]).div(10000);
+        claimRewards.swapAndBurn =
+        claimRewardAmount.mul(poolsRewards[_poolId].swapAndBurnSplit).div(10000);
         //hackerHatReward
-        rewards[3] = claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit[3]).div(10000);
+        claimRewards.hackerHatReward =
+        claimRewardAmount.mul(poolsRewards[_poolId].hackerHatRewardSplit).div(10000);
 
-        uint256 totalSupplyRemain = totalSupply.sub(rewards[0].add(rewards[1]).add(rewards[2]).add(rewards[3]));
+        uint256 totalSupplyRemain = totalSupply
+        .sub(claimRewards.hackerReward
+        .add(claimRewards.approverReward)
+        .add(claimRewards.swapAndBurn)
+        .add(claimRewards.hackerHatReward));
         //factor
-        rewards[4] = totalSupplyRemain.mul(factor).div(totalSupply);
+        claimRewards.factor = totalSupplyRemain.mul(poolsRewards[_poolId].factor).div(totalSupply);
     }
 }

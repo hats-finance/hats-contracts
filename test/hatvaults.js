@@ -100,6 +100,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await hatVaults.approveClaim(0,accounts[2],4);
+
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
@@ -138,7 +139,7 @@ contract('HatVaults',  accounts =>  {
     let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
-    let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * await hatVaults.factor();
+    let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * (await hatVaults.getPoolRewards(0)).factor;
     await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await stakingToken.balanceOf(staker),expectedBalance);
 
