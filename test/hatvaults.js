@@ -24,7 +24,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]]);
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0]);
 };
 
 function assertVMException(error) {
@@ -99,7 +99,7 @@ contract('HatVaults',  accounts =>  {
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
-    await hatVaults.approveClaim(0,accounts[2],0);
+    await hatVaults.approveClaim(0,accounts[2],4);
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
@@ -125,6 +125,9 @@ contract('HatVaults',  accounts =>  {
     await utils.increaseTime(7*24*3600);
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
+    var rewards = await hatVaults.calcClaimRewards(0,1);
+    //check factor
+    assert.equal(web3.utils.fromWei(rewards[4].toString()),"0.604");
     await hatVaults.approveClaim(0,accounts[2],1);
     await hatVaults.approveClaim(0,accounts[2],1);
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -135,9 +138,8 @@ contract('HatVaults',  accounts =>  {
     let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
-
-    await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
     let expectedBalance = web3.utils.toWei("1") / web3.utils.toWei("1") * await hatVaults.factor();
+    await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await stakingToken.balanceOf(staker),expectedBalance);
 
     let balanceOfStakerHats = await hatToken.balanceOf(staker);

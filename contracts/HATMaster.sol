@@ -25,6 +25,13 @@ contract HATMaster {
         uint256 rewardPerShare;
     }
 
+    // Info of each pool.
+    struct PoolReward {
+        uint256[4] rewardsSplit;
+        uint256[]  rewardsLevels;
+        uint256 pendingLpTokenRewards;
+    }
+
     HATToken public HAT;
 
     uint256 public REWARD_PER_BLOCK;
@@ -43,6 +50,9 @@ contract HATMaster {
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     // Total allocation poitns. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
+
+    //pid -> PoolReward
+    mapping (uint256=>PoolReward) internal poolsRewards;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -103,7 +113,7 @@ contract HATMaster {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
         if (lpSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
@@ -229,7 +239,7 @@ contract HATMaster {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
         if (block.number > pool.lastRewardBlock && lpSupply > 0) {
             uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
             rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(lpSupply));
