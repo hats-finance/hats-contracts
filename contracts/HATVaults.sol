@@ -41,11 +41,6 @@ contract  HATVaults is HATMaster {
         _;
     }
 
-    modifier onlyProjectRegistery() {
-        require(msg.sender == projectsRegistery, "only projectsRegistery");
-        _;
-    }
-
     event SetApprovers(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
 
     event AddPool(uint256 indexed _pid,
