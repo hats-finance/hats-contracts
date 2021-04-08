@@ -83,7 +83,7 @@ contract('HATToken', accounts => {
             assertVMException(error);
         }
         for (let i=0;i<utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT -10 ;i++) {
-          await utils.mineBlock()
+          await utils.mineBlock();
         }
 
         try {
@@ -94,7 +94,7 @@ contract('HATToken', accounts => {
         }
 
         for (let i=0;i<10 ;i++) {
-          await utils.mineBlock()
+          await utils.mineBlock();
         }
 
         await token.confirmGovernance({ 'from': accounts[0]});
@@ -125,7 +125,7 @@ contract('HATToken', accounts => {
             assertVMException(error);
         }
         for (let i=0;i<utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT -10 ;i++) {
-          await utils.mineBlock()
+          await utils.mineBlock();
         }
 
         try {
@@ -136,7 +136,7 @@ contract('HATToken', accounts => {
         }
 
         for (let i=0;i<10 ;i++) {
-          await utils.mineBlock()
+          await utils.mineBlock();
         }
 
         await token.confirmMinter(accounts[1],{ 'from': accounts[0]});

@@ -48,7 +48,7 @@ const setMinter = async function(hatToken,minter,cap) {
         await mineBlock();
     }
     await hatToken.confirmMinter(minter);
-}
+};
 
 module.exports = {
   increaseTime,
