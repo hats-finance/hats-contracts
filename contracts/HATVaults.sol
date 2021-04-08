@@ -63,6 +63,14 @@ contract  HATVaults is HATMaster {
 
     event SetRewardsLevels(uint256 indexed _pid, uint256[] indexed _rewardsLevels);
 
+    event SwapAndSend(uint256 indexed _pid,
+                    address indexed _beneficiary,
+                    uint256 indexed _amountSwaped,
+                    uint256 _amountReceived);
+
+    event SwapAndBurn(uint256 indexed _pid,
+                    uint256 indexed _amountSwaped,
+                    uint256 _amountBurnet);
 
     IUniswapV2Router01 public immutable uniSwapRouter;
 
@@ -207,6 +215,7 @@ contract  HATVaults is HATMaster {
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
         HAT.burn(hatsRecieved);
+        emit SwapAndBurn(_pid, amount, hatsRecieved);
     }
 
     //swap tokens to hats and send to msg.sender if is entitile to.
@@ -227,6 +236,7 @@ contract  HATVaults is HATMaster {
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
         HAT.transfer(msg.sender, hatsRecieved);
+        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved);
     }
 
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {

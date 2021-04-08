@@ -171,4 +171,24 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatToken.balanceOf(staker)).toString(),
                     web3.utils.toWei("175000").toString());
   });
+
+  it("approve+ swapAndSend", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    await hatVaults.approveClaim(0,accounts[2],4);
+
+    var hackerHatsBalance = await hatToken.balanceOf(accounts[2]);
+    var tx = await hatVaults.swapAndSend(0,{from:accounts[2]});
+    assert.equal(tx.logs[0].event, "SwapAndSend");
+    assert.equal((await hatToken.balanceOf(accounts[2])).toString(),tx.logs[0].args._amountReceived.toString());
+
+  });
 });
