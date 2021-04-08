@@ -152,7 +152,7 @@ contract  HATVaults is HATMaster {
                     uint256[] memory _rewardsLevels,
                     uint256[4] memory _rewardsSplit)
     external onlyGovernance {
-        add(_allocPoint, IERC20(_lpToken), _withUpdate);
+        _add(_allocPoint, IERC20(_lpToken), _withUpdate);
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _approvers.length; i++) {
             claimApprovers[poolId][_approvers[i]] = true;
@@ -189,7 +189,7 @@ contract  HATVaults is HATMaster {
     }
 
     function setPool(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external onlyGovernance {
-        set(_pid, _allocPoint, _withUpdate);
+        _set(_pid, _allocPoint, _withUpdate);
         emit SetPool(_pid, _allocPoint);
     }
 

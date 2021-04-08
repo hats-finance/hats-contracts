@@ -9,7 +9,7 @@ var hatToken;
 var stakingToken;
 var REWARD_PER_BLOCK = "100";
 
-const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
+const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK, startBlock=0) {
   hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
@@ -17,7 +17,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
 
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
-                                  0,
+                                  startBlock,
                                   10,
                                   accounts[0],
                                   router.address);
@@ -81,6 +81,119 @@ contract('HatVaults',  accounts =>  {
         assert.equal((await hatToken.balanceOf(staker)).toString(),
                       expectedReward.toString());
     });
+
+    async function calculateExpectedReward(staker) {
+      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
+      let allocPoint = (await hatVaults.poolInfo(0)).allocPoint;
+      let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
+      let onee12 = new web3.utils.BN("1000000000000");
+      let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
+      let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,allocPoint);
+      rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
+      return stakeVaule.mul(rewardPerShare).div(onee12);
+    }
+
+    it("multiple stakes from same account", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal(await hatToken.balanceOf(staker), 0);
+
+      // Deposit redeemed existing reward
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      let expectedReward = await calculateExpectedReward(staker);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      expectedReward = await calculateExpectedReward(staker);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+
+      // Deposit redeemed existing reward
+      await utils.increaseTime(7*24*3600);
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      expectedReward = await calculateExpectedReward(staker);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+
+      assert.equal(await stakingToken.balanceOf(staker), 0);
+      assert.equal(await stakingToken.balanceOf(hatVaults.address), web3.utils.toWei("4"));
+      await utils.increaseTime(7*24*3600);
+      //withdraw
+
+      expectedReward = await calculateExpectedReward(staker);
+      await hatVaults.withdraw(0,web3.utils.toWei("4"),{from:staker});
+      //staker  get stake back
+      assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("4").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+    });
+
+    it("getMultiplier - from below startblock return 0", async () => {
+      await setup(accounts, REWARD_PER_BLOCK, 1);      
+      assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 0);
+      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 688);
+    });
+
+    it("getMultiplier - from must be <= to", async () => {
+      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      try {
+        await hatVaults.getMultiplier(1, 0)
+        assert(false, 'from must be <= to');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      assert.equal((await hatVaults.getMultiplier(0, 0)).toNumber(), 0);
+    });
+
+    it("getMultiplier - from below startblock return 0", async () => {
+      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), 688 * 10);
+      assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (688 * 10) + (413 * 5));
+      assert.equal((await hatVaults.getMultiplier(0, 20)).toNumber(), (688 * 10) + (413 * 10));
+      assert.equal((await hatVaults.getMultiplier(0, 1000)).toNumber(), (688 * 10) + (413 * 10) + (310 * 10) + (232 * 10) + (209 * 10) + (188 * 10) + (169 * 10) + (152 * 10) + (137 * 10) + (123 * 10) + (111 * 10) + (100 * 890));
+  });
+
+
+  it("emergency withdraw", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    var notStaker = accounts[4];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    //stake
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+
+    assert.equal(await stakingToken.balanceOf(staker),0);
+    let stakerAmount = await hatVaults.getStakedAmount(0,staker);
+    assert.equal(stakerAmount.toString(),web3.utils.toWei("1"));
+
+    // Can emergency withdraw 1 token
+    assert.equal(await stakingToken.balanceOf(staker),0);
+    await hatVaults.emergencyWithdraw(0 ,{from:staker});
+    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
+
+    // Can emergency withdraw only once
+    await hatVaults.emergencyWithdraw(0 ,{from:staker});
+    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
+
+    // Can't withdraw if didn't deposit
+    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(notStaker))), 0);
+    await hatVaults.emergencyWithdraw(0 ,{from:notStaker});
+    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(notStaker))), 0);
+  });
+
 
   //
   // //
