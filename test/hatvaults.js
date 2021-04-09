@@ -91,7 +91,7 @@ contract('HatVaults',  accounts =>  {
       let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
       let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,allocPoint);
       rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
-      return stakeVaule.mul(rewardPerShare).div(onee12);
+      return stakeVaule.mul(rewardPerShare).div(onee12).add(await hatToken.balanceOf(staker));
     }
 
     it("multiple stakes from same account", async () => {
