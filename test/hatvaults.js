@@ -98,11 +98,14 @@ contract('HatVaults',  accounts =>  {
       let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
       let allocPoint = (await hatVaults.poolInfo(0)).allocPoint;
       let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
+      //console.log("rewardPerShare",web3.utils.fromWei(rewardPerShare.toString()))
       let onee12 = new web3.utils.BN("1000000000000");
-      let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
+      let stakerAmount = (await hatVaults.userInfo(0,staker)).amount;
       let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,allocPoint);
-      rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
-      return stakeVaule.mul(rewardPerShare).div(onee12).add(await hatToken.balanceOf(staker));
+      let lpSupply = await stakingToken.balanceOf(hatVaults.address);
+      rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
+      let rewardDebt = (await hatVaults.userInfo(0,staker)).rewardDebt;
+      return stakerAmount.mul(rewardPerShare).div(onee12).sub(rewardDebt);
     }
 
     it("multiple stakes from same account", async () => {
@@ -111,6 +114,7 @@ contract('HatVaults',  accounts =>  {
       await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
       assert.equal(await hatToken.balanceOf(staker), 0);
 
       // Deposit redeemed existing reward
@@ -121,39 +125,40 @@ contract('HatVaults',  accounts =>  {
 
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       expectedReward = await calculateExpectedReward(staker);
+      var balanceOfStakerBefore = await hatToken.balanceOf(staker);
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
 
       // Deposit redeemed existing reward
       await utils.increaseTime(7*24*3600);
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       expectedReward = await calculateExpectedReward(staker);
+      balanceOfStakerBefore = await hatToken.balanceOf(staker);
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
-
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
       assert.equal(await stakingToken.balanceOf(staker), 0);
       assert.equal(await stakingToken.balanceOf(hatVaults.address), web3.utils.toWei("4"));
       await utils.increaseTime(7*24*3600);
       //withdraw
-
       expectedReward = await calculateExpectedReward(staker);
+      balanceOfStakerBefore = await hatToken.balanceOf(staker);
       await hatVaults.withdraw(0,web3.utils.toWei("4"),{from:staker});
       //staker  get stake back
       assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("4").toString());
-      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
     });
 
     it("getMultiplier - from below startblock return 0", async () => {
-      await setup(accounts, REWARD_PER_BLOCK, 1);      
+      await setup(accounts, REWARD_PER_BLOCK, 1);
       assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 0);
-      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      await setup(accounts, REWARD_PER_BLOCK, 0);
       assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 688);
     });
 
     it("getMultiplier - from must be <= to", async () => {
-      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      await setup(accounts, REWARD_PER_BLOCK, 0);
       try {
-        await hatVaults.getMultiplier(1, 0)
+        await hatVaults.getMultiplier(1, 0);
         assert(false, 'from must be <= to');
       } catch (ex) {
         assertVMException(ex);
@@ -162,7 +167,7 @@ contract('HatVaults',  accounts =>  {
     });
 
     it("getMultiplier - from below startblock return 0", async () => {
-      await setup(accounts, REWARD_PER_BLOCK, 0);      
+      await setup(accounts, REWARD_PER_BLOCK, 0);
       assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), 688 * 10);
       assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (688 * 10) + (413 * 5));
       assert.equal((await hatVaults.getMultiplier(0, 20)).toNumber(), (688 * 10) + (413 * 10));

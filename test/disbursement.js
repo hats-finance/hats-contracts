@@ -81,9 +81,6 @@ contract('Disbursement', function(accounts) {
     });
 
     it('Disbursement tests - no start_time specified', async () => {
-        const initialBlock = await web3.eth.getBlock(await (web3.eth.getBlockNumber()));
-        const start_date = initialBlock.timestamp;
-
         // # Create Test token
         const token = await TestToken.new(accounts[0],0);
 
