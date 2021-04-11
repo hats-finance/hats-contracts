@@ -51,12 +51,19 @@ contract('HatVaults',  accounts =>  {
 
     it("custom rewardsSplit and rewardsLevels", async () => {
       try {
-        await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [9000, 200, 100, 800]);
+          await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [9000, 200, 100, 800]);
           assert(false, 'cannot init with rewardSplit > 10000');
       } catch (ex) {
           assertVMException(ex);
       }
-      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 100, 200, 700]);
+      try {
+          await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 11000], [8000, 100, 100, 800]);
+          assert(false, 'cannot init with rewardLevel > 10000');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 100, 100, 700]);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 4);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "3000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "5000");
@@ -64,10 +71,22 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "9000");
       assert.equal((await hatVaults.getPoolRewards(0)).hackerRewardSplit.toString(), "8000");
       assert.equal((await hatVaults.getPoolRewards(0)).approverRewardSplit.toString(), "100");
-      assert.equal((await hatVaults.getPoolRewards(0)).swapAndBurnSplit.toString(), "200");
+      assert.equal((await hatVaults.getPoolRewards(0)).swapAndBurnSplit.toString(), "100");
       assert.equal((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit.toString(), "700");
 
+      try {
+          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000])
+          assert(false, "reward level can't be more than 10000");
+      } catch (ex) {
+          assertVMException(ex);
+      }
       await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000])
+      try {
+          await hatVaults.setRewardsSplit(0, [7000, 1000, 1100, 900])
+          assert(false, 'cannot init with rewardSplit > 10000');
+      } catch (ex) {
+          assertVMException(ex);
+      }
       await hatVaults.setRewardsSplit(0, [6000, 1000, 1100, 800])
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
