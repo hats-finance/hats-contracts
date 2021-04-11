@@ -8,6 +8,6 @@
       "two-lines-top-level-separator": "off",
       "mark-callable-contracts": "off",
       "reason-string": "off",
-      "compiler-version": ["error","^0.7.6"]
+      "compiler-version": ["error","^0.8.3"]
     }
   }
