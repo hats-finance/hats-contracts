@@ -32,7 +32,7 @@ contract  HATVaults is HATMaster {
         uint256 factor;
     }
 
-    modifier onlyApprover(uint256 _pid) {
+    modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid][msg.sender], "only committee");
         _;
     }
@@ -86,7 +86,7 @@ contract  HATVaults is HATMaster {
         uniSwapRouter = _uniSwapRouter;
     }
 
-    function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyApprover(_poolId) {
+    function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
         poolsRewards[_poolId].factor = claimRewards.factor;
@@ -132,7 +132,7 @@ contract  HATVaults is HATMaster {
 
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
-    onlyApprover(_pid) {
+    onlyCommittee(_pid) {
         for (uint256 i=0; i < _rewardsLevels.length; i++) {
             require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
         }
