@@ -137,9 +137,7 @@ contract  HATVaults is HATMaster {
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
-    function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status)
-    external
-    onlyApprover(_pid) {
+    function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status) external {
         //check if commitee already checked in.
         if (msg.sender == governance) {
             require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
