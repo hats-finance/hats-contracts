@@ -17,8 +17,8 @@ contract  HATVaults is HATMaster {
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
     address public governance;
-    uint256[4] public DEFAULT_REWARDS_SPLIT = [8500, 500, 500, 400];
-    uint256[] public DEFAULT_REWARD_LEVEL = [2000, 4000, 6000, 8000, 10000];
+    uint256[4] public defaultRewardsSplit = [8500, 500, 500, 400];
+    uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     address public projectsRegistery;
     string public vaultName;
 
@@ -132,26 +132,35 @@ contract  HATVaults is HATMaster {
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyApprover(_pid) {
-        poolsRewards[_pid].rewardsLevels = _rewardsLevels;
-        poolsRewards[_pid].committeeCheckIn = true;
+        if (_rewardsLevels.length == 0) {
+            poolsRewards[_pid].rewardsLevels = defaultRewardLevel;
+        } else {
+            poolsRewards[_pid].rewardsLevels = _rewardsLevels;
+        }
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
+    //use also for committee checkin.
     function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status)
-    external
-    onlyApprover(_pid) {
+    external {
         //check if commitee already checked in.
-        if (msg.sender == governance) {
+        if (msg.sender == governance && !committees[_pid][msg.sender]) {
             require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
         } else {
             require(committees[_pid][msg.sender], "only committee");
+            poolsRewards[_pid].committeeCheckIn = true;
         }
         require(_committee.length == _status.length, "wrong length");
         require(_committee.length != 0);
 
+        bool atLeastOneAddressIsTrue;
         for (uint256 i=0; i < _committee.length; i++) {
             committees[_pid][_committee[i]] = _status[i];
+            if (!atLeastOneAddressIsTrue && _status[i]) {
+                atLeastOneAddressIsTrue = true;
+            }
         }
+        require(atLeastOneAddressIsTrue);
         emit SetCommittee(_pid, _committee, _status);
     }
 
@@ -171,13 +180,13 @@ contract  HATVaults is HATMaster {
         }
         uint256[] memory rewardsLevels;
         if (_rewardsLevels.length == 0) {
-            rewardsLevels = DEFAULT_REWARD_LEVEL;
+            rewardsLevels = defaultRewardLevel;
         } else {
             rewardsLevels = _rewardsLevels;
         }
         uint256[4] memory rewardsSplit;
         if (_rewardsSplit[0] == 0) {
-            rewardsSplit = DEFAULT_REWARDS_SPLIT;
+            rewardsSplit = defaultRewardsSplit;
         } else {
             rewardsSplit = _rewardsSplit;
         }
