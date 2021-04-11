@@ -137,7 +137,7 @@ contract  HATVaults is HATMaster {
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
-    function setCommitte(uint256 _pid, address[] memory _committee, bool[] memory _status)
+    function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status)
     external
     onlyApprover(_pid) {
         //check if commitee already checked in.
