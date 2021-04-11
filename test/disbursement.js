@@ -80,6 +80,14 @@ contract('Disbursement', function(accounts) {
 
     });
 
+    it('Disbursement tests - no start_time specified', async () => {
+        // # Create Test token
+        const token = await TestToken.new(accounts[0],0);
+
+        // Create disbursement contracts
+        const disbursement_1 = await Disbursement.new(accounts[1], accounts[5], FOUR_YEARS, 0, token.address, {from: accounts[0]});
+        assert.equal((await disbursement_1.startDate()).toNumber(),(await web3.eth.getBlock((await web3.eth.getTransaction(disbursement_1.transactionHash)).blockNumber)).timestamp);
+    });
 });
 
 function mineBlock(_web3, reject, resolve) {

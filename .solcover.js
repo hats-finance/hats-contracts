@@ -5,7 +5,7 @@ module.exports = {
    invert: true,               // Run the grep's inverse set.
    timeout: 100000,
  },
-  skipFiles: ['test/'],
+  skipFiles: ['test/', 'mocks/'],
   providerOptions: {
     accounts: [
        {

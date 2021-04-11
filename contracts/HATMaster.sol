@@ -161,8 +161,7 @@ contract HATMaster {
     }
 
     // GET INFO for UI
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        uint256 result = 0;
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
         if (_from < START_BLOCK) return 0;
 
         for (uint256 i = 0; i < HALVING_AT_BLOCK.length; i++) {
@@ -179,8 +178,6 @@ contract HATMaster {
                 result = result.add(m);
             }
         }
-
-        return result;
     }
 
     function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint) public view returns (uint) {
