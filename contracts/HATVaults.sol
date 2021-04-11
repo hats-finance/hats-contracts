@@ -42,13 +42,13 @@ contract  HATVaults is HATMaster {
         _;
     }
 
-    event SetCommittee(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
+    event SetCommittee(uint256 indexed _pid, address[] indexed _committee, bool[] indexed _status);
 
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
                 string _name,
-                address[] _approvers,
+                address[] _committee,
                 string _descriptionHash);
 
     event SetPool(uint256 indexed _pid,
