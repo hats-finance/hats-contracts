@@ -49,7 +49,9 @@ contract  HATVaults is HATMaster {
                 address indexed _lpToken,
                 string _name,
                 address[] _committee,
-                string _descriptionHash);
+                string _descriptionHash,
+                uint256[] _rewardsLevels,
+                uint256[4] _rewardsSplit);
 
     event SetPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
@@ -232,7 +234,14 @@ contract  HATVaults is HATMaster {
 
         string memory name = ERC20(_lpToken).name();
 
-        emit AddPool(poolId, _allocPoint, address(_lpToken), name, _committee, _descriptionHash);
+        emit AddPool(poolId,
+                    _allocPoint,
+                    address(_lpToken),
+                    name,
+                    _committee,
+                    _descriptionHash,
+                    rewardsLevels,
+                    rewardsSplit);
     }
 
     function setPool(uint256 _pid,
