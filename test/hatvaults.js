@@ -41,6 +41,17 @@ contract('HatVaults',  accounts =>  {
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVaults.governance(), accounts[0]);
     });
+
+    it("setCommitte", async () => {
+        await setup(accounts);
+        assert.equal(await hatVaults.committees(0,accounts[0]), true);
+
+        await hatVaults.setCommittee(0,[accounts[0],accounts[2]],[false,true]);
+
+        assert.equal(await hatVaults.committees(0,accounts[0]), false);
+        assert.equal(await hatVaults.committees(0,accounts[2]), true);
+
+    });
   //
     it("stake", async () => {
         await setup(accounts);
