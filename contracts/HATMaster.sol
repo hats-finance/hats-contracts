@@ -212,8 +212,6 @@ contract HATMaster {
                 result = result.add(m);
             }
         }
-        // Line impossible to reach since last endBlock is the max of uint256
-        // return result;
     }
 
     function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint) public view returns (uint) {
