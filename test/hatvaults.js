@@ -208,7 +208,11 @@ contract('HatVaults',  accounts =>  {
       // Deposit redeemed existing reward
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       let expectedReward = await calculateExpectedReward(staker);
-      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      var tx = await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal(tx.logs[0].event, "SendReward");
+      assert.equal(tx.logs[0].args.amount.toString(), expectedReward.toString());
+      assert.equal(tx.logs[0].args.user, staker);
+      assert.equal(tx.logs[0].args.pid, 0);
       assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
 
       await stakingToken.mint(staker,web3.utils.toWei("1"));
@@ -462,7 +466,7 @@ contract('HatVaults',  accounts =>  {
     let burnedTokens = await hatToken.balanceOf(router.address);
     var tx = await hatVaults.swapAndBurn(0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
-    assert.equal(tx.logs[0].args._amountSwaped.toString(), 
+    assert.equal(tx.logs[0].args._amountSwaped.toString(),
       new web3.utils.BN(web3.utils.toWei("1")).mul(
         (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit))
       ).div(new web3.utils.BN("10000")).toString()

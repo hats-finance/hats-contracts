@@ -114,11 +114,11 @@ contract HATMaster {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
-            if(pending > 0) {
-                safeTransferReward(msg.sender, pending);
+            if (pending > 0) {
+                safeTransferReward(msg.sender, pending, _pid);
             }
         }
-        if(_amount > 0) {
+        if (_amount > 0) {
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             user.amount = user.amount.add(_amount.mul(1e18).div(poolsRewards[_pid].factor));
         }
@@ -133,7 +133,7 @@ contract HATMaster {
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
-            safeTransferReward(msg.sender, pending);
+            safeTransferReward(msg.sender, pending, _pid);
         }
         uint256 factoredAmount = _amount;
         if (_amount > 0) {
@@ -248,12 +248,14 @@ contract HATMaster {
     }
 
     // -----------------------------
-    function safeTransferReward(address _to, uint256 _amount) internal {
+    function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         uint256 bal = HAT.balanceOf(address(this));
         if (_amount > bal) {
             HAT.transfer(_to, bal);
+            emit SendReward(_to, _pid, bal);
         } else {
             HAT.transfer(_to, _amount);
+            emit SendReward(_to, _pid, _amount);
         }
     }
 }

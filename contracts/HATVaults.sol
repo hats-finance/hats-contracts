@@ -317,7 +317,8 @@ contract  HATVaults is HATMaster {
         require(totalSupply > 0, "totalSupply is zero");
         require(_sevirity < poolsRewards[_poolId].rewardsLevels.length, "_sevirity is not in the range");
         //hackingRewardAmount
-        uint256 claimRewardAmount = totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(REWARDS_LEVEL_DENOMINATOR);
+        uint256 claimRewardAmount =
+        totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(REWARDS_LEVEL_DENOMINATOR);
         //hackerReward
         claimRewards.hackerReward =
         claimRewardAmount.mul(poolsRewards[_poolId].hackerRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
