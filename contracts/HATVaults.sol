@@ -71,6 +71,12 @@ contract  HATVaults is HATMaster {
                     uint256 indexed _amountSwaped,
                     uint256 _amountBurnet);
 
+    event ClaimApprove(address indexed _approver,
+                    uint256 indexed _poolId,
+                    address indexed _beneficiary,
+                    uint256 _sevirity,
+                    ClaimReward  _claimRewards);
+
     IUniswapV2Router01 public immutable uniSwapRouter;
 
     /* ========== CONSTRUCTOR ========== */
@@ -105,6 +111,8 @@ contract  HATVaults is HATMaster {
         poolsRewards[_poolId].pendingLpTokenRewards
         .add(claimRewards.swapAndBurn)
         .add(claimRewards.hackerHatReward);
+
+        emit ClaimApprove(msg.sender, _poolId, _beneficiary, _sevirity, claimRewards);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.

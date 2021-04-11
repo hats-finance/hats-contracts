@@ -327,8 +327,8 @@ contract('HatVaults',  accounts =>  {
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
-    await hatVaults.approveClaim(0,accounts[2],4);
-
+    var tx = await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(tx.logs[0].event, "ClaimApprove");
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
     assert.equal(await stakingToken.balanceOf(staker),0);
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
