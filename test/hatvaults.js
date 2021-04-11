@@ -92,19 +92,19 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit.toString(), "700");
 
       try {
-          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000])
+          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000]);
           assert(false, "reward level can't be more than 10000");
       } catch (ex) {
           assertVMException(ex);
       }
-      await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000])
+      await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000]);
       try {
-          await hatVaults.setRewardsSplit(0, [7000, 1000, 1100, 900])
+          await hatVaults.setRewardsSplit(0, [7000, 1000, 1100, 900]);
           assert(false, 'cannot init with rewardSplit > 10000');
       } catch (ex) {
           assertVMException(ex);
       }
-      await hatVaults.setRewardsSplit(0, [6000, 1000, 1100, 800])
+      await hatVaults.setRewardsSplit(0, [6000, 1000, 1100, 800]);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "3000");
