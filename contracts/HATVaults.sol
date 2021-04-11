@@ -75,7 +75,10 @@ contract  HATVaults is HATMaster {
                     uint256 indexed _poolId,
                     address indexed _beneficiary,
                     uint256 _sevirity,
-                    ClaimReward  _claimRewards);
+                    uint256 hackerReward,
+                    uint256 approverReward,
+                    uint256 swapAndBurn,
+                    uint256 hackerHatReward);
 
     IUniswapV2Router01 public immutable uniSwapRouter;
 
@@ -112,7 +115,14 @@ contract  HATVaults is HATMaster {
         .add(claimRewards.swapAndBurn)
         .add(claimRewards.hackerHatReward);
 
-        emit ClaimApprove(msg.sender, _poolId, _beneficiary, _sevirity, claimRewards);
+        emit ClaimApprove(msg.sender,
+                        _poolId,
+                        _beneficiary,
+                        _sevirity,
+                        claimRewards.hackerReward,
+                        claimRewards.approverReward,
+                        claimRewards.swapAndBurn,
+                        claimRewards.hackerHatReward);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
