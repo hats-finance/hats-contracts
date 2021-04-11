@@ -79,31 +79,6 @@ contract HATMaster {
         HALVING_AT_BLOCK.push(type(uint256).max);
     }
 
-    // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
-        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
-        if (_withUpdate) {
-            massUpdatePools();
-        }
-        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-        totalAllocPoint = totalAllocPoint.add(_allocPoint);
-        poolId1[address(_lpToken)] = poolInfo.length + 1;
-        poolInfo.push(PoolInfo({
-            lpToken: _lpToken,
-            allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
-            rewardPerShare: 0
-        }));
-    }
-
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
-        if (_withUpdate) {
-            massUpdatePools();
-        }
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
-        poolInfo[_pid].allocPoint = _allocPoint;
-    }
-
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -133,6 +108,7 @@ contract HATMaster {
 
     // --------- For user ----------------
     function deposit(uint256 _pid, uint256 _amount) public {
+        require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -156,11 +132,11 @@ contract HATMaster {
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
-        if(pending > 0) {
+        if (pending > 0) {
             safeTransferReward(msg.sender, pending);
         }
         uint256 factoredAmount = _amount;
-        if(_amount > 0) {
+        if (_amount > 0) {
             factoredAmount = factoredAmount.mul(poolsRewards[_pid].factor).div(1e18);
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), factoredAmount);
@@ -182,16 +158,6 @@ contract HATMaster {
         user.rewardDebt = 0;
         pool.lpToken.safeTransfer(address(msg.sender), amount);
         emit EmergencyWithdraw(msg.sender, _pid, amount);
-    }
-
-    // -----------------------------
-    function safeTransferReward(address _to, uint256 _amount) internal {
-        uint256 bal = HAT.balanceOf(address(this));
-        if (_amount > bal) {
-            HAT.transfer(_to, bal);
-        } else {
-            HAT.transfer(_to, _amount);
-        }
     }
 
     // GET INFO for UI
@@ -257,5 +223,40 @@ contract HATMaster {
     function getStakedAmount(uint _pid, address _user) public view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
         return user.amount;
+    }
+
+    // -------- For manage pool ---------
+    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
+        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
+        if (_withUpdate) {
+            massUpdatePools();
+        }
+        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
+        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        poolId1[address(_lpToken)] = poolInfo.length + 1;
+        poolInfo.push(PoolInfo({
+            lpToken: _lpToken,
+            allocPoint: _allocPoint,
+            lastRewardBlock: lastRewardBlock,
+            rewardPerShare: 0
+        }));
+    }
+
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
+        if (_withUpdate) {
+            massUpdatePools();
+        }
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        poolInfo[_pid].allocPoint = _allocPoint;
+    }
+
+    // -----------------------------
+    function safeTransferReward(address _to, uint256 _amount) internal {
+        uint256 bal = HAT.balanceOf(address(this));
+        if (_amount > bal) {
+            HAT.transfer(_to, bal);
+        } else {
+            HAT.transfer(_to, _amount);
+        }
     }
 }
