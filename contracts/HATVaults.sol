@@ -75,10 +75,10 @@ contract  HATVaults is HATMaster {
                     uint256 indexed _poolId,
                     address indexed _beneficiary,
                     uint256 _sevirity,
-                    uint256 hackerReward,
-                    uint256 approverReward,
-                    uint256 swapAndBurn,
-                    uint256 hackerHatReward);
+                    uint256 _hackerReward,
+                    uint256 _approverReward,
+                    uint256 _swapAndBurn,
+                    uint256 _hackerHatReward);
 
     IUniswapV2Router01 public immutable uniSwapRouter;
 
