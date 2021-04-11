@@ -24,7 +24,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0]);
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0],"_descriptionHash");
 };
 
 function assertVMException(error) {
