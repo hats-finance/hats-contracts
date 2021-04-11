@@ -56,7 +56,7 @@ contract  HATVaults is HATMaster {
                 bool indexed _registered,
                 string _descriptionHash);
 
-    event Claim(string _descriptionHash);
+    event Claim(address indexed _claimer, string _descriptionHash);
 
     event SetRewardsSplit(uint256 indexed _pid, uint256[4] indexed _rewardsSplit);
 
@@ -110,7 +110,7 @@ contract  HATVaults is HATMaster {
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external {
-        emit Claim(_descriptionHash);
+        emit Claim(msg.sender, _descriptionHash);
     }
 
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)

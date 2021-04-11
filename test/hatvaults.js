@@ -476,5 +476,6 @@ contract('HatVaults',  accounts =>  {
     var tx = await hatVaults.claim(someHash);
     assert.equal(tx.logs[0].event, "Claim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
+    assert.equal(tx.logs[0].args._claimer, accounts[0]);
   });
 });
