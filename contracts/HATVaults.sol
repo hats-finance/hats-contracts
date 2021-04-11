@@ -19,6 +19,8 @@ contract  HATVaults is HATMaster {
     address public governance;
     uint256[4] public DEFAULT_REWARDS_SPLIT = [8500, 500, 500, 400];
     uint256[] public DEFAULT_REWARD_LEVEL = [2000, 4000, 6000, 8000, 10000];
+    uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
+
     address public projectsRegistery;
     string public vaultName;
 
@@ -120,7 +122,7 @@ contract  HATVaults is HATMaster {
             _rewardsSplit[0]+
             _rewardsSplit[1]+
             _rewardsSplit[2]+
-            _rewardsSplit[3] < 10000,
+            _rewardsSplit[3] < REWARDS_LEVEL_DENOMINATOR,
         "total split % should be less than 10000");
         poolsRewards[_pid].hackerRewardSplit = _rewardsSplit[0];
         poolsRewards[_pid].approverRewardSplit = _rewardsSplit[1];
@@ -132,6 +134,9 @@ contract  HATVaults is HATMaster {
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyApprover(_pid) {
+        for (uint256 i=0; i < _rewardsLevels.length; i++) {
+            require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
+        }
         poolsRewards[_pid].rewardsLevels = _rewardsLevels;
         poolsRewards[_pid].committeeCheckIn = true;
         emit SetRewardsLevels(_pid, _rewardsLevels);
@@ -162,7 +167,7 @@ contract  HATVaults is HATMaster {
                     string memory _descriptionHash)
     external
     onlyGovernance {
-        add(_allocPoint, IERC20(_lpToken), _withUpdate);
+        _add(_allocPoint, IERC20(_lpToken), _withUpdate);
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _committee.length; i++) {
             committees[poolId][_committee[i]] = true;
@@ -180,7 +185,10 @@ contract  HATVaults is HATMaster {
             rewardsSplit = _rewardsSplit;
         }
 
-        require(rewardsSplit[0]+rewardsSplit[1]+rewardsSplit[2]+rewardsSplit[3] < 10000,
+        for (uint256 i=0; i < rewardsLevels.length; i++) {
+            require(rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
+        }
+        require(rewardsSplit[0]+rewardsSplit[1]+rewardsSplit[2]+rewardsSplit[3] < REWARDS_LEVEL_DENOMINATOR,
         "total split % should be less than 10000");
 
         poolsRewards[poolId] = PoolReward({
@@ -206,7 +214,7 @@ contract  HATVaults is HATMaster {
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
-        set(_pid, _allocPoint, _withUpdate);
+        _set(_pid, _allocPoint, _withUpdate);
         //set approver only if commite not checkin.
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
@@ -270,19 +278,19 @@ contract  HATVaults is HATMaster {
         require(totalSupply > 0, "totalSupply is zero");
         require(_sevirity < poolsRewards[_poolId].rewardsLevels.length, "_sevirity is not in the range");
         //hackingRewardAmount
-        uint256 claimRewardAmount = totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(10000);
+        uint256 claimRewardAmount = totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(REWARDS_LEVEL_DENOMINATOR);
         //hackerReward
         claimRewards.hackerReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].hackerRewardSplit).div(10000);
+        claimRewardAmount.mul(poolsRewards[_poolId].hackerRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
         //approverReward
         claimRewards.approverReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].approverRewardSplit).div(10000);
+        claimRewardAmount.mul(poolsRewards[_poolId].approverRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
         //swapAndBurnAmount
         claimRewards.swapAndBurn =
-        claimRewardAmount.mul(poolsRewards[_poolId].swapAndBurnSplit).div(10000);
+        claimRewardAmount.mul(poolsRewards[_poolId].swapAndBurnSplit).div(REWARDS_LEVEL_DENOMINATOR);
         //hackerHatReward
         claimRewards.hackerHatReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].hackerHatRewardSplit).div(10000);
+        claimRewardAmount.mul(poolsRewards[_poolId].hackerHatRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
 
         uint256 totalSupplyRemain = totalSupply
         .sub(claimRewards.hackerReward

@@ -80,7 +80,7 @@ contract HATMaster {
     }
 
     // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
+    function _add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
         if (_withUpdate) {
             massUpdatePools();
@@ -96,7 +96,7 @@ contract HATMaster {
         }));
     }
 
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
+    function _set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
         if (_withUpdate) {
             massUpdatePools();
         }
