@@ -32,7 +32,7 @@ contract  HATVaults is HATMaster {
         uint256 factor;
     }
 
-    modifier onlyApprover(uint256 _pid) {
+    modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid][msg.sender], "only committee");
         _;
     }
@@ -42,21 +42,23 @@ contract  HATVaults is HATMaster {
         _;
     }
 
-    event SetCommittee(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
+    event SetCommittee(uint256 indexed _pid, address[] indexed _committee, bool[] indexed _status);
 
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
                 string _name,
-                address[] _approvers,
-                string _descriptionHash);
+                address[] _committee,
+                string _descriptionHash,
+                uint256[] _rewardsLevels,
+                uint256[4] _rewardsSplit);
 
     event SetPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 bool indexed _registered,
                 string _descriptionHash);
 
-    event Claim(string _descriptionHash);
+    event Claim(address indexed _claimer, string _descriptionHash);
 
     event SetRewardsSplit(uint256 indexed _pid, uint256[4] indexed _rewardsSplit);
 
@@ -70,6 +72,15 @@ contract  HATVaults is HATMaster {
     event SwapAndBurn(uint256 indexed _pid,
                     uint256 indexed _amountSwaped,
                     uint256 _amountBurnet);
+
+    event ClaimApprove(address indexed _approver,
+                    uint256 indexed _poolId,
+                    address indexed _beneficiary,
+                    uint256 _sevirity,
+                    uint256 _hackerReward,
+                    uint256 _approverReward,
+                    uint256 _swapAndBurn,
+                    uint256 _hackerHatReward);
 
     IUniswapV2Router01 public immutable uniSwapRouter;
 
@@ -86,7 +97,7 @@ contract  HATVaults is HATMaster {
         uniSwapRouter = _uniSwapRouter;
     }
 
-    function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyApprover(_poolId) {
+    function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
         poolsRewards[_poolId].factor = claimRewards.factor;
@@ -105,12 +116,21 @@ contract  HATVaults is HATMaster {
         poolsRewards[_poolId].pendingLpTokenRewards
         .add(claimRewards.swapAndBurn)
         .add(claimRewards.hackerHatReward);
+
+        emit ClaimApprove(msg.sender,
+                        _poolId,
+                        _beneficiary,
+                        _sevirity,
+                        claimRewards.hackerReward,
+                        claimRewards.approverReward,
+                        claimRewards.swapAndBurn,
+                        claimRewards.hackerHatReward);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external {
-        emit Claim(_descriptionHash);
+        emit Claim(msg.sender, _descriptionHash);
     }
 
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)
@@ -132,7 +152,7 @@ contract  HATVaults is HATMaster {
 
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
-    onlyApprover(_pid) {
+    onlyCommittee(_pid) {
         for (uint256 i=0; i < _rewardsLevels.length; i++) {
             require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
         }
@@ -214,7 +234,14 @@ contract  HATVaults is HATMaster {
 
         string memory name = ERC20(_lpToken).name();
 
-        emit AddPool(poolId, _allocPoint, address(_lpToken), name, _committee, _descriptionHash);
+        emit AddPool(poolId,
+                    _allocPoint,
+                    address(_lpToken),
+                    name,
+                    _committee,
+                    _descriptionHash,
+                    rewardsLevels,
+                    rewardsSplit);
     }
 
     function setPool(uint256 _pid,
