@@ -6,14 +6,21 @@ const utils = require("./utils.js");
 
 var hatVaults;
 var hatToken;
+var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "100";
 
-const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK, startBlock=0) {
+const setup = async function (
+                              accounts,
+                              reward_per_block=REWARD_PER_BLOCK,
+                              startBlock=0,
+                              rewardsLevels=[],
+                              rewardsSplit=[0,0,0,0],
+                            ) {
   hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
-  var router =  await UniSwapV2RouterMock.new();
+  router =  await UniSwapV2RouterMock.new();
 
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
@@ -24,7 +31,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK, startB
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0]);
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit);
 };
 
 function assertVMException(error) {
@@ -41,6 +48,38 @@ contract('HatVaults',  accounts =>  {
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVaults.governance(), accounts[0]);
     });
+
+    it("custom rewardsSplit and rewardsLevels", async () => {
+      try {
+        await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [9000, 200, 100, 800]);
+          assert(false, 'cannot init with rewardSplit > 10000');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 100, 200, 700]);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 4);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "3000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "5000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "7000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "9000");
+      assert.equal((await hatVaults.getPoolRewards(0)).hackerRewardSplit.toString(), "8000");
+      assert.equal((await hatVaults.getPoolRewards(0)).approverRewardSplit.toString(), "100");
+      assert.equal((await hatVaults.getPoolRewards(0)).swapAndBurnSplit.toString(), "200");
+      assert.equal((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit.toString(), "700");
+
+      await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000])
+      await hatVaults.setRewardsSplit(0, [6000, 1000, 1100, 800])
+      assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "3000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "4500");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "9000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "10000");
+      assert.equal((await hatVaults.getPoolRewards(0)).hackerRewardSplit.toString(), "6000");
+      assert.equal((await hatVaults.getPoolRewards(0)).approverRewardSplit.toString(), "1000");
+      assert.equal((await hatVaults.getPoolRewards(0)).swapAndBurnSplit.toString(), "1100");
+      assert.equal((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit.toString(), "800");
+  });
   //
     it("stake", async () => {
         await setup(accounts);
@@ -339,7 +378,7 @@ contract('HatVaults',  accounts =>  {
     await setup(accounts);
     await hatVaults.setPool(0, 200, true);
     var staker = accounts[1];
-    await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
 
@@ -350,5 +389,76 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
     assert.equal(await stakingToken.balanceOf(staker), 0);
     assert.equal(await stakingToken.balanceOf(hatVaults.address), web3.utils.toWei("1"));
+  });
+
+  it("swapAndBurn rewards check", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    assert.equal((await hatVaults.getPoolRewardsPendingLpToken(0)).toString(), "0");
+
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(
+      (
+        await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
+        new web3.utils.BN(web3.utils.toWei("1")).mul(
+          (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit)).add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
+      ).div(new web3.utils.BN("10000")).toString()
+    );
+    let burnedTokens = await hatToken.balanceOf(router.address);
+    var tx = await hatVaults.swapAndBurn(0);
+    assert.equal(tx.logs[0].event, "SwapAndBurn");
+    assert.equal(tx.logs[0].args._amountSwaped.toString(), 
+      new web3.utils.BN(web3.utils.toWei("1")).mul(
+        (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit))
+      ).div(new web3.utils.BN("10000")).toString()
+    );
+    assert.equal(tx.logs[0].args._amountBurnet.toString(), burnedTokens.toString());
+  });
+
+  it("switch approvers", async () => {
+    await setup(accounts);
+    try {
+        await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [true, false], {from: accounts[1]});
+        assert(false, 'cannot set approvers from non approver account');
+    } catch (ex) {
+        assertVMException(ex);
+    }
+
+    await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [false, true]);
+
+    try {
+        await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [true, false]);
+        assert(false, 'cannot set approvers from non approver account');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [true, true], {from: accounts[1]});
+    await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [true, false]);
+    try {
+        await hatVaults.setApprovers(0, [accounts[0], accounts[1]], [true, false], {from: accounts[1]});
+        assert(false, 'cannot set approvers from non approver account');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    await hatVaults.setApprovers(0, [accounts[0]], [true]);
+  });
+
+  it("claim", async () => {
+    await setup(accounts);
+   let someHash = "0x00000000000000000000000000000000000001";
+    var tx = await hatVaults.claim(someHash);
+    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].args._descriptionHash, someHash);
   });
 });
