@@ -235,6 +235,7 @@ contract  HATVaults is HATMaster {
        //along the route determined by the path.
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
         uint256 hatsRecieved =
+        // solhint-disable-next-line not-rely-on-time
         uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
@@ -256,6 +257,7 @@ contract  HATVaults is HATMaster {
        //along the route determined by the path.
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
         uint256 hatsRecieved =
+        // solhint-disable-next-line not-rely-on-time
         uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
