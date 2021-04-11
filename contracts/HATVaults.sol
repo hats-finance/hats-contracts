@@ -129,6 +129,9 @@ contract  HATVaults is HATMaster {
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyApprover(_pid) {
+        for (uint256 i=0; i < _rewardsLevels.length; i++) {
+            require(_rewardsLevels[i] <= 10000, "reward level can't be more than 10000");
+        }
         poolsRewards[_pid].rewardsLevels = _rewardsLevels;
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
@@ -170,6 +173,9 @@ contract  HATVaults is HATMaster {
             rewardsSplit = _rewardsSplit;
         }
 
+        for (uint256 i=0; i < rewardsLevels.length; i++) {
+            require(rewardsLevels[i] <= 10000, "reward level can't be more than 10000");
+        }
         require(rewardsSplit[0]+rewardsSplit[1]+rewardsSplit[2]+rewardsSplit[3] < 10000,
         "total split % should be less than 10000");
 
