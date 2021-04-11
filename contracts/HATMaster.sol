@@ -34,6 +34,7 @@ contract HATMaster {
         uint256 hackerHatRewardSplit;
         uint256 factor;
         uint256[]  rewardsLevels;
+        bool committeeCheckIn;
     }
 
     HATToken public HAT;

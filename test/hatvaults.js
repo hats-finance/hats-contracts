@@ -24,7 +24,7 @@ const setup = async function (accounts,reward_per_block=REWARD_PER_BLOCK) {
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0]);
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],[],[0,0,0,0],"_descriptionHash");
 };
 
 function assertVMException(error) {
@@ -40,6 +40,17 @@ contract('HatVaults',  accounts =>  {
         await setup(accounts);
         assert.equal(await stakingToken.name(), "Staking");
         assert.equal(await hatVaults.governance(), accounts[0]);
+    });
+
+    it("setCommitte", async () => {
+        await setup(accounts);
+        assert.equal(await hatVaults.committees(0,accounts[0]), true);
+
+        await hatVaults.setCommittee(0,[accounts[0],accounts[2]],[false,true]);
+
+        assert.equal(await hatVaults.committees(0,accounts[0]), false);
+        assert.equal(await hatVaults.committees(0,accounts[2]), true);
+
     });
   //
     it("stake", async () => {

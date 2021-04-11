@@ -12,7 +12,7 @@ contract  HATVaults is HATMaster {
     using SafeERC20 for IERC20;
 
     //pid -> (approver->boolean)
-    mapping (uint256=>mapping(address => bool)) public claimApprovers;
+    mapping (uint256=>mapping(address => bool)) public committees;
     mapping(address => uint256) public swapAndBurns;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
@@ -32,7 +32,7 @@ contract  HATVaults is HATMaster {
     }
 
     modifier onlyApprover(uint256 _pid) {
-        require(claimApprovers[_pid][msg.sender], "only approver");
+        require(committees[_pid][msg.sender], "only committee");
         _;
     }
 
@@ -41,16 +41,19 @@ contract  HATVaults is HATMaster {
         _;
     }
 
-    event SetApprovers(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
+    event SetCommittee(uint256 indexed _pid, address[] indexed _approvers, bool[] indexed _status);
 
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
                 string _name,
-                address[] _approvers);
+                address[] _approvers,
+                string _descriptionHash);
 
     event SetPool(uint256 indexed _pid,
-                uint256 indexed _allocPoint);
+                uint256 indexed _allocPoint,
+                bool indexed _registered,
+                string _descriptionHash);
 
     event Claim(string _descriptionHash);
 
@@ -130,32 +133,41 @@ contract  HATVaults is HATMaster {
     external
     onlyApprover(_pid) {
         poolsRewards[_pid].rewardsLevels = _rewardsLevels;
+        poolsRewards[_pid].committeeCheckIn = true;
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
-    function setApprovers(uint256 _pid, address[] memory _claimApprovers, bool[] memory _status)
+    function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status)
     external
     onlyApprover(_pid) {
-        require(_claimApprovers.length == _status.length, "wrong length");
-        require(_claimApprovers.length != 0);
-
-        for (uint256 i=0; i < _claimApprovers.length; i++) {
-            claimApprovers[_pid][_claimApprovers[i]] = _status[i];
+        //check if commitee already checked in.
+        if (msg.sender == governance) {
+            require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
+        } else {
+            require(committees[_pid][msg.sender], "only committee");
         }
-        emit SetApprovers(_pid, _claimApprovers, _status);
+        require(_committee.length == _status.length, "wrong length");
+        require(_committee.length != 0);
+
+        for (uint256 i=0; i < _committee.length; i++) {
+            committees[_pid][_committee[i]] = _status[i];
+        }
+        emit SetCommittee(_pid, _committee, _status);
     }
 
     function addPool(uint256 _allocPoint,
                     address _lpToken,
                     bool _withUpdate,
-                    address[] memory _approvers,
+                    address[] memory _committee,
                     uint256[] memory _rewardsLevels,
-                    uint256[4] memory _rewardsSplit)
-    external onlyGovernance {
+                    uint256[4] memory _rewardsSplit,
+                    string memory _descriptionHash)
+    external
+    onlyGovernance {
         add(_allocPoint, IERC20(_lpToken), _withUpdate);
         uint256 poolId = poolLength()-1;
-        for (uint256 i=0; i < _approvers.length; i++) {
-            claimApprovers[poolId][_approvers[i]] = true;
+        for (uint256 i=0; i < _committee.length; i++) {
+            committees[poolId][_committee[i]] = true;
         }
         uint256[] memory rewardsLevels;
         if (_rewardsLevels.length == 0) {
@@ -180,17 +192,25 @@ contract  HATVaults is HATMaster {
             approverRewardSplit :rewardsSplit[1],
             swapAndBurnSplit: rewardsSplit[2],
             hackerHatRewardSplit: rewardsSplit[3],
-            factor: 1e18
+            factor: 1e18,
+            committeeCheckIn: false
         });
 
         string memory name = ERC20(_lpToken).name();
 
-        emit AddPool(poolId, _allocPoint, address(_lpToken), name, _approvers);
+        emit AddPool(poolId, _allocPoint, address(_lpToken), name, _committee, _descriptionHash);
     }
 
-    function setPool(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external onlyGovernance {
+    function setPool(uint256 _pid,
+                    uint256 _allocPoint,
+                    bool _withUpdate,
+                    bool _registered,
+                    string memory _descriptionHash)
+    external onlyGovernance {
+        require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
         set(_pid, _allocPoint, _withUpdate);
-        emit SetPool(_pid, _allocPoint);
+        //set approver only if commite not checkin.
+        emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
     //swap tokens to hats and burn it.
