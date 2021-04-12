@@ -13,6 +13,7 @@ coverage.json
 .private.json
 cache/
 yarn*
+frontend/
 
 node_modules
 
