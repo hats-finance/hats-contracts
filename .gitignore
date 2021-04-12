@@ -10,6 +10,7 @@ site/
 coverage/
 coverage.json
 .covera*
+.private.json
 cache/
 yarn*
 

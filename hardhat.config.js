@@ -2,6 +2,10 @@ require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-solhint");
 require("solidity-coverage");
+require("@nomiclabs/hardhat-etherscan");
+
+
+const PRIVATE = require("./.private.json");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -23,7 +27,16 @@ module.exports = {
   paths: {
       artifacts: './build/contracts'
   },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: PRIVATE["ETHERSCAN_API_KEY"]
+  },
   networks: {
+  rinkeby: {
+     url: `https://rinkeby.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+     accounts: [PRIVATE["PRIVATE_KEY"]]
+  },
   hardhat: {
   accounts: [
       {
