@@ -2,7 +2,7 @@ const HATToken = artifacts.require("./HATToken.sol");
 const utils = require("./utils.js");
 const { fromRpcSig } = require('ethereumjs-util');
 const ethSigUtil = require('eth-sig-util');
-const { EIP712Domain, domainSeparator } = require('./eip712.js');
+const { EIP712Domain } = require('./eip712.js');
 const Wallet = require('ethereumjs-wallet').default;
 
 function assertVMException(error) {
