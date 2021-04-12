@@ -1,5 +1,9 @@
 const HATToken = artifacts.require("./HATToken.sol");
 const utils = require("./utils.js");
+const { fromRpcSig } = require('ethereumjs-util');
+const ethSigUtil = require('eth-sig-util');
+const { EIP712Domain } = require('./eip712.js');
+const Wallet = require('ethereumjs-wallet').default;
 
 function assertVMException(error) {
     let condition = (
@@ -315,5 +319,151 @@ contract('HATToken', accounts => {
 
             assert(false, 'non-minter was able to mint');
         });
+    });
+
+    const Permit = [
+        { name: 'owner', type: 'address' },
+        { name: 'spender', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' },
+    ];
+
+    const buildData = (chainId, verifyingContract, owner, spender, value, nonce, deadline) => ({
+        primaryType: 'Permit',
+        types: { EIP712Domain, Permit },
+        domain: { name: "HATToken", chainId, verifyingContract },
+        message: { owner, spender, value, nonce, deadline },
+    });
+
+    it("permit", async () => {
+        const wallet = Wallet.generate();
+        const owner = wallet.getAddressString();
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(owner, web3.utils.toWei("100"));
+
+        
+
+        let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+        let chainId = await web3.eth.net.getId();
+        let value = web3.utils.toWei("10");
+        let nonce = 0;
+        let deadline = currentBlockTimestamp + (7*24*3600);
+
+        
+
+        const data = buildData(
+            chainId,
+            token.address,
+            owner,
+            accounts[2],
+            value,
+            nonce,
+            deadline,
+        );
+        const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
+        const { v, r, s } = fromRpcSig(signature);
+        await token.permit(owner, accounts[2], value, deadline, v, r, s);
+
+        assert.equal((await token.nonces(owner)).toString(), '1');
+        assert.equal((await token.allowance(owner, accounts[2])).toString(), value.toString());
+        
+        let recipientBalance = (await token.balanceOf(accounts[3])).toString();
+        assert.equal(recipientBalance, '0');
+
+        await token.transferFrom(owner, accounts[3], web3.utils.toWei("5"), { from: accounts[2] });
+
+        recipientBalance = (await token.balanceOf(accounts[3])).toString();
+        assert.equal(recipientBalance, web3.utils.toWei("5"));
+
+        try {
+            await token.transferFrom(owner, accounts[3], web3.utils.toWei("6"), { from: accounts[2] });
+            assert(false, 'cannot send above amount allowed');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        recipientBalance = (await token.balanceOf(accounts[3])).toString();
+        assert.equal(recipientBalance, web3.utils.toWei("5"));
+
+        await token.transferFrom(owner, accounts[3], web3.utils.toWei("5"), { from: accounts[2] });
+        recipientBalance = (await token.balanceOf(accounts[3])).toString();
+        assert.equal(recipientBalance, web3.utils.toWei("10"));
+    });
+
+    it("can't replay permit", async () => {
+        const wallet = Wallet.generate();
+        const owner = wallet.getAddressString();
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(owner, web3.utils.toWei("100"));
+
+        let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+        let chainId = await web3.eth.net.getId();
+        let value = web3.utils.toWei("10");
+        let nonce = 0;
+        let deadline = currentBlockTimestamp + (7*24*3600);
+
+        const data = buildData(
+            chainId,
+            token.address,
+            owner,
+            accounts[2],
+            value,
+            nonce,
+            deadline,
+        );
+        const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
+        const { v, r, s } = fromRpcSig(signature);
+        await token.permit(owner, accounts[2], value, deadline, v, r, s);
+
+        assert.equal((await token.nonces(owner)).toString(), '1');
+        assert.equal((await token.allowance(owner, accounts[2])).toString(), value.toString());
+
+        try {
+            await token.permit(owner, accounts[2], value, deadline, v, r, s);
+            assert(false, 'cannot replay signed permit message');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+    });
+
+    it("can't use signed permit after deadline", async () => {
+        const wallet = Wallet.generate();
+        const owner = wallet.getAddressString();
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(owner, web3.utils.toWei("100"));
+
+        let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+        let chainId = await web3.eth.net.getId();
+        let value = web3.utils.toWei("10");
+        let nonce = 0;
+        let deadline = currentBlockTimestamp + (7*24*3600);
+
+        const data = buildData(
+            chainId,
+            token.address,
+            owner,
+            accounts[2],
+            value,
+            nonce,
+            deadline,
+        );
+        const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
+        const { v, r, s } = fromRpcSig(signature);
+
+        await utils.increaseTime(7*24*3600);
+
+        try {
+            await token.permit(owner, accounts[2], value, deadline, v, r, s);
+            assert(false, 'cannot replay signed permit message');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        assert.equal((await token.nonces(owner)).toString(), '0');
+        assert.equal((await token.allowance(owner, accounts[2])).toString(), '0');
     });
 });

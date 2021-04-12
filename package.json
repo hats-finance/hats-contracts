@@ -68,7 +68,9 @@
   "license": "GPL-3.0",
   "dependencies": {
     "eth-ecies": "^1.0.5",
+    "eth-sig-util": "^3.0.1",
     "ethereumjs-tx": "^2.1.2",
+    "ethereumjs-wallet": "^1.0.1",
     "kbpgp": "^2.1.15",
     "math": "0.0.3",
     "openzeppelin-solidity": "4.0.0",
