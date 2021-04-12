@@ -4,6 +4,18 @@ import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 
 
 contract HATToken {
+
+    struct PendingMinter {
+        uint256 seedAmount;
+        uint256 setMinterPendingAtBlock;
+    }
+
+    /// @notice A checkpoint for marking number of votes from a given block
+    struct Checkpoint {
+        uint32 fromBlock;
+        uint96 votes;
+    }
+
     /// @notice EIP-20 token name for this token
     string public constant name = "HATToken";
 
@@ -19,22 +31,16 @@ contract HATToken {
     address public governance;
     address public governancePending;
     uint256 public setGovernancePendingAtBlock;
+    uint256 public timeLockDelayInBlocksUnits;
+    uint256 public cap = 500000e18;
 
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
     mapping (address => uint256) public minters;
 
-    struct PendingMinter {
-        uint256 seedAmount;
-        uint256 setMinterPendingAtBlock;
-    }
-
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
     mapping (address => PendingMinter) public pendingMinters;
-
-    uint256 public  timeLockDelayInBlocksUnits;
-    uint256 public cap = 500000e18;
 
     // @notice Allowance amounts on behalf of others
     mapping (address => mapping (address => uint96)) internal allowances;
@@ -45,17 +51,14 @@ contract HATToken {
     /// @notice A record of each accounts delegate
     mapping (address => address) public delegates;
 
-    /// @notice A checkpoint for marking number of votes from a given block
-    struct Checkpoint {
-        uint32 fromBlock;
-        uint96 votes;
-    }
-
     /// @notice A record of votes checkpoints for each account, by index
     mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
 
     /// @notice The number of checkpoints for each account
     mapping (address => uint32) public numCheckpoints;
+
+    /// @notice A record of states for signing / validating signatures
+    mapping (address => uint) public nonces;
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
@@ -65,9 +68,6 @@ contract HATToken {
 
     /// @notice The EIP-712 typehash for the permit struct used by the contract
     bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-
-    /// @notice A record of states for signing / validating signatures
-    mapping (address => uint) public nonces;
 
     /// @notice An event thats emitted when the minter address is changed
     event MinterChanged(address minter, address newMinter);
