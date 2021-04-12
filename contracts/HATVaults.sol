@@ -175,7 +175,7 @@ contract  HATVaults is HATMaster {
             poolsRewards[_pid].committeeCheckIn = true;
         }
         require(_committee.length == _status.length, "wrong length");
-        require(_committee.length != 0);
+        require(_committee.length != 0, "empty committee");
 
         bool atLeastOneAddressIsTrue;
         for (uint256 i=0; i < _committee.length; i++) {
