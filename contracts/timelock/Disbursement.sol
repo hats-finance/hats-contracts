@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
-import "./HATToken.sol";
+import "../HATToken.sol";
 
 
 /// @title Disbursement contract - allows to distribute tokens over time

@@ -2,6 +2,8 @@ const HATVaults = artifacts.require("./HATVaults.sol");
 const HATToken = artifacts.require("./HATToken.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
+const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
+const AnyTokenLock = artifacts.require("./AnyTokenLock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -9,6 +11,7 @@ var hatToken;
 var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "100";
+var tokenLockFactory;
 
 const setup = async function (
                               accounts,
@@ -21,13 +24,17 @@ const setup = async function (
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   router =  await UniSwapV2RouterMock.new();
+  var tokenLock = await AnyTokenLock.new();
+  tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
                                   10,
                                   accounts[0],
-                                  router.address);
+                                  router.address,
+                                  tokenLockFactory.address,
+                                  tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));

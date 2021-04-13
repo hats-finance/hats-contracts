@@ -4,6 +4,7 @@ import "./interfaces/IUniswapV2Router01.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
+import "./timelock/ITokenLockFactory.sol";
 
 
 // WIP WIP WIP
@@ -22,6 +23,11 @@ contract  HATVaults is HATMaster {
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     address public projectsRegistery;
     string public vaultName;
+    ITokenLockFactory public tokenLockFactoryForHat;
+    ITokenLockFactory public tokenLockFactory;
+
+    uint256 public vestingDuration = 7 days;
+    uint256 public vestingPeriods = 10;
 
     // Info of each pool.
     struct ClaimReward {
@@ -91,10 +97,14 @@ contract  HATVaults is HATMaster {
         uint256 _startBlock,
         uint256 _halvingAfterBlock,
         address _governance,
-        IUniswapV2Router01 _uniSwapRouter
+        IUniswapV2Router01 _uniSwapRouter,
+        ITokenLockFactory _tokenLockFactoryForHat,
+        ITokenLockFactory _tokenLockFactory
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         governance = _governance;
         uniSwapRouter = _uniSwapRouter;
+        tokenLockFactoryForHat = _tokenLockFactoryForHat;
+        tokenLockFactory = _tokenLockFactory;
     }
 
     function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
@@ -102,8 +112,21 @@ contract  HATVaults is HATMaster {
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
         poolsRewards[_poolId].factor = claimRewards.factor;
 
-        //hacker get its reward
-        lpToken.safeTransfer(_beneficiary, claimRewards.hackerReward);
+        //hacker get its reward to a vesting contract
+        address timeLock = tokenLockFactory.createTokenLock(
+            address(lpToken),
+            governance,
+            _beneficiary,
+            claimRewards.hackerReward,
+            block.timestamp, //start
+            block.timestamp + vestingDuration, //end
+            vestingPeriods, //one vesting period
+            0, //no release start
+            0, //no cliff
+            ITokenLock.Revocability.Disabled
+        );
+
+        lpToken.safeTransfer(timeLock, claimRewards.hackerReward);
         //approver get its rewards
         lpToken.safeTransfer(msg.sender, claimRewards.approverReward);
         //storing the amount of token which can be swap and burned
@@ -131,6 +154,11 @@ contract  HATVaults is HATMaster {
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external {
         emit Claim(msg.sender, _descriptionHash);
+    }
+
+    function setVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
+        vestingDuration = _duration;
+        vestingPeriods = _periods;
     }
 
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)
