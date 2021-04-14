@@ -17,6 +17,7 @@ interface ITokenLockFactory {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        ITokenLock.Revocability _revocable
+        ITokenLock.Revocability _revocable,
+        bool _canDelegate
     ) external returns(address contractAddress);
 }

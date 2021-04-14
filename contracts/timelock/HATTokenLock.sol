@@ -7,6 +7,8 @@ import "../HATToken.sol";
 
 contract HATTokenLock is TokenLock {
 
+    bool public canDelegate;
+
     // Initializer
     function initialize(
         address _owner,
@@ -18,7 +20,8 @@ contract HATTokenLock is TokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        Revocability _revocable
+        Revocability _revocable,
+        bool _canDelegate
     ) external {
         _initialize(
             _owner,
@@ -32,7 +35,10 @@ contract HATTokenLock is TokenLock {
             _vestingCliffTime,
             _revocable
         );
-        _token.delegate(_beneficiary);
+        if (_canDelegate) {
+            _token.delegate(_beneficiary);
+        }
+        canDelegate = _canDelegate;
     }
 
     /// @dev delegate voting power
@@ -41,6 +47,7 @@ contract HATTokenLock is TokenLock {
         external
         onlyBeneficiary
     {
+        require(canDelegate, "delegate is disable");
         HATToken(address(token)).delegate(_delegatee);
     }
 }

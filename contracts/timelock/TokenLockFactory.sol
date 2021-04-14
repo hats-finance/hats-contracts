@@ -34,7 +34,8 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
         uint256 periods,
         uint256 releaseStartTime,
         uint256 vestingCliffTime,
-        ITokenLock.Revocability revocable
+        ITokenLock.Revocability revocable,
+        bool canDelegate
     );
 
     /**
@@ -67,6 +68,7 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
      * @param _periods Number of periods between start time and end time
      * @param _releaseStartTime Override time for when the releases start
      * @param _revocable Whether the contract is revocable
+     * @param _canDelegate Whether the contract should call delegate
      */
     function createTokenLock(
         address _token,
@@ -78,11 +80,12 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        ITokenLock.Revocability _revocable
+        ITokenLock.Revocability _revocable,
+        bool _canDelegate
     ) external override returns(address contractAddress) {
         // Create contract using a minimal proxy and call initializer
         bytes memory initializer = abi.encodeWithSignature(
-            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint8)", 
+            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint8,bool)",
             _owner,
             _beneficiary,
             _token,
@@ -92,14 +95,42 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
             _periods,
             _releaseStartTime,
             _vestingCliffTime,
-            _revocable
+            _revocable,
+            _canDelegate
         );
 
-        contractAddress = _deployProxy2(keccak256(initializer), masterCopy, initializer);
+        contractAddress = deployProxyPrivate(initializer,
+        _beneficiary,
+        _token,
+        _managedAmount,
+        _startTime,
+        _endTime,
+        _periods,
+        _releaseStartTime,
+        _vestingCliffTime,
+        _revocable,
+        _canDelegate);
+    }
 
+    //this private function is to handle stack too deep issue
+    function  deployProxyPrivate(
+        bytes memory _initializer,
+        address _beneficiary,
+        address _token,
+        uint256 _managedAmount,
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256 _periods,
+        uint256 _releaseStartTime,
+        uint256 _vestingCliffTime,
+        ITokenLock.Revocability _revocable,
+        bool _canDelegate
+    ) private returns (address contractAddress) {
+
+        contractAddress = _deployProxy2(keccak256(_initializer), masterCopy, _initializer);
         emit TokenLockCreated(
             contractAddress,
-            keccak256(initializer),
+            keccak256(_initializer),
             _beneficiary,
             _token,
             _managedAmount,
@@ -108,7 +139,8 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
             _periods,
             _releaseStartTime,
             _vestingCliffTime,
-            _revocable
+            _revocable,
+            _canDelegate
         );
     }
 }

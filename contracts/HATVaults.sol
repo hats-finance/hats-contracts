@@ -23,6 +23,8 @@ contract  HATVaults is HATMaster {
     address public projectsRegistery;
     string public vaultName;
     ITokenLockFactory public tokenLockFactory;
+    uint256 public hatVestingDuration = 90 days;
+    uint256 public hatVestingPeriods = 90;
 
     // Info of each pool.
     struct ClaimReward {
@@ -56,29 +58,20 @@ contract  HATVaults is HATMaster {
                 uint256 _rewardVestingDuration,
                 uint256 _rewardVestingPeriods);
 
-    event SetPool(uint256 indexed _pid,
-                uint256 indexed _allocPoint,
-                bool indexed _registered,
-                string _descriptionHash);
-
+    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
-
     event SetRewardsSplit(uint256 indexed _pid, uint256[4] indexed _rewardsSplit);
-
     event SetRewardsLevels(uint256 indexed _pid, uint256[] indexed _rewardsLevels);
 
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
                     uint256 indexed _amountSwaped,
-                    uint256 _amountReceived);
+                    uint256 _amountReceived,
+                    address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid,
-                    uint256 indexed _amountSwaped,
-                    uint256 indexed _amountBurnet);
-
-    event SetVestingParams(uint256 indexed _pid,
-                    uint256 indexed _duration,
-                    uint256 indexed _periods);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurnet);
+    event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
+    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
     event ClaimApprove(address indexed _approver,
                     uint256 indexed _poolId,
@@ -124,7 +117,8 @@ contract  HATVaults is HATMaster {
             poolReward.vestingPeriods,
             0, //no release start
             0, //no cliff
-            ITokenLock.Revocability.Disabled
+            ITokenLock.Revocability.Disabled,
+            false
         );
 
         lpToken.safeTransfer(tokenLock, claimRewards.hackerReward);
@@ -159,12 +153,21 @@ contract  HATVaults is HATMaster {
     }
 
     function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
-        require(_duration < 90 days, "vesting duration is too long");
+        require(_duration < 365 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
         poolsRewards[_pid].vestingDuration = _duration;
         poolsRewards[_pid].vestingPeriods = _periods;
         emit SetVestingParams(_pid, _duration, _periods);
+    }
+
+    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
+        require(_duration < 365 days, "vesting duration is too long");
+        require(_periods > 0, "vesting periods cannot be zero");
+        require(_duration >= _periods, "vesting duration smaller than periods");
+        hatVestingDuration = _duration;
+        hatVestingPeriods = _periods;
+        emit SetHatVestingParams(_duration, _periods);
     }
 
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)
@@ -232,7 +235,7 @@ contract  HATVaults is HATMaster {
                     uint256 _rewardVestingPeriods)
     external
     onlyGovernance {
-        require(_rewardVestingDuration < 90 days, "vesting duration is too long");
+        require(_rewardVestingDuration < 365 days, "vesting duration is too long");
         require(_rewardVestingPeriods > 0, "vesting periods cannot be zero");
         require(_rewardVestingDuration >= _rewardVestingPeriods, "vesting duration smaller than periods");
         add(_allocPoint, IERC20(_lpToken), _withUpdate);
@@ -328,8 +331,23 @@ contract  HATVaults is HATMaster {
         uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
-        HAT.transfer(msg.sender, hatsRecieved);
-        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved);
+        //hacker get its reward to a vesting contract
+        address tokenLock = tokenLockFactory.createTokenLock(
+            address(HAT),
+            governance,
+            msg.sender,
+            hatsRecieved,
+            block.timestamp, //start
+            block.timestamp + hatVestingDuration, //end
+            hatVestingPeriods,
+            0, //no release start
+            0, //no cliff
+            ITokenLock.Revocability.Disabled,
+            true
+        );
+
+        HAT.transfer(tokenLock, hatsRecieved);
+        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved, tokenLock);
     }
 
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
