@@ -35,6 +35,8 @@ contract HATMaster {
         uint256 factor;
         uint256[]  rewardsLevels;
         bool committeeCheckIn;
+        uint256 vestingDuration;
+        uint256 vestingPeriods;
     }
 
     HATToken public HAT;

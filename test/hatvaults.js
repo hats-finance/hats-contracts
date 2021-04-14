@@ -33,12 +33,11 @@ const setup = async function (
                                   10,
                                   accounts[0],
                                   router.address,
-                                  tokenLockFactory.address,
                                   tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash");
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
   await hatVaults.setCommittee(0,[accounts[0]],[true]);
 };
 
@@ -489,4 +488,65 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[0]);
   });
+
+
+  it("vesting", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    //stake
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+
+    var tx = await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(tx.logs[0].event, "ClaimApprove");
+    var vestingTokenLock = await AnyTokenLock.at(tx.logs[0].args._tokenLock);
+    assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
+    var depositValutBN = new web3.utils.BN(web3.utils.toWei("1"));
+    var expectedHackerBalance = depositValutBN.mul(new web3.utils.BN(8500)).div(new web3.utils.BN(10000));
+    assert.isTrue((await stakingToken.balanceOf(vestingTokenLock.address)).eq(expectedHackerBalance));
+    assert.isTrue(tx.logs[0].args._hackerReward.eq(expectedHackerBalance));
+    assert.isTrue(expectedHackerBalance.eq(await vestingTokenLock.managedAmount()));
+    assert.equal(await vestingTokenLock.revocable(),2);//Disable
+    try {
+          await vestingTokenLock.revoke();
+          assert(false, 'cannot revoke');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+      try {
+            await vestingTokenLock.withdrawSurplus(1);
+            assert(false, 'no surplus');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+        try {
+              await vestingTokenLock.release();
+              assert(false, 'only beneficiary can release');
+            } catch (ex) {
+              assertVMException(ex);
+          }
+
+         try {
+               await vestingTokenLock.release({from:accounts[2]});
+               assert(false, 'cannot release before first period');
+             } catch (ex) {
+               assertVMException(ex);
+           }
+         await utils.increaseTime(8640);
+         await vestingTokenLock.release({from:accounts[2]});
+         assert.isTrue((await stakingToken.balanceOf(accounts[2]))
+                       .eq(expectedHackerBalance.div(new web3.utils.BN(10))));
+
+         await utils.increaseTime(8640*9);
+         await vestingTokenLock.release({from:accounts[2]});
+         assert.isTrue((await stakingToken.balanceOf(accounts[2])).eq(expectedHackerBalance));
+  });
+
 });
