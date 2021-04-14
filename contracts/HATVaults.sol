@@ -7,7 +7,6 @@ import "./HATMaster.sol";
 import "./timelock/ITokenLockFactory.sol";
 
 
-// WIP WIP WIP
 contract  HATVaults is HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -171,7 +170,6 @@ contract  HATVaults is HATMaster {
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)
     external
     onlyGovernance {
-        //todo : should the hacker split rewards can be updated ?
         require(
             _rewardsSplit[0]+
             _rewardsSplit[1]+
