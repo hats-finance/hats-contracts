@@ -503,7 +503,6 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
-
     var tx = await hatVaults.approveClaim(0,accounts[2],4);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     var vestingTokenLock = await AnyTokenLock.at(tx.logs[0].args._tokenLock);
@@ -549,4 +548,25 @@ contract('HatVaults',  accounts =>  {
          assert.isTrue((await stakingToken.balanceOf(accounts[2])).eq(expectedHackerBalance));
   });
 
+  it("set vesting params", async () => {
+    await setup(accounts);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,86400);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,10);
+
+    try {
+          await hatVaults.setVestingParams(0,21000,7,{from:accounts[2]});
+          assert(false, 'only gov can set vesting params');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    var tx = await hatVaults.setVestingParams(0,21000,7);
+    assert.equal(tx.logs[0].event, "SetVestingParams");
+    assert.equal(tx.logs[0].args._duration, 21000);
+    assert.equal(tx.logs[0].args._periods, 7);
+
+
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,21000);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,7);
+
+  });
 });
