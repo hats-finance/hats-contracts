@@ -2,6 +2,8 @@ const HATVaults = artifacts.require("./HATVaults.sol");
 const HATToken = artifacts.require("./HATToken.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
+const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
+const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -9,6 +11,7 @@ var hatToken;
 var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "100";
+var tokenLockFactory;
 
 const setup = async function (
                               accounts,
@@ -21,17 +24,20 @@ const setup = async function (
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   router =  await UniSwapV2RouterMock.new();
+  var tokenLock = await HATTokenLock.new();
+  tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
                                   10,
                                   accounts[0],
-                                  router.address);
+                                  router.address,
+                                  tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash");
+  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
   await hatVaults.setCommittee(0,[accounts[0]],[true]);
 };
 
@@ -419,7 +425,11 @@ contract('HatVaults',  accounts =>  {
 
     var tx = await hatVaults.swapAndSend(0,{from:accounts[2]});
     assert.equal(tx.logs[0].event, "SwapAndSend");
-    assert.equal((await hatToken.balanceOf(accounts[2])).toString(),tx.logs[0].args._amountReceived.toString());
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
+    assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[0].args._amountReceived.toString());
+    assert.equal(await vestingTokenLock.canDelegate(),true);
+    await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
+    assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
 
   });
 
@@ -481,5 +491,116 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "Claim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[0]);
+  });
+
+
+  it("vesting", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    //stake
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    var tx = await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(tx.logs[0].event, "ClaimApprove");
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
+    assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
+    var depositValutBN = new web3.utils.BN(web3.utils.toWei("1"));
+    var expectedHackerBalance = depositValutBN.mul(new web3.utils.BN(8500)).div(new web3.utils.BN(10000));
+    assert.isTrue((await stakingToken.balanceOf(vestingTokenLock.address)).eq(expectedHackerBalance));
+    assert.isTrue(tx.logs[0].args._hackerReward.eq(expectedHackerBalance));
+    assert.isTrue(expectedHackerBalance.eq(await vestingTokenLock.managedAmount()));
+    assert.equal(await vestingTokenLock.revocable(),2);//Disable
+    assert.equal(await vestingTokenLock.canDelegate(),false);
+
+    try {
+          await vestingTokenLock.delegate(accounts[4]);
+          assert(false, 'cannot delegate');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+
+    try {
+          await vestingTokenLock.revoke();
+          assert(false, 'cannot revoke');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+      try {
+            await vestingTokenLock.withdrawSurplus(1);
+            assert(false, 'no surplus');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+        try {
+              await vestingTokenLock.release();
+              assert(false, 'only beneficiary can release');
+            } catch (ex) {
+              assertVMException(ex);
+          }
+
+         try {
+               await vestingTokenLock.release({from:accounts[2]});
+               assert(false, 'cannot release before first period');
+             } catch (ex) {
+               assertVMException(ex);
+           }
+         await utils.increaseTime(8640);
+         await vestingTokenLock.release({from:accounts[2]});
+         assert.isTrue((await stakingToken.balanceOf(accounts[2]))
+                       .eq(expectedHackerBalance.div(new web3.utils.BN(10))));
+
+         await utils.increaseTime(8640*9);
+         await vestingTokenLock.release({from:accounts[2]});
+         assert.isTrue((await stakingToken.balanceOf(accounts[2])).eq(expectedHackerBalance));
+  });
+
+  it("set vesting params", async () => {
+    await setup(accounts);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,86400);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,10);
+
+    try {
+          await hatVaults.setVestingParams(0,21000,7,{from:accounts[2]});
+          assert(false, 'only gov can set vesting params');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    var tx = await hatVaults.setVestingParams(0,21000,7);
+    assert.equal(tx.logs[0].event, "SetVestingParams");
+    assert.equal(tx.logs[0].args._duration, 21000);
+    assert.equal(tx.logs[0].args._periods, 7);
+
+
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,21000);
+    assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,7);
+
+  });
+
+  it("set hat vesting params", async () => {
+    await setup(accounts);
+    assert.equal(await hatVaults.hatVestingDuration(),90*3600*24);
+    assert.equal(await hatVaults.hatVestingPeriods(),90);
+
+    try {
+          await hatVaults.setHatVestingParams(21000,7,{from:accounts[2]});
+          assert(false, 'only gov can set vesting params');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    var tx = await hatVaults.setHatVestingParams(21000,7);
+    assert.equal(tx.logs[0].event, "SetHatVestingParams");
+    assert.equal(tx.logs[0].args._duration, 21000);
+    assert.equal(tx.logs[0].args._periods, 7);
+
+    assert.equal(await hatVaults.hatVestingDuration(),21000);
+    assert.equal(await hatVaults.hatVestingPeriods(),7);
+
   });
 });
