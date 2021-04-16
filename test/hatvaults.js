@@ -288,7 +288,6 @@ contract('HatVaults',  accounts =>  {
     await setup(accounts);
     var staker = accounts[1];
     var staker2 = accounts[3];
-    var notStaker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
@@ -306,21 +305,19 @@ contract('HatVaults',  accounts =>  {
 
     // Can emergency withdraw 1 token
     assert.equal(await stakingToken.balanceOf(staker),0);
-    await hatVaults.emergencyWithdraw(0 ,{from:staker});
+    await hatVaults.emergencyWithdraw(0 ,web3.utils.toWei("1"), {from:staker});
     assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
 
-    // Can emergency withdraw only once
-    await hatVaults.emergencyWithdraw(0 ,{from:staker});
+    //Can emergency withdraw only once
+      try {
+            await hatVaults.emergencyWithdraw(0 ,web3.utils.toWei("1"),{from:staker});
+            assert(false, 'an emergency withdraw only once');
+          } catch (ex) {
+            assertVMException(ex);
+        }
     assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
-
-    // Can't withdraw if didn't deposit
-    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(notStaker))), 0);
-    await hatVaults.emergencyWithdraw(0 ,{from:notStaker});
-    assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(notStaker))), 0);
   });
 
-
-  //
   // //
   it("approve+ stake + exit", async () => {
     await setup(accounts);
@@ -350,7 +347,30 @@ contract('HatVaults',  accounts =>  {
     // await hatVaults.exit({from:staker2});
     await hatVaults.withdraw(0,web3.utils.toWei("100"),{from:staker2});
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
-    // assert.equal((await stakingToken.balanceOf(staker2)).toString(),web3.utils.toWei("1"));
+  });
+
+
+  it("emergencyWithdraw after approve", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    //stake
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+  //exit
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    var tx = await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(tx.logs[0].event, "ClaimApprove");
+    tx = await hatVaults.emergencyWithdraw(0,web3.utils.toWei("1"),{from:staker});
+    assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("0.01"));
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
+    tx = await hatVaults.emergencyWithdraw(0, web3.utils.toWei("100"),{from:staker2});
+    assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("1"));
   });
 
   it("enable farming  + 2xapprove+ exit", async () => {
