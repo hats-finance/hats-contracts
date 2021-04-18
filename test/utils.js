@@ -49,10 +49,12 @@ const setMinter = async function(hatToken,minter,cap) {
     }
     await hatToken.confirmMinter(minter);
 };
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 module.exports = {
   increaseTime,
   setMinter,
   mineBlock,
-  TIME_LOCK_DELAY_IN_BLOCKS_UNIT
+  TIME_LOCK_DELAY_IN_BLOCKS_UNIT,
+  NULL_ADDRESS
 };

@@ -1,13 +1,16 @@
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
+const utils = require("./utils.js");
 
 var stakingToken;
 var tokenLockFactory;
 var tokenLock;
 
 const setup = async function (
-                              accounts
+                              accounts,
+                              revocable = 1,
+                              delegate = false
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
@@ -24,8 +27,8 @@ const setup = async function (
                                          5,
                                          0,
                                          0,
-                                         1,
-                                         false
+                                         revocable,
+                                         delegate
                                        );
 
   assert.equal(tx.logs[2].event,"TokenLockCreated");
@@ -56,5 +59,123 @@ contract('TokenLock',  accounts =>  {
         assert.equal(tx.logs[0].event,"TokensRevoked");
         assert.equal(tx.logs[0].args.beneficiary,accounts[1]);
         assert.equal(tx.logs[0].args.amount.toString(),web3.utils.toWei("1"));
+    });
+
+    it("cannot revoke after renaunceOwnership revoke", async () => {
+        await setup(accounts);
+        await tokenLock.renounceOwnership();
+        try {
+            await tokenLock.revoke();
+            assert(false, 'only owner can call revoke');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+    });
+
+    it("cannot revoke after renaunceOwnership revoke", async () => {
+        await setup(accounts);
+        await tokenLock.transferOwnership(accounts[2]);
+        try {
+            await tokenLock.revoke();
+            assert(false, 'only owner can call revoke');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        var tx = await tokenLock.revoke({from:accounts[2]});
+        assert.equal(tx.logs[0].event,"TokensRevoked");
+        assert.equal(tx.logs[0].args.beneficiary,accounts[1]);
+        assert.equal(tx.logs[0].args.amount.toString(),web3.utils.toWei("1"));
+    });
+
+    it("cancel lock", async () => {
+        await setup(accounts);
+        try {
+            await tokenLock.cancelLock({from:accounts[2]});
+            assert(false, 'only owner can call cancelLock');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        var balanceBefore = await stakingToken.balanceOf(tokenLock.address);
+        var tx = await tokenLock.cancelLock();
+        assert.equal(tx.logs[0].event,"LockCanceled");
+        assert.equal(await stakingToken.balanceOf(tokenLock.address),0);
+        assert.isTrue((await stakingToken.balanceOf(accounts[0])).eq(balanceBefore));
+
+    });
+
+    it("cannot cancel lock after acceptLock by beneficiary", async () => {
+        await setup(accounts);
+        try {
+            await tokenLock.acceptLock();
+            assert(false, 'only beneficiary');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        await tokenLock.acceptLock({from:accounts[1]});
+        try {
+            await tokenLock.cancelLock();
+            assert(false, 'cannot cancel lock after accept by beneficiary');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+
+    });
+
+    it("changeBeneficiary", async () => {
+        await setup(accounts);
+        try {
+            await tokenLock.changeBeneficiary(accounts[3]);
+            assert(false, 'only beneficiary');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        await tokenLock.changeBeneficiary(accounts[3],{from:accounts[1]});
+        assert.equal(await tokenLock.beneficiary(),accounts[3]);
+    });
+
+    it("none revocable", async () => {
+        await setup(accounts,2);
+        assert.equal(await tokenLock.vestedAmount(),web3.utils.toWei("1"));
+        try {
+            await tokenLock.revoke();
+            assert(false, 'none revocable');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+    });
+
+    it("no delegate", async () => {
+        await setup(accounts,2);
+        assert.equal(await tokenLock.canDelegate(),false);
+        try {
+            await tokenLock.delegate(accounts[2]);
+            assert(false, 'cannot delegate');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+    });
+    it("delegate", async () => {
+        await setup(accounts,2,true);
+        assert.equal(await tokenLock.canDelegate(),true);
+        try {
+            await tokenLock.delegate(accounts[2]);
+            assert(false, 'only beneficiary');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        await tokenLock.delegate(accounts[2],{from:accounts[1]});
+        assert.equal(await stakingToken.delegates(tokenLock.address),accounts[2]);
+    });
+
+    it("setMasterCopy", async () => {
+        await setup(accounts);
+
+        try {
+            await tokenLockFactory.setMasterCopy(utils.NULL_ADDRESS);
+            assert(false, 'address cannot be zero');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+        await tokenLockFactory.setMasterCopy(accounts[1]);
     });
 });
