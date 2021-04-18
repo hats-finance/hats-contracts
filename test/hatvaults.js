@@ -104,6 +104,12 @@ contract('HatVaults',  accounts =>  {
       } catch (ex) {
           assertVMException(ex);
       }
+      try {
+          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000],{from:accounts[2]});
+          assert(false, "only committee");
+      } catch (ex) {
+          assertVMException(ex);
+      }
       await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000]);
       try {
           await hatVaults.setRewardsSplit(0, [7000, 1000, 1100, 900]);
@@ -335,6 +341,12 @@ contract('HatVaults',  accounts =>  {
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
+    try {
+          await hatVaults.approveClaim(0,accounts[2],4,{from:accounts[2]});
+          assert(false, 'only Committee');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     var tx = await hatVaults.approveClaim(0,accounts[2],4);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
@@ -566,7 +578,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[1].args._tokenLock, '0x0000000000000000000000000000000000000000');
 
     tx = await hatVaults.swapBurnSend(0, accounts[2], {from: accounts[1] });
-    
+
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
     assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
