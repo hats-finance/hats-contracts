@@ -701,6 +701,17 @@ contract('HatVaults',  accounts =>  {
          await utils.increaseTime(8640*9);
          await vestingTokenLock.release({from:accounts[2]});
          assert.isTrue((await stakingToken.balanceOf(accounts[2])).eq(expectedHackerBalance));
+         try {
+               await vestingTokenLock.withdrawSurplus(1,{from:accounts[2]});
+               assert(false, 'no Surplus');
+             } catch (ex) {
+               assertVMException(ex);
+           }
+         await stakingToken.transfer(vestingTokenLock.address,10);
+         tx = await vestingTokenLock.withdrawSurplus(1,{from:accounts[2]});
+         assert.equal(tx.logs[0].event,"TokensWithdrawn");
+         assert.equal(tx.logs[0].args.amount,1);
+
   });
 
   it("set vesting params", async () => {
