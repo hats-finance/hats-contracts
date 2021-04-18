@@ -292,62 +292,54 @@ contract  HATVaults is HATMaster {
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
-    //swap tokens to hats and burn it.
-    function swapAndBurn(uint256 _pid) external {
+    //swapBurnSend swap lptoken to HAT.
+    // send to beneficiary its hats rewards .
+    // burn the rest of HAT.
+    function swapBurnSend(uint256 _pid, address _beneficiary) external {
         IERC20 token = poolInfo[_pid].lpToken;
-        uint256 amount = swapAndBurns[address(token)];
+        uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
+        uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
+        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards);
+        require(amount > 0, "amount is zero");
         swapAndBurns[address(token)] = 0;
-        require(token.approve(address(uniSwapRouter), amount), "token approve failed");
-        address[] memory path = new address[](2);
-        path[0] = address(token);
-        path[1] = address(HAT);
-       //Swaps an exact amount of input tokens for as many output tokens as possible,
-       //along the route determined by the path.
-        uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        uint256 hatsRecieved =
-        // solhint-disable-next-line not-rely-on-time
-        uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
-        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
-        poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
-        HAT.burn(hatsRecieved);
-        emit SwapAndBurn(_pid, amount, hatsRecieved);
-    }
-
-    //swap tokens to hats and send to msg.sender if is entitile to.
-    function swapAndSend(uint256 _pid) external {
-        IERC20 token = poolInfo[_pid].lpToken;
-        uint256 amount = hackersHatRewards[msg.sender][address(token)];
-        require(amount > 0, "no reward for msg.sender");
         hackersHatRewards[msg.sender][address(token)] = 0;
         require(token.approve(address(uniSwapRouter), amount), "token approve failed");
         address[] memory path = new address[](2);
         path[0] = address(token);
         path[1] = address(HAT);
-       //Swaps an exact amount of input tokens for as many output tokens as possible,
-       //along the route determined by the path.
+        //Swaps an exact amount of input tokens for as many output tokens as possible,
+        //along the route determined by the path.
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
         uint256 hatsRecieved =
-        // solhint-disable-next-line not-rely-on-time
+         // solhint-disable-next-line not-rely-on-time
         uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
-        //hacker get its reward to a vesting contract
-        address tokenLock = tokenLockFactory.createTokenLock(
-            address(HAT),
-            governance,
-            msg.sender,
-            hatsRecieved,
-            block.timestamp, //start
-            block.timestamp + hatVestingDuration, //end
-            hatVestingPeriods,
-            0, //no release start
-            0, //no cliff
-            ITokenLock.Revocability.Disabled,
-            true
-        );
-
-        HAT.transfer(tokenLock, hatsRecieved);
-        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved, tokenLock);
+        uint256 burnetHats = hatsRecieved.mul(amountToSwapAndBurn).div(amount);
+        if (burnetHats > 0) {
+          //burn the relative HATs amount.
+            HAT.burn(burnetHats);
+        }
+        emit SwapAndBurn(_pid, amount, burnetHats);
+        address tokenLock;
+        if (hatsRecieved.sub(burnetHats) > 0) {
+           //hacker get the rest ...
+            tokenLock = tokenLockFactory.createTokenLock(
+                address(HAT),
+                governance,
+                _beneficiary,
+                hatsRecieved.sub(burnetHats),
+                block.timestamp, //start
+                block.timestamp + hatVestingDuration, //end
+                hatVestingPeriods,
+                0, //no release start
+                0, //no cliff
+                ITokenLock.Revocability.Disabled,
+                true
+            );
+            HAT.transfer(tokenLock, hatsRecieved.sub(burnetHats));
+        }
+        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved.sub(burnetHats), tokenLock);
     }
 
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
