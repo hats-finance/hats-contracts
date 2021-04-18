@@ -499,6 +499,12 @@ contract('HatVaults',  accounts =>  {
 
   it("setPool", async () => {
     await setup(accounts);
+    try {
+        await hatVaults.setPool(1, 200, true, true, '_descriptionHash');
+        assert(false, 'no pool exist');
+      } catch (ex) {
+        assertVMException(ex);
+    }
     await hatVaults.setPool(0, 200, true, true, '_descriptionHash');
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
