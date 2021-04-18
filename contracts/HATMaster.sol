@@ -138,8 +138,8 @@ contract HATMaster {
 <<<<<<< HEAD
         require(user.amount >= _amount, "withdraw: not enough user balance");
 =======
-        require(user.amount >= _amount, "withdraw: not enough use balance");
->>>>>>> emergenecy - withdraw without amount
+        require(user.amount >= _amount, "withdraw: not enough user balance");
+>>>>>>> Update contracts/HATMaster.sol
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
