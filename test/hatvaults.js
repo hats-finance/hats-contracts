@@ -495,7 +495,6 @@ contract('HatVaults',  accounts =>  {
           (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit)).add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
       ).div(new web3.utils.BN("10000")).toString()
     );
-    let burnedTokens = await hatToken.balanceOf(router.address);
     var tx = await hatVaults.swapBurnSend(0,accounts[2]);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
