@@ -79,6 +79,20 @@ contract('HATToken', accounts => {
             assertVMException(error);
         }
 
+        try {
+            await token.setPendingGovernance(accounts[1],{ 'from': accounts[1]});
+            throw 'only gov can setPendingGovernance ';
+        } catch (error) {
+            assertVMException(error);
+        }
+
+        try {
+            await token.setPendingGovernance(utils.NULL_ADDRESS,{ 'from': accounts[0]});
+            throw 'cannot set null gov';
+        } catch (error) {
+            assertVMException(error);
+        }
+
         await token.setPendingGovernance(accounts[1],{ 'from': accounts[0]});
         try {
             await token.confirmGovernance({ 'from': accounts[0]});
@@ -141,6 +155,13 @@ contract('HATToken', accounts => {
 
         for (let i=0;i<10 ;i++) {
           await utils.mineBlock();
+        }
+
+        try {
+            await token.confirmMinter(accounts[1],{ 'from': accounts[2]});
+            throw 'only gov';
+        } catch (error) {
+            assertVMException(error);
         }
 
         await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
