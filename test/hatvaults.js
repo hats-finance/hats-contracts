@@ -71,6 +71,24 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
         }
+
+        //set other pool with different committee
+        let rewardsLevels=[];
+        let rewardsSplit=[0,0,0,0];
+        await hatVaults.addPool(100,hatToken.address,true,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
+        assert.equal(await hatVaults.committees(1,accounts[1]), true);
+        assert.equal(await hatVaults.committees(1,accounts[2]), true);
+        //committe check in
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true],{from:accounts[1]});
+        try {
+             await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
+            assert(false, 'commitee already checked in');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true],{from:accounts[2]});
+
     });
 
     it("custom rewardsSplit and rewardsLevels", async () => {
