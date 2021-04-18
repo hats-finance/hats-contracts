@@ -152,14 +152,14 @@ contract HATMaster {
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
+    function emergencyWithdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 amount = user.amount;
-        user.amount = 0;
-        user.rewardDebt = 0;
-        pool.lpToken.safeTransfer(address(msg.sender), amount);
-        emit EmergencyWithdraw(msg.sender, _pid, amount);
+        uint256 factoredAmount = _amount;
+        factoredAmount = factoredAmount.mul(poolsRewards[_pid].factor).div(1e18);
+        user.amount = user.amount.sub(_amount);
+        pool.lpToken.safeTransfer(address(msg.sender), factoredAmount);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredAmount);
     }
 
     // GET INFO for UI
