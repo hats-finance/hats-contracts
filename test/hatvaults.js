@@ -305,17 +305,18 @@ contract('HatVaults',  accounts =>  {
 
     // Can emergency withdraw 1 token
     assert.equal(await stakingToken.balanceOf(staker),0);
-    await hatVaults.emergencyWithdraw(0 ,web3.utils.toWei("1"), {from:staker});
+    await hatVaults.emergencyWithdraw(0 ,{from:staker});
     assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
 
     //Can emergency withdraw only once
-      try {
-            await hatVaults.emergencyWithdraw(0 ,web3.utils.toWei("1"),{from:staker});
-            assert(false, 'an emergency withdraw only once');
-          } catch (ex) {
-            assertVMException(ex);
-        }
+    await hatVaults.emergencyWithdraw(0,{from:staker});
     assert.equal(web3.utils.fromWei((await stakingToken.balanceOf(staker))),1);
+    try {
+          await hatVaults.withdraw(0,1,{from:staker});
+          assert(false, 'cannot withdraw after emergenecy withdraw');
+        } catch (ex) {
+          assertVMException(ex);
+      }
   });
 
   // //
@@ -366,10 +367,10 @@ contract('HatVaults',  accounts =>  {
     await utils.increaseTime(7*24*3600);
     var tx = await hatVaults.approveClaim(0,accounts[2],4);
     assert.equal(tx.logs[0].event, "ClaimApprove");
-    tx = await hatVaults.emergencyWithdraw(0,web3.utils.toWei("1"),{from:staker});
+    tx = await hatVaults.emergencyWithdraw(0,{from:staker});
     assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("0.01"));
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
-    tx = await hatVaults.emergencyWithdraw(0, web3.utils.toWei("100"),{from:staker2});
+    tx = await hatVaults.emergencyWithdraw(0,{from:staker2});
     assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("1"));
   });
 
