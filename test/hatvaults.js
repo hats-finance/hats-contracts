@@ -439,6 +439,12 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
+    try {
+          await hatVaults.swapBurnSend(0, accounts[2]);
+          assert(false, 'cannot swapBurnSend before approve');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     await hatVaults.approveClaim(0,accounts[2],4);
     var tx = await hatVaults.swapBurnSend(0, accounts[2]);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
@@ -452,6 +458,12 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await vestingTokenLock.canDelegate(),true);
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
+    try {
+          await hatVaults.swapBurnSend(0, accounts[2]);
+          assert(false, 'cannot swapBurnSend twice');
+        } catch (ex) {
+          assertVMException(ex);
+      }
 
   });
 
