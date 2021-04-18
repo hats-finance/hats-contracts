@@ -339,7 +339,7 @@ contract  HATVaults is HATMaster {
             );
             HAT.transfer(tokenLock, hatsRecieved.sub(burnetHats));
         }
-        emit SwapAndSend(_pid, msg.sender, amount, hatsRecieved.sub(burnetHats), tokenLock);
+        emit SwapAndSend(_pid, _beneficiary, amount, hatsRecieved.sub(burnetHats), tokenLock);
     }
 
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
