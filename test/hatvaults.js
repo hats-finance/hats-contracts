@@ -518,6 +518,76 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit))
     ).div(new web3.utils.BN("10000")).toString());
+
+    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+      (new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
+    ).div(new web3.utils.BN("10000")).toString());
+    let afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
+    assert.equal(tx.logs[1].args._amountReceived.toString(), afterRewardBalance);
+  });
+
+  it("swapAndBurn burn then swap", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    var staker2 = accounts[3];
+    assert.equal((await hatVaults.getPoolRewardsPendingLpToken(0)).toString(), "0");
+
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    await hatVaults.approveClaim(0,accounts[2],4);
+    assert.equal(
+      (
+        await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
+        new web3.utils.BN(web3.utils.toWei("1")).mul(
+          (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit)).add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
+      ).div(new web3.utils.BN("10000")).toString()
+    );
+    var tx = await hatVaults.swapBurnSend(0,accounts[1], {from: accounts[1] });
+    assert.equal(tx.logs[0].event, "SwapAndBurn");
+    assert.equal(tx.logs[0].args._amountSwaped.toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).mul(
+        (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit))
+      ).div(new web3.utils.BN("10000")).toString()
+    );
+    assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+      (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit))
+    ).div(new web3.utils.BN("10000")).toString());
+    assert.equal(tx.logs[1].event, "SwapAndSend");
+    assert.equal(tx.logs[1].args._amountReceived.toString(), '0');
+    // Not real beneficiary should not get tokens
+    let afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
+    assert.equal(tx.logs[1].args._tokenLock, '0x0000000000000000000000000000000000000000');
+
+    tx = await hatVaults.swapBurnSend(0, accounts[2], {from: accounts[1] });
+    
+    assert.equal(tx.logs[0].event, "SwapAndBurn");
+    assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
+    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+      (new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
+    ).div(new web3.utils.BN("10000")).toString());
+    afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
+    assert.equal(tx.logs[1].args._amountReceived.toString(), afterRewardBalance);
+
+    try {
+        tx = await hatVaults.swapBurnSend(0, accounts[1], {from: accounts[1] });
+        assert(false, 'can claim only once, nothing to redeem or burn');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+
+    try {
+      tx = await hatVaults.swapBurnSend(0, accounts[2], {from: accounts[1] });
+      assert(false, 'can claim only once, nothing to redeem or burn');
+    } catch (ex) {
+      assertVMException(ex);
+    }
   });
 
   it("claim", async () => {
