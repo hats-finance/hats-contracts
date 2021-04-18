@@ -302,7 +302,7 @@ contract  HATVaults is HATMaster {
         uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards);
         require(amount > 0, "amount is zero");
         swapAndBurns[address(token)] = 0;
-        hackersHatRewards[msg.sender][address(token)] = 0;
+        hackersHatRewards[_beneficiary][address(token)] = 0;
         require(token.approve(address(uniSwapRouter), amount), "token approve failed");
         address[] memory path = new address[](2);
         path[0] = address(token);
