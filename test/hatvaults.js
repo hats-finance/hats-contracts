@@ -71,6 +71,24 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
         }
+
+        //set other pool with different committee
+        let rewardsLevels=[];
+        let rewardsSplit=[0,0,0,0];
+        await hatVaults.addPool(100,hatToken.address,true,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
+        assert.equal(await hatVaults.committees(1,accounts[1]), true);
+        assert.equal(await hatVaults.committees(1,accounts[2]), true);
+        //committe check in
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true],{from:accounts[1]});
+        try {
+             await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
+            assert(false, 'commitee already checked in');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+        await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true],{from:accounts[2]});
+
     });
 
     it("custom rewardsSplit and rewardsLevels", async () => {
@@ -101,6 +119,12 @@ contract('HatVaults',  accounts =>  {
       try {
           await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000]);
           assert(false, "reward level can't be more than 10000");
+      } catch (ex) {
+          assertVMException(ex);
+      }
+      try {
+          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 10000],{from:accounts[2]});
+          assert(false, "only committee");
       } catch (ex) {
           assertVMException(ex);
       }
@@ -335,6 +359,12 @@ contract('HatVaults',  accounts =>  {
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
+    try {
+          await hatVaults.approveClaim(0,accounts[2],4,{from:accounts[2]});
+          assert(false, 'only Committee');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     var tx = await hatVaults.approveClaim(0,accounts[2],4);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
@@ -469,6 +499,12 @@ contract('HatVaults',  accounts =>  {
 
   it("setPool", async () => {
     await setup(accounts);
+    try {
+        await hatVaults.setPool(1, 200, true, true, '_descriptionHash');
+        assert(false, 'no pool exist');
+      } catch (ex) {
+        assertVMException(ex);
+    }
     await hatVaults.setPool(0, 200, true, true, '_descriptionHash');
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
@@ -566,7 +602,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[1].args._tokenLock, '0x0000000000000000000000000000000000000000');
 
     tx = await hatVaults.swapBurnSend(0, accounts[2], {from: accounts[1] });
-    
+
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
     assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
