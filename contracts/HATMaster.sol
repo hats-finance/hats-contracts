@@ -131,11 +131,7 @@ contract HATMaster {
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-<<<<<<< HEAD
         require(user.amount >= _amount, "withdraw: not enough user balance");
-=======
-        require(user.amount >= _amount, "withdraw: not enough user balance");
->>>>>>> Update contracts/HATMaster.sol
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
