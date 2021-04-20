@@ -365,6 +365,21 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
       }
+      try {
+            await hatVaults.pauseApproval(0,true,{from:accounts[2]});
+            assert(false, 'only gov');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+    await hatVaults.pauseApproval(0,true);
+    try {
+          await hatVaults.approveClaim(0,accounts[2],4);
+          assert(false, 'pool is paused');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    await hatVaults.pauseApproval(0,false);
+
     var tx = await hatVaults.approveClaim(0,accounts[2],4);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});

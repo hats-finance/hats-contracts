@@ -83,7 +83,7 @@ contract  HATVaults is HATMaster {
                     uint256 _hackerHatReward,
                     address _tokenLock);
 
-    event PausePool(uint256 indexed _pid, bool indexed _pause);
+    event PauseApproval(uint256 indexed _pid, bool indexed _pause);
 
 
     IUniswapV2Router01 public immutable uniSwapRouter;
@@ -105,7 +105,7 @@ contract  HATVaults is HATMaster {
 
     function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
         PoolReward storage poolReward = poolsRewards[_poolId];
-        require(!poolReward.paused, "pool is paused");
+        require(!poolReward.approvalPaused, "pool approval is paused");
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
         poolReward.factor = claimRewards.factor;
@@ -228,9 +228,9 @@ contract  HATVaults is HATMaster {
         emit SetCommittee(_pid, _committee, _status);
     }
 
-    function pausePool(uint256 _pid, bool _pause) external onlyGovernance {
-        poolsRewards[_pid].paused = _pause;
-        emit PausePool(_pid, _pause);
+    function pauseApproval(uint256 _pid, bool _pause) external onlyGovernance {
+        poolsRewards[_pid].approvalPaused = _pause;
+        emit PauseApproval(_pid, _pause);
     }
 
     function addPool(uint256 _allocPoint,
@@ -273,7 +273,7 @@ contract  HATVaults is HATMaster {
             committeeCheckIn: false,
             vestingDuration: _rewardVestingDuration,
             vestingPeriods: _rewardVestingPeriods,
-            paused: false
+            approvalPaused: false
         });
 
         string memory name = ERC20(_lpToken).name();
