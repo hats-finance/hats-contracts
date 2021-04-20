@@ -37,6 +37,7 @@ contract HATMaster {
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
+        bool paused;
     }
 
     HATToken public HAT;
