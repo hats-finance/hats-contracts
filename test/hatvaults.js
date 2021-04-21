@@ -75,12 +75,25 @@ contract('HatVaults',  accounts =>  {
         //set other pool with different committee
         let rewardsLevels=[];
         let rewardsSplit=[0,0,0,0];
-        await hatVaults.addPool(100,hatToken.address,true,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+        var stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+        await hatVaults.addPool(100,stakingToken2.address,true,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
         await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
         assert.equal(await hatVaults.committees(1,accounts[1]), true);
         assert.equal(await hatVaults.committees(1,accounts[2]), true);
         //committe check in
+        var staker = accounts[1];
+        await stakingToken2.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
+        await stakingToken2.mint(staker,web3.utils.toWei("1"));
+        try {
+            await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+            assert(false, 'cannot deposit before committee check in');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
         await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true],{from:accounts[1]});
+        await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+
         try {
              await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
             assert(false, 'commitee already checked in');
@@ -192,6 +205,11 @@ contract('HatVaults',  accounts =>  {
         let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
         await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
         //staker  get stake back
+        assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+        assert.equal((await hatToken.balanceOf(staker)).toString(),
+                      expectedReward.toString());
+        //withdraw with 0
+        await hatVaults.withdraw(0,0,{from:staker});
         assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
         assert.equal((await hatToken.balanceOf(staker)).toString(),
                       expectedReward.toString());
