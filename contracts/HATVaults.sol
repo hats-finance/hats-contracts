@@ -83,6 +83,9 @@ contract  HATVaults is HATMaster {
                     uint256 _hackerHatReward,
                     address _tokenLock);
 
+    event PauseApproval(uint256 indexed _pid, bool indexed _pause);
+
+
     IUniswapV2Router01 public immutable uniSwapRouter;
 
     /* ========== CONSTRUCTOR ========== */
@@ -101,9 +104,10 @@ contract  HATVaults is HATMaster {
     }
 
     function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
+        PoolReward storage poolReward = poolsRewards[_poolId];
+        require(!poolReward.approvalPaused, "pool approval is paused");
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
-        PoolReward storage poolReward = poolsRewards[_poolId];
         poolReward.factor = claimRewards.factor;
 
         //hacker get its reward to a vesting contract
@@ -153,7 +157,7 @@ contract  HATVaults is HATMaster {
     }
 
     function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
-        require(_duration < 365 days, "vesting duration is too long");
+        require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
         poolsRewards[_pid].vestingDuration = _duration;
@@ -162,7 +166,7 @@ contract  HATVaults is HATMaster {
     }
 
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
-        require(_duration < 365 days, "vesting duration is too long");
+        require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
         hatVestingDuration = _duration;
@@ -224,6 +228,11 @@ contract  HATVaults is HATMaster {
         emit SetCommittee(_pid, _committee, _status);
     }
 
+    function pauseApproval(uint256 _pid, bool _pause) external onlyGovernance {
+        poolsRewards[_pid].approvalPaused = _pause;
+        emit PauseApproval(_pid, _pause);
+    }
+
     function addPool(uint256 _allocPoint,
                     address _lpToken,
                     bool _withUpdate,
@@ -235,7 +244,7 @@ contract  HATVaults is HATMaster {
                     uint256 _rewardVestingPeriods)
     external
     onlyGovernance {
-        require(_rewardVestingDuration < 365 days, "vesting duration is too long");
+        require(_rewardVestingDuration < 120 days, "vesting duration is too long");
         require(_rewardVestingPeriods > 0, "vesting periods cannot be zero");
         require(_rewardVestingDuration >= _rewardVestingPeriods, "vesting duration smaller than periods");
         add(_allocPoint, IERC20(_lpToken), _withUpdate);
@@ -263,7 +272,8 @@ contract  HATVaults is HATMaster {
             factor: 1e18,
             committeeCheckIn: false,
             vestingDuration: _rewardVestingDuration,
-            vestingPeriods: _rewardVestingPeriods
+            vestingPeriods: _rewardVestingPeriods,
+            approvalPaused: false
         });
 
         string memory name = ERC20(_lpToken).name();

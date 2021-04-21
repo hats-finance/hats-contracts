@@ -23,6 +23,7 @@ contract HATMaster {
         uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
+        uint256 totalUsersAmount;
     }
 
     // Info of each pool.
@@ -37,6 +38,7 @@ contract HATMaster {
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
+        bool approvalPaused;
     }
 
     HATToken public HAT;
@@ -62,7 +64,7 @@ contract HATMaster {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount);
+    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
 
     constructor(
         HATToken _HAT,
@@ -93,8 +95,8 @@ contract HATMaster {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        if (lpSupply == 0) {
+  
+        if (pool.totalUsersAmount == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
@@ -104,7 +106,7 @@ contract HATMaster {
             HAT.mint(address(this), reward);
         }
 
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(lpSupply));
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         pool.lastRewardBlock = block.number;
     }
 
@@ -122,7 +124,9 @@ contract HATMaster {
         }
         if (_amount > 0) {
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            user.amount = user.amount.add(_amount.mul(1e18).div(poolsRewards[_pid].factor));
+            uint256 factoredAmount = _amount.mul(1e18).div(poolsRewards[_pid].factor);
+            user.amount = user.amount.add(factoredAmount);
+            pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
@@ -141,6 +145,7 @@ contract HATMaster {
         if (_amount > 0) {
             factoredAmount = factoredAmount.mul(poolsRewards[_pid].factor).div(1e18);
             user.amount = user.amount.sub(_amount);
+            pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), factoredAmount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -156,6 +161,7 @@ contract HATMaster {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 factoredBalance = user.amount.mul(poolsRewards[_pid].factor).div(1e18);
+        pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
         pool.lpToken.safeTransfer(address(msg.sender), factoredBalance);
@@ -208,10 +214,9 @@ contract HATMaster {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        if (block.number > pool.lastRewardBlock && lpSupply > 0) {
+        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
             uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(lpSupply));
+            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         }
         return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
     }
@@ -238,7 +243,8 @@ contract HATMaster {
             lpToken: _lpToken,
             allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
-            rewardPerShare: 0
+            rewardPerShare: 0,
+            totalUsersAmount: 0
         }));
     }
 
@@ -255,10 +261,10 @@ contract HATMaster {
         uint256 bal = HAT.balanceOf(address(this));
         if (_amount > bal) {
             HAT.transfer(_to, bal);
-            emit SendReward(_to, _pid, bal);
+            emit SendReward(_to, _pid, bal, _amount);
         } else {
             HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount);
+            emit SendReward(_to, _pid, _amount, _amount);
         }
     }
 }
