@@ -146,7 +146,6 @@ contract HATMaster {
         if (pending > 0) {
             safeTransferReward(msg.sender, pending, _pid);
         }
-        //uint256 factoredAmount = _amount;
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
