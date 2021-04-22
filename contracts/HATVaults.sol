@@ -145,6 +145,8 @@ contract  HATVaults is HATMaster {
                         claimRewards.swapAndBurn,
                         claimRewards.hackerHatReward,
                         tokenLock);
+        require(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0,
+        "total supply cannot be zero");
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
