@@ -33,7 +33,6 @@ contract HATMaster {
         uint256 approverRewardSplit;
         uint256 swapAndBurnSplit;
         uint256 hackerHatRewardSplit;
-        uint256 factor;
         uint256[]  rewardsLevels;
         bool committeeCheckIn;
         uint256 vestingDuration;
@@ -125,12 +124,11 @@ contract HATMaster {
         if (_amount > 0) {
             uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-          //  user.amount += totalUserAmount * incomingTokens/totalTokensBeforeIncoming
             uint256 factoredAmount = _amount;
             if (pool.totalUsersAmount > 0) {
                 factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
             }
-            user.amount = user.amount.add(_amount);
+            user.amount = user.amount.add(factoredAmount);
             pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -150,8 +148,6 @@ contract HATMaster {
         }
         //uint256 factoredAmount = _amount;
         if (_amount > 0) {
-            //factoredAmount = factoredAmount.mul(poolsRewards[_pid].factor).div(1e18);
-            //factoredAmount = user.amount.mul(_amount).div(pool.totalUsersAmount);
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
@@ -169,7 +165,10 @@ contract HATMaster {
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 factoredBalance = user.amount.mul(poolsRewards[_pid].factor).div(1e18);
+        require(user.amount > 0, "user.amount = 0");
+
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
+        uint256 factoredBalance = user.amount.mul(lpSupply).div(pool.totalUsersAmount);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
@@ -237,10 +236,8 @@ contract HATMaster {
     function getStakedAmount(uint _pid, address _user) public view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
         return  user.amount;
-        // uint256 lpSupply =
-        // poolInfo[_pid].lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        // return user.amount.mul(lpSupply).div(poolInfo[_pid].totalUsersAmount);
     }
+
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");

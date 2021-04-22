@@ -32,7 +32,6 @@ contract  HATVaults is HATMaster {
         uint256 approverReward;
         uint256 swapAndBurn;
         uint256 hackerHatReward;
-        uint256 factor;
     }
 
     modifier onlyCommittee(uint256 _pid) {
@@ -108,8 +107,6 @@ contract  HATVaults is HATMaster {
         require(!poolReward.approvalPaused, "pool approval is paused");
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
-        poolReward.factor = claimRewards.factor;
-
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
@@ -269,7 +266,6 @@ contract  HATVaults is HATMaster {
             approverRewardSplit :rewardsSplit[1],
             swapAndBurnSplit: rewardsSplit[2],
             hackerHatRewardSplit: rewardsSplit[3],
-            factor: 1e18,
             committeeCheckIn: false,
             vestingDuration: _rewardVestingDuration,
             vestingPeriods: _rewardVestingPeriods,
@@ -384,13 +380,5 @@ contract  HATVaults is HATMaster {
         //hackerHatReward
         claimRewards.hackerHatReward =
         claimRewardAmount.mul(poolsRewards[_poolId].hackerHatRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
-
-        uint256 totalSupplyRemain = totalSupply
-        .sub(claimRewards.hackerReward
-        .add(claimRewards.approverReward)
-        .add(claimRewards.swapAndBurn)
-        .add(claimRewards.hackerHatReward));
-        //factor
-        claimRewards.factor = totalSupplyRemain.mul(poolsRewards[_poolId].factor).div(totalSupply);
     }
 }
