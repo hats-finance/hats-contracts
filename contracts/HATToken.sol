@@ -166,6 +166,50 @@ contract HATToken {
     }
 
     /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint addedValue) public virtual returns (bool) {
+        require(spender != address(0), "HAT: increaseAllowance to the zero address");
+        uint96 valueToAdd = safe96(addedValue, "HAT::increaseAllowance: addedValue exceeds 96 bits");
+        allowances[msg.sender][spender] =
+        add96(allowances[msg.sender][spender], valueToAdd, "HAT::increaseAllowance: overflows");
+        emit Approval(msg.sender, spender, allowances[msg.sender][spender]);
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint subtractedValue) public virtual returns (bool) {
+        require(spender != address(0), "HAT: decreaseAllowance to the zero address");
+        uint96 valueTosubtract = safe96(subtractedValue, "HAT::decreaseAllowance: subtractedValue exceeds 96 bits");
+        allowances[msg.sender][spender] = sub96(allowances[msg.sender][spender], valueTosubtract,
+        "HAT::decreaseAllowance: spender allowance is less than subtractedValue");
+        emit Approval(msg.sender, spender, allowances[msg.sender][spender]);
+        return true;
+    }
+
+    /**
      * @notice Triggers an approval from owner to spends
      * @param owner The address to approve from
      * @param spender The address to be approved
