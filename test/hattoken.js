@@ -369,6 +369,44 @@ contract('HATToken', accounts => {
         });
     });
 
+    it("increase/decrease allowance", async () => {
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(accounts[1], web3.utils.toWei("100"));
+        let value = web3.utils.toWei("10");
+        try {
+            await token.increaseAllowance(utils.NULL_ADDRESS, value, { from: accounts[1] });
+            assert(false, 'spender cannot be null');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+        await token.increaseAllowance(accounts[2], value, { from: accounts[1] });
+        assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), value.toString());
+        await token.increaseAllowance(accounts[2], value, { from: accounts[1] });
+        assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), web3.utils.toWei("20"));
+
+        try {
+          await token.decreaseAllowance(utils.NULL_ADDRESS, value, { from: accounts[1] });
+            assert(false, 'spender cannot be null');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        await token.decreaseAllowance(accounts[2], value, { from: accounts[1] });
+        assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), value.toString());
+        try {
+          await token.decreaseAllowance(accounts[2], web3.utils.toWei("20"), { from: accounts[1] });
+            assert(false, 'cannot decrease more than allowence');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+
+
+
+
+    });
+
     it("approve", async () => {
         const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
@@ -378,7 +416,7 @@ contract('HATToken', accounts => {
         await token.approve(accounts[2], value, { from: accounts[1] });
 
         assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), value.toString());
-        
+
         let recipientBalance = (await token.balanceOf(accounts[3])).toString();
         assert.equal(recipientBalance, '0');
 
@@ -436,7 +474,7 @@ contract('HATToken', accounts => {
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
-        
+
 
         let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
         let chainId = await web3.eth.net.getId();
@@ -444,7 +482,7 @@ contract('HATToken', accounts => {
         let nonce = 0;
         let deadline = currentBlockTimestamp + (7*24*3600);
 
-        
+
 
         const data = buildDataPermit(
             chainId,
@@ -461,7 +499,7 @@ contract('HATToken', accounts => {
 
         assert.equal((await token.nonces(owner)).toString(), '1');
         assert.equal((await token.allowance(owner, accounts[2])).toString(), value.toString());
-        
+
         let recipientBalance = (await token.balanceOf(accounts[3])).toString();
         assert.equal(recipientBalance, '0');
 
