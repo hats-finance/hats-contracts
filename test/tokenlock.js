@@ -31,8 +31,8 @@ const setup = async function (
                                          delegate
                                        );
 
-  assert.equal(tx.logs[2].event,"TokenLockCreated");
-  let tokenLockAddress = tx.logs[2].args.contractAddress;
+  assert.equal(tx.logs[1].event,"TokenLockCreated");
+  let tokenLockAddress = tx.logs[1].args.contractAddress;
   tokenLock = await HATTokenLock.at(tokenLockAddress);
   await stakingToken.mint(tokenLockAddress,web3.utils.toWei("1"));
 

@@ -4,7 +4,7 @@ import "./interfaces/IUniswapV2Router01.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
-import "./timelock/ITokenLockFactory.sol";
+import "./tokenlock/ITokenLockFactory.sol";
 
 
 contract  HATVaults is HATMaster {
@@ -16,15 +16,18 @@ contract  HATVaults is HATMaster {
     mapping(address => uint256) public swapAndBurns;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
-    address public governance;
+    address public immutable governance;
     uint256[4] public defaultRewardsSplit = [8500, 500, 500, 400];
     uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     address public projectsRegistery;
     string public vaultName;
-    ITokenLockFactory public tokenLockFactory;
+    ITokenLockFactory public immutable tokenLockFactory;
     uint256 public hatVestingDuration = 90 days;
     uint256 public hatVestingPeriods = 90;
+    uint256 public constant WITHDRAW_PERIOD =  3000;
+    uint256 public constant WITHDRAW_DISABLE_PERIOD =  240;
+    IUniswapV2Router01 public immutable uniSwapRouter;
 
     // Info of each pool.
     struct ClaimReward {
@@ -32,6 +35,13 @@ contract  HATVaults is HATMaster {
         uint256 approverReward;
         uint256 swapAndBurn;
         uint256 hackerHatReward;
+    }
+
+    modifier onlyWithdrawPeriod() {
+        //disable withdraw for 240 blocks each 3000 blocks.
+        //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
+        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
+        _;
     }
 
     modifier onlyCommittee(uint256 _pid) {
@@ -83,9 +93,6 @@ contract  HATVaults is HATMaster {
                     address _tokenLock);
 
     event PauseApproval(uint256 indexed _pid, bool indexed _pause);
-
-
-    IUniswapV2Router01 public immutable uniSwapRouter;
 
     /* ========== CONSTRUCTOR ========== */
     constructor(
@@ -304,6 +311,9 @@ contract  HATVaults is HATMaster {
     // send to beneficiary its hats rewards .
     // burn the rest of HAT.
     function swapBurnSend(uint256 _pid, address _beneficiary) external {
+        //only committee or governance can call it.
+        require(committees[_pid][msg.sender] || msg.sender == governance, "only committee or governance");
+
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
@@ -348,6 +358,14 @@ contract  HATVaults is HATMaster {
             HAT.transfer(tokenLock, hatsRecieved.sub(burnetHats));
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hatsRecieved.sub(burnetHats), tokenLock);
+    }
+
+    function withdraw(uint256 _pid, uint256 _amount) external onlyWithdrawPeriod {
+        _withdraw(_pid, _amount);
+    }
+
+    function emergencyWithdraw(uint256 _pid) external onlyWithdrawPeriod {
+        _emergencyWithdraw(_pid);
     }
 
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {

@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "./MinimalProxyFactory.sol";
+import "./CloneFactory.sol";
 import "./ITokenLock.sol";
 import "./ITokenLockFactory.sol";
+import "openzeppelin-solidity/contracts/utils/Address.sol";
+import "openzeppelin-solidity/contracts/access/Ownable.sol";
 
 
 /**
@@ -14,7 +16,7 @@ import "./ITokenLockFactory.sol";
  * This contract receives funds to make the process of creating TokenLock contracts
  * easier by distributing them the initial tokens to be managed.
  */
-contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
+contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
     // -- State --
 
     address public masterCopy;
@@ -127,7 +129,10 @@ contract TokenLockFactory is MinimalProxyFactory, ITokenLockFactory {
         bool _canDelegate
     ) private returns (address contractAddress) {
 
-        contractAddress = _deployProxy2(keccak256(_initializer), masterCopy, _initializer);
+        contractAddress = createClone(masterCopy);
+
+        Address.functionCall(contractAddress, _initializer);
+
         emit TokenLockCreated(
             contractAddress,
             keccak256(_initializer),

@@ -40,14 +40,13 @@ contract HATMaster {
         bool approvalPaused;
     }
 
-    HATToken public HAT;
+    HATToken public immutable HAT;
 
-    uint256 public REWARD_PER_BLOCK;
+    uint256 public immutable REWARD_PER_BLOCK;
     uint256[] public REWARD_MULTIPLIER = [688, 413, 310, 232, 209, 188, 169, 152, 137, 123, 111, 100];
     uint256[] public HALVING_AT_BLOCK;
-    uint256 public FINISH_BONUS_AT_BLOCK;
 
-    uint256 public START_BLOCK;
+    uint256 public immutable START_BLOCK;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -78,7 +77,6 @@ contract HATMaster {
             uint256 halvingAtBlock = _halvingAfterBlock.mul(i + 1).add(_startBlock);
             HALVING_AT_BLOCK.push(halvingAtBlock);
         }
-        FINISH_BONUS_AT_BLOCK = _halvingAfterBlock.mul(REWARD_MULTIPLIER.length - 1).add(_startBlock);
         HALVING_AT_BLOCK.push(type(uint256).max);
     }
 
@@ -135,45 +133,8 @@ contract HATMaster {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        require(user.amount >= _amount, "withdraw: not enough user balance");
-
-        updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
-        if (pending > 0) {
-            safeTransferReward(msg.sender, pending, _pid);
-        }
-        if (_amount > 0) {
-            user.amount = user.amount.sub(_amount);
-            pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
-            pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
-
-        }
-        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
-        emit Withdraw(msg.sender, _pid, _amount);
-    }
-
     function claimReward(uint256 _pid) public {
         deposit(_pid, 0);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount > 0, "user.amount = 0");
-
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        uint256 factoredBalance = user.amount.mul(lpSupply).div(pool.totalUsersAmount);
-        pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
-        user.amount = 0;
-        user.rewardDebt = 0;
-        pool.lpToken.safeTransfer(address(msg.sender), factoredBalance);
-        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
-
     }
 
     // GET INFO for UI
@@ -235,6 +196,42 @@ contract HATMaster {
     function getStakedAmount(uint _pid, address _user) public view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
         return  user.amount;
+    }
+
+    function _withdraw(uint256 _pid, uint256 _amount) internal {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
+        require(user.amount >= _amount, "withdraw: not enough user balance");
+
+        updatePool(_pid);
+        uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+        if (pending > 0) {
+            safeTransferReward(msg.sender, pending, _pid);
+        }
+        if (_amount > 0) {
+            user.amount = user.amount.sub(_amount);
+            pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
+            pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
+
+        }
+        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
+        emit Withdraw(msg.sender, _pid, _amount);
+    }
+
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    function _emergencyWithdraw(uint256 _pid) internal {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.amount > 0, "user.amount = 0");
+
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
+        uint256 factoredBalance = user.amount.mul(lpSupply).div(pool.totalUsersAmount);
+        pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
+        user.amount = 0;
+        user.rewardDebt = 0;
+        pool.lpToken.safeTransfer(address(msg.sender), factoredBalance);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
     // -------- For manage pool ---------
