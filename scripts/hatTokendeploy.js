@@ -1,4 +1,4 @@
-
+const PRIVATE = require("../.private.json");
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -16,8 +16,8 @@ async function main() {
     await deployer.getAddress()
   );
 
-  const governance  = await deployer.getAddress();
-  const timelockblocks =  2;
+  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  const timelockblocks =  12000;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 

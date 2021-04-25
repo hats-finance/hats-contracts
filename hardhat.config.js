@@ -37,6 +37,10 @@ module.exports = {
      url: `https://rinkeby.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
      accounts: [PRIVATE["PRIVATE_KEY"]]
   },
+  mainnet: {
+     url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+     accounts: [PRIVATE["PRIVATE_KEY"]]
+  },
   hardhat: {
   accounts: [
       {
@@ -143,7 +147,7 @@ module.exports = {
   }
   },
   solidity: {
-  version: "0.8.3",
+  version: "0.8.4",
   settings: {
       optimizer: {
         enabled: true,
