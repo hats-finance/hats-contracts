@@ -61,26 +61,31 @@ contract HATToken {
     mapping (address => uint) public nonces;
 
     /// @notice The EIP-712 typehash for the contract's domain
-    bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
+    bytes32 public constant DOMAIN_TYPEHASH =
+    keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
     /// @notice The EIP-712 typehash for the delegation struct used by the contract
-    bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+    bytes32 public constant DELEGATION_TYPEHASH =
+    keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
     /// @notice The EIP-712 typehash for the permit struct used by the contract
-    bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public constant PERMIT_TYPEHASH =
+    keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
+    /// @notice An event thats emitted when a new minter address is pending
+    event MinterPending(address indexed minter, uint256 seedAmount, uint256 atBlock);
     /// @notice An event thats emitted when the minter address is changed
-    event MinterChanged(address minter, address newMinter);
-
+    event MinterChanged(address indexed minter, uint256 seedAmount);
+    /// @notice An event thats emitted when a new governance address is pending
+    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 atBlock);
+    /// @notice An event thats emitted when a new governance address is set
+    event GovernanceChanged(address indexed oldGovernance, address indexed newGovernance);
     /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
-
     /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
-
     /// @notice The standard EIP-20 transfer event
     event Transfer(address indexed from, address indexed to, uint256 amount);
-
     /// @notice The standard EIP-20 approval event
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
@@ -97,6 +102,7 @@ contract HATToken {
         require(_governance != address(0), "HAT:!_governance");
         governancePending = _governance;
         setGovernancePendingAtBlock = block.number;
+        emit GovernancePending(governance, _governance, block.number);
     }
 
     function confirmGovernance() public {
@@ -104,6 +110,7 @@ contract HATToken {
         require(setGovernancePendingAtBlock > 0, "HAT:!governancePending");
         require(block.number - setGovernancePendingAtBlock > timeLockDelayInBlocksUnits,
         "HAT: cannot confirm governance at this time");
+        emit GovernanceChanged(governance, governancePending);
         governance = governancePending;
         setGovernancePendingAtBlock = 0;
     }
@@ -112,6 +119,7 @@ contract HATToken {
         require(msg.sender == governance, "HAT::!governance");
         pendingMinters[_minter].seedAmount = _cap;
         pendingMinters[_minter].setMinterPendingAtBlock = block.number;
+        emit MinterPending(_minter, _cap, block.number);
     }
 
     function confirmMinter(address _minter) public {
@@ -121,6 +129,7 @@ contract HATToken {
         "HATToken: cannot confirm at this time");
         minters[_minter] = pendingMinters[_minter].seedAmount;
         pendingMinters[_minter].setMinterPendingAtBlock = 0;
+        emit MinterChanged(_minter, pendingMinters[_minter].seedAmount);
     }
 
     function burn(uint256 _amount) public {
