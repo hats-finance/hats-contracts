@@ -47,7 +47,9 @@ module.exports = {
   },
   mainnet: {
      url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
-     accounts: [PRIVATE["PRIVATE_KEY"]]
+     accounts: [PRIVATE["PRIVATE_KEY"]],
+     gasPrice:40000000000,
+     gas: 2510000
   },
   hardhat: {
   accounts: [
