@@ -63,6 +63,7 @@ contract HATMaster {
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     constructor(
         HATToken _HAT,
@@ -80,11 +81,13 @@ contract HATMaster {
         HALVING_AT_BLOCK.push(type(uint256).max);
     }
 
-    function massUpdatePools() public {
-        uint256 length = poolInfo.length;
-        for (uint256 pid = 0; pid < length; ++pid) {
+    function massUpdatePools(uint256 _fromPid, uint256 _toPid) public {
+        require(_toPid <= poolInfo.length, "pool range is too big");
+        require(_fromPid <= _toPid, "invalid pool range");
+        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }
+        emit MassUpdatePools(_fromPid, _toPid);
     }
 
     function updatePool(uint256 _pid) public {
@@ -235,11 +238,9 @@ contract HATMaster {
     }
 
     // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) internal {
+    function add(uint256 _allocPoint, IERC20 _lpToken, uint256 _updateFromPid, uint256 _updateToPid) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
-        if (_withUpdate) {
-            massUpdatePools();
-        }
+        massUpdatePools(_updateFromPid, _updateToPid);
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolId1[address(_lpToken)] = poolInfo.length + 1;
@@ -252,10 +253,8 @@ contract HATMaster {
         }));
     }
 
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
-        if (_withUpdate) {
-            massUpdatePools();
-        }
+    function set(uint256 _pid, uint256 _allocPoint, uint256 _updateFromPid, uint256 _updateToPid) internal {
+        massUpdatePools(_updateFromPid, _updateToPid);
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint;
     }
