@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.3;
+pragma solidity 0.8.4;
 import "./interfaces/IUniswapV2Router01.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
-import "./timelock/ITokenLockFactory.sol";
+import "./tokenlock/ITokenLockFactory.sol";
 
 
 contract  HATVaults is HATMaster {
@@ -16,15 +16,18 @@ contract  HATVaults is HATMaster {
     mapping(address => uint256) public swapAndBurns;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
-    address public governance;
+    address public immutable governance;
     uint256[4] public defaultRewardsSplit = [8500, 500, 500, 400];
     uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     address public projectsRegistery;
     string public vaultName;
-    ITokenLockFactory public tokenLockFactory;
+    ITokenLockFactory public immutable tokenLockFactory;
     uint256 public hatVestingDuration = 90 days;
     uint256 public hatVestingPeriods = 90;
+    uint256 public constant WITHDRAW_PERIOD =  3000;
+    uint256 public constant WITHDRAW_DISABLE_PERIOD =  240;
+    IUniswapV2Router01 public immutable uniSwapRouter;
 
     // Info of each pool.
     struct ClaimReward {
@@ -32,7 +35,13 @@ contract  HATVaults is HATMaster {
         uint256 approverReward;
         uint256 swapAndBurn;
         uint256 hackerHatReward;
-        uint256 factor;
+    }
+
+    modifier onlyWithdrawPeriod() {
+        //disable withdraw for 240 blocks each 3000 blocks.
+        //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
+        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
+        _;
     }
 
     modifier onlyCommittee(uint256 _pid) {
@@ -85,9 +94,6 @@ contract  HATVaults is HATMaster {
 
     event PauseApproval(uint256 indexed _pid, bool indexed _pause);
 
-
-    IUniswapV2Router01 public immutable uniSwapRouter;
-
     /* ========== CONSTRUCTOR ========== */
     constructor(
         address _rewardsToken,//hat
@@ -108,8 +114,6 @@ contract  HATVaults is HATMaster {
         require(!poolReward.approvalPaused, "pool approval is paused");
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
-        poolReward.factor = claimRewards.factor;
-
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
@@ -148,6 +152,8 @@ contract  HATVaults is HATMaster {
                         claimRewards.swapAndBurn,
                         claimRewards.hackerHatReward,
                         tokenLock);
+        require(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0,
+        "total supply cannot be zero");
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -269,7 +275,6 @@ contract  HATVaults is HATMaster {
             approverRewardSplit :rewardsSplit[1],
             swapAndBurnSplit: rewardsSplit[2],
             hackerHatRewardSplit: rewardsSplit[3],
-            factor: 1e18,
             committeeCheckIn: false,
             vestingDuration: _rewardVestingDuration,
             vestingPeriods: _rewardVestingPeriods,
@@ -306,6 +311,9 @@ contract  HATVaults is HATMaster {
     // send to beneficiary its hats rewards .
     // burn the rest of HAT.
     function swapBurnSend(uint256 _pid, address _beneficiary) external {
+        //only committee or governance can call it.
+        require(committees[_pid][msg.sender] || msg.sender == governance, "only committee or governance");
+
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
@@ -352,6 +360,14 @@ contract  HATVaults is HATMaster {
         emit SwapAndSend(_pid, _beneficiary, amount, hatsRecieved.sub(burnetHats), tokenLock);
     }
 
+    function withdraw(uint256 _pid, uint256 _amount) external onlyWithdrawPeriod {
+        _withdraw(_pid, _amount);
+    }
+
+    function emergencyWithdraw(uint256 _pid) external onlyWithdrawPeriod {
+        _emergencyWithdraw(_pid);
+    }
+
     function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
         return poolsRewards[_poolId].rewardsLevels;
     }
@@ -384,13 +400,5 @@ contract  HATVaults is HATMaster {
         //hackerHatReward
         claimRewards.hackerHatReward =
         claimRewardAmount.mul(poolsRewards[_poolId].hackerHatRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);
-
-        uint256 totalSupplyRemain = totalSupply
-        .sub(claimRewards.hackerReward
-        .add(claimRewards.approverReward)
-        .add(claimRewards.swapAndBurn)
-        .add(claimRewards.hackerHatReward));
-        //factor
-        claimRewards.factor = totalSupplyRemain.mul(poolsRewards[_poolId].factor).div(totalSupply);
     }
 }

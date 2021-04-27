@@ -1,4 +1,4 @@
-const PRIVATE = require("../.private.json");
+
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -16,22 +16,28 @@ async function main() {
     await deployer.getAddress()
   );
 
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
-  const timelockblocks =  12000;
-
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const HATToken = await ethers.getContractFactory("HATToken");
-  const hatToken = await HATToken.deploy(governance, timelockblocks);
-  await hatToken.deployed();
+  const HATTokenLock = await ethers.getContractFactory("HATTokenLock");
+  const hatTokenLock = await HATTokenLock.deploy();
+  await hatTokenLock.deployed();
 
-  console.log("hatToken address:", hatToken.address);
+  console.log("hatTokenLock address:", hatTokenLock.address);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatToken);
+  saveFrontendFiles(hatTokenLock,"HATTokenLock");
+
+  const TokenLockFactory = await ethers.getContractFactory("TokenLockFactory");
+  const tokenLockFactory = await TokenLockFactory.deploy(hatTokenLock.address);
+  await tokenLockFactory.deployed();
+
+  console.log("tokenLockFactory address:", tokenLockFactory.address);
+
+  // We also save the contract's artifacts and address in the frontend directory
+  saveFrontendFiles(tokenLockFactory,"TokenLockFactory");
 }
 
-function saveFrontendFiles(hatToken) {
+function saveFrontendFiles(contract,name) {
   const fs = require("fs");
   const contractsDir = __dirname + "/../frontend/src/contracts";
 
@@ -41,14 +47,14 @@ function saveFrontendFiles(hatToken) {
 
   fs.writeFileSync(
     contractsDir + "/contract-address.json",
-    JSON.stringify({ HATToken: hatToken.address }, undefined, 2)
+    JSON.stringify({ name: contract.address }, undefined, 2)
   );
 
-  const HATTokenArtifact = artifacts.readArtifactSync("HATToken");
+  const ContractArtifact = artifacts.readArtifactSync(name);
 
   fs.writeFileSync(
-    contractsDir + "/HATToken.json",
-    JSON.stringify(HATTokenArtifact, null, 2)
+    contractsDir + "/"+name+".json",
+    JSON.stringify(ContractArtifact, null, 2)
   );
 }
 
