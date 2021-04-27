@@ -239,9 +239,25 @@ contract  HATVaults is HATMaster {
         emit PauseApproval(_pid, _pause);
     }
 
+    /**
+   * @dev addPool - onlyGovernance
+   * @param _allocPoint the pool allocation point
+   * @param _lpToken pool token
+   * @param _updateFromPid update pool from pid
+   * @param _updateToPid update pool up to pid
+   * @param _committee pools committee addresses array
+   * @param _rewardsLevels pool reward levels(sevirities)
+     each level is a number between 0 and 10000.
+   * @param _rewardsSplit pool reward split.
+     each entry is a number between 0 and 10000.
+     total splits should be less than 10000
+   * @param _committee pools committee addresses array
+   * @param _descriptionHash the hash of the pool description.
+ */
     function addPool(uint256 _allocPoint,
                     address _lpToken,
-                    bool _withUpdate,
+                    uint256 _updateFromPid,
+                    uint256 _updateToPid,
                     address[] memory _committee,
                     uint256[] memory _rewardsLevels,
                     uint256[4] memory _rewardsSplit,
@@ -253,7 +269,7 @@ contract  HATVaults is HATMaster {
         require(_rewardVestingDuration < 120 days, "vesting duration is too long");
         require(_rewardVestingPeriods > 0, "vesting periods cannot be zero");
         require(_rewardVestingDuration >= _rewardVestingPeriods, "vesting duration smaller than periods");
-        add(_allocPoint, IERC20(_lpToken), _withUpdate);
+        add(_allocPoint, IERC20(_lpToken), _updateFromPid, _updateToPid);
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _committee.length; i++) {
             committees[poolId][_committee[i]] = true;
@@ -295,21 +311,32 @@ contract  HATVaults is HATMaster {
                     _rewardVestingPeriods);
     }
 
+    /**
+   * @dev setPool
+   * @param _pid the pool id
+   * @param _allocPoint the pool allocation point
+   * @param _updateFromPid update pool from pid
+   * @param _updateToPid update pool up to pid
+   * @param _registered does this pool is registered (default true)
+   * @param _descriptionHash the hash of the pool description.
+ */
     function setPool(uint256 _pid,
                     uint256 _allocPoint,
-                    bool _withUpdate,
+                    uint256 _updateFromPid,
+                    uint256 _updateToPid,
                     bool _registered,
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
-        set(_pid, _allocPoint, _withUpdate);
+        set(_pid, _allocPoint, _updateFromPid, _updateToPid);
         //set approver only if commite not checkin.
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
-    //swapBurnSend swap lptoken to HAT.
+    // swapBurnSend swap lptoken to HAT.
     // send to beneficiary its hats rewards .
     // burn the rest of HAT.
+    // only committee or governance are unauthorized to call this function.
     function swapBurnSend(uint256 _pid, address _beneficiary) external {
         //only committee or governance can call it.
         require(committees[_pid][msg.sender] || msg.sender == governance, "only committee or governance");

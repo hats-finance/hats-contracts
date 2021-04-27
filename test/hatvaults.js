@@ -37,7 +37,7 @@ const setup = async function (
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("175000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("175000"));
   await hatToken.mint(router.address, web3.utils.toWei("175000"));
-  await hatVaults.addPool(100,stakingToken.address,true,[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+  await hatVaults.addPool(100,stakingToken.address,0,await hatVaults.poolLength(),[accounts[0]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
   await hatVaults.setCommittee(0,[accounts[0]],[true]);
 };
 
@@ -76,7 +76,7 @@ contract('HatVaults',  accounts =>  {
         let rewardsLevels=[];
         let rewardsSplit=[0,0,0,0];
         var stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
-        await hatVaults.addPool(100,stakingToken2.address,true,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+        await hatVaults.addPool(100,stakingToken2.address,0,1,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
         await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
         assert.equal(await hatVaults.committees(1,accounts[1]), true);
         assert.equal(await hatVaults.committees(1,accounts[2]), true);
@@ -639,7 +639,13 @@ contract('HatVaults',  accounts =>  {
       for(var i =0;i<allBlocksOfFarm;i++) {
           await utils.increaseTime(1);
       }
-      await hatVaults.massUpdatePools();
+      try {
+            await hatVaults.massUpdatePools(0,2);
+            assert(false, 'massUpdatePools not in range');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+      await hatVaults.massUpdatePools(0,1);
       await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
 
       //staker  get stake back
@@ -688,12 +694,12 @@ contract('HatVaults',  accounts =>  {
   it("setPool", async () => {
     await setup(accounts);
     try {
-        await hatVaults.setPool(1, 200, true, true, '_descriptionHash');
+        await hatVaults.setPool(1, 200, 0,1, true, '_descriptionHash');
         assert(false, 'no pool exist');
       } catch (ex) {
         assertVMException(ex);
     }
-    await hatVaults.setPool(0, 200, true, true, '_descriptionHash');
+    await hatVaults.setPool(0, 200, 0, 1,true, '_descriptionHash');
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
