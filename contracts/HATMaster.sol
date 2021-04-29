@@ -300,7 +300,6 @@ contract HATMaster {
 
         poolId1[address(_lpToken)] = poolInfo.length + 1;
 
-
         poolInfo.push(PoolInfo({
             lpToken: _lpToken,
             allocPoint: _allocPoint,
@@ -309,7 +308,7 @@ contract HATMaster {
             totalUsersAmount: 0
         }));
 
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? 0 :
+        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
         if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
