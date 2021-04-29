@@ -29,6 +29,7 @@ contract HATMaster {
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
         uint256 totalUsersAmount;
+        uint256 lastProcessedTotalAllocPoint;
     }
 
     // Info of each pool.
@@ -89,11 +90,10 @@ contract HATMaster {
   /**
    * @dev massUpdatePools - Update reward vairables for all pools
    * Be careful of gas spending!
-   * This function can set a range up to 100 pools with 8437690 gas
    * @param _fromPid update pools range from this pool id
    * @param _toPid update pools range to this pool id
    */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) public {
+    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
         require(_toPid <= poolInfo.length, "pool range is too big");
         require(_fromPid <= _toPid, "invalid pool range");
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
@@ -120,6 +120,7 @@ contract HATMaster {
 
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         pool.lastRewardBlock = block.number;
+        //pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
     }
 
     // --------- For user ----------------
@@ -221,40 +222,35 @@ contract HATMaster {
 
     function getPoolRewardLoop(uint256 _pid) public view returns(uint256 reward) {
         uint256 globalPoolUpdatesLength = globalPoolUpdates.length;
+        uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
         uint256 from = poolInfo[_pid].lastRewardBlock;
-        uint256 index = 0;
+        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+
         for (index; index < globalPoolUpdatesLength; index++) {
             if (globalPoolUpdates[index].blockNumber > from) {
-              break;
+               break;
             }
         }
 
         if (index >= globalPoolUpdatesLength) {
             return getPoolReward(from,
             block.number,
-            poolInfo[_pid].allocPoint,
+            poolAllocPoint,
             globalPoolUpdates[globalPoolUpdatesLength-1].totalAllocPoint);
         }
 
-        uint256 to = globalPoolUpdates[index].blockNumber;
-
-        while (from < block.number) {
-
-            if (index+1 >= globalPoolUpdatesLength) {
-                return reward.add(getPoolReward(from,
-                block.number,
-                poolInfo[_pid].allocPoint,
-                globalPoolUpdates[globalPoolUpdatesLength-1].totalAllocPoint));
-            } else {
-                reward = reward.add(getPoolReward(from,
-                to,
-                poolInfo[_pid].allocPoint,
-                globalPoolUpdates[index].totalAllocPoint));
-                from = to;
-                index++;
-                to = globalPoolUpdates[index].blockNumber;
-            }
+        for (index; index < globalPoolUpdatesLength; index++) {
+            reward = reward.add(getPoolReward(from,
+            globalPoolUpdates[index].blockNumber,
+            poolAllocPoint,
+            globalPoolUpdates[index-1].totalAllocPoint));
+            from = globalPoolUpdates[index].blockNumber;
         }
+
+        return reward.add(getPoolReward(from,
+                block.number,
+                poolAllocPoint,
+                globalPoolUpdates[globalPoolUpdatesLength-1].totalAllocPoint));
     }
 
     function _withdraw(uint256 _pid, uint256 _amount) internal {
@@ -305,7 +301,8 @@ contract HATMaster {
             allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
             rewardPerShare: 0,
-            totalUsersAmount: 0
+            totalUsersAmount: 0,
+            lastProcessedTotalAllocPoint: 0
         }));
 
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
