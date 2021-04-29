@@ -120,7 +120,7 @@ contract HATMaster {
 
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         pool.lastRewardBlock = block.number;
-        //pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
+        pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
     }
 
     // --------- For user ----------------
