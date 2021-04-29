@@ -229,7 +229,7 @@ contract HATMaster {
               break;
             }
         }
-
+        
         if (index >= poolUpdatesLength) {
             return getPoolReward(from,
             block.number,
@@ -240,15 +240,18 @@ contract HATMaster {
         to = poolUpdates[_pid][index].blockNumber;
 
         while (from < block.number) {
-            reward = reward.add(getPoolReward(from,
-            to,
-            poolUpdates[_pid][index].allocPoint,
-            poolUpdates[_pid][index].totalAllocPoint));
-            from = to;
 
             if (index+1 >= poolUpdatesLength) {
-                to = block.number;
+                return reward.add(getPoolReward(from,
+                block.number,
+                poolUpdates[_pid][poolUpdatesLength-1].allocPoint,
+                poolUpdates[_pid][poolUpdatesLength-1].totalAllocPoint));
             } else {
+                reward = reward.add(getPoolReward(from,
+                to,
+                poolUpdates[_pid][index].allocPoint,
+                poolUpdates[_pid][index].totalAllocPoint));
+                from = to;
                 index++;
                 to = poolUpdates[_pid][index].blockNumber;
             }
