@@ -985,7 +985,7 @@ contract('HatVaults',  accounts =>  {
 
   });
 
-  it("massupdate gas test 18", async () => {
+  it("massupdate gas test 18 [ @skip-on-coverage ] ", async () => {
     await setup(accounts);
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
