@@ -17,6 +17,12 @@ contract HATMaster {
         uint256 rewardDebt; // Reward debt. See explanation below.
     }
 
+    struct PoolUpdate {
+        uint256 blockNumber;// update blocknumber
+        uint256 allocPoint; // allocPoint
+        uint256 totalAllocPoint; //totalAllocPoint
+    }
+
     // Info of each pool.
     struct PoolInfo {
         IERC20 lpToken;
@@ -50,6 +56,8 @@ contract HATMaster {
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
+    // Pool id to poolUpdates array
+    mapping(uint256 => PoolUpdate[]) public poolUpdates;
     mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
@@ -81,6 +89,13 @@ contract HATMaster {
         HALVING_AT_BLOCK.push(type(uint256).max);
     }
 
+  /**
+   * @dev massUpdatePools - Update reward vairables for all pools
+   * Be careful of gas spending!
+   * This function can set a range up to 100 pools with 8437690 gas
+   * @param _fromPid update pools range from this pool id
+   * @param _toPid update pools range to this pool id
+   */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) public {
         require(_toPid <= poolInfo.length, "pool range is too big");
         require(_fromPid <= _toPid, "invalid pool range");
@@ -100,7 +115,7 @@ contract HATMaster {
             pool.lastRewardBlock = block.number;
             return;
         }
-        uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
+        uint256 reward = getPoolRewardLoop(_pid);
         //the original BDPMaster was reverted if the reward is zero to to the cap check of at the BDP token.
         if (reward > 0) {
             HAT.mint(address(this), reward);
@@ -160,9 +175,12 @@ contract HATMaster {
         }
     }
 
-    function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint) public view returns (uint) {
+    function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
+    public
+    view
+    returns (uint) {
         uint256 multiplier = getMultiplier(_from, _to);
-        uint256 amount = (multiplier.mul(REWARD_PER_BLOCK).mul(_allocPoint).div(totalAllocPoint)).div(100);
+        uint256 amount = (multiplier.mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint)).div(100);
         uint256 amountCanMint = HAT.minters(address(this));
         return amountCanMint < amount ? amountCanMint : amount;
     }
@@ -171,8 +189,7 @@ contract HATMaster {
         uint256 multiplier = getMultiplier(block.number -1, block.number);
         if (pid1 == 0) {
             return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
-        }
-        else {
+        } else {
             return (multiplier
                 .mul(REWARD_PER_BLOCK)
                 .mul(poolInfo[pid1 - 1].allocPoint)
@@ -186,7 +203,7 @@ contract HATMaster {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
         if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
-            uint256 reward = getPoolReward(pool.lastRewardBlock, block.number, pool.allocPoint);
+            uint256 reward = getPoolRewardLoop(_pid);
             rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         }
         return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
@@ -199,6 +216,43 @@ contract HATMaster {
     function getStakedAmount(uint _pid, address _user) public view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
         return  user.amount;
+    }
+
+    function getPoolRewardLoop(uint256 _pid) public view returns(uint256 reward) {
+        uint256 poolUpdatesLength = poolUpdates[_pid].length;
+
+        uint256 from = poolInfo[_pid].lastRewardBlock;
+        uint256 index = 0;
+        uint256 to;
+        for (index; index < poolUpdatesLength; index++) {
+            if (poolUpdates[_pid][index].blockNumber > from) {
+              break;
+            }
+        }
+
+        if (index >= poolUpdatesLength) {
+            return getPoolReward(from,
+            block.number,
+            poolInfo[_pid].allocPoint,
+            totalAllocPoint);
+        }
+
+        to = poolUpdates[_pid][index].blockNumber;
+
+        while (from < block.number) {
+            reward = reward.add(getPoolReward(from,
+            to,
+            poolUpdates[_pid][index].allocPoint,
+            poolUpdates[_pid][index].totalAllocPoint));
+            from = to;
+
+            if (index+1 >= poolUpdatesLength) {
+                to = block.number;
+            } else {
+                index++;
+                to = poolUpdates[_pid][index].blockNumber;
+            }
+        }
     }
 
     function _withdraw(uint256 _pid, uint256 _amount) internal {
@@ -238,12 +292,14 @@ contract HATMaster {
     }
 
     // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken, uint256 _updateFromPid, uint256 _updateToPid) internal {
+    function add(uint256 _allocPoint, IERC20 _lpToken) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
-        massUpdatePools(_updateFromPid, _updateToPid);
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
+
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolId1[address(_lpToken)] = poolInfo.length + 1;
+
+
         poolInfo.push(PoolInfo({
             lpToken: _lpToken,
             allocPoint: _allocPoint,
@@ -251,12 +307,22 @@ contract HATMaster {
             rewardPerShare: 0,
             totalUsersAmount: 0
         }));
+
+        poolUpdates[poolInfo.length-1].push(PoolUpdate({
+            blockNumber: block.number,
+            allocPoint: _allocPoint,
+            totalAllocPoint: totalAllocPoint
+        }));
     }
 
-    function set(uint256 _pid, uint256 _allocPoint, uint256 _updateFromPid, uint256 _updateToPid) internal {
-        massUpdatePools(_updateFromPid, _updateToPid);
+    function set(uint256 _pid, uint256 _allocPoint) internal {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint;
+        poolUpdates[_pid].push(PoolUpdate({
+            blockNumber: block.number,
+            allocPoint: _allocPoint,
+            totalAllocPoint: totalAllocPoint
+        }));
     }
 
     // -----------------------------

@@ -243,8 +243,6 @@ contract  HATVaults is HATMaster {
    * @dev addPool - onlyGovernance
    * @param _allocPoint the pool allocation point
    * @param _lpToken pool token
-   * @param _updateFromPid update pool from pid
-   * @param _updateToPid update pool up to pid
    * @param _committee pools committee addresses array
    * @param _rewardsLevels pool reward levels(sevirities)
      each level is a number between 0 and 10000.
@@ -256,8 +254,6 @@ contract  HATVaults is HATMaster {
  */
     function addPool(uint256 _allocPoint,
                     address _lpToken,
-                    uint256 _updateFromPid,
-                    uint256 _updateToPid,
                     address[] memory _committee,
                     uint256[] memory _rewardsLevels,
                     uint256[4] memory _rewardsSplit,
@@ -269,7 +265,7 @@ contract  HATVaults is HATMaster {
         require(_rewardVestingDuration < 120 days, "vesting duration is too long");
         require(_rewardVestingPeriods > 0, "vesting periods cannot be zero");
         require(_rewardVestingDuration >= _rewardVestingPeriods, "vesting duration smaller than periods");
-        add(_allocPoint, IERC20(_lpToken), _updateFromPid, _updateToPid);
+        add(_allocPoint, IERC20(_lpToken));
         uint256 poolId = poolLength()-1;
         for (uint256 i=0; i < _committee.length; i++) {
             committees[poolId][_committee[i]] = true;
@@ -315,20 +311,16 @@ contract  HATVaults is HATMaster {
    * @dev setPool
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
-   * @param _updateFromPid update pool from pid
-   * @param _updateToPid update pool up to pid
    * @param _registered does this pool is registered (default true)
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,
                     uint256 _allocPoint,
-                    uint256 _updateFromPid,
-                    uint256 _updateToPid,
                     bool _registered,
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
-        set(_pid, _allocPoint, _updateFromPid, _updateToPid);
+        set(_pid, _allocPoint);
         //set approver only if commite not checkin.
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
