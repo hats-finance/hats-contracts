@@ -4,6 +4,8 @@ const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
+
+const PoolsManager = artifacts.require("./PoolsManager.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -1032,6 +1034,12 @@ contract('HatVaults',  accounts =>  {
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
     let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    try {
+          await hatVaults.addPool(100,stakingToken.address,[accounts[1]],[],[0,0,0,0],"_descriptionHash",86400,10);
+          assert(false, 'canot add pool with already exist token');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     await hatVaults.addPool(100,stakingToken2.address,[accounts[1]],[],[0,0,0,0],"_descriptionHash",86400,10);
     await hatVaults.setCommittee(1,[accounts[0]],[true],{from:accounts[1]});
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
@@ -1053,6 +1061,37 @@ contract('HatVaults',  accounts =>  {
               assert.equal(events.length,2);
           });
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),250);
+
+  });
+
+  it("add/set pool on the same block", async () => {
+    let hatToken1 = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+    let router1 =  await UniSwapV2RouterMock.new();
+    var tokenLock1 = await HATTokenLock.new();
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    var poolManager= await PoolsManager.new();
+    let hatVaults1 = await HATVaults.new(hatToken1.address,
+                                    web3.utils.toWei("100"),
+                                    1,
+                                    10,
+                                    poolManager.address,
+                                    router1.address,
+                                    tokenLockFactory1.address);
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    let stakingToken3 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    var globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
+    assert.equal(globalPoolUpdatesLength,0);
+    await poolManager.addPools(hatVaults1.address,100,[stakingToken2.address,stakingToken3.address],[accounts[1]],[],[0,0,0,0],"_descriptionHash",86400,10);
+    globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
+    assert.equal(globalPoolUpdatesLength,1); //2 got in the same block
+    assert.equal(await hatVaults1.poolLength(),2);
+    await poolManager.setPools(hatVaults1.address,[0,1],200,true,"_descriptionHash");
+
+    globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
+    assert.equal(globalPoolUpdatesLength,2); //2 got in the same block
+    let globalUpdatesLen =  await hatVaults1.getGlobalPoolUpdatesLength();
+    let totalAllocPoint = (await hatVaults1.globalPoolUpdates(globalUpdatesLen-1)).totalAllocPoint;
+    assert.equal(totalAllocPoint.toString(),400); //2 got in the same block
 
   });
 

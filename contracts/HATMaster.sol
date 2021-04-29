@@ -310,13 +310,13 @@ contract HATMaster {
 
         if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length-1;
+            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
     }
 
@@ -328,13 +328,13 @@ contract HATMaster {
 
         if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length-1;
+            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
         poolInfo[_pid].allocPoint = _allocPoint;
     }
