@@ -112,7 +112,7 @@ contract HATMaster {
             pool.lastRewardBlock = block.number;
             return;
         }
-        uint256 reward = getPoolRewardLoop(_pid);
+        uint256 reward = calcPoolReward(_pid);
         //the original BDPMaster was reverted if the reward is zero to to the cap check of at the BDP token.
         if (reward > 0) {
             HAT.mint(address(this), reward);
@@ -201,7 +201,7 @@ contract HATMaster {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
         if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
-            uint256 reward = getPoolRewardLoop(_pid);
+            uint256 reward = calcPoolReward(_pid);
             rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         }
         return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
@@ -220,12 +220,23 @@ contract HATMaster {
         return  user.amount;
     }
 
-    function getPoolRewardLoop(uint256 _pid) public view returns(uint256 reward) {
+    /**
+     * @dev calcPoolReward -
+     * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
+     * and sum up all rewards periods from pool.lastRewardBlock till current block number.
+     * Be careful of gas spending!
+     * @param _pid pool id
+     * @return reward
+     */
+    function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
         uint256 globalPoolUpdatesLength = globalPoolUpdates.length;
         uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
         uint256 from = poolInfo[_pid].lastRewardBlock;
         uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
 
+        //Iterate over globalPoolUpdates ,starting from lastProcessedTotalAllocPoint,to find the first entry 
+        //which its blockNumber is bigger than pool.lastRewardBlock.
+        //TODO: optimize the loop by using binary search
         for (index; index < globalPoolUpdatesLength; index++) {
             if (globalPoolUpdates[index].blockNumber > from) {
                break;

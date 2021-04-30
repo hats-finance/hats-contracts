@@ -5,7 +5,7 @@ const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 
-const PoolsManager = artifacts.require("./PoolsManager.sol");
+const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -1069,7 +1069,7 @@ contract('HatVaults',  accounts =>  {
     let router1 =  await UniSwapV2RouterMock.new();
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
-    var poolManager= await PoolsManager.new();
+    var poolManager= await PoolsManagerMock.new();
     let hatVaults1 = await HATVaults.new(hatToken1.address,
                                     web3.utils.toWei("100"),
                                     1,

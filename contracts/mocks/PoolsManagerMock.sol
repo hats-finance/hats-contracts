@@ -3,8 +3,9 @@ pragma solidity 0.8.4;
 
 import "../HATVaults.sol";
 
+//this contract is used as an helper contract only for testing purpose
 
-contract PoolsManager {
+contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
                     uint256 _allocPoint,
@@ -29,10 +30,10 @@ contract PoolsManager {
     }
 
     function setPools(HATVaults _hatVaults,
-                  uint256[] memory _pids,
-                  uint256 _allocPoint,
-                  bool _registered,
-                  string memory _descriptionHash) external {
+                      uint256[] memory _pids,
+                      uint256 _allocPoint,
+                      bool _registered,
+                      string memory _descriptionHash) external {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
