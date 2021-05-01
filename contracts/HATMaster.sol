@@ -229,39 +229,41 @@ contract HATMaster {
      * @return reward
      */
     function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
-        uint256 globalPoolUpdatesLength = globalPoolUpdates.length;
         uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
         uint256 from = poolInfo[_pid].lastRewardBlock;
         uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+        PoolUpdate[] memory poolUpdates  =  globalPoolUpdates;
+        uint256 poolUpdatesLength = poolUpdates.length;
 
-        //Iterate over globalPoolUpdates ,starting from lastProcessedTotalAllocPoint,to find the first entry 
+
+        //Iterate over globalPoolUpdates ,starting from lastProcessedTotalAllocPoint,to find the first entry
         //which its blockNumber is bigger than pool.lastRewardBlock.
         //TODO: optimize the loop by using binary search
-        for (index; index < globalPoolUpdatesLength; index++) {
-            if (globalPoolUpdates[index].blockNumber > from) {
+        for (index; index < poolUpdatesLength; index++) {
+            if (poolUpdates[index].blockNumber > from) {
                break;
             }
         }
 
-        if (index >= globalPoolUpdatesLength) {
+        if (index >= poolUpdatesLength) {
             return getPoolReward(from,
             block.number,
             poolAllocPoint,
-            globalPoolUpdates[globalPoolUpdatesLength-1].totalAllocPoint);
+            poolUpdates[poolUpdatesLength-1].totalAllocPoint);
         }
 
-        for (index; index < globalPoolUpdatesLength; index++) {
+        for (index; index < poolUpdatesLength; index++) {
             reward = reward.add(getPoolReward(from,
-            globalPoolUpdates[index].blockNumber,
+            poolUpdates[index].blockNumber,
             poolAllocPoint,
-            globalPoolUpdates[index-1].totalAllocPoint));
-            from = globalPoolUpdates[index].blockNumber;
+            poolUpdates[index-1].totalAllocPoint));
+            from = poolUpdates[index].blockNumber;
         }
 
         return reward.add(getPoolReward(from,
                 block.number,
                 poolAllocPoint,
-                globalPoolUpdates[globalPoolUpdatesLength-1].totalAllocPoint));
+                poolUpdates[poolUpdatesLength-1].totalAllocPoint));
     }
 
     function _withdraw(uint256 _pid, uint256 _amount) internal {
