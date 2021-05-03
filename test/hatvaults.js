@@ -52,6 +52,17 @@ function assertVMException(error) {
 
 contract('HatVaults',  accounts =>  {
 
+    async function advanceToSaftyPeriod() {
+      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
+      let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
+      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_DISABLE_PERIOD.toNumber()) {
+         await utils.mineBlock();
+         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      }
+      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    }
+
     it("constructor", async () => {
         await setup(accounts);
         assert.equal(await stakingToken.name(), "Staking");
@@ -170,6 +181,62 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "10000");
   });
 
+  async function safeWithdraw(pid, amount, staker) {
+    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
+    let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
+    while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_PERIOD.toNumber()) {
+       await utils.mineBlock();
+       currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    }
+    return await hatVaults.withdraw(pid,amount,{from:staker});
+  }
+
+
+  it("withdrawn", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await utils.increaseTime(7*24*3600);
+      await advanceToSaftyPeriod();
+      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      try {
+          await safeWithdraw(0,web3.utils.toWei("1"),staker);
+          assert(false, 'cannot stake without approve');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      await hatVaults.dismissPendingApprovalClaim(0);
+      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+
+      let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
+      let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
+      let onee12 = new web3.utils.BN("1000000000000");
+      let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
+      let totalAllocPoint = 100;
+      let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100, totalAllocPoint);
+      rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
+      let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
+
+      await safeWithdraw(0,web3.utils.toWei("1"),staker);
+      //staker  get stake back
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal((await hatToken.balanceOf(staker)).toString(),
+                    expectedReward.toString());
+      //withdraw with 0
+      await hatVaults.withdraw(0,0,{from:staker});
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal((await hatToken.balanceOf(staker)).toString(),
+                    expectedReward.toString());
+  });
+
     it("stake", async () => {
         await setup(accounts);
         var staker = accounts[1];
@@ -268,29 +335,6 @@ contract('HatVaults',  accounts =>  {
       }
       return await hatVaults.withdraw(pid,amount,{from:staker});
     }
-
-    async function advanceToSaftyPeriod() {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
-      let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
-      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_DISABLE_PERIOD.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      }
-      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    }
-
-    async function safeWithdraw(pid, amount, staker) {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
-      let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
-      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_PERIOD.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      }
-      return await hatVaults.withdraw(pid,amount,{from:staker});
-    }
-
 
     it("claim reward", async () => {
       await setup(accounts);
@@ -1106,7 +1150,6 @@ contract('HatVaults',  accounts =>  {
     let globalUpdatesLen =  await hatVaults1.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (await hatVaults1.globalPoolUpdates(globalUpdatesLen-1)).totalAllocPoint;
     assert.equal(totalAllocPoint.toString(),400); //2 got in the same block
-
   });
 
 });
