@@ -43,7 +43,6 @@ contract HATMaster {
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
-        bool approvalPaused;
     }
 
     HATToken public immutable HAT;
@@ -104,6 +103,8 @@ contract HATMaster {
 
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
+        pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
+
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
@@ -120,7 +121,6 @@ contract HATMaster {
 
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
         pool.lastRewardBlock = block.number;
-        pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
     }
 
     // --------- For user ----------------
@@ -229,28 +229,19 @@ contract HATMaster {
      * @return reward
      */
     function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
-        uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
         uint256 from = poolInfo[_pid].lastRewardBlock;
         uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
         PoolUpdate[] memory poolUpdates  =  globalPoolUpdates;
         uint256 poolUpdatesLength = poolUpdates.length;
 
-
-        //Iterate over globalPoolUpdates ,starting from lastProcessedTotalAllocPoint,to find the first entry
-        //which its blockNumber is bigger than pool.lastRewardBlock.
-        //TODO: optimize the loop by using binary search
-        for (index; index < poolUpdatesLength; index++) {
-            if (poolUpdates[index].blockNumber > from) {
-               break;
-            }
-        }
-
-        if (index >= poolUpdatesLength) {
+        if (poolUpdates[poolUpdatesLength-1].blockNumber <= from) {
             return getPoolReward(from,
             block.number,
             poolAllocPoint,
             poolUpdates[poolUpdatesLength-1].totalAllocPoint);
         }
+
+        uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
 
         for (index; index < poolUpdatesLength; index++) {
             reward = reward.add(getPoolReward(from,

@@ -11,9 +11,17 @@ contract  HATVaults is HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
+    struct PendingApproval {
+        address beneficiary;
+        uint256 sevirity;
+    }
+
     //pid -> (approver->boolean)
     mapping (uint256=>mapping(address => bool)) public committees;
     mapping(address => uint256) public swapAndBurns;
+
+    //pid -> PendingApproval
+    mapping(uint256 => PendingApproval) public pendingApproval;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
     address public immutable governance;
@@ -37,10 +45,11 @@ contract  HATVaults is HATMaster {
         uint256 hackerHatReward;
     }
 
-    modifier onlyWithdrawPeriod() {
+    modifier onlyWithdrawPeriod(uint256 _pid) {
         //disable withdraw for 240 blocks each 3000 blocks.
         //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
         require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
+        require(pendingApproval[_pid].beneficiary == address(0), "pending approval exist");
         _;
     }
 
@@ -92,7 +101,7 @@ contract  HATVaults is HATMaster {
                     uint256 _hackerHatReward,
                     address _tokenLock);
 
-    event PauseApproval(uint256 indexed _pid, bool indexed _pause);
+    event PendingApprovalLog(uint256 indexed _pid, address indexed _beneficiary, uint256 indexed _sevirity);
 
     /* ========== CONSTRUCTOR ========== */
     constructor(
@@ -109,16 +118,40 @@ contract  HATVaults is HATMaster {
         tokenLockFactory = _tokenLockFactory;
     }
 
-    function approveClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity) external onlyCommittee(_poolId) {
+    function pendingApprovalClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity)
+    external
+    onlyCommittee(_poolId) {
+        require(_beneficiary != address(0), "beneficiary is zero");
+        require(pendingApproval[_poolId].beneficiary == address(0), "there is already pending approval");
+        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_DISABLE_PERIOD,
+        "none safty period");
+
+        pendingApproval[_poolId] = PendingApproval({
+            beneficiary: _beneficiary,
+            sevirity: _sevirity
+        });
+        emit PendingApprovalLog(_poolId, _beneficiary, _sevirity);
+    }
+
+    function dismissPendingApprovalClaim(uint256 _poolId) external onlyGovernance {
+        delete pendingApproval[_poolId];
+    }
+
+    function approveClaim(uint256 _poolId) external onlyGovernance {
+        require(pendingApproval[_poolId].beneficiary != address(0), "no pending approval");
         PoolReward storage poolReward = poolsRewards[_poolId];
-        require(!poolReward.approvalPaused, "pool approval is paused");
+        address beneficiary = pendingApproval[_poolId].beneficiary;
+        uint256 sevirity = pendingApproval[_poolId].sevirity;
+        delete pendingApproval[_poolId];
+
         IERC20 lpToken = poolInfo[_poolId].lpToken;
-        ClaimReward memory claimRewards = calcClaimRewards(_poolId, _sevirity);
+        ClaimReward memory claimRewards = calcClaimRewards(_poolId, sevirity);
+
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
             governance,
-            _beneficiary,
+            beneficiary,
             claimRewards.hackerReward,
             block.timestamp, //start
             block.timestamp + poolReward.vestingDuration, //end
@@ -136,8 +169,8 @@ contract  HATVaults is HATMaster {
         //so it could be swapAndBurn by any one in a seperate tx.
 
         swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
-        hackersHatRewards[_beneficiary][address(lpToken)] =
-        hackersHatRewards[_beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
+        hackersHatRewards[beneficiary][address(lpToken)] =
+        hackersHatRewards[beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
         poolReward.pendingLpTokenRewards =
         poolReward.pendingLpTokenRewards
         .add(claimRewards.swapAndBurn)
@@ -145,8 +178,8 @@ contract  HATVaults is HATMaster {
 
         emit ClaimApprove(msg.sender,
                         _poolId,
-                        _beneficiary,
-                        _sevirity,
+                        beneficiary,
+                        sevirity,
                         claimRewards.hackerReward,
                         claimRewards.approverReward,
                         claimRewards.swapAndBurn,
@@ -234,11 +267,6 @@ contract  HATVaults is HATMaster {
         emit SetCommittee(_pid, _committee, _status);
     }
 
-    function pauseApproval(uint256 _pid, bool _pause) external onlyGovernance {
-        poolsRewards[_pid].approvalPaused = _pause;
-        emit PauseApproval(_pid, _pause);
-    }
-
     /**
    * @dev addPool - onlyGovernance
    * @param _allocPoint the pool allocation point
@@ -289,8 +317,7 @@ contract  HATVaults is HATMaster {
             hackerHatRewardSplit: rewardsSplit[3],
             committeeCheckIn: false,
             vestingDuration: _rewardVestingDuration,
-            vestingPeriods: _rewardVestingPeriods,
-            approvalPaused: false
+            vestingPeriods: _rewardVestingPeriods
         });
 
         string memory name = ERC20(_lpToken).name();
@@ -379,11 +406,11 @@ contract  HATVaults is HATMaster {
         emit SwapAndSend(_pid, _beneficiary, amount, hatsRecieved.sub(burnetHats), tokenLock);
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) external onlyWithdrawPeriod {
+    function withdraw(uint256 _pid, uint256 _amount) external onlyWithdrawPeriod(_pid) {
         _withdraw(_pid, _amount);
     }
 
-    function emergencyWithdraw(uint256 _pid) external onlyWithdrawPeriod {
+    function emergencyWithdraw(uint256 _pid) external onlyWithdrawPeriod(_pid) {
         _emergencyWithdraw(_pid);
     }
 
