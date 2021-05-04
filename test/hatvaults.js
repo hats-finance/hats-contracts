@@ -56,7 +56,20 @@ contract('HatVaults',  accounts =>  {
       let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
       let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
       let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
-      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_DISABLE_PERIOD.toNumber()) {
+      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) < WITHDRAW_PERIOD.toNumber()) {
+         await utils.mineBlock();
+         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      }
+      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    }
+
+
+    //advanced blocks to a withdraw enable period
+    async function advanceToNoneSaftyPeriod() {
+      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
+      let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
+      while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_PERIOD.toNumber()) {
          await utils.mineBlock();
          currentBlockNumber = (await web3.eth.getBlock("latest")).number;
       }
@@ -183,6 +196,7 @@ contract('HatVaults',  accounts =>  {
 
   async function safeWithdraw(pid, amount, staker) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+
     let WITHDRAW_PERIOD  =  await hatVaults.WITHDRAW_PERIOD();
     let WITHDRAW_DISABLE_PERIOD = await hatVaults.WITHDRAW_DISABLE_PERIOD();
     while (currentBlockNumber % (WITHDRAW_PERIOD.toNumber() + WITHDRAW_DISABLE_PERIOD.toNumber()) >= WITHDRAW_PERIOD.toNumber()) {
@@ -191,7 +205,6 @@ contract('HatVaults',  accounts =>  {
     }
     return await hatVaults.withdraw(pid,amount,{from:staker});
   }
-
 
   it("withdrawn", async () => {
       await setup(accounts);
@@ -529,7 +542,7 @@ contract('HatVaults',  accounts =>  {
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
     assert.equal(stakerAmount.toString(),web3.utils.toWei("1"));
   //  assert.equal(await stakingToken.balanceOf(hatVaults.address),0);
-    tx = await hatVaults.withdraw(0,stakerAmount,{from:staker});
+    tx = await safeWithdraw(0,stakerAmount,staker);
 
     assert.equal(stakerAmount.toString(),web3.utils.toWei("1"));
 
@@ -538,11 +551,11 @@ contract('HatVaults',  accounts =>  {
 
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)),"0.01");
     stakerAmount = await hatVaults.getStakedAmount(0,staker2);
-    tx = await hatVaults.withdraw(0,stakerAmount,{from:staker2});
+    tx = await await safeWithdraw(0,stakerAmount,staker2);
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.00000000001");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000057");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   });
 
@@ -555,8 +568,7 @@ contract('HatVaults',  accounts =>  {
 
     //stake
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-  //  assert.equal(await hatVaults.lpBalances(staker), web3.utils.toWei("1"));
-  //exit
+
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
@@ -565,7 +577,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "ClaimApprove");
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
     assert.equal(stakerAmount.toString(),web3.utils.toWei("1"));
-    tx = await hatVaults.withdraw(0,stakerAmount,{from:staker});
+    tx = await safeWithdraw(0,stakerAmount,staker);
     await hatToken.getPastEvents('Transfer', {
           fromBlock: tx.blockNumber,
           toBlock: 'latest'
@@ -600,7 +612,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.approveClaim(0);
     await safeEmergencyWithdraw(0,staker);
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-    var tx = await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker2});
+    var tx = await safeWithdraw(0,web3.utils.toWei("1"),staker2);
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     tx = await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
@@ -665,6 +677,8 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],1,{from:accounts[1]});
     await hatVaults.approveClaim(0);
+    await advanceToNoneSaftyPeriod();
+
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
     let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
@@ -674,7 +688,7 @@ contract('HatVaults',  accounts =>  {
     let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1,100,100);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
-    await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
+    await safeWithdraw(0,web3.utils.toWei("1"),staker);
     assert.equal((await stakingToken.balanceOf(staker)).toString(),"364816000000000000");//(0.6)*(0.6)
 
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
@@ -1152,4 +1166,43 @@ contract('HatVaults',  accounts =>  {
     assert.equal(totalAllocPoint.toString(),400); //2 got in the same block
   });
 
+  it("governance", async () => {
+      await setup(accounts);
+      assert.equal(await hatVaults.governance(), accounts[0]);
+      try {
+        await hatVaults.setPendingGovernance(accounts[1],{from: accounts[1]});
+        assert(false, 'only gov can set pending gov');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      await hatVaults.setPendingGovernance(accounts[1],{from: accounts[0]});
+      try {
+        await hatVaults.transferGovernorship({from: accounts[1]});
+        assert(false, 'only gov can transferGovernorship');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await hatVaults.transferGovernorship({from: accounts[0]});
+        assert(false, 'need to wait 12000 blocks');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      for(var i =0;i<10000;i++) {
+          await utils.mineBlock();
+      }
+      try {
+        await hatVaults.transferGovernorship({from: accounts[0]});
+        assert(false, 'need to wait 12000 blocks');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      for(i=10000;i<12000;i++) {
+          await utils.mineBlock();
+      }
+      await hatVaults.transferGovernorship({from: accounts[0]});
+      assert.equal(await hatVaults.governance(), accounts[1]);
+  });
 });

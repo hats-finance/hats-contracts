@@ -5,9 +5,10 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
 import "./tokenlock/ITokenLockFactory.sol";
+import "./Governable.sol";
 
 
-contract  HATVaults is HATMaster {
+contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
@@ -24,7 +25,6 @@ contract  HATVaults is HATMaster {
     mapping(uint256 => PendingApproval) public pendingApproval;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
-    address public immutable governance;
     uint256[4] public defaultRewardsSplit = [8500, 500, 500, 400];
     uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
@@ -55,11 +55,6 @@ contract  HATVaults is HATMaster {
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid][msg.sender], "only committee");
-        _;
-    }
-
-    modifier onlyGovernance() {
-        require(msg.sender == governance, "only governance");
         _;
     }
 
@@ -113,7 +108,7 @@ contract  HATVaults is HATMaster {
         IUniswapV2Router01 _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
-        governance = _governance;
+        Governable.initialize(_governance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
     }
@@ -123,7 +118,7 @@ contract  HATVaults is HATMaster {
     onlyCommittee(_poolId) {
         require(_beneficiary != address(0), "beneficiary is zero");
         require(pendingApproval[_poolId].beneficiary == address(0), "there is already pending approval");
-        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_DISABLE_PERIOD,
+        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) >= WITHDRAW_PERIOD,
         "none safty period");
 
         pendingApproval[_poolId] = PendingApproval({
@@ -150,7 +145,7 @@ contract  HATVaults is HATMaster {
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
-            governance,
+            governance(),
             beneficiary,
             claimRewards.hackerReward,
             block.timestamp, //start
@@ -247,7 +242,7 @@ contract  HATVaults is HATMaster {
     function setCommittee(uint256 _pid, address[] memory _committee, bool[] memory _status)
     external {
         //check if commitee already checked in.
-        if (msg.sender == governance && !committees[_pid][msg.sender]) {
+        if (msg.sender == governance() && !committees[_pid][msg.sender]) {
             require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
         } else {
             require(committees[_pid][msg.sender], "only committee");
@@ -358,7 +353,7 @@ contract  HATVaults is HATMaster {
     // only committee or governance are unauthorized to call this function.
     function swapBurnSend(uint256 _pid, address _beneficiary) external {
         //only committee or governance can call it.
-        require(committees[_pid][msg.sender] || msg.sender == governance, "only committee or governance");
+        require(committees[_pid][msg.sender] || msg.sender == governance(), "only committee or governance");
 
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
@@ -390,7 +385,7 @@ contract  HATVaults is HATMaster {
            //hacker get the rest ...
             tokenLock = tokenLockFactory.createTokenLock(
                 address(HAT),
-                governance,
+                governance(),
                 _beneficiary,
                 hatsRecieved.sub(burnetHats),
                 block.timestamp, //start
