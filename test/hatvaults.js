@@ -103,7 +103,14 @@ contract('HatVaults',  accounts =>  {
         let rewardsSplit=[0,0,0,0];
         var stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
         await hatVaults.addPool(100,stakingToken2.address,[accounts[1]],rewardsLevels,rewardsSplit,"_descriptionHash",86400,10);
+        try {
+              await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[false,false]);
+              assert(false, 'at least one address is true');
+        } catch (ex) {
+          assertVMException(ex);
+        }
         await hatVaults.setCommittee(1,[accounts[1],accounts[2]],[true,true]);
+
         assert.equal(await hatVaults.committees(1,accounts[1]), true);
         assert.equal(await hatVaults.committees(1,accounts[2]), true);
         //committe check in

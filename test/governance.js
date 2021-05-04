@@ -101,5 +101,5 @@ contract('HatVaults  governance',  accounts =>  {
       } catch (ex) {
         assertVMException(ex);
       }
-  });
+  }).timeout(40000);
 });
