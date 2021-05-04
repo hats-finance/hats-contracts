@@ -1165,44 +1165,4 @@ contract('HatVaults',  accounts =>  {
     let totalAllocPoint = (await hatVaults1.globalPoolUpdates(globalUpdatesLen-1)).totalAllocPoint;
     assert.equal(totalAllocPoint.toString(),400); //2 got in the same block
   });
-
-  it("governance", async () => {
-      await setup(accounts);
-      assert.equal(await hatVaults.governance(), accounts[0]);
-      try {
-        await hatVaults.setPendingGovernance(accounts[1],{from: accounts[1]});
-        assert(false, 'only gov can set pending gov');
-      } catch (ex) {
-        assertVMException(ex);
-      }
-
-      await hatVaults.setPendingGovernance(accounts[1],{from: accounts[0]});
-      try {
-        await hatVaults.transferGovernorship({from: accounts[1]});
-        assert(false, 'only gov can transferGovernorship');
-      } catch (ex) {
-        assertVMException(ex);
-      }
-
-      try {
-        await hatVaults.transferGovernorship({from: accounts[0]});
-        assert(false, 'need to wait 12000 blocks');
-      } catch (ex) {
-        assertVMException(ex);
-      }
-      for(var i =0;i<10000;i++) {
-          await utils.mineBlock();
-      }
-      try {
-        await hatVaults.transferGovernorship({from: accounts[0]});
-        assert(false, 'need to wait 12000 blocks');
-      } catch (ex) {
-        assertVMException(ex);
-      }
-      for(i=10000;i<12000;i++) {
-          await utils.mineBlock();
-      }
-      await hatVaults.transferGovernorship({from: accounts[0]});
-      assert.equal(await hatVaults.governance(), accounts[1]);
-  });
 });

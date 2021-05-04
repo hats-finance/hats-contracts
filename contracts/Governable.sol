@@ -25,7 +25,7 @@ contract Governable {
     /// @notice An event thats emitted when a new governance address is set
     event GovernorshipTransferred(address indexed _previousGovernance, address indexed _newGovernance);
     /// @notice An event thats emitted when a new governance address is pending
-    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 atBlock);
+    event GovernancePending(address indexed _previousGovernance, address indexed _newGovernance, uint256 _atBlock);
 
     /**
      * @dev Throws if called by any account other than the governance.
@@ -47,7 +47,7 @@ contract Governable {
     }
 
     /**
-     * @dev transferGovernorship transfer ownership to the pending governance address.
+     * @dev transferGovernorship transfer governorship to the pending governance address.
      * NOTE: transferGovernorship can be called after a time delay of 12000 blocks from the latest setPendingGovernance.
      */
     function transferGovernorship() external  onlyGovernance {
