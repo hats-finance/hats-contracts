@@ -35,6 +35,7 @@ async function main() {
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(tokenLockFactory,"TokenLockFactory");
+
 }
 
 function saveFrontendFiles(contract,name) {
@@ -45,9 +46,13 @@ function saveFrontendFiles(contract,name) {
     fs.mkdirSync(contractsDir,{recursive: true});
   }
 
+  var data = JSON.parse(fs.readFileSync(contractsDir + "/contract-address.json",
+                             {encoding:'utf8', flag:'r'}));
+  data[name] = contract.address;
+
   fs.writeFileSync(
     contractsDir + "/contract-address.json",
-    JSON.stringify({ name: contract.address }, undefined, 2)
+    JSON.stringify(data, undefined, 2)
   );
 
   const ContractArtifact = artifacts.readArtifactSync(name);

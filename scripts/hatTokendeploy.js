@@ -18,6 +18,8 @@ async function main() {
 
   const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
   const timelockblocks =  12000;
+  //const governance  = await deployer.getAddress();
+  //const timelockblocks = 1;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
