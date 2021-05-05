@@ -156,7 +156,11 @@ contract  HATVaults is Governable, HATMaster {
             ITokenLock.Revocability.Disabled,
             false
         );
-
+        poolInfo[_poolId].balance = poolInfo[_poolId].balance.sub(
+        claimRewards.hackerReward
+        .add(claimRewards.approverReward)
+        .add(claimRewards.swapAndBurn)
+        .add(claimRewards.hackerHatReward));
         lpToken.safeTransfer(tokenLock, claimRewards.hackerReward);
         //approver get its rewards
         lpToken.safeTransfer(msg.sender, claimRewards.approverReward);
@@ -166,11 +170,7 @@ contract  HATVaults is Governable, HATMaster {
         swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
         hackersHatRewards[beneficiary][address(lpToken)] =
         hackersHatRewards[beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
-        poolReward.pendingLpTokenRewards =
-        poolReward.pendingLpTokenRewards
-        .add(claimRewards.swapAndBurn)
-        .add(claimRewards.hackerHatReward);
-
+  
         emit ClaimApprove(msg.sender,
                         _poolId,
                         beneficiary,
@@ -180,7 +180,7 @@ contract  HATVaults is Governable, HATMaster {
                         claimRewards.swapAndBurn,
                         claimRewards.hackerHatReward,
                         tokenLock);
-        require(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0,
+        require(poolInfo[_poolId].balance > 0,
         "total supply cannot be zero");
     }
 
@@ -305,7 +305,6 @@ contract  HATVaults is Governable, HATMaster {
 
         poolsRewards[poolId] = PoolReward({
             rewardsLevels: rewardsLevels,
-            pendingLpTokenRewards: 0,
             hackerRewardSplit: rewardsSplit[0],
             approverRewardSplit :rewardsSplit[1],
             swapAndBurnSplit: rewardsSplit[2],
@@ -373,7 +372,6 @@ contract  HATVaults is Governable, HATMaster {
          // solhint-disable-next-line not-rely-on-time
         uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
-        poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
         uint256 burnetHats = hatsRecieved.mul(amountToSwapAndBurn).div(amount);
         if (burnetHats > 0) {
           //burn the relative HATs amount.
@@ -413,17 +411,12 @@ contract  HATVaults is Governable, HATMaster {
         return poolsRewards[_poolId].rewardsLevels;
     }
 
-    function getPoolRewardsPendingLpToken(uint256 _poolId) external view returns(uint256) {
-        return poolsRewards[_poolId].pendingLpTokenRewards;
-    }
-
     function getPoolRewards(uint256 _poolId) external view returns(PoolReward memory) {
         return poolsRewards[_poolId];
     }
 
     function calcClaimRewards(uint256 _poolId, uint256 _sevirity) public view returns(ClaimReward memory claimRewards) {
-        IERC20 lpToken = poolInfo[_poolId].lpToken;
-        uint256 totalSupply = lpToken.balanceOf(address(this)).sub(poolsRewards[_poolId].pendingLpTokenRewards);
+        uint256 totalSupply = poolInfo[_poolId].balance;
         require(totalSupply > 0, "totalSupply is zero");
         require(_sevirity < poolsRewards[_poolId].rewardsLevels.length, "_sevirity is not in the range");
         //hackingRewardAmount

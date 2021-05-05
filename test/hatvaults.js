@@ -801,7 +801,6 @@ contract('HatVaults',  accounts =>  {
     await setup(accounts);
     var staker = accounts[1];
     var staker2 = accounts[3];
-    assert.equal((await hatVaults.getPoolRewardsPendingLpToken(0)).toString(), "0");
 
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
@@ -815,9 +814,9 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
     await hatVaults.approveClaim(0);
+    let poolRewardsPendingLpToken = (await hatVaults.swapAndBurns(stakingToken.address)).add(await hatVaults.hackersHatRewards(accounts[2],stakingToken.address));
     assert.equal(
-      (
-        await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
+        poolRewardsPendingLpToken.toString(),
         new web3.utils.BN(web3.utils.toWei("1")).mul(
           (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit)).add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
       ).div(new web3.utils.BN("10000")).toString()
@@ -845,7 +844,6 @@ contract('HatVaults',  accounts =>  {
     await setup(accounts);
     var staker = accounts[1];
     var staker2 = accounts[3];
-    assert.equal((await hatVaults.getPoolRewardsPendingLpToken(0)).toString(), "0");
 
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
@@ -859,9 +857,10 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
     await hatVaults.approveClaim(0);
+    let poolRewardsPendingLpToken = (await hatVaults.swapAndBurns(stakingToken.address)).add(await hatVaults.hackersHatRewards(accounts[2],stakingToken.address));
+
     assert.equal(
-      (
-        await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
+        poolRewardsPendingLpToken.toString(),
         new web3.utils.BN(web3.utils.toWei("1")).mul(
           (new web3.utils.BN((await hatVaults.getPoolRewards(0)).swapAndBurnSplit)).add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).hackerHatRewardSplit))
       ).div(new web3.utils.BN("10000")).toString()
@@ -1083,7 +1082,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed,2990098);
+    assert.equal(tx.receipt.gasUsed,2990062);
   }).timeout(40000);
 
 
