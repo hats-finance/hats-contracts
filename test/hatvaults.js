@@ -1105,6 +1105,12 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),90);
+    try {
+      await hatVaults.massUpdatePools(2,1);
+      assert(false, 'invalid mass update pools range');
+    } catch (ex) {
+      assertVMException(ex);
+    }
   });
 
   it("setPool x2 v2", async () => {
