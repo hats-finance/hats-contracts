@@ -148,7 +148,7 @@ contract('TokenLock',  accounts =>  {
         await setup(accounts,2);
         assert.equal(await tokenLock.canDelegate(),false);
         try {
-            await tokenLock.delegate(accounts[2]);
+            await tokenLock.delegate(accounts[2],{from:accounts[1]});
             assert(false, 'cannot delegate');
         } catch (ex) {
           assertVMException(ex);
