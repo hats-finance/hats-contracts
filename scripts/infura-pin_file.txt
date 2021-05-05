@@ -1,0 +1,4 @@
+curl "https://ipfs.infura.io:5001/api/v0/add?pin=true" \
+    -X POST \
+    -H "Content-Type: multipart/form-data" \
+    -F file=@"./committee-example.json"
