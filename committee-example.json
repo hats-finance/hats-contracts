@@ -69,7 +69,7 @@ gyptSk4dQBbrPGfcOl3nUQr/V+U3FlBbeBjP44PwPUBS6rRbye38alZRP1d2
 			}
 		]
 	},
-	"sevirities": [{
+	"severities": [{
 			"name": "low",
                       "index": 0,
 			"contracts-covered": [
