@@ -252,6 +252,18 @@ contract  HATVaults is Governable, HATMaster {
         emit SetHatVestingParams(_duration, _periods);
     }
 
+    /**
+   * @dev setRewardsSplit - set the pool token rewards split upon an approval
+   * the function can be called only by governance.
+   * the sum of the rewards split should be less than 10000 (less than 100%)
+   * @param _pid pool id
+   * @param _rewardsSplit split array
+   * _rewardsSplit[0] - hackerRewardSplit - the percentage of the total reward to reward the hacker(claim reported)
+   * _rewardsSplit[1] - approverRewardSplit  - the percentage of the total reward to reward
+   * _rewardsSplit[2] - swapAndBurnSplit - the percentage of the total reward to be swap to HAT and burnet
+   * _rewardsSplit[3] - hackerHatRewardSplit - the percentage of the total reward to be swap and to HAT
+   * and sent to the hacker(claim reported)
+ */
     function setRewardsSplit(uint256 _pid, uint256[4] memory _rewardsSplit)
     external
     onlyGovernance {
@@ -268,6 +280,14 @@ contract  HATVaults is Governable, HATMaster {
         emit SetRewardsSplit(_pid, _rewardsSplit);
     }
 
+    /**
+   * @dev setRewardsLevels - set the pool token rewards level.
+   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the function can be called only by the pool committee.
+   * each level should be less than 10000
+   * @param _pid pool id
+   * @param _rewardsLevels the reward levels array
+ */
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyCommittee(_pid) {
