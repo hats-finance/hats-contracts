@@ -292,8 +292,8 @@ contract('HATToken', accounts => {
 
     it("CappedToken ", async () => {
         const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
-        const cap = web3.utils.toWei("500000");
-        await utils.setMinter(token,accounts[0],web3.utils.toWei("600000"));
+        const cap = web3.utils.toWei("1000000");
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1600000"));
         await token.mint(accounts[1], cap);
 
         var amount = await token.balanceOf(accounts[1]);

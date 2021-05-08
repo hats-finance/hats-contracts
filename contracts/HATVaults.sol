@@ -14,7 +14,7 @@ contract  HATVaults is Governable, HATMaster {
 
     struct PendingApproval {
         address beneficiary;
-        uint256 sevirity;
+        uint256 severity;
     }
 
     //pid -> (approver->boolean)
@@ -89,18 +89,32 @@ contract  HATVaults is Governable, HATMaster {
     event ClaimApprove(address indexed _approver,
                     uint256 indexed _poolId,
                     address indexed _beneficiary,
-                    uint256 _sevirity,
+                    uint256 _severity,
                     uint256 _hackerReward,
                     uint256 _approverReward,
                     uint256 _swapAndBurn,
                     uint256 _hackerHatReward,
                     address _tokenLock);
 
-    event PendingApprovalLog(uint256 indexed _pid, address indexed _beneficiary, uint256 indexed _sevirity);
+    event PendingApprovalLog(uint256 indexed _pid, address indexed _beneficiary, uint256 indexed _severity);
 
-    /* ========== CONSTRUCTOR ========== */
+    /**
+   * @dev constructor -
+   * @param _rewardsToken the reward token address (HAT)
+   * @param _rewardPerBlock the reward amount per block the contract will reward pools
+   * @param _startBlock start block of of which the contract will start rewarding from.
+   * @param _halvingAfterBlock a fix period value. each period will have its own multiplier value.
+   *        which set the reward for each period. e.g a vaule of 100000 means that each such period is 100000 blocks.
+   * @param _governance the governance address.
+   *        Some of the contracts functions are limited only to governance :
+   *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
+   *         setHatVestingParams,setVestingParams,setRewardsSplit
+   * @param _uniSwapRouter uni swap v2 rounter to be used to swap tokens for HAT token.
+   * @param _tokenLockFactory address of the token lock factory to be used
+   *        to create a vesting contract for the approved claim reporter.
+ */
     constructor(
-        address _rewardsToken,//hat
+        address _rewardsToken,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _halvingAfterBlock,
@@ -113,7 +127,17 @@ contract  HATVaults is Governable, HATMaster {
         tokenLockFactory = _tokenLockFactory;
     }
 
-    function pendingApprovalClaim(uint256 _poolId, address _beneficiary, uint256 _sevirity)
+      /**
+     * @dev pendingApprovalClaim - called by a commitee to set a pending approval claim.
+     * The pending approval need to be approved or dismissd  by the hats governance.
+     * This function should be called only on a safty period, where withdrawn is disable.
+     * Upon a call to this function by the committee the pool withdrawn will be disable
+     * till governance will approve or dismiss this pending approval.
+     * @param _poolId pool id
+     * @param _beneficiary the approval claim beneficiary
+     * @param _severity approval claim severity
+   */
+    function pendingApprovalClaim(uint256 _poolId, address _beneficiary, uint256 _severity)
     external
     onlyCommittee(_poolId) {
         require(_beneficiary != address(0), "beneficiary is zero");
@@ -123,24 +147,32 @@ contract  HATVaults is Governable, HATMaster {
 
         pendingApproval[_poolId] = PendingApproval({
             beneficiary: _beneficiary,
-            sevirity: _sevirity
+            severity: _severity
         });
-        emit PendingApprovalLog(_poolId, _beneficiary, _sevirity);
+        emit PendingApprovalLog(_poolId, _beneficiary, _severity);
     }
 
+  /**
+   * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
+   * @param _poolId pool id
+  */
     function dismissPendingApprovalClaim(uint256 _poolId) external onlyGovernance {
         delete pendingApproval[_poolId];
     }
 
+    /**
+   * @dev approveClaim - called by hats governance to approve a pending approval claim.
+   * @param _poolId pool id
+ */
     function approveClaim(uint256 _poolId) external onlyGovernance {
         require(pendingApproval[_poolId].beneficiary != address(0), "no pending approval");
         PoolReward storage poolReward = poolsRewards[_poolId];
         address beneficiary = pendingApproval[_poolId].beneficiary;
-        uint256 sevirity = pendingApproval[_poolId].sevirity;
+        uint256 severity = pendingApproval[_poolId].severity;
         delete pendingApproval[_poolId];
 
         IERC20 lpToken = poolInfo[_poolId].lpToken;
-        ClaimReward memory claimRewards = calcClaimRewards(_poolId, sevirity);
+        ClaimReward memory claimRewards = calcClaimRewards(_poolId, severity);
 
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
@@ -174,7 +206,7 @@ contract  HATVaults is Governable, HATMaster {
         emit ClaimApprove(msg.sender,
                         _poolId,
                         beneficiary,
-                        sevirity,
+                        severity,
                         claimRewards.hackerReward,
                         claimRewards.approverReward,
                         claimRewards.swapAndBurn,
@@ -190,6 +222,12 @@ contract  HATVaults is Governable, HATMaster {
         emit Claim(msg.sender, _descriptionHash);
     }
 
+    /**
+   * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
+   * @param _pid pool id
+   * @param _duration duration of the vesting period
+   * @param _periods the vesting periods
+ */
     function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
         require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
@@ -199,6 +237,12 @@ contract  HATVaults is Governable, HATMaster {
         emit SetVestingParams(_pid, _duration, _periods);
     }
 
+    /**
+   * @dev setHatVestingParams - set HAT vesting params for rewarding claim reporter with HAT token
+   * the function can be called only by governance.
+   * @param _duration duration of the vesting period
+   * @param _periods the vesting periods
+ */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
         require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
@@ -421,14 +465,14 @@ contract  HATVaults is Governable, HATMaster {
         return poolsRewards[_poolId];
     }
 
-    function calcClaimRewards(uint256 _poolId, uint256 _sevirity) public view returns(ClaimReward memory claimRewards) {
+    function calcClaimRewards(uint256 _poolId, uint256 _severity) public view returns(ClaimReward memory claimRewards) {
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         uint256 totalSupply = lpToken.balanceOf(address(this)).sub(poolsRewards[_poolId].pendingLpTokenRewards);
         require(totalSupply > 0, "totalSupply is zero");
-        require(_sevirity < poolsRewards[_poolId].rewardsLevels.length, "_sevirity is not in the range");
+        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
         //hackingRewardAmount
         uint256 claimRewardAmount =
-        totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_sevirity]).div(REWARDS_LEVEL_DENOMINATOR);
+        totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_severity]).div(REWARDS_LEVEL_DENOMINATOR);
         //hackerReward
         claimRewards.hackerReward =
         claimRewardAmount.mul(poolsRewards[_poolId].hackerRewardSplit).div(REWARDS_LEVEL_DENOMINATOR);

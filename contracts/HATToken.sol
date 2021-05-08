@@ -32,7 +32,7 @@ contract HATToken {
     address public governancePending;
     uint256 public setGovernancePendingAtBlock;
     uint256 public timeLockDelayInBlocksUnits;
-    uint256 public cap = 500000e18;
+    uint256 public cap = 1000000e18;
 
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
