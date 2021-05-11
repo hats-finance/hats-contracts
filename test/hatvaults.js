@@ -85,13 +85,20 @@ contract('HatVaults',  accounts =>  {
         await setup(accounts);
         assert.equal(await hatVaults.committees(0), accounts[1]);
 
+        try {
+          await hatVaults.setCommittee(0,utils.NULL_ADDRESS,{from: accounts[1]});
+          assert(false, 'cannot set zero address committee');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+
         await hatVaults.setCommittee(0,accounts[2],{from:accounts[1]});
 
         assert.equal(await hatVaults.committees(0),accounts[2]);
 
         try {
-          await hatVaults.setCommittee(0,accounts[2],{from: accounts[0]});
-          assert(false, 'cannot set approvers from non approver account');
+          await hatVaults.setCommittee(0,accounts[2],{from: accounts[1]});
+          assert(false, 'cannot set committee from non committee account');
         } catch (ex) {
           assertVMException(ex);
         }
@@ -524,18 +531,43 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await hatToken.balanceOf(hatVaults.address),0);
 
-  //  assert.equal(await hatVaults.lpBalances(staker), web3.utils.toWei("1"));
   //exit
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
+    await advanceToNoneSaftyPeriod();
+    try {
+          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+          assert(false, 'none safty period');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    await advanceToSaftyPeriod();
+    try {
+          await hatVaults.pendingApprovalClaim(0,accounts[2],5,{from:accounts[1]});
+          assert(false, 'severity is out of range');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+
+    try {
+          await hatVaults.pendingApprovalClaim(0,utils.NULL_ADDRESS,4,{from:accounts[1]});
+          assert(false, 'beneficiary is zero');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     try {
           await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[2]});
           assert(false, 'only Committee');
         } catch (ex) {
           assertVMException(ex);
       }
-    await advanceToSaftyPeriod();
     var tx = await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    try {
+          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+          assert(false, 'there is already pending approval');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     assert.equal(tx.logs[0].event, "PendingApprovalLog");
     tx = await hatVaults.approveClaim(0);
     assert.equal(await hatToken.balanceOf(hatVaults.address),0);
@@ -559,7 +591,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000057");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000017");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   });
 

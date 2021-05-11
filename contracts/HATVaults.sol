@@ -148,6 +148,7 @@ contract  HATVaults is Governable, HATMaster {
         require(pendingApprovals[_poolId].beneficiary == address(0), "there is already pending approval");
         require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) >= WITHDRAW_PERIOD,
         "none safty period");
+        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
 
         pendingApprovals[_poolId] = PendingApproval({
             beneficiary: _beneficiary,
