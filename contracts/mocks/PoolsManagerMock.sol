@@ -2,6 +2,7 @@
 pragma solidity 0.8.4;
 
 import "../HATVaults.sol";
+import "../HATMaster.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
@@ -10,12 +11,11 @@ contract PoolsManagerMock {
     function addPools(HATVaults _hatVaults,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
-                    address[] memory _committee,
+                    address _committee,
                     uint256[] memory _rewardsLevels,
-                    uint256[4] memory _rewardsSplit,
+                    HATMaster.RewardsSplit memory _rewardsSplit,
                     string memory _descriptionHash,
-                    uint256 _rewardVestingDuration,
-                    uint256 _rewardVestingPeriods) external {
+                    uint256[2] memory _rewardVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
             _hatVaults.addPool(_allocPoint,
@@ -24,8 +24,7 @@ contract PoolsManagerMock {
                                 _rewardsLevels,
                                 _rewardsSplit,
                                 _descriptionHash,
-                                _rewardVestingDuration,
-                                _rewardVestingPeriods);
+                                _rewardVestingParams);
         }
     }
 

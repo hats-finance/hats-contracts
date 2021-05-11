@@ -22,6 +22,21 @@ contract HATMaster {
         uint256 totalAllocPoint; //totalAllocPoint
     }
 
+    struct RewardsSplit {
+        //the percentage of the total reward to reward the hacker via vesting contract(claim reported)
+        uint256 hackerVestedReward;
+        //the percentage of the total reward to reward the hacker(claim reported)
+        uint256 hackerReward;
+        // the percentage of the total reward to be sent to the committee
+        uint256 committeeReward;
+        // the percentage of the total reward to be swap to HAT and burnet
+        uint256 swapAndBurn;
+        // the percentage of the total reward to be swap to HAT and sent to governance
+        uint256 governanceHatReward;
+        // the percentage of the total reward to be swap to HAT and sent to the hacker
+        uint256 hackerHatReward;
+    }
+
     // Info of each pool.
     struct PoolInfo {
         IERC20 lpToken;
@@ -34,11 +49,8 @@ contract HATMaster {
 
     // Info of each pool.
     struct PoolReward {
+        RewardsSplit rewardsSplit;
         uint256 pendingLpTokenRewards;
-        uint256 hackerRewardSplit;
-        uint256 approverRewardSplit;
-        uint256 swapAndBurnSplit;
-        uint256 hackerHatRewardSplit;
         uint256[]  rewardsLevels;
         bool committeeCheckIn;
         uint256 vestingDuration;
