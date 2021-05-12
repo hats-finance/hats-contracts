@@ -401,11 +401,11 @@ contract HATToken {
     function _burn(address src, uint rawAmount) internal {
         require(src != address(0), "HAT::burn: cannot burn to the zero address");
 
-        // mint the amount
+        // burn the amount
         uint96 amount = safe96(rawAmount, "HAT::burn: amount exceeds 96 bits");
         totalSupply = safe96(SafeMath.sub(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
 
-        // transfer the amount to the recipient
+        // reduce the amount from src address
         balances[src] = sub96(balances[src], amount, "HAT::burn: burn amount exceeds balance");
         emit Transfer(src, address(0), amount);
 
