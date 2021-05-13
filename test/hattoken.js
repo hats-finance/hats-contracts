@@ -1,4 +1,4 @@
-const HATToken = artifacts.require("./HATToken.sol");
+const HATToken = artifacts.require("./HATTokenMock.sol");
 const utils = require("./utils.js");
 const { fromRpcSig } = require('ethereumjs-util');
 const ethSigUtil = require('eth-sig-util');
