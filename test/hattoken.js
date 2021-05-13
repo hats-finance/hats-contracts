@@ -134,7 +134,12 @@ contract('HATToken', accounts => {
         } catch (error) {
             assertVMException(error);
         }
-
+        try {
+            await token.setPendingMinter(accounts[1], 10 ,{ 'from': accounts[1]});
+            throw 'cant set minter from non governance account';
+        } catch (error) {
+            assertVMException(error);
+        }
         await token.setPendingMinter(accounts[1],10,{ 'from': accounts[0]});
         try {
             await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
