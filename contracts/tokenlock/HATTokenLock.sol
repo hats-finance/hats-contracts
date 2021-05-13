@@ -11,7 +11,7 @@ contract HATTokenLock is TokenLock {
 
     // Initializer
     function initialize(
-        address _owner,
+        address _tokenLockOwner,
         address _beneficiary,
         HATToken _token,
         uint256 _managedAmount,
@@ -24,7 +24,7 @@ contract HATTokenLock is TokenLock {
         bool _canDelegate
     ) external {
         _initialize(
-            _owner,
+            _tokenLockOwner,
             _beneficiary,
             address(_token),
             _managedAmount,
