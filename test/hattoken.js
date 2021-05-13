@@ -190,7 +190,7 @@ contract('HATToken', accounts => {
         assert.equal(tx.logs.length, 1);
         assert.equal(tx.logs[0].event, "Transfer");
         assert.equal(tx.logs[0].args.to, accounts[1]);
-        assert.equal(tx.logs[0].args.amount.toNumber(), 1000);
+        assert.equal(tx.logs[0].args.value.toNumber(), 1000);
     });
 
     it("mint should be reflected in totalSupply", async () => {

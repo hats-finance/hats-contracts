@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
 import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
-contract HATToken {
+contract HATToken is IERC20 {
 
     struct PendingMinter {
         uint256 seedAmount;
@@ -26,13 +27,13 @@ contract HATToken {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public totalSupply;
+    uint public override totalSupply;
 
     address public governance;
     address public governancePending;
     uint256 public setGovernancePendingAtBlock;
     uint256 public timeLockDelayInBlocksUnits;
-    uint256 public cap = 1000000e18;
+    uint256 public constant CAP = 1000000e18;
 
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
@@ -84,10 +85,6 @@ contract HATToken {
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
-    /// @notice The standard EIP-20 transfer event
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-    /// @notice The standard EIP-20 approval event
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     /**
      * @notice Construct a new HAT token
@@ -97,7 +94,7 @@ contract HATToken {
         timeLockDelayInBlocksUnits = _timeLockDelayInBlocksUnits;
     }
 
-    function setPendingGovernance(address _governance) public {
+    function setPendingGovernance(address _governance) external {
         require(msg.sender == governance, "HAT:!governance");
         require(_governance != address(0), "HAT:!_governance");
         governancePending = _governance;
@@ -105,7 +102,7 @@ contract HATToken {
         emit GovernancePending(governance, _governance, block.number);
     }
 
-    function confirmGovernance() public {
+    function confirmGovernance() external {
         require(msg.sender == governance, "HAT:!governance");
         require(setGovernancePendingAtBlock > 0, "HAT:!governancePending");
         require(block.number - setGovernancePendingAtBlock > timeLockDelayInBlocksUnits,
@@ -115,14 +112,14 @@ contract HATToken {
         setGovernancePendingAtBlock = 0;
     }
 
-    function setPendingMinter(address _minter, uint256 _cap) public {
+    function setPendingMinter(address _minter, uint256 _cap) external {
         require(msg.sender == governance, "HAT::!governance");
         pendingMinters[_minter].seedAmount = _cap;
         pendingMinters[_minter].setMinterPendingAtBlock = block.number;
         emit MinterPending(_minter, _cap, block.number);
     }
 
-    function confirmMinter(address _minter) public {
+    function confirmMinter(address _minter) external {
         require(msg.sender == governance, "HAT::mint: only the governance can confirm minter");
         require(pendingMinters[_minter].setMinterPendingAtBlock > 0, "HAT:: no pending minter was set");
         require(block.number - pendingMinters[_minter].setMinterPendingAtBlock > timeLockDelayInBlocksUnits,
@@ -132,11 +129,11 @@ contract HATToken {
         emit MinterChanged(_minter, pendingMinters[_minter].seedAmount);
     }
 
-    function burn(uint256 _amount) public {
+    function burn(uint256 _amount) external {
         return _burn(msg.sender, _amount);
     }
 
-    function mint(address _account, uint _amount) public {
+    function mint(address _account, uint _amount) external {
         require(minters[msg.sender] >= _amount, "HATToken: amount greater than limitation");
         minters[msg.sender] = SafeMath.sub(minters[msg.sender], _amount);
         _mint(_account, _amount);
@@ -148,7 +145,7 @@ contract HATToken {
      * @param spender The address of the account spending the funds
      * @return The number of tokens approved
      */
-    function allowance(address account, address spender) external view returns (uint) {
+    function allowance(address account, address spender) external override view returns (uint) {
         return allowances[account][spender];
     }
 
@@ -160,7 +157,7 @@ contract HATToken {
      * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint rawAmount) external returns (bool) {
+    function approve(address spender, uint rawAmount) external override returns (bool) {
         uint96 amount;
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
@@ -186,7 +183,7 @@ contract HATToken {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint addedValue) external virtual returns (bool) {
         require(spender != address(0), "HAT: increaseAllowance to the zero address");
         uint96 valueToAdd = safe96(addedValue, "HAT::increaseAllowance: addedValue exceeds 96 bits");
         allowances[msg.sender][spender] =
@@ -209,7 +206,7 @@ contract HATToken {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint subtractedValue) external virtual returns (bool) {
         require(spender != address(0), "HAT: decreaseAllowance to the zero address");
         uint96 valueTosubtract = safe96(subtractedValue, "HAT::decreaseAllowance: subtractedValue exceeds 96 bits");
         allowances[msg.sender][spender] = sub96(allowances[msg.sender][spender], valueTosubtract,
@@ -254,7 +251,7 @@ contract HATToken {
      * @param account The address of the account to get the balance of
      * @return The number of tokens held
      */
-    function balanceOf(address account) external view returns (uint) {
+    function balanceOf(address account) external view override returns (uint) {
         return balances[account];
     }
 
@@ -264,7 +261,7 @@ contract HATToken {
      * @param rawAmount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint rawAmount) external returns (bool) {
+    function transfer(address dst, uint rawAmount) external override returns (bool) {
         uint96 amount = safe96(rawAmount, "HAT::transfer: amount exceeds 96 bits");
         _transferTokens(msg.sender, dst, amount);
         return true;
@@ -277,13 +274,14 @@ contract HATToken {
      * @param rawAmount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint rawAmount) external returns (bool) {
+    function transferFrom(address src, address dst, uint rawAmount) external override returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
         uint96 amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
 
         if (spender != src && spenderAllowance != type(uint96).max) {
-            uint96 newAllowance = sub96(spenderAllowance, amount, "HAT::transferFrom: transfer amount exceeds spender allowance");
+            uint96 newAllowance = sub96(spenderAllowance, amount,
+            "HAT::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -297,7 +295,7 @@ contract HATToken {
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegatee The address to delegate votes to
      */
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) external {
         return _delegate(msg.sender, delegatee);
     }
 
@@ -310,7 +308,7 @@ contract HATToken {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public {
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
@@ -338,7 +336,7 @@ contract HATToken {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
+    function getPriorVotes(address account, uint blockNumber) external view returns (uint96) {
         require(blockNumber < block.number, "HAT::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -379,7 +377,7 @@ contract HATToken {
      */
     function _mint(address dst, uint rawAmount) internal {
         require(dst != address(0), "HAT::mint: cannot transfer to the zero address");
-        require(SafeMath.add(totalSupply, rawAmount) <= cap, "ERC20Capped: cap exceeded");
+        require(SafeMath.add(totalSupply, rawAmount) <= CAP, "ERC20Capped: CAP exceeded");
 
         // mint the amount
         uint96 amount = safe96(rawAmount, "HAT::mint: amount exceeds 96 bits");
