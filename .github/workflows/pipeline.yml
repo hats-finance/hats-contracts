@@ -5,7 +5,7 @@ name: Contracts Quality Test
 
 on:
   push:
-    branches: [ develop, audit_1 ]
+    branches: [ develop, audit_1,  audit_fix_1_0 ]
   pull_request:
     branches: [ develop, main, audit_1 ]
 
