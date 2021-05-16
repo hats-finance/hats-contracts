@@ -4,8 +4,6 @@ const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
-const PoolUpdateHelper = artifacts.require("./PoolUpdateHelper.sol");
-
 const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 
@@ -1177,7 +1175,7 @@ contract('HatVaults',  accounts =>  {
 
 
   it("setPool x2", async () => {
-    var poolUpdateHelper = await PoolUpdateHelper.new();
+    var poolManagerMock = await PoolsManagerMock.new();
     await setup(accounts);
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
@@ -1191,7 +1189,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
     await hatVaults.setPool(0,200,true,"123");
     // Update twice in one block should be same as once
-    await poolUpdateHelper.updatePoolsTwice(hatVaults.address, 0, 1);
+    await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 80);

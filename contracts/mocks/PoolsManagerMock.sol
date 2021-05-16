@@ -42,4 +42,9 @@ contract PoolsManagerMock {
         }
     }
 
+    function updatePoolsTwice(HATMaster target, uint256 _fromPid, uint256 _toPid) external {
+        target.massUpdatePools(_fromPid, _toPid);
+        target.massUpdatePools(_fromPid, _toPid);
+    }
+
 }
