@@ -5,9 +5,9 @@ name: Contracts Quality Test
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ develop, audit_1 ]
   pull_request:
-    branches: [ develop, main ]
+    branches: [ develop, main, audit_1 ]
 
 jobs:
   build:
