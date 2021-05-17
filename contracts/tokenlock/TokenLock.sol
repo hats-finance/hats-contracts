@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Ownable.sol";
+import "./OwnableInitializable.sol";
 import "./MathUtils.sol";
 import "./ITokenLock.sol";
 
@@ -30,7 +30,7 @@ import "./ITokenLock.sol";
  * perform the first release on the configured time. After that it will continue with the
  * default schedule.
  */
-abstract contract TokenLock is Ownable, ITokenLock {
+abstract contract TokenLock is OwnableInitializable, ITokenLock {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -85,13 +85,13 @@ abstract contract TokenLock is Ownable, ITokenLock {
 
     // Constructor
     constructor() {
-        Ownable.initialize(msg.sender);
+        OwnableInitializable.initialize(msg.sender);
     }
 
 
     /**
      * @notice Initializes the contract
-     * @param _owner Address of the contract owner
+     * @param _tokenLockOwner Address of the contract owner
      * @param _beneficiary Address of the beneficiary of locked tokens
      * @param _managedAmount Amount of tokens to be managed by the lock contract
      * @param _startTime Start time of the release schedule
@@ -102,7 +102,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @param _revocable Whether the contract is revocable
      */
     function _initialize(
-        address _owner,
+        address _tokenLockOwner,
         address _beneficiary,
         address _token,
         uint256 _managedAmount,
@@ -114,7 +114,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
         Revocability _revocable
     ) internal {
         require(!isInitialized, "Already initialized");
-        require(_owner != address(0), "Owner cannot be zero");
+        require(_tokenLockOwner != address(0), "Owner cannot be zero");
         require(_beneficiary != address(0), "Beneficiary cannot be zero");
         require(_token != address(0), "Token cannot be zero");
         require(_managedAmount > 0, "Managed tokens cannot be zero");
@@ -127,7 +127,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
 
         isInitialized = true;
 
-        Ownable.initialize(_owner);
+        OwnableInitializable.initialize(_tokenLockOwner);
         beneficiary = _beneficiary;
         token = IERC20(_token);
 

@@ -6,9 +6,10 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
+import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 
 
-contract HATMaster {
+contract HATMaster is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -136,7 +137,7 @@ contract HATMaster {
     }
 
     // --------- For user ----------------
-    function deposit(uint256 _pid, uint256 _amount) public {
+    function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
         require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -161,7 +162,7 @@ contract HATMaster {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function claimReward(uint256 _pid) public {
+    function claimReward(uint256 _pid) external {
         deposit(_pid, 0);
     }
 
@@ -195,8 +196,8 @@ contract HATMaster {
         return amountCanMint < amount ? amountCanMint : amount;
     }
 
-    function getRewardPerBlock(uint256 pid1) public view returns (uint256) {
-        uint256 multiplier = getMultiplier(block.number -1, block.number);
+    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
+        uint256 multiplier = getMultiplier(block.number-1, block.number);
         if (pid1 == 0) {
             return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
         } else {
@@ -208,7 +209,7 @@ contract HATMaster {
         }
     }
 
-    function pendingReward(uint256 _pid, address _user) public view returns (uint256) {
+    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
@@ -223,11 +224,11 @@ contract HATMaster {
         return poolInfo.length;
     }
 
-    function getGlobalPoolUpdatesLength() public view returns (uint256) {
+    function getGlobalPoolUpdatesLength() external view returns (uint256) {
         return globalPoolUpdates.length;
     }
 
-    function getStakedAmount(uint _pid, address _user) public view returns (uint256) {
+    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
         return  user.amount;
     }
@@ -269,7 +270,7 @@ contract HATMaster {
                 poolUpdates[poolUpdatesLength-1].totalAllocPoint));
     }
 
-    function _withdraw(uint256 _pid, uint256 _amount) internal {
+    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);

@@ -3,6 +3,7 @@ require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-solhint");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-etherscan");
+require('hardhat-contract-sizer');
 
 
 const PRIVATE = require("./.private.json");
@@ -158,5 +159,10 @@ module.exports = {
         runs: 200
       }
     }
-  }
+  },
+  contractSizer: {
+    alphaSort: false,
+    runOnCompile: true,
+    disambiguatePaths: true,
+}
 };

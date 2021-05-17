@@ -44,21 +44,11 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
      * Constructor.
      * @param _masterCopy Address of the master copy to use to clone proxies
      */
-    constructor(address _masterCopy) {
+    constructor(address _masterCopy) public {
         setMasterCopy(_masterCopy);
     }
 
     // -- Factory --
-    /**
-     * @notice Sets the masterCopy bytecode to use to create clones of TokenLock contracts
-     * @param _masterCopy Address of contract bytecode to factory clone
-     */
-    function setMasterCopy(address _masterCopy) public override onlyOwner {
-        require(_masterCopy != address(0), "MasterCopy cannot be zero");
-        masterCopy = _masterCopy;
-        emit MasterCopyUpdated(_masterCopy);
-    }
-
     /**
      * @notice Creates and fund a new token lock wallet using a minimum proxy
      * @param _token token to time lock
@@ -112,6 +102,16 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
         _vestingCliffTime,
         _revocable,
         _canDelegate);
+    }
+
+    /**
+     * @notice Sets the masterCopy bytecode to use to create clones of TokenLock contracts
+     * @param _masterCopy Address of contract bytecode to factory clone
+     */
+    function setMasterCopy(address _masterCopy) public override onlyOwner {
+        require(_masterCopy != address(0), "MasterCopy cannot be zero");
+        masterCopy = _masterCopy;
+        emit MasterCopyUpdated(_masterCopy);
     }
 
     //this private function is to handle stack too deep issue
