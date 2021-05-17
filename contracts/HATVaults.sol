@@ -123,7 +123,7 @@ contract  HATVaults is Governable, HATMaster {
         address _hatGovernance,
         IUniswapV2Router01 _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
-    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+    ) public HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
@@ -183,7 +183,9 @@ contract  HATVaults is Governable, HATMaster {
             governance(),
             pendingApproval.beneficiary,
             claimRewards.hackerVestedReward,
+            // solhint-disable-next-line not-rely-on-time
             block.timestamp, //start
+            // solhint-disable-next-line not-rely-on-time
             block.timestamp + poolReward.vestingDuration, //end
             poolReward.vestingPeriods,
             0, //no release start
@@ -191,15 +193,11 @@ contract  HATVaults is Governable, HATMaster {
             ITokenLock.Revocability.Disabled,
             false
         );
-
         lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
         lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
-
-        //approver get its rewards
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned
-        //so it could be swapAndBurn by any one in a seperate tx.
-
+        //so it could be swapAndBurn in a seperate tx.
         swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
         governanceHatRewards[address(lpToken)] =
         governanceHatRewards[address(lpToken)].add(claimRewards.governanceHatReward);
@@ -397,16 +395,13 @@ contract  HATVaults is Governable, HATMaster {
     // swapBurnSend swap lptoken to HAT.
     // send to beneficiary and governance its hats rewards .
     // burn the rest of HAT.
-    // only committee or governance are unauthorized to call this function.
+    // only committee or governance are authorized to call this function.
     function swapBurnSend(uint256 _pid, address _beneficiary) external {
-        //only committee or governance can call it.
         require(committees[_pid] == msg.sender || msg.sender == governance(), "only committee or governance");
-
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
         uint256 amountForGovernanceHatRewards = governanceHatRewards[address(token)];
-
         uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(amountForGovernanceHatRewards);
         require(amount > 0, "amount is zero");
         swapAndBurns[address(token)] = 0;
@@ -425,15 +420,12 @@ contract  HATVaults is Governable, HATMaster {
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
         uint256 burnetHats = hatsRecieved.mul(amountToSwapAndBurn).div(amount);
-
         if (burnetHats > 0) {
-          //burn the relative HATs amount.
             HAT.burn(burnetHats);
         }
         emit SwapAndBurn(_pid, amount, burnetHats);
         address tokenLock;
         uint256 hackerReward = hatsRecieved.mul(amountForHackersHatRewards).div(amount);
-
         if (hackerReward > 0) {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
@@ -441,7 +433,9 @@ contract  HATVaults is Governable, HATMaster {
                 governance(),
                 _beneficiary,
                 hackerReward,
+                // solhint-disable-next-line not-rely-on-time
                 block.timestamp, //start
+                // solhint-disable-next-line not-rely-on-time
                 block.timestamp + hatVestingDuration, //end
                 hatVestingPeriods,
                 0, //no release start
@@ -452,7 +446,6 @@ contract  HATVaults is Governable, HATMaster {
             HAT.transfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        //send rest to governance
         HAT.transfer(governance(), hatsRecieved.sub(hackerReward).sub(burnetHats));
     }
 

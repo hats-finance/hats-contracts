@@ -1,0 +1,90 @@
+{
+  "communication-channel": {
+    "committee-bot": "https://170.29.30.40/comchan",
+    "pgp-pk": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n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\n=capV\n-----END PGP PUBLIC KEY BLOCK-----\n"
+  },
+  "Project-metadata": {
+		"website": "https://yearn.finance/",
+		"icon": "https://cryptologos.cc/logos/yearn-finance-yfi-logo.svg?v=010"
+
+	},
+	"committee": {
+		"multisig-address": "0x536835937de4340f73d98ac94a6be3da98f51fe3",
+		"members": [{
+				"name": "andre",
+				"address": "0x536835937de4340f73d98ac94a6be3da98f51fe3",
+				"twitter-link": "https://twitter.com/andre"
+			},
+			{
+				"name": "loren",
+				"address": "0x536835937de4340f73d98ac94a6be3da98f51fe3",
+				"twitter-link": "https://twitter.com/loren"
+			}
+		]
+	},
+	"severities": [{
+			"name": "low",
+			"index": 0,
+			"contracts-covered": [{
+					"hello contract": "0x536835937de4340f73d98ac94a6be3da98f51fe3"
+				},
+				{
+					"vault": "0xD11Eb5Db7cFbB9ECae4B62E71Ec0A461F6baF669"
+				},
+				{
+					"yeald-farming": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+				}
+			],
+			"nft-link": "https://opensea.io/assets/0xd07dc4262bcdbf85190c01c996b4c06a461d2430/124178",
+			"reward-for": "lorem ipsum low"
+		},
+		{
+			"name": "medium",
+			"index": 1,
+			"contracts-covered": [{
+					"hello contract": "0x536835937de4340f73d98ac94a6be3da98f51fe3"
+				},
+				{
+					"vault": "0xD11Eb5Db7cFbB9ECae4B62E71Ec0A461F6baF669"
+				},
+				{
+					"yeald-farming": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+				}
+			],
+			"nft-link": "https://opensea.io/assets/0xd07dc4262bcdbf85190c01c996b4c06a461d2430/124178",
+			"reward-for": "lorem ipsum medium"
+		},
+		{
+			"name": "high",
+			"index": 2,
+			"contracts-covered": [{
+					"hello-contract": "0x536835937de4340f73d98ac94a6be3da98f51fe3"
+				},
+				{
+					"vault": "0xD11Eb5Db7cFbB9ECae4B62E71Ec0A461F6baF669"
+				},
+				{
+					"yeald-farming": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+				}
+			],
+			"nft-link": "https://opensea.io/assets/0xd07dc4262bcdbf85190c01c996b4c06a461d2430/124178",
+			"reward-for": "lorem ipsum high"
+		},
+		{
+			"name": "critical",
+			"index": 3,
+			"contracts-covered": [{
+					"hello-contract": "0x536835937de4340f73d98ac94a6be3da98f51fe3"
+				},
+				{
+					"vault": "0xD11Eb5Db7cFbB9ECae4B62E71Ec0A461F6baF669"
+				},
+				{
+					"yeald-farming": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+				}
+			],
+			"nft-link": "https://opensea.io/assets/0xd07dc4262bcdbf85190c01c996b4c06a461d2430/124178",
+			"reward-for": "lorem ipsum critical"
+		}
+	]
+}
