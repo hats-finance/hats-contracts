@@ -1,4 +1,4 @@
-const HATToken = artifacts.require("./HATToken.sol");
+const HATToken = artifacts.require("./HATTokenMock.sol");
 const utils = require("./utils.js");
 const { fromRpcSig } = require('ethereumjs-util');
 const ethSigUtil = require('eth-sig-util');
@@ -41,6 +41,13 @@ contract('HATToken', accounts => {
         userSupply = await token.balanceOf(governance);
         assert.equal(totalSupply, 1000);
         assert.equal(userSupply, 1000);
+
+        try {
+            await token.mint('0x0000000000000000000000000000000000000000', 1300);
+            throw 'cant mint to 0 address';
+        } catch (error) {
+            assertVMException(error);
+        }
 
         await token.mint(accounts[2], 1300);
         totalSupply = await token.totalSupply();
@@ -134,7 +141,12 @@ contract('HATToken', accounts => {
         } catch (error) {
             assertVMException(error);
         }
-
+        try {
+            await token.setPendingMinter(accounts[1], 10 ,{ 'from': accounts[1]});
+            throw 'cant set minter from non governance account';
+        } catch (error) {
+            assertVMException(error);
+        }
         await token.setPendingMinter(accounts[1],10,{ 'from': accounts[0]});
         try {
             await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
@@ -224,6 +236,13 @@ contract('HATToken', accounts => {
 
         await token.burn(100,{ from: accounts[1] });
 
+        try {
+            await token.burnFrom('0x0000000000000000000000000000000000000000', 0);
+            throw 'cant burn from 0 address';
+        } catch (error) {
+            assertVMException(error);
+        }
+
         amount = await token.balanceOf(accounts[1]);
 
         assert.equal(amount.toNumber(), 900);
@@ -243,6 +262,14 @@ contract('HATToken', accounts => {
     it("getPriorVotes ", async () => {
         const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
         await utils.setMinter(token,accounts[0],2000);
+
+        try {
+            await token.getPriorVotes(accounts[1], (await web3.eth.getBlock("latest")).number + 1);
+            throw 'cant get for future block';
+        } catch (error) {
+            assertVMException(error);
+        }
+
         // Should start at 0
         let currentVote = await token.getPriorVotes(accounts[1], (await web3.eth.getBlock("latest")).number - 1);
         assert.equal(currentVote , 0);

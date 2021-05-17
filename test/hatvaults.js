@@ -1,10 +1,9 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
-const HATToken = artifacts.require("./HATToken.sol");
+const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
-
 const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 
@@ -22,7 +21,7 @@ const setup = async function (
                               rewardsLevels=[],
                               rewardsSplit=[0,0,0,0,0,0],
                             ) {
-  hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+  hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   router =  await UniSwapV2RouterMock.new();
@@ -300,7 +299,7 @@ contract('HatVaults',  accounts =>  {
         let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
 
         await safeWithdraw(0,web3.utils.toWei("1"),staker);
-        //staker  get stake back
+        //staker get stake back
         assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
         assert.equal((await hatToken.balanceOf(staker)).toString(),
                       expectedReward.toString());
@@ -424,6 +423,56 @@ contract('HatVaults',  accounts =>  {
       //staker  get stake back
       assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("4").toString());
       assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
+    });
+
+    it("hat reward withdraw all balance if reward larger than balance", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
+      assert.equal(await hatToken.balanceOf(staker), 0);
+
+      // Deposit redeemed existing reward
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      let expectedReward = await calculateExpectedReward(staker);
+      var tx = await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal(tx.logs[0].event, "SendReward");
+      assert.equal(tx.logs[0].args.amount.toString(), expectedReward.toString());
+      assert.equal(tx.logs[0].args.user, staker);
+      assert.equal(tx.logs[0].args.pid, 0);
+      assert.isTrue(tx.logs[0].args.requestedAmount.eq(tx.logs[0].args.amount));
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      expectedReward = await calculateExpectedReward(staker);
+      var balanceOfStakerBefore = await hatToken.balanceOf(staker);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
+
+      // Deposit redeemed existing reward
+      await utils.increaseTime(7*24*3600);
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      expectedReward = await calculateExpectedReward(staker);
+      balanceOfStakerBefore = await hatToken.balanceOf(staker);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.add(balanceOfStakerBefore).toString());
+      assert.equal(await stakingToken.balanceOf(staker), 0);
+      assert.equal(await stakingToken.balanceOf(hatVaults.address), web3.utils.toWei("4"));
+      await utils.increaseTime(7*24*3600);
+      //withdraw
+      await hatVaults.updatePool(0);
+      balanceOfStakerBefore = await hatToken.balanceOf(staker);
+      // Burn tokens so contract doesn't have enough for the whole reward
+      let balanceInPool = await hatToken.balanceOf(hatVaults.address);
+      await hatToken.burnFrom(hatVaults.address, balanceInPool);
+      expectedReward = await calculateExpectedReward(staker);
+      await hatVaults.withdraw(0,web3.utils.toWei("4"),{from:staker});
+      //staker get stake back
+      assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("4").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.sub(balanceInPool).add(balanceOfStakerBefore).toString());
+      assert.equal((await hatToken.balanceOf(hatVaults.address)).toString(), '0');
     });
 
     it("getMultiplier - from below startblock return 0", async () => {
@@ -1126,6 +1175,7 @@ contract('HatVaults',  accounts =>  {
 
 
   it("setPool x2", async () => {
+    var poolManagerMock = await PoolsManagerMock.new();
     await setup(accounts);
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
@@ -1138,11 +1188,11 @@ contract('HatVaults',  accounts =>  {
     await stakingToken2.mint(staker,web3.utils.toWei("2"));
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
     await hatVaults.setPool(0,200,true,"123");
-    await hatVaults.massUpdatePools(0,2);
-    await hatVaults.massUpdatePools(0,2);
+    // Update twice in one block should be same as once
+    await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),90);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 80);
     try {
       await hatVaults.massUpdatePools(2,1);
       assert(false, 'invalid mass update pools range');
@@ -1188,7 +1238,7 @@ contract('HatVaults',  accounts =>  {
   });
 
   it("add/set pool on the same block", async () => {
-    let hatToken1 = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+    let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
     let router1 =  await UniSwapV2RouterMock.new();
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
