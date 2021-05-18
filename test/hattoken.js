@@ -317,6 +317,22 @@ contract('HATToken', accounts => {
         assert.equal(currentVote , 50);
     });
 
+    it("delegate twice in same block ", async () => {
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],2000);
+
+        // Should start at 0
+        let currentVote = await token.getPriorVotes(accounts[1], (await web3.eth.getBlock("latest")).number - 1);
+        assert.equal(currentVote , 0);
+
+        await token.mint(accounts[1], 100);
+        currentVote = await token.getCurrentVotes(accounts[1]);
+        assert.equal(currentVote , 0);
+        await token.delegateTwice(accounts[1], accounts[2],{from:accounts[1]});
+        currentVote = await token.getCurrentVotes(accounts[1]);
+        assert.equal(currentVote , 100);
+    });
+
     it("CappedToken ", async () => {
         const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
         const cap = web3.utils.toWei("1000000");
@@ -434,6 +450,31 @@ contract('HATToken', accounts => {
 
     });
 
+    it("transfer from and to 0 address not allowed", async () => {
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(accounts[1], web3.utils.toWei("100"));
+        let value = web3.utils.toWei("10");
+
+        await token.approve(accounts[2], value, { from: accounts[1] });
+
+        assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), value.toString());
+
+        try {
+            await token.transferFrom(accounts[1], '0x0000000000000000000000000000000000000000', web3.utils.toWei("1"), { from: accounts[2] });
+            assert(false, 'cannot send to 0 address');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        try {
+            await token.transferFromZero(accounts[3], web3.utils.toWei("1"), { from: accounts[2] });
+            assert(false, 'cannot send from 0 address');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+    });
+
     it("approve", async () => {
         const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
@@ -473,9 +514,45 @@ contract('HATToken', accounts => {
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1));
 
+        try {
+            await token.approve(accounts[2], value.sub(web3.utils.toBN(1)), { from: accounts[1] });
+            assert(false, 'cannot allow amount larger than 96 bits');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
         await token.approve(accounts[2], value, { from: accounts[1] });
 
         assert.equal((await token.allowance(accounts[1], accounts[2])).toString(), web3.utils.toBN(2).pow(web3.utils.toBN(96)).sub(web3.utils.toBN(1)).toString());
+        await token.transferFrom(accounts[1], accounts[3], web3.utils.toWei("5"), { from: accounts[2] });
+        recipientBalance = (await token.balanceOf(accounts[3])).toString();
+        assert.equal(recipientBalance, web3.utils.toWei("5"));
+
+        try {
+            await token.increaseAllowance(accounts[2], web3.utils.toBN(1), { from: accounts[1] });
+            assert(false, 'cannot allow amount larger than 96 bits');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+    });
+
+    it("test safe 32", async () => {
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
+        await token.mint(accounts[1], web3.utils.toWei("100"));
+        let value = web3.utils.toBN(2).pow(web3.utils.toBN(32));
+
+        try {
+            await token.testSafe32(value);
+            assert(false, 'cannot allow amount larger than 96 bits');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        value = value.sub(web3.utils.toBN(1));
+
+        let safe32 = await token.testSafe32(value);
+        assert.equal(safe32.toString(), value.toString());
     });
 
     const Permit = [
@@ -657,16 +734,17 @@ contract('HATToken', accounts => {
     });
 
     const Delegation = [
+        { name: 'owner', type: 'address' },
         { name: 'delegatee', type: 'address' },
         { name: 'nonce', type: 'uint256' },
         { name: 'expiry', type: 'uint256' },
     ];
 
-    const buildDataDelegation = (chainId, verifyingContract, delegatee, nonce, expiry) => ({
+    const buildDataDelegation = (chainId, verifyingContract, owner, delegatee, nonce, expiry) => ({
         primaryType: 'Delegation',
         types: { EIP712Domain, Delegation },
         domain: { name: "HATToken", chainId, verifyingContract },
-        message: { delegatee, nonce, expiry },
+        message: { owner, delegatee, nonce, expiry },
     });
 
     it("delegateBySig", async () => {
@@ -684,13 +762,21 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
+            owner,
             accounts[2],
             nonce,
             expiry,
         );
         const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
         const { v, r, s } = fromRpcSig(signature);
-        await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
+
+        try {
+            await token.delegateBySig(owner, accounts[3], nonce, expiry, v, r, s);
+            assert(false, 'cant delegate with wrong signature');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+        await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
 
         assert.equal((await token.nonces(owner)).toString(), '1');
         assert.equal(await token.delegates(owner), accounts[2]);
@@ -711,18 +797,19 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
+            owner,
             accounts[2],
             nonce,
             expiry,
         );
         const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
         const { v, r, s } = fromRpcSig(signature);
-        await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
+        await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
 
         assert.equal((await token.nonces(owner)).toString(), '1');
         assert.equal(await token.delegates(owner), accounts[2]);
         try {
-            await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
+            await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
             assert(false, 'cannot replay signed delegation message');
         } catch (ex) {
             assertVMException(ex);
@@ -744,6 +831,7 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
+            owner,
             accounts[2],
             nonce,
             expiry,
@@ -752,7 +840,7 @@ contract('HATToken', accounts => {
         const { v, r, s } = fromRpcSig(signature);
         await utils.increaseTime(7*24*3600);
         try {
-            await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
+            await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
             assert(false, 'cannot replay signed permit message');
         } catch (ex) {
             assertVMException(ex);
