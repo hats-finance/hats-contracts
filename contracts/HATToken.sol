@@ -301,6 +301,7 @@ contract HATToken is IERC20 {
 
     /**
      * @notice Delegates votes from signatory to `delegatee`
+     * @param owner The address delegating the votes
      * @param delegatee The address to delegate votes to
      * @param nonce The contract state required to match the signature
      * @param expiry The time at which to expire the signature
