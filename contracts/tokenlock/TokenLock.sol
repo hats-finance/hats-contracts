@@ -10,8 +10,8 @@ import "./OwnableInitializable.sol";
 import "./MathUtils.sol";
 import "./ITokenLock.sol";
 
-// this contract is based on HatTokenLock
-// see https://github.com/graphprotocol/token-distribution/blob/main/contracts/HatTokenLock.sol
+// this contract is based on GraphTokenLock
+// see https://github.com/graphprotocol/token-distribution/blob/main/contracts/GraphTokenLock.sol
 
 /**
  * @title HatTokenLock
@@ -82,12 +82,6 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         require(msg.sender == beneficiary, "!auth");
         _;
     }
-
-    // Constructor
-    constructor() {
-        OwnableInitializable.initialize(msg.sender);
-    }
-
 
     /**
      * @notice Initializes the contract
