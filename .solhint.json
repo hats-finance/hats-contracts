@@ -1,13 +1,13 @@
 {
-    "extends": "solhint:all",
+    "extends": "solhint:recommended",
     "rules": {
       "indent": ["error", 4],
-
-       "compiler-fixed": "off",
+      "compiler-fixed": "off",
       "no-simple-event-func-name": "off",
       "two-lines-top-level-separator": "off",
       "mark-callable-contracts": "off",
-      "reason-string": "off",
-      "compiler-version": ["error","^0.8.4"]
+      "reason-string": "on",
+      "compiler-version": ["error","^0.8.4"],
+      "func-visibility": ["error",{"ignoreConstructors": true}]
     }
   }
