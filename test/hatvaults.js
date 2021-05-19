@@ -236,7 +236,7 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "700");
 
       try {
-          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000]);
+          await hatVaults.setRewardsLevels(0, [1500, 3000, 4500, 9000, 11000],{from:accounts[1]});
           assert(false, "reward level can't be more than 10000");
       } catch (ex) {
           assertVMException(ex);
@@ -687,6 +687,15 @@ contract('HatVaults',  accounts =>  {
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
     await stakingToken.mint(staker2,web3.utils.toWei("1"));
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    try {
+          await hatVaults.approveClaim(0);
+          assert(false, 'lpbalance is zero');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    await hatVaults.dismissPendingApprovalClaim(0);
 
     //stake
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
@@ -722,6 +731,12 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
       }
+      try {
+            await hatVaults.approveClaim(0);
+            assert(false, 'there is no pending approval');
+          } catch (ex) {
+            assertVMException(ex);
+        }
     var tx = await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
     try {
           await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
@@ -752,7 +767,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000047");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000037");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   });
 
@@ -1321,10 +1336,36 @@ contract('HatVaults',  accounts =>  {
     let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
     try {
           await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
-          assert(false, 'canot add pool with already exist token');
+          assert(false, 'cannot add pool with already exist token');
         } catch (ex) {
           assertVMException(ex);
       }
+      try {
+            await hatVaults.addPool(100,stakingToken2.address,utils.NULL_ADDRESS,[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+            assert(false, 'committee cannot be zero');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+        try {
+              await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[10,86400]);
+              assert(false, 'vesting duration smaller than period');
+            } catch (ex) {
+              assertVMException(ex);
+          }
+
+          try {
+                await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[(121*24*3600),10]);
+                assert(false, 'vesting duration is too long');
+              } catch (ex) {
+                assertVMException(ex);
+            }
+
+            try {
+                 await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,0]);
+                  assert(false, 'vesting period cannot be zero');
+                } catch (ex) {
+                  assertVMException(ex);
+              }
     await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
     await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
