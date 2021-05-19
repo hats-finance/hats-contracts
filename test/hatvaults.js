@@ -1230,6 +1230,24 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
       }
+      try {
+            await hatVaults.setVestingParams(0,21000,0);
+            assert(false, 'period should not be zero');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+        try {
+              await hatVaults.setVestingParams(0,120*24*3600,7);
+              assert(false, 'duration should be less than 120 days');
+            } catch (ex) {
+              assertVMException(ex);
+          }
+          try {
+                await hatVaults.setVestingParams(0,6,7);
+                assert(false, 'duration should be greater than period');
+              } catch (ex) {
+                assertVMException(ex);
+            }
     var tx = await hatVaults.setVestingParams(0,21000,7);
     assert.equal(tx.logs[0].event, "SetVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
@@ -1252,6 +1270,24 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
       }
+      try {
+            await hatVaults.setHatVestingParams(21000,0);
+            assert(false, 'period should not be zero');
+          } catch (ex) {
+            assertVMException(ex);
+        }
+        try {
+              await hatVaults.setHatVestingParams(120*24*3600,7);
+              assert(false, 'duration should be less than 120 days');
+            } catch (ex) {
+              assertVMException(ex);
+          }
+          try {
+                await hatVaults.setHatVestingParams(6,7);
+                assert(false, 'duration should be greater than period');
+              } catch (ex) {
+                assertVMException(ex);
+            }
     var tx = await hatVaults.setHatVestingParams(21000,7);
     assert.equal(tx.logs[0].event, "SetHatVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
