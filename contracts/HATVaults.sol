@@ -57,6 +57,11 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+    modifier noPendingApproval(uint256 _pid) {
+        require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
+        _;
+    }
+
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
 
     event AddPool(uint256 indexed _pid,
@@ -124,7 +129,7 @@ contract  HATVaults is Governable, HATMaster {
         address _hatGovernance,
         IUniswapV2Router01 _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
-    ) public HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
@@ -136,25 +141,25 @@ contract  HATVaults is Governable, HATMaster {
      * This function should be called only on a safty period, where withdrawn is disable.
      * Upon a call to this function by the committee the pool withdrawn will be disable
      * till governance will approve or dismiss this pending approval.
-     * @param _poolId pool id
+     * @param _pid pool id
      * @param _beneficiary the approval claim beneficiary
      * @param _severity approval claim severity
    */
-    function pendingApprovalClaim(uint256 _poolId, address _beneficiary, uint256 _severity)
+    function pendingApprovalClaim(uint256 _pid, address _beneficiary, uint256 _severity)
     external
-    onlyCommittee(_poolId) {
+    onlyCommittee(_pid)
+    noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        require(pendingApprovals[_poolId].beneficiary == address(0), "there is already pending approval");
         require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) >= WITHDRAW_PERIOD,
         "none safty period");
-        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
+        require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
 
-        pendingApprovals[_poolId] = PendingApproval({
+        pendingApprovals[_pid] = PendingApproval({
             beneficiary: _beneficiary,
             severity: _severity,
             approver: msg.sender
         });
-        emit PendingApprovalLog(_poolId, _beneficiary, _severity, msg.sender);
+        emit PendingApprovalLog(_pid, _beneficiary, _severity, msg.sender);
     }
 
     /**
@@ -288,13 +293,14 @@ contract  HATVaults is Governable, HATMaster {
    * @dev setRewardsLevels - set the pool token rewards level.
    * the reward level represent the percentage of the pool's token which will be splited as a reward.
    * the function can be called only by the pool committee.
+   * cannot be called if there already pending approval.
    * each level should be less than 10000
    * @param _pid pool id
    * @param _rewardsLevels the reward levels array
  */
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
-    onlyCommittee(_pid) {
+    onlyCommittee(_pid) noPendingApproval(_pid) {
         for (uint256 i=0; i < _rewardsLevels.length; i++) {
             require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
         }
@@ -545,11 +551,10 @@ contract  HATVaults is Governable, HATMaster {
         "total split % should be less than 10000");
     }
 
-    function checkWithdrawRequest(uint256 _pid) internal {
+    function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
         //disable withdraw for 240 blocks each 3000 blocks.
         //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
         require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
-        require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time

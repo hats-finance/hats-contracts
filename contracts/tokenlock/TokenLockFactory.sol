@@ -44,7 +44,7 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
      * Constructor.
      * @param _masterCopy Address of the master copy to use to clone proxies
      */
-    constructor(address _masterCopy) public {
+    constructor(address _masterCopy) {
         setMasterCopy(_masterCopy);
     }
 

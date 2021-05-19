@@ -267,6 +267,15 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.committeeReward.toString(), "1000");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "1100");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "800");
+      await advanceToSaftyPeriod();
+      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      try {
+           await hatVaults.setRewardsLevels(0, [],{from:accounts[1]});
+          assert(false, 'there is already pending approval');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await hatVaults.dismissPendingApprovalClaim(0);
 
       await hatVaults.setRewardsLevels(0, [],{from:accounts[1]});
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
@@ -769,7 +778,7 @@ contract('HatVaults',  accounts =>  {
     //dust
     assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000037");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
-  });
+  }).timeout(40000);
 
 
   it("approve+ stake simple check rewards", async () => {
