@@ -38,6 +38,9 @@ contract  HATVaults is Governable, HATMaster {
     //pid -> PendingApproval
     mapping(uint256 => PendingApproval) public pendingApprovals;
 
+    //poolId -> (address -> requestTime)
+    mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
+
     uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
@@ -46,17 +49,16 @@ contract  HATVaults is Governable, HATMaster {
     uint256 public constant WITHDRAW_PERIOD =  3000;
     uint256 public constant WITHDRAW_DISABLE_PERIOD =  240;
     IUniswapV2Router01 public immutable uniSwapRouter;
-
-    modifier onlyWithdrawPeriod(uint256 _pid) {
-        //disable withdraw for 240 blocks each 3000 blocks.
-        //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
-        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
-        require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
-        _;
-    }
+    uint256 public withdrawEnablePeriod = 1 days;
+    uint256 public withdrawRequestPendingPeriod = 7 days;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
+        _;
+    }
+
+    modifier noPendingApproval(uint256 _pid) {
+        require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
         _;
     }
 
@@ -100,6 +102,10 @@ contract  HATVaults is Governable, HATMaster {
                             uint256 indexed _severity,
                             address _approver);
 
+    event WithdrawRequest(uint256 indexed _pid,
+                        address indexed _beneficiary,
+                        uint256 indexed _withdrawEnableTime);
+
     /**
    * @dev constructor -
    * @param _rewardsToken the reward token address (HAT)
@@ -123,7 +129,7 @@ contract  HATVaults is Governable, HATMaster {
         address _hatGovernance,
         IUniswapV2Router01 _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
-    ) public HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
@@ -135,25 +141,37 @@ contract  HATVaults is Governable, HATMaster {
      * This function should be called only on a safty period, where withdrawn is disable.
      * Upon a call to this function by the committee the pool withdrawn will be disable
      * till governance will approve or dismiss this pending approval.
-     * @param _poolId pool id
+     * @param _pid pool id
      * @param _beneficiary the approval claim beneficiary
      * @param _severity approval claim severity
    */
-    function pendingApprovalClaim(uint256 _poolId, address _beneficiary, uint256 _severity)
+    function pendingApprovalClaim(uint256 _pid, address _beneficiary, uint256 _severity)
     external
-    onlyCommittee(_poolId) {
+    onlyCommittee(_pid)
+    noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        require(pendingApprovals[_poolId].beneficiary == address(0), "there is already pending approval");
         require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) >= WITHDRAW_PERIOD,
         "none safty period");
-        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
+        require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
 
-        pendingApprovals[_poolId] = PendingApproval({
+        pendingApprovals[_pid] = PendingApproval({
             beneficiary: _beneficiary,
             severity: _severity,
             approver: msg.sender
         });
-        emit PendingApprovalLog(_poolId, _beneficiary, _severity, msg.sender);
+        emit PendingApprovalLog(_pid, _beneficiary, _severity, msg.sender);
+    }
+
+    /**
+     * @dev setWithrawRequestParams - called by hats governance to set withdraw request params
+     * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
+     * @param _withdrawEnablePeriod - the time period where the withdraw is enable for a withdraw request.
+    */
+    function setWithrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawEnablePeriod)
+    external
+    onlyGovernance {
+        withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
+        withdrawEnablePeriod = _withdrawEnablePeriod;
     }
 
   /**
@@ -275,13 +293,14 @@ contract  HATVaults is Governable, HATMaster {
    * @dev setRewardsLevels - set the pool token rewards level.
    * the reward level represent the percentage of the pool's token which will be splited as a reward.
    * the function can be called only by the pool committee.
+   * cannot be called if there already pending approval.
    * each level should be less than 10000
    * @param _pid pool id
    * @param _rewardsLevels the reward levels array
  */
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
-    onlyCommittee(_pid) {
+    onlyCommittee(_pid) noPendingApproval(_pid) {
         for (uint256 i=0; i < _rewardsLevels.length; i++) {
             require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
         }
@@ -449,11 +468,22 @@ contract  HATVaults is Governable, HATMaster {
         HAT.transfer(governance(), hatsRecieved.sub(hackerReward).sub(burnetHats));
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) external onlyWithdrawPeriod(_pid) {
+    function withdrawRequest(uint256 _pid) external {
+      // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp > withdrawRequests[_pid][msg.sender] + withdrawEnablePeriod,
+        "pending withdraw request exist");
+        // solhint-disable-next-line not-rely-on-time
+        withdrawRequests[_pid][msg.sender] = block.timestamp + withdrawRequestPendingPeriod;
+        emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
+    }
+
+    function withdraw(uint256 _pid, uint256 _amount) external {
+        checkWithdrawRequest(_pid);
         _withdraw(_pid, _amount);
     }
 
-    function emergencyWithdraw(uint256 _pid) external onlyWithdrawPeriod(_pid) {
+    function emergencyWithdraw(uint256 _pid) external {
+        checkWithdrawRequest(_pid);
         _emergencyWithdraw(_pid);
     }
 
@@ -519,5 +549,17 @@ contract  HATVaults is Governable, HATMaster {
             .add(_rewardsSplit.governanceHatReward)
             .add(_rewardsSplit.hackerHatReward) < REWARDS_LEVEL_DENOMINATOR,
         "total split % should be less than 10000");
+    }
+
+    function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
+        //disable withdraw for 240 blocks each 3000 blocks.
+        //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
+        require(block.number % (WITHDRAW_PERIOD + WITHDRAW_DISABLE_PERIOD) < WITHDRAW_PERIOD, "safty period");
+      // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
+      // solhint-disable-next-line not-rely-on-time
+                block.timestamp < withdrawRequests[_pid][msg.sender] + withdrawEnablePeriod,
+                "withdraw request not valid");
+        withdrawRequests[_pid][msg.sender] = 0;
     }
 }
