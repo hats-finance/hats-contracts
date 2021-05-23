@@ -167,11 +167,11 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-     * @dev setWithrawRequestParams - called by hats governance to set withdraw request params
+     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
      * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
      * @param _withdrawEnablePeriod - the time period where the withdraw is enable for a withdraw request.
     */
-    function setWithrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawEnablePeriod)
+    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawEnablePeriod)
     external
     onlyGovernance {
         withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
@@ -376,7 +376,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_rewardVestingParams[0] >= _rewardVestingParams[1], "vesting duration smaller than periods");
         require(_committee != address(0), "committee is zero");
         add(_allocPoint, IERC20(_lpToken));
-        uint256 poolId = poolLength()-1;
+        uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
         uint256[] memory rewardsLevels = _rewardsLevels.length == 0 ? defaultRewardLevel : _rewardsLevels;
 
@@ -428,17 +428,20 @@ contract  HATVaults is Governable, HATMaster {
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
-    // swapBurnSend swap lptoken to HAT.
-    // send to beneficiary and governance its hats rewards .
-    // burn the rest of HAT.
-    // only committee or governance are authorized to call this function.
-    function swapBurnSend(uint256 _pid, address _beneficiary) external {
-        require(committees[_pid] == msg.sender || msg.sender == governance(), "only committee or governance");
+    /**
+    * swapBurnSend swap lptoken to HAT.
+    * send to beneficiary and governance its hats rewards .
+    * burn the rest of HAT.
+    * only governance are authorized to call this function.
+    * @param _pid the pool id
+    * @param _beneficiary beneficiary
+    * @param _minOutputAmount minimum output of HATs at swap
+    **/
+    function swapBurnSend(uint256 _pid, address _beneficiary, uint256 _minOutputAmount) external onlyGovernance {
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
-        uint256 amountForGovernanceHatRewards = governanceHatRewards[address(token)];
-        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(amountForGovernanceHatRewards);
+        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(governanceHatRewards[address(token)]);
         require(amount > 0, "amount is zero");
         swapAndBurns[address(token)] = 0;
         governanceHatRewards[address(token)] = 0;
@@ -450,18 +453,19 @@ contract  HATVaults is Governable, HATMaster {
         //Swaps an exact amount of input tokens for as many output tokens as possible,
         //along the route determined by the path.
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        uint256 hatsRecieved =
+        uint256 hatsReceived =
          // solhint-disable-next-line not-rely-on-time
-        uniSwapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp)[1];
-        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsRecieved), "wrong amount received");
+        uniSwapRouter.swapExactTokensForTokens(amount, _minOutputAmount, path, address(this), block.timestamp)[1];
+        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
-        uint256 burnetHats = hatsRecieved.mul(amountToSwapAndBurn).div(amount);
-        if (burnetHats > 0) {
-            HAT.burn(burnetHats);
+
+        uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
+        if (burntHats > 0) {
+            HAT.burn(burntHats);
         }
-        emit SwapAndBurn(_pid, amount, burnetHats);
+        emit SwapAndBurn(_pid, amount, burntHats);
         address tokenLock;
-        uint256 hackerReward = hatsRecieved.mul(amountForHackersHatRewards).div(amount);
+        uint256 hackerReward = hatsReceived.mul(amountForHackersHatRewards).div(amount);
         if (hackerReward > 0) {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
@@ -482,7 +486,7 @@ contract  HATVaults is Governable, HATMaster {
             HAT.transfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        HAT.transfer(governance(), hatsRecieved.sub(hackerReward).sub(burnetHats));
+        HAT.transfer(governance(), hatsReceived.sub(hackerReward).sub(burntHats));
     }
 
     function withdrawRequest(uint256 _pid) external {
