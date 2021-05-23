@@ -241,10 +241,13 @@ contract  HATVaults is Governable, HATMaster {
         "total supply cannot be zero");
     }
 
+    /**
+     * @dev setClaimFee - called by hats governance to set claim fee
+     * @param _fee claim fee in ETH
+    */
     function setClaimFee(uint256 _fee) external onlyGovernance {
         claimFee = _fee;
     }
-
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
