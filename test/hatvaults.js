@@ -1137,11 +1137,27 @@ contract('HatVaults',  accounts =>  {
 
   it("claim", async () => {
     await setup(accounts);
-   let someHash = "0x00000000000000000000000000000000000001";
-    var tx = await hatVaults.claim(someHash);
+    let someHash = "0x00000000000000000000000000000000000001";
+    let fee  = web3.utils.toWei("1");
+    var tx = await hatVaults.claim(someHash,{from:accounts[3]});
     assert.equal(tx.logs[0].event, "Claim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
-    assert.equal(tx.logs[0].args._claimer, accounts[0]);
+    assert.equal(tx.logs[0].args._claimer, accounts[3]);
+
+    await hatVaults.setClaimFee(fee);
+    var govBalanceBefore = new web3.utils.BN(await web3.eth.getBalance(accounts[0]));
+    try {
+          await hatVaults.claim(someHash,{from:accounts[3],value:web3.utils.toWei("0.9")});
+          assert(false, 'fee is not enough');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    tx = await hatVaults.claim(someHash,{from:accounts[3],value:web3.utils.toWei("1")});
+    var govBalanceAfter  =  new web3.utils.BN(await web3.eth.getBalance(accounts[0]));
+    assert.equal(govBalanceAfter.sub(govBalanceBefore),fee);
+    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].args._descriptionHash, someHash);
+    assert.equal(tx.logs[0].args._claimer, accounts[3]);
   });
 
 
@@ -1342,7 +1358,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed,2975486);
+    assert.equal(tx.receipt.gasUsed,2975420);
   }).timeout(40000);
 
 
@@ -1463,5 +1479,24 @@ contract('HatVaults',  accounts =>  {
     let globalUpdatesLen =  await hatVaults1.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (await hatVaults1.globalPoolUpdates(globalUpdatesLen-1)).totalAllocPoint;
     assert.equal(totalAllocPoint.toString(),400); //2 got in the same block
+  });
+
+  it("stop in the middle", async () => {
+      await setup(accounts,"1000");
+      var staker = accounts[1];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+      await stakingToken.mint(staker,web3.utils.toWei("2"));
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await utils.mineBlock(1);
+      await hatVaults.massUpdatePools(0,1);
+      await utils.setMinter(hatToken,hatVaults.address,0);
+      await safeWithdraw(0,web3.utils.toWei("1"),staker);
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("2000").toString());
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await utils.mineBlock(1);
+      await safeWithdraw(0,web3.utils.toWei("1"),staker);
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("2000").toString());
   });
 });
