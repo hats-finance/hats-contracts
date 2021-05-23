@@ -41,6 +41,9 @@ contract  HATVaults is Governable, HATMaster {
     //poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
 
+    //claim fee in ETH
+    uint256 public claimFee;
+
     uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
@@ -129,6 +132,7 @@ contract  HATVaults is Governable, HATMaster {
         address _hatGovernance,
         IUniswapV2Router01 _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
+    // solhint-disable-next-line func-visibility
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
@@ -237,9 +241,19 @@ contract  HATVaults is Governable, HATMaster {
         "total supply cannot be zero");
     }
 
+    function setClaimFee(uint256 _fee) external onlyGovernance {
+        claimFee = _fee;
+    }
+
+
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
-    function claim(string memory _descriptionHash) external {
+    function claim(string memory _descriptionHash) external payable {
+        if (claimFee > 0) {
+            require(msg.value >= claimFee, "not enough fee payed");
+            // solhint-disable-next-line indent
+            payable(governance()).transfer(msg.value);
+        }
         emit Claim(msg.sender, _descriptionHash);
     }
 
