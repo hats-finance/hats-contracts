@@ -237,8 +237,7 @@ contract  HATVaults is Governable, HATMaster {
                         pendingApproval.severity,
                         tokenLock,
                         claimRewards);
-        require(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0,
-        "total supply cannot be zero");
+        assert(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0);
     }
 
     /**
