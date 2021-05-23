@@ -1139,6 +1139,11 @@ contract('HatVaults',  accounts =>  {
     await setup(accounts);
     let someHash = "0x00000000000000000000000000000000000001";
     let fee  = web3.utils.toWei("1");
+    var tx = await hatVaults.claim(someHash,{from:accounts[3]});
+    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].args._descriptionHash, someHash);
+    assert.equal(tx.logs[0].args._claimer, accounts[3]);
+
     await hatVaults.setClaimFee(fee);
     var govBalanceBefore = new web3.utils.BN(await web3.eth.getBalance(accounts[0]));
     try {
@@ -1147,7 +1152,7 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
       }
-    var tx = await hatVaults.claim(someHash,{from:accounts[3],value:web3.utils.toWei("1")});
+    tx = await hatVaults.claim(someHash,{from:accounts[3],value:web3.utils.toWei("1")});
     var govBalanceAfter  =  new web3.utils.BN(await web3.eth.getBalance(accounts[0]));
     assert.equal(govBalanceAfter.sub(govBalanceBefore),fee);
     assert.equal(tx.logs[0].event, "Claim");
