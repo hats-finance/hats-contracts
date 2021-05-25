@@ -123,6 +123,7 @@ contract HATMaster is ReentrancyGuard {
 
         if (pool.totalUsersAmount == 0) {
             pool.lastRewardBlock = block.number;
+            pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
             return;
         }
         uint256 reward = calcPoolReward(_pid);
@@ -237,15 +238,15 @@ contract HATMaster is ReentrancyGuard {
      * @dev calcPoolReward -
      * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
      * and sum up all rewards periods from pool.lastRewardBlock till current block number.
-     * Be careful of gas spending!
      * @param _pid pool id
      * @return reward
      */
-     function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
+    function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
         uint256 from = poolInfo[_pid].lastRewardBlock;
         uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
         PoolUpdate[] memory poolUpdates = globalPoolUpdates;
         uint256 lastPoolUpdate = poolUpdates.length-1;
+
         for (uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint; index < lastPoolUpdate; index++) {
             reward =
             reward.add(getPoolReward(from,
@@ -257,41 +258,7 @@ contract HATMaster is ReentrancyGuard {
         return
         reward.add(getPoolReward(from, block.number, poolAllocPoint, poolUpdates[lastPoolUpdate].totalAllocPoint));
     }
-    // function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
-    //     uint256 from = poolInfo[_pid].lastRewardBlock;
-    //     uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
-    //     PoolUpdate[] memory poolUpdates  =  globalPoolUpdates;
-    //     uint256 poolUpdatesLength = poolUpdates.length;
-    //
-    //     if (poolUpdates[poolUpdatesLength-1].blockNumber <= from) {
-    //         return getPoolReward(from,
-    //         block.number,
-    //         poolAllocPoint,
-    //         poolUpdates[poolUpdatesLength-1].totalAllocPoint);
-    //     }
-    //
-    //     uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint;
-    //
-    //     for (index; index < poolUpdatesLength; index++) {
-    //         if (poolUpdates[index].blockNumber > poolInfo[_pid].lastRewardBlock) {
-    //             break;
-    //         }
-    //     }
-    //
-    //     for (index; index < poolUpdatesLength; index++) {
-    //         reward = reward.add(getPoolReward(from,
-    //         poolUpdates[index].blockNumber,
-    //         poolAllocPoint,
-    //         poolUpdates[index-1].totalAllocPoint));
-    //         from = poolUpdates[index].blockNumber;
-    //     }
-    //
-    //     return reward.add(getPoolReward(from,
-    //             block.number,
-    //             poolAllocPoint,
-    //             poolUpdates[poolUpdatesLength-1].totalAllocPoint));
-    // }
-
+    
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];

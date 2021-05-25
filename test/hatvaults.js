@@ -1358,7 +1358,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed,2975420);
+    assert.equal(tx.receipt.gasUsed,8162151);
   }).timeout(40000);
 
 
@@ -1435,7 +1435,6 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
     await hatVaults.setPool(0,200,true,"123");
-
     var tx = await hatVaults.massUpdatePools(0,2);
         await hatToken.getPastEvents('Transfer', {
               fromBlock: tx.blockNumber,
@@ -1499,4 +1498,5 @@ contract('HatVaults',  accounts =>  {
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
       assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("2000").toString());
   });
+
 });
