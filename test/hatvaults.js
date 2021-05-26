@@ -1523,4 +1523,12 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("22.5").toString());
   });
 
+  it("deposit twice on the same block", async () => {
+    await setup(accounts);
+    var poolManagerMock = await PoolsManagerMock.new();
+    await stakingToken.mint(poolManagerMock.address,web3.utils.toWei("2"));
+    await poolManagerMock.depositTwice(hatVaults.address,stakingToken.address,0,web3.utils.toWei("1"));
+    assert.equal((await hatToken.balanceOf(poolManagerMock.address)).toString(),0);
+  });
+
 });

@@ -47,4 +47,10 @@ contract PoolsManagerMock {
         target.massUpdatePools(_fromPid, _toPid);
     }
 
+    function depositTwice(HATMaster _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
+        _lpToken.approve(address(_target), _amount * 2);
+        _target.deposit(_pid, _amount);
+        _target.deposit(_pid, _amount);
+    }
+
 }
