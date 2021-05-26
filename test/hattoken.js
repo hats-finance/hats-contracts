@@ -734,17 +734,16 @@ contract('HATToken', accounts => {
     });
 
     const Delegation = [
-        { name: 'owner', type: 'address' },
         { name: 'delegatee', type: 'address' },
         { name: 'nonce', type: 'uint256' },
         { name: 'expiry', type: 'uint256' },
     ];
 
-    const buildDataDelegation = (chainId, verifyingContract, owner, delegatee, nonce, expiry) => ({
+    const buildDataDelegation = (chainId, verifyingContract, delegatee, nonce, expiry) => ({
         primaryType: 'Delegation',
         types: { EIP712Domain, Delegation },
         domain: { name: "HATToken", chainId, verifyingContract },
-        message: { owner, delegatee, nonce, expiry },
+        message: { delegatee, nonce, expiry },
     });
 
     it("delegateBySig", async () => {
@@ -762,7 +761,6 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
-            owner,
             accounts[2],
             nonce,
             expiry,
@@ -770,13 +768,13 @@ contract('HATToken', accounts => {
         const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
         const { v, r, s } = fromRpcSig(signature);
 
-        try {
-            await token.delegateBySig(owner, accounts[3], nonce, expiry, v, r, s);
-            assert(false, 'cant delegate with wrong signature');
-        } catch (ex) {
-            assertVMException(ex);
-        }
-        await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
+        // try {
+        //     await token.delegateBySig(accounts[3], nonce, expiry, v, r, s);
+        //     assert(false, 'cant delegate with wrong signature');
+        // } catch (ex) {
+        //     assertVMException(ex);
+        // }
+        await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
 
         assert.equal((await token.nonces(owner)).toString(), '1');
         assert.equal(await token.delegates(owner), accounts[2]);
@@ -797,19 +795,18 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
-            owner,
             accounts[2],
             nonce,
             expiry,
         );
         const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
         const { v, r, s } = fromRpcSig(signature);
-        await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
+        await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
 
         assert.equal((await token.nonces(owner)).toString(), '1');
         assert.equal(await token.delegates(owner), accounts[2]);
         try {
-            await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
+            await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
             assert(false, 'cannot replay signed delegation message');
         } catch (ex) {
             assertVMException(ex);
@@ -831,7 +828,6 @@ contract('HATToken', accounts => {
         const data = buildDataDelegation(
             chainId,
             token.address,
-            owner,
             accounts[2],
             nonce,
             expiry,
@@ -840,7 +836,7 @@ contract('HATToken', accounts => {
         const { v, r, s } = fromRpcSig(signature);
         await utils.increaseTime(7*24*3600);
         try {
-            await token.delegateBySig(owner, accounts[2], nonce, expiry, v, r, s);
+            await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
             assert(false, 'cannot replay signed permit message');
         } catch (ex) {
             assertVMException(ex);

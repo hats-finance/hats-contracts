@@ -67,7 +67,7 @@ contract HATToken is IERC20 {
 
     /// @notice The EIP-712 typehash for the delegation struct used by the contract
     bytes32 public constant DELEGATION_TYPEHASH =
-    keccak256("Delegation(address owner,address delegatee,uint256 nonce,uint256 expiry)");
+    keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
     /// @notice The EIP-712 typehash for the permit struct used by the contract
     bytes32 public constant PERMIT_TYPEHASH =
@@ -301,7 +301,6 @@ contract HATToken is IERC20 {
 
     /**
      * @notice Delegates votes from signatory to `delegatee`
-     * @param owner The address delegating the votes
      * @param delegatee The address to delegate votes to
      * @param nonce The contract state required to match the signature
      * @param expiry The time at which to expire the signature
@@ -309,13 +308,12 @@ contract HATToken is IERC20 {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(address owner, address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, owner, delegatee, nonce, expiry));
+        bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "HAT::delegateBySig: invalid signature");
-        require(signatory == owner, "HAT::delegateBySig: unauthorized");
         require(nonce == nonces[signatory]++, "HAT::delegateBySig: invalid nonce");
         require(block.timestamp <= expiry, "HAT::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
