@@ -10,7 +10,8 @@ var tokenLock;
 const setup = async function (
                               accounts,
                               revocable = 1,
-                              delegate = false
+                              delegate = false,
+                              startsIn = 0
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
@@ -22,8 +23,8 @@ const setup = async function (
                                          accounts[0],
                                          accounts[1],
                                          web3.utils.toWei("1"),
-                                         currentBlockTimestamp,
-                                         currentBlockTimestamp+ 1000,
+                                         currentBlockTimestamp+startsIn,
+                                         currentBlockTimestamp+startsIn+ 1000,
                                          5,
                                          0,
                                          0,
@@ -59,6 +60,16 @@ contract('TokenLock',  accounts =>  {
         assert.equal(tx.logs[0].event,"TokensRevoked");
         assert.equal(tx.logs[0].args.beneficiary,accounts[1]);
         assert.equal(tx.logs[0].args.amount.toString(),web3.utils.toWei("1"));
+    });
+
+    it("sinceStartTime", async () => {
+        await setup(accounts,1,false,100);
+        assert.equal(await tokenLock.sinceStartTime(),0);
+        assert.equal(await tokenLock.availableAmount(),0);
+        //each period is 250 seconds
+        await utils.increaseTime(350);
+        assert.equal(await tokenLock.sinceStartTime(),252);
+        assert.equal(await tokenLock.availableAmount(),web3.utils.toWei("0.2"));
     });
 
     it("cannot revoke after renaunceOwnership revoke", async () => {
