@@ -68,7 +68,7 @@ contract('TokenLock',  accounts =>  {
         assert.equal(await tokenLock.availableAmount(),0);
         //each period is 250 seconds
         await utils.increaseTime(350);
-        assert.equal(await tokenLock.sinceStartTime(),252);
+        assert.equal((await tokenLock.sinceStartTime()).toString(),"252");
         assert.equal(await tokenLock.availableAmount(),web3.utils.toWei("0.2"));
     });
 
