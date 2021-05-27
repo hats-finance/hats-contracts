@@ -549,7 +549,7 @@ contract('HatVaults',  accounts =>  {
     });
 
     it("hat reward withdraw all balance if reward larger than balance", async () => {
-      await setup(accounts, REAL_REWARD_PER_BLOCK, 0, [], [0,0, 0, 0,0, 0],10000);
+      await setup(accounts, REAL_REWARD_PER_BLOCK,(await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
       var staker = accounts[1];
       await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
       await stakingToken.mint(staker,web3.utils.toWei("1"));
