@@ -61,10 +61,13 @@ contract HATMaster is ReentrancyGuard {
     HATToken public immutable HAT;
 
     uint256 public immutable REWARD_PER_BLOCK;
-    uint256[] public REWARD_MULTIPLIER = [688, 413, 310, 232, 209, 188, 169, 152, 137, 123, 111, 100];
-    uint256[] public HALVING_AT_BLOCK;
+    uint256[] public REWARD_MULTIPLIER = [8825, 7788, 6873, 6065, 5353, 4724,
+                                          4169, 3679, 3247, 2865, 2528, 2231,
+                                          1969, 1738, 1534, 1353, 1194, 1054,
+                                          930, 821, 724, 639, 564, 498, 0];
 
     uint256 public immutable START_BLOCK;
+    uint256 public immutable halvingAfterBlock;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -92,11 +95,7 @@ contract HATMaster is ReentrancyGuard {
         HAT = _HAT;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;
-        for (uint256 i = 0; i < REWARD_MULTIPLIER.length - 1; i++) {
-            uint256 halvingAtBlock = _halvingAfterBlock.mul(i + 1).add(_startBlock);
-            HALVING_AT_BLOCK.push(halvingAtBlock);
-        }
-        HALVING_AT_BLOCK.push(type(uint256).max);
+        halvingAfterBlock = _halvingAfterBlock;
     }
 
   /**
@@ -171,8 +170,8 @@ contract HATMaster is ReentrancyGuard {
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
         if (_from < START_BLOCK) return 0;
 
-        for (uint256 i = 0; i < HALVING_AT_BLOCK.length; i++) {
-            uint256 endBlock = HALVING_AT_BLOCK[i];
+        for (uint256 i = 0; i < REWARD_MULTIPLIER.length; i++) {
+            uint256 endBlock = halvingAfterBlock.mul(i + 1).add(START_BLOCK);
 
             if (_to <= endBlock) {
                 uint256 m = _to.sub(_from).mul(REWARD_MULTIPLIER[i]);
