@@ -1358,7 +1358,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 2975024);
+    assert.equal(tx.receipt.gasUsed,8161755);
   }).timeout(40000);
 
 
@@ -1435,7 +1435,6 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
     await hatVaults.setPool(0,200,true,"123");
-
     var tx = await hatVaults.massUpdatePools(0,2);
         await hatToken.getPastEvents('Transfer', {
               fromBlock: tx.blockNumber,
@@ -1499,4 +1498,37 @@ contract('HatVaults',  accounts =>  {
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
       assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("2000").toString());
   });
+
+  it("check deep alloc history", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+    await stakingToken.mint(staker,web3.utils.toWei("2"));
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    await stakingToken2.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken2.mint(staker,web3.utils.toWei("1"));
+    var tx  = await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    //10
+    await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+    //5
+    await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
+    //5
+    await hatVaults.setPool(1,300,true,"123");
+    //2.5
+    assert.equal((await hatToken.balanceOf(staker)).toString(),0);
+    assert.equal(await hatVaults.getGlobalPoolUpdatesLength(),3);
+    assert.equal((await hatVaults.poolInfo(0)).lastProcessedTotalAllocPoint,0);
+    assert.equal((await hatVaults.poolInfo(0)).lastRewardBlock,tx.receipt.blockNumber);
+    await hatVaults.claimReward(0,{from:staker});
+    assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("22.5").toString());
+  });
+
+  it("deposit twice on the same block", async () => {
+    await setup(accounts);
+    var poolManagerMock = await PoolsManagerMock.new();
+    await stakingToken.mint(poolManagerMock.address,web3.utils.toWei("2"));
+    await poolManagerMock.depositTwice(hatVaults.address,stakingToken.address,0,web3.utils.toWei("1"));
+    assert.equal((await hatToken.balanceOf(poolManagerMock.address)).toString(),0);
+  });
+
 });
