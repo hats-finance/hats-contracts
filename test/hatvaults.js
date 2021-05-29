@@ -602,9 +602,14 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatToken.balanceOf(hatVaults.address)).toString(), '0');
     });
 
-    it("getMultiplier - from below startblock return first multiplier ", async () => {
+    it("getMultiplier - from below startblock will revert ", async () => {
       await setup(accounts, REWARD_PER_BLOCK, 1);
-      assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 8825);
+      try {
+            await hatVaults.getMultiplier(0, 1);
+            assert(false, 'from below startblock will revert ');
+          } catch (ex) {
+            assertVMException(ex);
+        }
       await setup(accounts, REWARD_PER_BLOCK, 0);
       assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 8825);
     });
@@ -1380,7 +1385,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 3388488);
+    assert.equal(tx.receipt.gasUsed, 1358034);
   }).timeout(40000);
 
 

@@ -61,7 +61,7 @@ contract HATMaster is ReentrancyGuard {
     HATToken public immutable HAT;
     uint256 public immutable REWARD_PER_BLOCK;
     uint256 public immutable START_BLOCK;
-    uint256 public immutable halvingAfterBlock;
+    uint256 public immutable HALVING_AFTER_BLOCK;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -81,15 +81,15 @@ contract HATMaster is ReentrancyGuard {
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     constructor(
-        HATToken _HAT,
+        HATToken _hat,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _halvingAfterBlock
     ) {
-        HAT = _HAT;
+        HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;
-        halvingAfterBlock = _halvingAfterBlock;
+        HALVING_AFTER_BLOCK = _halvingAfterBlock;
     }
 
   /**
@@ -162,26 +162,28 @@ contract HATMaster is ReentrancyGuard {
     }
 
     // GET INFO for UI
+    /**
+     * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
+     * @param _from range's from block
+     * @param _to range's to block
+     * will revert if from < START_BLOCK or _to < _from
+     */
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-
         uint256[25] memory rewardMultipliers = [uint256(8825), 7788, 6873, 6065, 5353, 4724,
                                             4169, 3679, 3247, 2865, 2528, 2231,
                                             1969, 1738, 1534, 1353, 1194, 1054,
                                             930, 821, 724, 639, 564, 498, 0];
-        for (uint256 i = 0; i < rewardMultipliers.length; i++) {
-            uint256 endBlock = halvingAfterBlock.mul(i + 1).add(START_BLOCK);
-
+        uint256 max = rewardMultipliers.length;
+        uint256 i = (_from - START_BLOCK) / HALVING_AFTER_BLOCK + 1;
+        for (; i < max; i++) {
+            uint256 endBlock = HALVING_AFTER_BLOCK * i + START_BLOCK;
             if (_to <= endBlock) {
-                uint256 m = _to.sub(_from).mul(rewardMultipliers[i]);
-                return result.add(m);
+                break;
             }
-
-            if (_from < endBlock) {
-                uint256 m = endBlock.sub(_from).mul(rewardMultipliers[i]);
-                _from = endBlock;
-                result = result.add(m);
-            }
+            result += (endBlock - _from) * rewardMultipliers[i-1];
+            _from = endBlock;
         }
+        result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
     }
 
     function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
