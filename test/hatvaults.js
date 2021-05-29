@@ -319,7 +319,6 @@ contract('HatVaults',  accounts =>  {
       let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100, totalAllocPoint);
       rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
       let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
-
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
       //staker  get stake back
       assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
@@ -495,9 +494,14 @@ contract('HatVaults',  accounts =>  {
       let expectedReward = await calculateExpectedReward(staker);
       assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
 
+      try {
+          await hatVaults.calcClaimRewards(0,10);
+          assert(false, 'severity is not in range');
+      } catch (ex) {
+        assertVMException(ex);
+      }
       await hatVaults.claimReward(0, {from:staker});
       assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
-
       assert.equal((await hatToken.balanceOf(staker)).toString(), expectedReward.toString());
       assert.equal(await stakingToken.balanceOf(staker), 0);
       assert.equal(await stakingToken.balanceOf(hatVaults.address), web3.utils.toWei("1"));
