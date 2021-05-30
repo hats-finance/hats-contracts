@@ -6,6 +6,7 @@ const utils = require("./utils.js");
 var stakingToken;
 var tokenLockFactory;
 var tokenLock;
+var tokenLockParent;
 
 const setup = async function (
                               accounts,
@@ -15,7 +16,7 @@ const setup = async function (
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
-  var tokenLockParent = await HATTokenLock.new();
+  tokenLockParent = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLockParent.address);
   let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
@@ -47,6 +48,27 @@ function assertVMException(error) {
 }
 
 contract('TokenLock',  accounts =>  {
+
+    it("cannot initialize twice", async () => {
+        await setup(accounts);
+        try {
+            await tokenLock.initialize(await tokenLock.owner(),
+                                       await tokenLock.beneficiary(),
+                                       await tokenLock.token(),
+                                       10,
+                                       await tokenLock.startTime(),
+                                       await tokenLock.endTime(),
+                                       await tokenLock.periods(),
+                                       await tokenLock.releaseStartTime(),
+                                       await tokenLock.vestingCliffTime(),
+                                       await tokenLock.revocable(),
+                                       await tokenLock.canDelegate()
+                                       );
+            assert(false, 'cannot initialize twice');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+    });
 
     it("revoke", async () => {
         await setup(accounts);
@@ -195,4 +217,5 @@ contract('TokenLock',  accounts =>  {
         }
         await tokenLockFactory.setMasterCopy(accounts[1]);
     });
+
 });

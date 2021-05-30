@@ -132,7 +132,7 @@ contract HATMaster is ReentrancyGuard {
     }
 
     // --------- For user ----------------
-    function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
+    function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
         require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -158,7 +158,7 @@ contract HATMaster is ReentrancyGuard {
     }
 
     function claimReward(uint256 _pid) external {
-        deposit(_pid, 0);
+        _deposit(_pid, 0);
     }
 
     // GET INFO for UI

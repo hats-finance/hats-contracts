@@ -2,7 +2,6 @@
 pragma solidity 0.8.4;
 
 import "../HATVaults.sol";
-import "../HATMaster.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
@@ -42,12 +41,12 @@ contract PoolsManagerMock {
         }
     }
 
-    function updatePoolsTwice(HATMaster target, uint256 _fromPid, uint256 _toPid) external {
+    function updatePoolsTwice(HATVaults target, uint256 _fromPid, uint256 _toPid) external {
         target.massUpdatePools(_fromPid, _toPid);
         target.massUpdatePools(_fromPid, _toPid);
     }
 
-    function depositTwice(HATMaster _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
+    function depositTwice(HATVaults _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
         _lpToken.approve(address(_target), _amount * 2);
         _target.deposit(_pid, _amount);
         _target.deposit(_pid, _amount);

@@ -347,6 +347,29 @@ contract('HatVaults',  accounts =>  {
 
   });
 
+  it("deposit cancle withdrawn request ", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+
+      await stakingToken.mint(staker,web3.utils.toWei("2"));
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await utils.increaseTime(7*24*3600);
+      await advanceToNoneSaftyPeriod();
+      await hatVaults.withdrawRequest(0,{from:staker});
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await utils.increaseTime(7*24*3600);
+      try {
+          await hatVaults.withdraw(0,web3.utils.toWei("0.5"),{from:staker});
+          assert(false, 'deposit cancel withdrawRequest');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+  });
+
   it("withdrawn request ", async () => {
       await setup(accounts);
       var staker = accounts[1];

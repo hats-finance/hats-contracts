@@ -497,6 +497,12 @@ contract  HATVaults is Governable, HATMaster {
         emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
     }
 
+    function deposit(uint256 _pid, uint256 _amount) external {
+        //clear withdraw request
+        withdrawRequests[_pid][msg.sender] = 0;
+        _deposit(_pid, _amount);
+    }
+
     function withdraw(uint256 _pid, uint256 _amount) external {
         checkWithdrawRequest(_pid);
         _withdraw(_pid, _amount);
