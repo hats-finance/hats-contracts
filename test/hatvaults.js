@@ -104,7 +104,7 @@ contract('HatVaults',  accounts =>  {
       let stakerAmount = (await hatVaults.userInfo(0,staker)).amount;
       let globalUpdatesLen =  await hatVaults.getGlobalPoolUpdatesLength();
       let totalAllocPoint = (await hatVaults.globalPoolUpdates(globalUpdatesLen-1)).totalAllocPoint;
-      let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1+operationBlocksIncrement,allocPoint,totalAllocPoint);
+      let poolReward = await hatVaults.getRewardForBlocksRange(lastRewardBlock,currentBlockNumber+1+operationBlocksIncrement,allocPoint,totalAllocPoint);
       let lpSupply = await stakingToken.balanceOf(hatVaults.address);
       rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
       let rewardDebt = (await hatVaults.userInfo(0,staker)).rewardDebt;
@@ -316,7 +316,7 @@ contract('HatVaults',  accounts =>  {
       let onee12 = new web3.utils.BN("1000000000000");
       let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
       let totalAllocPoint = 100;
-      let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100, totalAllocPoint);
+      let poolReward = await hatVaults.getRewardForBlocksRange(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100, totalAllocPoint);
       rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
       let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
@@ -488,7 +488,7 @@ contract('HatVaults',  accounts =>  {
         let onee12 = new web3.utils.BN("1000000000000");
         let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
         let totalAllocPoint = 100;
-        let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100, totalAllocPoint);
+        let poolReward = await hatVaults.getRewardForBlocksRange(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100, totalAllocPoint);
         rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
         let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
 
@@ -956,7 +956,7 @@ contract('HatVaults',  accounts =>  {
     let onee12 = new web3.utils.BN("1000000000000");
     let stakeVaule = new web3.utils.BN(web3.utils.toWei("1"));
 
-    let poolReward = await hatVaults.getPoolReward(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100,100);
+    let poolReward = await hatVaults.getRewardForBlocksRange(lastRewardBlock,currentBlockNumber+1+safeWithdrawBlocksIncrement,100,100);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
     await safeWithdraw(0,web3.utils.toWei("1"),staker);
@@ -1408,7 +1408,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1358034);
+    assert.equal(tx.receipt.gasUsed, 1358012);
   }).timeout(40000);
 
 

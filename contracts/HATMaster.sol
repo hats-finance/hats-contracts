@@ -107,6 +107,10 @@ contract HATMaster is ReentrancyGuard {
         emit MassUpdatePools(_fromPid, _toPid);
     }
 
+    function claimReward(uint256 _pid) external {
+        _deposit(_pid, 0);
+    }
+
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         uint256 lastRewardBlock = pool.lastRewardBlock;
@@ -131,37 +135,6 @@ contract HATMaster is ReentrancyGuard {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // --------- For user ----------------
-    function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
-        require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
-            if (pending > 0) {
-                safeTransferReward(msg.sender, pending, _pid);
-            }
-        }
-        if (_amount > 0) {
-            uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            uint256 factoredAmount = _amount;
-            if (pool.totalUsersAmount > 0) {
-                factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
-            }
-            user.amount = user.amount.add(factoredAmount);
-            pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
-        }
-        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
-        emit Deposit(msg.sender, _pid, _amount);
-    }
-
-    function claimReward(uint256 _pid) external {
-        _deposit(_pid, 0);
-    }
-
-    // GET INFO for UI
     /**
      * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
      * @param _from range's from block
@@ -186,49 +159,11 @@ contract HATMaster is ReentrancyGuard {
         result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
     }
 
-    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
-        uint256 multiplier = getMultiplier(block.number-1, block.number);
-        if (pid1 == 0) {
-            return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
-        } else {
-            return (multiplier
-                .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].allocPoint)
-                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
-                .div(100);
-        }
-    }
-
-    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-        uint256 rewardPerShare = pool.rewardPerShare;
-
-        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
-            uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
-        }
-        return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
-    }
-
-    function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
+    function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
     public
     view
     returns (uint256) {
         return getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
-    }
-
-    function poolLength() public view returns (uint256) {
-        return poolInfo.length;
-    }
-
-    function getGlobalPoolUpdatesLength() external view returns (uint256) {
-        return globalPoolUpdates.length;
-    }
-
-    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
-        UserInfo storage user = userInfo[_pid][_user];
-        return  user.amount;
     }
 
     /**
@@ -246,10 +181,41 @@ contract HATMaster is ReentrancyGuard {
         for (; i < _lastPoolUpdate; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
-            reward.add(getPoolReward(_from, nextUpdateBlock, poolAllocPoint, globalPoolUpdates[i].totalAllocPoint));
+            reward.add(getRewardForBlocksRange(_from,
+                                            nextUpdateBlock,
+                                            poolAllocPoint,
+                                            globalPoolUpdates[i].totalAllocPoint));
             _from = nextUpdateBlock;
         }
-        return reward.add(getPoolReward(_from, block.number, poolAllocPoint, globalPoolUpdates[i].totalAllocPoint));
+        return reward.add(getRewardForBlocksRange(_from,
+                                                block.number,
+                                                poolAllocPoint,
+                                                globalPoolUpdates[i].totalAllocPoint));
+    }
+
+    function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
+        require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+        if (user.amount > 0) {
+            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+            if (pending > 0) {
+                safeTransferReward(msg.sender, pending, _pid);
+            }
+        }
+        if (_amount > 0) {
+            uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
+            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            uint256 factoredAmount = _amount;
+            if (pool.totalUsersAmount > 0) {
+                factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
+            }
+            user.amount = user.amount.add(factoredAmount);
+            pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
+        }
+        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
+        emit Deposit(msg.sender, _pid, _amount);
     }
 
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
