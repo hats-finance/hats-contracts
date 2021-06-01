@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
-import "./interfaces/IUniswapV2Router01.sol";
+import "./interfaces/ISwapRouter.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
@@ -51,7 +51,7 @@ contract  HATVaults is Governable, HATMaster {
     uint256 public hatVestingPeriods = 90;
     uint256 public constant WITHDRAW_PERIOD =  3000;
     uint256 public constant WITHDRAW_DISABLE_PERIOD =  240;
-    IUniswapV2Router01 public immutable uniSwapRouter;
+    ISwapRouter public immutable uniSwapRouter;
     uint256 public withdrawEnablePeriod = 1 days;
     uint256 public withdrawRequestPendingPeriod = 7 days;
 
@@ -120,7 +120,7 @@ contract  HATVaults is Governable, HATMaster {
    *        Some of the contracts functions are limited only to governance :
    *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
    *         setHatVestingParams,setVestingParams,setRewardsSplit
-   * @param _uniSwapRouter uni swap v2 rounter to be used to swap tokens for HAT token.
+   * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
    * @param _tokenLockFactory address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
  */
@@ -130,7 +130,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 _startBlock,
         uint256 _halvingAfterBlock,
         address _hatGovernance,
-        IUniswapV2Router01 _uniSwapRouter,
+        ISwapRouter _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
@@ -435,8 +435,16 @@ contract  HATVaults is Governable, HATMaster {
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _minOutputAmount minimum output of HATs at swap
+    * @param _fee the fee of the token pool for the pair
+    * @param _sqrtPriceLimitX96 the price limit of the pool that cannot be exceeded by the swap
     **/
-    function swapBurnSend(uint256 _pid, address _beneficiary, uint256 _minOutputAmount) external onlyGovernance {
+    function swapBurnSend(uint256 _pid,
+                        address _beneficiary,
+                        uint256 _minOutputAmount,
+                        uint24 _fee,
+                        uint160 _sqrtPriceLimitX96)
+    external
+    onlyGovernance {
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
@@ -445,19 +453,8 @@ contract  HATVaults is Governable, HATMaster {
         swapAndBurns[address(token)] = 0;
         governanceHatRewards[address(token)] = 0;
         hackersHatRewards[_beneficiary][address(token)] = 0;
-        require(token.approve(address(uniSwapRouter), amount), "token approve failed");
-        address[] memory path = new address[](2);
-        path[0] = address(token);
-        path[1] = address(HAT);
-        //Swaps an exact amount of input tokens for as many output tokens as possible,
-        //along the route determined by the path.
-        uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        uint256 hatsReceived =
-         // solhint-disable-next-line not-rely-on-time
-        uniSwapRouter.swapExactTokensForTokens(amount, _minOutputAmount, path, address(this), block.timestamp)[1];
-        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
+        uint256 hatsReceived = swapTokenForHAT(amount, token, _fee, _minOutputAmount, _sqrtPriceLimitX96);
         poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
-
         uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -626,5 +623,29 @@ contract  HATVaults is Governable, HATMaster {
                 block.timestamp < withdrawRequests[_pid][msg.sender] + withdrawEnablePeriod,
                 "withdraw request not valid");
         withdrawRequests[_pid][msg.sender] = 0;
+    }
+
+    function swapTokenForHAT(uint256 _amount,
+                            IERC20 _token,
+                            uint24 _fee,
+                            uint256 _minOutputAmount,
+                            uint160 _sqrtPriceLimitX96)
+    internal
+    returns (uint256 hatsReceived)
+    {
+        require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
+        uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        hatsReceived = uniSwapRouter.exactInputSingle(ISwapRouter.ExactInputSingleParams(
+        address(_token),
+        address(HAT),
+        _fee,
+        address(this),
+        // solhint-disable-next-line not-rely-on-time
+        block.timestamp,
+        _amount,
+        _minOutputAmount,
+        _sqrtPriceLimitX96
+        ));
+        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
     }
 }

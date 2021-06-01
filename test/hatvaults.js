@@ -1,7 +1,7 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
-const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
+const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
@@ -27,7 +27,7 @@ const setup = async function (
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
-  router =  await UniSwapV2RouterMock.new();
+  router =  await UniSwapV3RouterMock.new();
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
@@ -1007,7 +1007,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
           assert(false, 'cannot swapBurnSend before approve');
         } catch (ex) {
           assertVMException(ex);
@@ -1015,7 +1015,7 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
     await hatVaults.approveClaim(0);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2],0);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("1"))).mul(new web3.utils.BN("25")).div(new web3.utils.BN(1000));
     assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned.toString());
@@ -1028,7 +1028,7 @@ contract('HatVaults',  accounts =>  {
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
           assert(false, 'cannot swapBurnSend twice');
         } catch (ex) {
           assertVMException(ex);
@@ -1088,7 +1088,7 @@ contract('HatVaults',  accounts =>  {
           .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
       ).div(new web3.utils.BN("10000")).toString()
     );
-    var tx = await hatVaults.swapBurnSend(0,accounts[2],0);
+    var tx = await hatVaults.swapBurnSend(0,accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
       new web3.utils.BN(web3.utils.toWei("1")).mul(
@@ -1137,13 +1137,13 @@ contract('HatVaults',  accounts =>  {
     );
 
     try {
-        await hatVaults.swapBurnSend(0, accounts[1],0,{from:accounts[3]});
+        await hatVaults.swapBurnSend(0, accounts[1],0,0,0,{from:accounts[3]});
         assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
     }
 
-    var tx = await hatVaults.swapBurnSend(0,accounts[1],0,{from:accounts[0]});
+    var tx = await hatVaults.swapBurnSend(0,accounts[1],0,0,0,{from:accounts[0]});
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
       new web3.utils.BN(web3.utils.toWei("1")).mul(
@@ -1160,7 +1160,7 @@ contract('HatVaults',  accounts =>  {
     let afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
     assert.equal(tx.logs[1].args._tokenLock, '0x0000000000000000000000000000000000000000');
 
-    tx = await hatVaults.swapBurnSend(0, accounts[2],0,{from:accounts[0]});
+    tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0,{from:accounts[0]});
 
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
@@ -1171,14 +1171,14 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[1].args._amountReceived.toString(), afterRewardBalance);
 
     try {
-        tx = await hatVaults.swapBurnSend(0, accounts[1],0,{from:accounts[0]});
+        tx = await hatVaults.swapBurnSend(0, accounts[1],0,0,0,{from:accounts[0]});
         assert(false, 'can claim only once, nothing to redeem or burn');
       } catch (ex) {
         assertVMException(ex);
     }
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[2],0,{from:accounts[0]});
+      tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0,{from:accounts[0]});
       assert(false, 'can claim only once, nothing to redeem or burn');
     } catch (ex) {
       assertVMException(ex);
@@ -1408,7 +1408,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1358012);
+    assert.equal(tx.receipt.gasUsed, 1357990);
   }).timeout(40000);
 
 
@@ -1507,7 +1507,7 @@ contract('HatVaults',  accounts =>  {
 
   it("add/set pool on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
-    let router1 =  await UniSwapV2RouterMock.new();
+    let router1 =  await UniSwapV3RouterMock.new();
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var poolManager= await PoolsManagerMock.new();
