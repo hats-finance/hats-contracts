@@ -59,12 +59,9 @@ contract HATMaster is ReentrancyGuard {
     }
 
     HATToken public immutable HAT;
-
     uint256 public immutable REWARD_PER_BLOCK;
-    uint256[] public REWARD_MULTIPLIER = [688, 413, 310, 232, 209, 188, 169, 152, 137, 123, 111, 100];
-    uint256[] public HALVING_AT_BLOCK;
-
     uint256 public immutable START_BLOCK;
+    uint256 public immutable HALVING_AFTER_BLOCK;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -84,19 +81,15 @@ contract HATMaster is ReentrancyGuard {
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     constructor(
-        HATToken _HAT,
+        HATToken _hat,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _halvingAfterBlock
     ) {
-        HAT = _HAT;
+        HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;
-        for (uint256 i = 0; i < REWARD_MULTIPLIER.length - 1; i++) {
-            uint256 halvingAtBlock = _halvingAfterBlock.mul(i + 1).add(_startBlock);
-            HALVING_AT_BLOCK.push(halvingAtBlock);
-        }
-        HALVING_AT_BLOCK.push(type(uint256).max);
+        HALVING_AFTER_BLOCK = _halvingAfterBlock;
     }
 
   /**
@@ -114,31 +107,93 @@ contract HATMaster is ReentrancyGuard {
         emit MassUpdatePools(_fromPid, _toPid);
     }
 
+    function claimReward(uint256 _pid) external {
+        _deposit(_pid, 0);
+    }
+
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
-
-        if (block.number <= pool.lastRewardBlock) {
+        uint256 lastRewardBlock = pool.lastRewardBlock;
+        if (block.number <= lastRewardBlock) {
             return;
         }
-
-        if (pool.totalUsersAmount == 0) {
+        uint256 totalUsersAmount = pool.totalUsersAmount;
+        uint256 lastPoolUpdate = globalPoolUpdates.length-1;
+        if (totalUsersAmount == 0) {
             pool.lastRewardBlock = block.number;
-            pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
+            pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
             return;
         }
-        uint256 reward = calcPoolReward(_pid);
-        pool.lastProcessedTotalAllocPoint = globalPoolUpdates.length-1;
-        //the original BDPMaster was reverted if the reward is zero to to the cap check of at the BDP token.
+        uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
+        uint256 amountCanMint = HAT.minters(address(this));
+        reward = amountCanMint < reward ? amountCanMint : reward;
         if (reward > 0) {
             HAT.mint(address(this), reward);
         }
-
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
+        pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // --------- For user ----------------
-    function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
+    /**
+     * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
+     * @param _from range's from block
+     * @param _to range's to block
+     * will revert if from < START_BLOCK or _to < _from
+     */
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
+        uint256[25] memory rewardMultipliers = [uint256(8825), 7788, 6873, 6065, 5353, 4724,
+                                            4169, 3679, 3247, 2865, 2528, 2231,
+                                            1969, 1738, 1534, 1353, 1194, 1054,
+                                            930, 821, 724, 639, 564, 498, 0];
+        uint256 max = rewardMultipliers.length;
+        uint256 i = (_from - START_BLOCK) / HALVING_AFTER_BLOCK + 1;
+        for (; i < max; i++) {
+            uint256 endBlock = HALVING_AFTER_BLOCK * i + START_BLOCK;
+            if (_to <= endBlock) {
+                break;
+            }
+            result += (endBlock - _from) * rewardMultipliers[i-1];
+            _from = endBlock;
+        }
+        result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
+    }
+
+    function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
+    public
+    view
+    returns (uint256) {
+        return getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+    }
+
+    /**
+     * @dev calcPoolReward -
+     * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
+     * and sum up all rewards periods from pool.lastRewardBlock till current block number.
+     * @param _pid pool id
+     * @param _from block starting calculation
+     * @param _lastPoolUpdate lastPoolUpdate (globalUpdates length)
+     * @return reward
+     */
+    function calcPoolReward(uint256 _pid, uint256 _from, uint256 _lastPoolUpdate) public view returns(uint256 reward) {
+        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
+        for (; i < _lastPoolUpdate; i++) {
+            uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
+            reward =
+            reward.add(getRewardForBlocksRange(_from,
+                                            nextUpdateBlock,
+                                            poolAllocPoint,
+                                            globalPoolUpdates[i].totalAllocPoint));
+            _from = nextUpdateBlock;
+        }
+        return reward.add(getRewardForBlocksRange(_from,
+                                                block.number,
+                                                poolAllocPoint,
+                                                globalPoolUpdates[i].totalAllocPoint));
+    }
+
+    function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
         require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -163,102 +218,6 @@ contract HATMaster is ReentrancyGuard {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function claimReward(uint256 _pid) external {
-        deposit(_pid, 0);
-    }
-
-    // GET INFO for UI
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-        if (_from < START_BLOCK) return 0;
-
-        for (uint256 i = 0; i < HALVING_AT_BLOCK.length; i++) {
-            uint256 endBlock = HALVING_AT_BLOCK[i];
-
-            if (_to <= endBlock) {
-                uint256 m = _to.sub(_from).mul(REWARD_MULTIPLIER[i]);
-                return result.add(m);
-            }
-
-            if (_from < endBlock) {
-                uint256 m = endBlock.sub(_from).mul(REWARD_MULTIPLIER[i]);
-                _from = endBlock;
-                result = result.add(m);
-            }
-        }
-    }
-
-    function getPoolReward(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
-    public
-    view
-    returns (uint) {
-        uint256 multiplier = getMultiplier(_from, _to);
-        uint256 amount = (multiplier.mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint)).div(100);
-        uint256 amountCanMint = HAT.minters(address(this));
-        return amountCanMint < amount ? amountCanMint : amount;
-    }
-
-    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
-        uint256 multiplier = getMultiplier(block.number-1, block.number);
-        if (pid1 == 0) {
-            return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
-        } else {
-            return (multiplier
-                .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].allocPoint)
-                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
-                .div(100);
-        }
-    }
-
-    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-        uint256 rewardPerShare = pool.rewardPerShare;
-        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
-            uint256 reward = calcPoolReward(_pid);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
-        }
-        return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
-    }
-
-    function poolLength() public view returns (uint256) {
-        return poolInfo.length;
-    }
-
-    function getGlobalPoolUpdatesLength() external view returns (uint256) {
-        return globalPoolUpdates.length;
-    }
-
-    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
-        UserInfo storage user = userInfo[_pid][_user];
-        return  user.amount;
-    }
-
-    /**
-     * @dev calcPoolReward -
-     * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
-     * and sum up all rewards periods from pool.lastRewardBlock till current block number.
-     * @param _pid pool id
-     * @return reward
-     */
-    function calcPoolReward(uint256 _pid) public view returns(uint256 reward) {
-        uint256 from = poolInfo[_pid].lastRewardBlock;
-        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
-        PoolUpdate[] memory poolUpdates = globalPoolUpdates;
-        uint256 lastPoolUpdate = poolUpdates.length-1;
-
-        for (uint256 index = poolInfo[_pid].lastProcessedTotalAllocPoint; index < lastPoolUpdate; index++) {
-            reward =
-            reward.add(getPoolReward(from,
-                                poolUpdates[index+1].blockNumber,
-                                poolAllocPoint,
-                                poolUpdates[index].totalAllocPoint));
-            from = poolUpdates[index+1].blockNumber;
-        }
-        return
-        reward.add(getPoolReward(from, block.number, poolAllocPoint, poolUpdates[lastPoolUpdate].totalAllocPoint));
-    }
-    
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];

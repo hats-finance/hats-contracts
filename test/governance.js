@@ -57,6 +57,12 @@ contract('HatVaults  governance',  accounts =>  {
       } catch (ex) {
         assertVMException(ex);
       }
+      try {
+        await hatVaults.setPendingGovernance(utils.NULL_ADDRESS,{from: accounts[0]});
+        assert(false, 'pending gov cannot be zero');
+      } catch (ex) {
+        assertVMException(ex);
+      }
       let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
       var tx =  await hatVaults.setPendingGovernance(accounts[1],{from: accounts[0]});
       assert.equal(tx.logs[0].event,"GovernancePending");

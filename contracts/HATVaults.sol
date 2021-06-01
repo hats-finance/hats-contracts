@@ -497,6 +497,12 @@ contract  HATVaults is Governable, HATMaster {
         emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
     }
 
+    function deposit(uint256 _pid, uint256 _amount) external {
+        //clear withdraw request
+        withdrawRequests[_pid][msg.sender] = 0;
+        _deposit(_pid, _amount);
+    }
+
     function withdraw(uint256 _pid, uint256 _amount) external {
         checkWithdrawRequest(_pid);
         _withdraw(_pid, _amount);
@@ -517,6 +523,45 @@ contract  HATVaults is Governable, HATMaster {
 
     function getPoolRewards(uint256 _poolId) external view returns(PoolReward memory) {
         return poolsRewards[_poolId];
+    }
+
+    // GET INFO for UI
+    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
+        uint256 multiplier = getMultiplier(block.number-1, block.number);
+        if (pid1 == 0) {
+            return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
+        } else {
+            return (multiplier
+                .mul(REWARD_PER_BLOCK)
+                .mul(poolInfo[pid1 - 1].allocPoint)
+                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
+                .div(100);
+        }
+    }
+
+    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_user];
+        uint256 rewardPerShare = pool.rewardPerShare;
+
+        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
+            uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
+            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
+        }
+        return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
+    }
+
+    function getGlobalPoolUpdatesLength() external view returns (uint256) {
+        return globalPoolUpdates.length;
+    }
+
+    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
+        UserInfo storage user = userInfo[_pid][_user];
+        return  user.amount;
+    }
+
+    function poolLength() external view returns (uint256) {
+        return poolInfo.length;
     }
 
     function calcClaimRewards(uint256 _poolId, uint256 _severity)
