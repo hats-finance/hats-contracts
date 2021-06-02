@@ -13,7 +13,8 @@
 		"members": [{
 				"name": "andre",
 				"address": "0x536835937de4340f73d98ac94a6be3da98f51fe3",
-				"twitter-link": "https://twitter.com/andre"
+				"twitter-link": "https://twitter.com/andre",
+        "image-ipfs-link": "QmUE4iVWJCg2F1TXktMV2EzKdx3qFWbSLXJqeK9AVVg6V7"
 			},
 			{
 				"name": "loren",
