@@ -343,7 +343,7 @@ contract('HatVaults',  accounts =>  {
 
       assert.equal(await hatVaults.withdrawPeriod(),1000);
       assert.equal(await hatVaults.safetyPeriod(),100);
-      assert.equal(tx.logs[0].event,"setWithdrawSafetyPeriod");
+      assert.equal(tx.logs[0].event,"SetWithdrawSafetyPeriod");
       assert.equal(tx.logs[0].args._withdrawPeriod,1000);
       assert.equal(tx.logs[0].args._safetyPeriod,100);
 
