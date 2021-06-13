@@ -1,6 +1,5 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
 const HATToken = artifacts.require("./HATToken.sol");
-const UniSwapV2RouterMock = artifacts.require("./UniSwapV2RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 
@@ -8,7 +7,6 @@ const utils = require("./utils.js");
 
 var hatVaults;
 var hatToken;
-var router;
 var REWARD_PER_BLOCK = "10";
 var tokenLockFactory;
 
@@ -18,8 +16,6 @@ const setup = async function (
                               startBlock=0
                             ) {
   hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
-
-  router =  await UniSwapV2RouterMock.new();
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
@@ -28,7 +24,7 @@ const setup = async function (
                                   startBlock,
                                   10,
                                   accounts[0],
-                                  router.address,
+                                  accounts[1], //as uniSwapRouter
                                   tokenLockFactory.address);
 };
 
