@@ -27,7 +27,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 hackerHatReward;
     }
 
-    //pid -> (approver->boolean)
+    //pid -> committee address
     mapping (uint256=>address) public committees;
     mapping(address => uint256) public swapAndBurns;
     //hackerAddress ->(token->amount)
@@ -341,16 +341,24 @@ contract  HATVaults is Governable, HATMaster {
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
+    /**
+   * @dev committeeCheckIn - committee check in.
+   * deposit is enable only after committee check in
+   * @param _pid pool id
+ */
+    function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
+        poolsRewards[_pid].committeeCheckIn = true;
+    }
+
     //use also for committee checkin.
     function setCommittee(uint256 _pid, address _committee)
     external {
         require(_committee != address(0), "commitee is zero");
-        //check if commitee already checked in.
+        //governance can update committee only if commitee was not checked in yet.
         if (msg.sender == governance() && committees[_pid] != msg.sender) {
             require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
         } else {
-            require(committees[_pid] == msg.sender, "only committee");
-            poolsRewards[_pid].committeeCheckIn = true;
+            require(committees[_pid] == msg.sender, "Only committee");
         }
 
         committees[_pid] = _committee;
@@ -426,7 +434,8 @@ contract  HATVaults is Governable, HATMaster {
    * @dev setPool
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
-   * @param _registered does this pool is registered (default true)
+   * @param _registered does this pool is registered (default true).
+   * This parameter can be used by the UI to include or exclude the pool 
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,

@@ -42,7 +42,7 @@ const setup = async function (
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatVaults.addPool(100,stakingToken.address,accounts[1],rewardsLevels,rewardsSplit,"_descriptionHash",[86400,10]);
-  await hatVaults.setCommittee(0,accounts[1],{from:accounts[1]});
+  await hatVaults.committeeCheckIn(0,{from:accounts[1]});
 };
 
 function assertVMException(error) {
@@ -186,7 +186,6 @@ contract('HatVaults',  accounts =>  {
         await hatVaults.setCommittee(1,accounts[1]);
 
         assert.equal(await hatVaults.committees(1),accounts[1]);
-        //committe check in
         var staker = accounts[1];
         await stakingToken2.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
         await stakingToken2.mint(staker,web3.utils.toWei("1"));
@@ -197,7 +196,13 @@ contract('HatVaults',  accounts =>  {
             assertVMException(ex);
         }
 
-        await hatVaults.setCommittee(1,accounts[2],{from:accounts[1]});
+        try {
+            await hatVaults.committeeCheckIn(1,{from:accounts[0]});
+            assert(false, 'only committee can check in');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+        await hatVaults.committeeCheckIn(1,{from:accounts[1]});
         await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
         try {
@@ -206,6 +211,7 @@ contract('HatVaults',  accounts =>  {
         } catch (ex) {
             assertVMException(ex);
         }
+        await hatVaults.setCommittee(1,accounts[2],{from:accounts[1]});
         await hatVaults.setCommittee(1,accounts[1],{from:accounts[2]});
     });
 
@@ -1470,6 +1476,7 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.setCommittee(i,accounts[0],{from:accounts[1]});
       await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
       await stakingToken2.mint(staker,web3.utils.toWei("2"));
+      await hatVaults.committeeCheckIn(i,{from:accounts[0]});
       await hatVaults.deposit(i,web3.utils.toWei("1"),{from:staker});
     }
     await utils.mineBlock();
@@ -1491,13 +1498,14 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken2.mint(staker,web3.utils.toWei("2"));
+    await hatVaults.committeeCheckIn(1,{from:accounts[0]});
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
     await hatVaults.setPool(0,200,true,"123");
     // Update twice in one block should be same as once
     await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 474);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 502);
     try {
       await hatVaults.massUpdatePools(2,1);
       assert(false, 'invalid mass update pools range');
@@ -1551,7 +1559,7 @@ contract('HatVaults',  accounts =>  {
     await stakingToken2.mint(staker,web3.utils.toWei("1"));
 
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-
+    await hatVaults.committeeCheckIn(1,{from:accounts[0]});
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
     await hatVaults.setPool(0,200,true,"123");
@@ -1567,7 +1575,7 @@ contract('HatVaults',  accounts =>  {
               assert.equal(events[0].args.to,hatVaults.address);
               assert.equal(events.length,2);
           });
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),4);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),5);
 
   });
 
