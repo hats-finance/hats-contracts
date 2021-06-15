@@ -34,23 +34,19 @@ contract  HATVaults is Governable, HATMaster {
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
     //token -> amount
     mapping(address => uint256) public governanceHatRewards;
-
     //pid -> PendingApproval
     mapping(uint256 => PendingApproval) public pendingApprovals;
-
     //poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
 
     //claim fee in ETH
     uint256 public claimFee;
-
-    uint256[] public defaultRewardLevel = [2000, 4000, 6000, 8000, 10000];
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     uint256 public hatVestingDuration = 90 days;
     uint256 public hatVestingPeriods = 90;
     uint256 public withdrawPeriod =  3000;
-    uint256 public safetyPeriod =  240; //withdraw disable period
+    uint256 public safetyPeriod =  240; //withdraw disable period in blocks units
     ISwapRouter public immutable uniSwapRouter;
     uint256 public withdrawRequestEnablePeriod = 1 days;
     uint256 public withdrawRequestPendingPeriod = 7 days;
@@ -330,14 +326,7 @@ contract  HATVaults is Governable, HATMaster {
     function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyCommittee(_pid) noPendingApproval(_pid) {
-        for (uint256 i=0; i < _rewardsLevels.length; i++) {
-            require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
-        }
-        if (_rewardsLevels.length == 0) {
-            poolsRewards[_pid].rewardsLevels = defaultRewardLevel;
-        } else {
-            poolsRewards[_pid].rewardsLevels = _rewardsLevels;
-        }
+        poolsRewards[_pid].rewardsLevels = checkRewardsLevels(_rewardsLevels);
         emit SetRewardsLevels(_pid, _rewardsLevels);
     }
 
@@ -398,14 +387,11 @@ contract  HATVaults is Governable, HATMaster {
         add(_allocPoint, IERC20(_lpToken));
         uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
-        uint256[] memory rewardsLevels = _rewardsLevels.length == 0 ? defaultRewardLevel : _rewardsLevels;
+        uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
 
         RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
         getDefaultRewardsSplit() : _rewardsSplit;
 
-        for (uint256 i=0; i < rewardsLevels.length; i++) {
-            require(rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can't be more than 10000");
-        }
         validateSplit(_rewardsSplit);
         poolsRewards[poolId] = PoolReward({
             rewardsLevels: rewardsLevels,
@@ -435,7 +421,7 @@ contract  HATVaults is Governable, HATMaster {
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
    * @param _registered does this pool is registered (default true).
-   * This parameter can be used by the UI to include or exclude the pool 
+   * This parameter can be used by the UI to include or exclude the pool
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,
@@ -669,5 +655,33 @@ contract  HATVaults is Governable, HATMaster {
         _sqrtPriceLimitX96
         ));
         require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
+    }
+
+    /**
+   * @dev checkRewardsLevels - check rewards levels.
+   * each level should be less than 10000
+   * if _rewardsLevels length is 0 a default reward levels will be return
+   * default reward levels = [2000, 4000, 6000, 8000, 10000]
+   * @param _rewardsLevels the reward levels array
+   * @return rewardsLevels
+ */
+    function checkRewardsLevels(uint256[] memory _rewardsLevels)
+    private
+    view
+    returns (uint256[] memory rewardsLevels) {
+
+        uint256 i;
+        if (_rewardsLevels.length == 0) {
+            rewardsLevels = new uint256[](5);
+            for (i; i < 5; i++) {
+              //defaultRewardLevels = [2000, 4000, 6000, 8000, 10000];
+                rewardsLevels[i] = 2000*(i+1);
+            }
+        } else {
+            for (i; i < _rewardsLevels.length; i++) {
+                require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can not be more than 10000");
+            }
+            rewardsLevels = _rewardsLevels;
+        }
     }
 }
