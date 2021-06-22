@@ -22,9 +22,10 @@ async function main() {
   const rewardPerBlock  = "30000000000000000";
   const startBlock =  await ethers.provider.getBlockNumber();
   const halvingAfterBlock = "6000";
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
-  //const governance  = await deployer.getAddress()
-  const uniSwapRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+  //const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  const governance  = await deployer.getAddress()
+  //v3 router
+  const uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
   const tokenLockFactory  = "0xF5e06c0093395AFb0ddEcf18a1041533ED11043c";
 
   console.log("Account balance:", (await deployer.getBalance()).toString());

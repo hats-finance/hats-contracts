@@ -1560,6 +1560,49 @@ contract('HatVaults',  accounts =>  {
     }
   });
 
+  it("addPool with zero alloc point", async () => {
+    await setup(accounts,REWARD_PER_BLOCK,(await web3.eth.getBlock("latest")).number);
+    var staker = accounts[1];
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    await hatVaults.addPool(0,stakingToken2.address,accounts[0],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+    await hatVaults.setPool(1,200,true,"123");
+    await hatVaults.setPool(1,0,true,"123");
+    await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+    await stakingToken2.mint(staker,web3.utils.toWei("2"));
+    await hatVaults.committeeCheckIn(1,{from:accounts[0]});
+    await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
+    await hatVaults.updatePool(1);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
+  });
+
+  it("remove and add minter", async () => {
+    await setup(accounts,REWARD_PER_BLOCK,(await web3.eth.getBlock("latest")).number,
+    [],
+    [0,0,0,0,0,0],
+    1000);
+    //remove minter
+    await utils.setMinter(hatToken,hatVaults.address,0);
+    //await  utils.mineBlock()
+    var staker = accounts[1];
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
+    await hatVaults.addPool(200,stakingToken2.address,accounts[0],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+    await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+    await stakingToken2.mint(staker,web3.utils.toWei("2"));
+    await hatVaults.committeeCheckIn(1,{from:accounts[0]});
+    await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
+    await hatVaults.updatePool(1);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
+    //set minter back
+    await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
+    await hatVaults.updatePool(1);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 60598);
+    await hatVaults.claimReward(1,{from:staker});
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(staker))), 61187);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
+  });
+
   it("setPool x2 v2", async () => {
     await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
 
