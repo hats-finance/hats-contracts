@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.4;
+pragma solidity 0.8.6;
 
 /// @title Router token swapping functionality
 /// @notice Functions for swapping tokens via Uniswap V3
