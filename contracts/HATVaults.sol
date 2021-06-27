@@ -641,6 +641,9 @@ contract  HATVaults is Governable, HATMaster {
     internal
     returns (uint256 hatsReceived)
     {
+        if (address(_token) == address(HAT)) {
+            return _amount;
+        }
         require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
         hatsReceived = uniSwapRouter.exactInputSingle(ISwapRouter.ExactInputSingleParams(
@@ -667,7 +670,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function checkRewardsLevels(uint256[] memory _rewardsLevels)
     private
-    view
+    pure
     returns (uint256[] memory rewardsLevels) {
 
         uint256 i;
