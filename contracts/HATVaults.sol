@@ -27,8 +27,24 @@ contract  HATVaults is Governable, HATMaster {
         uint256 hackerHatReward;
     }
 
+    struct PendingRewardsLevels {
+        uint256 timestamp;
+        uint256[] rewardsLevels;
+    }
+
+    struct GeneralParameters {
+        uint256 hatVestingDuration;
+        uint256 hatVestingPeriods;
+        uint256 withdrawPeriod;
+        uint256 safetyPeriod; //withdraw disable period in blocks units
+        uint256 setRewardsLevelsDelay;
+        uint256 withdrawRequestEnablePeriod;
+        uint256 withdrawRequestPendingPeriod;
+        uint256 claimFee;
+    }
+
     //pid -> committee address
-    mapping (uint256=>address) public committees;
+    mapping(uint256=>address) public committees;
     mapping(address => uint256) public swapAndBurns;
     //hackerAddress ->(token->amount)
     mapping(address => mapping(address => uint256)) public hackersHatRewards;
@@ -38,18 +54,15 @@ contract  HATVaults is Governable, HATMaster {
     mapping(uint256 => PendingApproval) public pendingApprovals;
     //poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
+    //poolId -> PendingRewardsLevels
+    mapping(uint256 => PendingRewardsLevels) public pendingRewardsLevels;
+
+    GeneralParameters public generalParameters;
 
     //claim fee in ETH
-    uint256 public claimFee;
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
-    uint256 public hatVestingDuration = 90 days;
-    uint256 public hatVestingPeriods = 90;
-    uint256 public withdrawPeriod =  3000;
-    uint256 public safetyPeriod =  240; //withdraw disable period in blocks units
     ISwapRouter public immutable uniSwapRouter;
-    uint256 public withdrawRequestEnablePeriod = 1 days;
-    uint256 public withdrawRequestPendingPeriod = 7 days;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -76,8 +89,9 @@ contract  HATVaults is Governable, HATMaster {
 
     event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
-    event SetRewardsSplit(uint256 indexed _pid, RewardsSplit indexed _rewardsSplit);
-    event SetRewardsLevels(uint256 indexed _pid, uint256[] indexed _rewardsLevels);
+    event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
+    event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
+    event PendingRewardsLevelsLog(uint256 indexed _pid, uint256[] _rewardsLevels, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
@@ -135,6 +149,16 @@ contract  HATVaults is Governable, HATMaster {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
+        generalParameters = GeneralParameters({
+            hatVestingDuration: 90 days,
+            hatVestingPeriods:90,
+            withdrawPeriod: 3000,
+            safetyPeriod: 240,//withdraw disable period in blocks units
+            setRewardsLevelsDelay: 2 days,
+            withdrawRequestEnablePeriod: 7 days,
+            withdrawRequestPendingPeriod: 7 days,
+            claimFee: 0
+        });
     }
 
       /**
@@ -152,7 +176,8 @@ contract  HATVaults is Governable, HATMaster {
     onlyCommittee(_pid)
     noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        require(block.number % (withdrawPeriod + safetyPeriod) >= withdrawPeriod,
+        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
+        generalParameters.withdrawPeriod,
         "none safty period");
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
 
@@ -172,8 +197,8 @@ contract  HATVaults is Governable, HATMaster {
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
     onlyGovernance {
-        withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
-        withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
+        generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
+        generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
     }
 
   /**
@@ -243,7 +268,7 @@ contract  HATVaults is Governable, HATMaster {
      * @param _fee claim fee in ETH
     */
     function setClaimFee(uint256 _fee) external onlyGovernance {
-        claimFee = _fee;
+        generalParameters.claimFee = _fee;
     }
 
     /**
@@ -252,16 +277,16 @@ contract  HATVaults is Governable, HATMaster {
      * @param _safetyPeriod withdraw disable period - in blocks unit
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
-        withdrawPeriod = _withdrawPeriod;
-        safetyPeriod = _safetyPeriod;
-        emit SetWithdrawSafetyPeriod(withdrawPeriod, safetyPeriod);
+        generalParameters.withdrawPeriod = _withdrawPeriod;
+        generalParameters.safetyPeriod = _safetyPeriod;
+        emit SetWithdrawSafetyPeriod(generalParameters.withdrawPeriod, generalParameters.safetyPeriod);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external payable {
-        if (claimFee > 0) {
-            require(msg.value >= claimFee, "not enough fee payed");
+        if (generalParameters.claimFee > 0) {
+            require(msg.value >= generalParameters.claimFee, "not enough fee payed");
             // solhint-disable-next-line indent
             payable(governance()).transfer(msg.value);
         }
@@ -293,8 +318,8 @@ contract  HATVaults is Governable, HATMaster {
         require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
-        hatVestingDuration = _duration;
-        hatVestingPeriods = _periods;
+        generalParameters.hatVestingDuration = _duration;
+        generalParameters.hatVestingPeriods = _periods;
         emit SetHatVestingParams(_duration, _periods);
     }
 
@@ -314,8 +339,15 @@ contract  HATVaults is Governable, HATMaster {
         emit SetRewardsSplit(_pid, _rewardsSplit);
     }
 
+    function setRewardsLevelsDelay(uint256 _delay)
+    external
+    onlyGovernance {
+        require(_delay >= 2 days, "delay is too short");
+        generalParameters.setRewardsLevelsDelay = _delay;
+    }
+
     /**
-   * @dev setRewardsLevels - set the pool token rewards level.
+   * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
    * the reward level represent the percentage of the pool's token which will be splited as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
@@ -323,11 +355,34 @@ contract  HATVaults is Governable, HATMaster {
    * @param _pid pool id
    * @param _rewardsLevels the reward levels array
  */
-    function setRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
+    function setPendingRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyCommittee(_pid) noPendingApproval(_pid) {
-        poolsRewards[_pid].rewardsLevels = checkRewardsLevels(_rewardsLevels);
-        emit SetRewardsLevels(_pid, _rewardsLevels);
+        pendingRewardsLevels[_pid].rewardsLevels = checkRewardsLevels(_rewardsLevels);
+        // solhint-disable-next-line not-rely-on-time
+        pendingRewardsLevels[_pid].timestamp = block.timestamp;
+        emit PendingRewardsLevelsLog(_pid, _rewardsLevels, pendingRewardsLevels[_pid].timestamp);
+    }
+
+  /**
+   * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
+   * see pendingRewardsLevels
+   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the function can be called only by the pool committee.
+   * cannot be called if there already pending approval.
+   * each level should be less than 10000
+   * @param _pid pool id
+ */
+    function setRewardsLevels(uint256 _pid)
+    external
+    onlyCommittee(_pid) noPendingApproval(_pid) {
+        require(pendingRewardsLevels[_pid].timestamp > 0, "no pending set rewards levels");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - pendingRewardsLevels[_pid].timestamp > generalParameters.setRewardsLevelsDelay,
+        "cannot confirm setRewardsLevels at this time");
+        poolsRewards[_pid].rewardsLevels = pendingRewardsLevels[_pid].rewardsLevels;
+        delete pendingRewardsLevels[_pid];
+        emit SetRewardsLevels(_pid, poolsRewards[_pid].rewardsLevels);
     }
 
     /**
@@ -480,8 +535,8 @@ contract  HATVaults is Governable, HATMaster {
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp, //start
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp + hatVestingDuration, //end
-                hatVestingPeriods,
+                block.timestamp + generalParameters.hatVestingDuration, //end
+                generalParameters.hatVestingPeriods,
                 0, //no release start
                 0, //no cliff
                 ITokenLock.Revocability.Disabled,
@@ -495,10 +550,10 @@ contract  HATVaults is Governable, HATMaster {
 
     function withdrawRequest(uint256 _pid) external {
       // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp > withdrawRequests[_pid][msg.sender] + withdrawRequestEnablePeriod,
+        require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
         "pending withdraw request exist");
         // solhint-disable-next-line not-rely-on-time
-        withdrawRequests[_pid][msg.sender] = block.timestamp + withdrawRequestPendingPeriod;
+        withdrawRequests[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
         emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
     }
 
@@ -624,11 +679,11 @@ contract  HATVaults is Governable, HATMaster {
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
         //disable withdraw for 240 blocks each 3000 blocks.
         //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
-        require(block.number % (withdrawPeriod + safetyPeriod) < withdrawPeriod, "safty period");
+        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) < generalParameters.withdrawPeriod, "safty period");
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
-                block.timestamp < withdrawRequests[_pid][msg.sender] + withdrawRequestEnablePeriod,
+                block.timestamp < withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
                 "withdraw request not valid");
         withdrawRequests[_pid][msg.sender] = 0;
     }
