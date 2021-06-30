@@ -142,10 +142,10 @@ contract HATMaster is ReentrancyGuard {
      * will revert if from < START_BLOCK or _to < _from
      */
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-        uint256[25] memory rewardMultipliers = [uint256(8825), 7788, 6873, 6065, 5353, 4724,
-                                            4169, 3679, 3247, 2865, 2528, 2231,
-                                            1969, 1738, 1534, 1353, 1194, 1054,
-                                            930, 821, 724, 639, 564, 498, 0];
+        uint256[25] memory rewardMultipliers = [uint256(4413), 4413, 8825, 7788, 6873, 6065,
+                                            5353, 4724, 4169, 3679, 3247, 2865,
+                                            2528, 2231, 1969, 1738, 1534, 1353,
+                                            1194, 1054, 930, 821, 724, 639, 0];
         uint256 max = rewardMultipliers.length;
         uint256 i = (_from - START_BLOCK) / HALVING_AFTER_BLOCK + 1;
         for (; i < max; i++) {
