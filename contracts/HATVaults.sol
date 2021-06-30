@@ -679,7 +679,9 @@ contract  HATVaults is Governable, HATMaster {
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
         //disable withdraw for 240 blocks each 3000 blocks.
         //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
-        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) < generalParameters.withdrawPeriod, "safty period");
+        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+        generalParameters.withdrawPeriod, 
+        "safty period");
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
