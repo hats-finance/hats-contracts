@@ -12,10 +12,9 @@ var hatToken;
 var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "10";
-var REAL_REWARD_PER_BLOCK = "0.01794630008";
+var REAL_REWARD_PER_BLOCK = "0.0161856448";
 var tokenLockFactory;
 let safeWithdrawBlocksIncrement = 3;
-
 const setup = async function (
                               accounts,
                               reward_per_block=REWARD_PER_BLOCK,
@@ -30,7 +29,6 @@ const setup = async function (
   router =  await UniSwapV3RouterMock.new();
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
@@ -690,6 +688,7 @@ contract('HatVaults',  accounts =>  {
       // Deposit redeemed existing reward
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       let expectedReward = await calculateExpectedReward(staker);
+
       var tx = await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       assert.equal(tx.logs[0].event, "SendReward");
       assert.equal(tx.logs[0].args.amount.toString(), expectedReward.toString());
@@ -737,7 +736,7 @@ contract('HatVaults',  accounts =>  {
             assertVMException(ex);
         }
       await setup(accounts, REWARD_PER_BLOCK, 0);
-      assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 8825);
+      assert.equal((await hatVaults.getMultiplier(0, 1)).toNumber(), 4413);
     });
 
     it("getMultiplier - from must be <= to", async () => {
@@ -753,10 +752,10 @@ contract('HatVaults',  accounts =>  {
 
     it("getMultiplier - ", async () => {
 
-      var rewardMultipliers = [8825, 7788, 6873, 6065, 5353, 4724,
+      var rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065, 5353, 4724,
                                4169, 3679, 3247, 2865, 2528, 2231,
                                1969, 1738, 1534, 1353, 1194, 1054,
-                              930, 821, 724, 639, 564, 498, 0];
+                              930, 821, 724, 639, 0];
       await setup(accounts, REWARD_PER_BLOCK, 0);
       assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), rewardMultipliers[0] * 10);
       assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (rewardMultipliers[0]* 10) + rewardMultipliers[1] * 5);
@@ -928,7 +927,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000093");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000104");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   }).timeout(40000);
 
@@ -1582,7 +1581,7 @@ contract('HatVaults',  accounts =>  {
     await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 502);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 645);
     try {
       await hatVaults.massUpdatePools(2,1);
       assert(false, 'invalid mass update pools range');
@@ -1628,9 +1627,9 @@ contract('HatVaults',  accounts =>  {
     //set minter back
     await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
     await hatVaults.updatePool(1);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 60598);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 30303);
     await hatVaults.claimReward(1,{from:staker});
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(staker))), 61187);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(staker))), 30597);
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
   });
 
@@ -1695,7 +1694,7 @@ contract('HatVaults',  accounts =>  {
               assert.equal(events[0].args.to,hatVaults.address);
               assert.equal(events.length,2);
           });
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),5);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),2);
 
   });
 
@@ -1742,11 +1741,11 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("0").toString());
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
       assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("12780").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("16420").toString());
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.mineBlock(1);
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
-      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("12780").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("16420").toString());
   });
   it("check deep alloc history", async () => {
     //await setup(accounts);
@@ -1771,7 +1770,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatVaults.poolInfo(0)).lastProcessedTotalAllocPoint,0);
     assert.equal((await hatVaults.poolInfo(0)).lastRewardBlock,tx.receipt.blockNumber);
     await hatVaults.claimReward(0,{from:staker});
-    assert.equal((await hatToken.balanceOf(staker)).toString(),await web3.utils.toWei("1985.625").toString());
+    assert.equal((await hatToken.balanceOf(staker)).toString(),await web3.utils.toWei("992.925").toString());
   });
 
   it("deposit twice on the same block", async () => {
