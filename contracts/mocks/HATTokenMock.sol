@@ -5,7 +5,8 @@ import "../HATToken.sol";
 
 
 contract HATTokenMock is HATToken {
-    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits) HATToken(_governance, _timeLockDelayInBlocksUnits) {
+    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits)
+    HATToken(_governance, _timeLockDelayInBlocksUnits) {
     }
 
     function burnFrom(address _from, uint256 _amount) public {

@@ -15,7 +15,7 @@ const setup = async function (
                               reward_per_block=REWARD_PER_BLOCK,
                               startBlock=0
                             ) {
-  hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+  hatToken = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
@@ -59,12 +59,11 @@ contract('HatVaults  governance',  accounts =>  {
       } catch (ex) {
         assertVMException(ex);
       }
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
       var tx =  await hatVaults.setPendingGovernance(accounts[1],{from: accounts[0]});
       assert.equal(tx.logs[0].event,"GovernancePending");
       assert.equal(tx.logs[0].args._previousGovernance,accounts[0]);
       assert.equal(tx.logs[0].args._newGovernance,accounts[1]);
-      assert.equal(tx.logs[0].args._atBlock,currentBlockNumber+1);
+      assert.equal(tx.logs[0].args._at,(await web3.eth.getBlock("latest")).timestamp);
 
       try {
         await hatVaults.transferGovernorship({from: accounts[1]});
@@ -75,22 +74,22 @@ contract('HatVaults  governance',  accounts =>  {
 
       try {
         await hatVaults.transferGovernorship({from: accounts[0]});
-        assert(false, 'need to wait 12000 blocks');
+        assert(false, 'need to wait 2 days');
       } catch (ex) {
         assertVMException(ex);
       }
-      for(var i =0;i<10000;i++) {
-          await utils.mineBlock();
-      }
+      //increase time in 1 day
+      await utils.increaseTime(24*3600);
       try {
         await hatVaults.transferGovernorship({from: accounts[0]});
-        assert(false, 'need to wait 12000 blocks');
+        assert(false, 'need to wait 2 days');
       } catch (ex) {
         assertVMException(ex);
       }
-      for(i=10000;i<12000;i++) {
-          await utils.mineBlock();
-      }
+
+      //increase time in additional 1 day
+      await utils.increaseTime(24*3600);
+
       tx = await hatVaults.transferGovernorship({from: accounts[0]});
       assert.equal(tx.logs[0].event,"GovernorshipTransferred");
       assert.equal(tx.logs[0].args._previousGovernance,accounts[0]);

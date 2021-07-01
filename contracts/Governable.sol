@@ -9,7 +9,7 @@ pragma solidity 0.8.6;
  * specific functions.
  *
  * The governance account will be passed on initialization of the contract. This
- * can later be changed with {setPendingGovernance and then transferGovernorship  after 12000 blocks}.
+ * can later be changed with {setPendingGovernance and then transferGovernorship  after 2 days}.
  *
  * This module is used through inheritance. It will make available the modifier
  * `onlyGovernance`, which can be applied to your functions to restrict their use to
@@ -18,14 +18,14 @@ pragma solidity 0.8.6;
 contract Governable {
     address private _governance;
     address public governancePending;
-    uint256 public setGovernancePendingAtBlock;
-    uint256 public constant TIME_LOCK_DELAY_IN_BLOCKS_UNIT = 12000;
+    uint256 public setGovernancePendingAt;
+    uint256 public constant TIME_LOCK_DELAY = 2 days;
 
 
     /// @notice An event thats emitted when a new governance address is set
     event GovernorshipTransferred(address indexed _previousGovernance, address indexed _newGovernance);
     /// @notice An event thats emitted when a new governance address is pending
-    event GovernancePending(address indexed _previousGovernance, address indexed _newGovernance, uint256 _atBlock);
+    event GovernancePending(address indexed _previousGovernance, address indexed _newGovernance, uint256 _at);
 
     /**
      * @dev Throws if called by any account other than the governance.
@@ -37,26 +37,28 @@ contract Governable {
 
     /**
      * @dev setPendingGovernance set a pending governance address.
-     * NOTE: transferGovernorship can be called after a time delay of 12000 blocks.
+     * NOTE: transferGovernorship can be called after a time delay of 2 days.
      */
     function setPendingGovernance(address _newGovernance) external  onlyGovernance {
         require(_newGovernance != address(0), "Governable:new governance is the zero address");
         governancePending = _newGovernance;
-        setGovernancePendingAtBlock = block.number;
-        emit GovernancePending(_governance, _newGovernance, block.number);
+        // solhint-disable-next-line not-rely-on-time
+        setGovernancePendingAt = block.timestamp;
+        emit GovernancePending(_governance, _newGovernance, setGovernancePendingAt);
     }
 
     /**
      * @dev transferGovernorship transfer governorship to the pending governance address.
-     * NOTE: transferGovernorship can be called after a time delay of 12000 blocks from the latest setPendingGovernance.
+     * NOTE: transferGovernorship can be called after a time delay of 2 days from the latest setPendingGovernance.
      */
     function transferGovernorship() external  onlyGovernance {
-        require(setGovernancePendingAtBlock > 0, "Governable: no pending governance");
-        require(block.number - setGovernancePendingAtBlock > TIME_LOCK_DELAY_IN_BLOCKS_UNIT,
+        require(setGovernancePendingAt > 0, "Governable: no pending governance");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - setGovernancePendingAt > TIME_LOCK_DELAY,
         "Governable: cannot confirm governance at this time");
         emit GovernorshipTransferred(_governance, governancePending);
         _governance = governancePending;
-        setGovernancePendingAtBlock = 0;
+        setGovernancePendingAt = 0;
     }
 
     /**

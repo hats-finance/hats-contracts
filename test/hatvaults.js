@@ -23,7 +23,7 @@ const setup = async function (
                               rewardsSplit=[0,0,0,0,0,0],
                               halvingAfterBlock = 10
                             ) {
-  hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+  hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
   router =  await UniSwapV3RouterMock.new();
@@ -54,43 +54,42 @@ contract('HatVaults',  accounts =>  {
 
     //this function will increment 4 blocks in local testnet
     async function safeWithdraw(pid, amount, staker) {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
 
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) >= withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      }
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+
       //increase time for the case there is already pending request ..so make sure start a new one..
       await utils.increaseTime(7*24*3600);
       await hatVaults.withdrawRequest(pid,{from:staker});
       //increase time for pending period
       await utils.increaseTime(7*24*3600);
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
+         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
+      }
       return await hatVaults.withdraw(pid,amount,{from:staker});
     }
 
     async function advanceToSaftyPeriod() {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) < withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) <  withdrawPeriod) {
+         await utils.increaseTime(withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod)));
       }
-      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     }
 
-    //advanced blocks to a withdraw enable period
+    //advanced time to a withdraw enable period
     async function advanceToNoneSaftyPeriod() {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) >= withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
+        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
-      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+
     }
 
     async function calculateExpectedReward(staker,operationBlocksIncrement = 0) {
@@ -110,39 +109,36 @@ contract('HatVaults',  accounts =>  {
     }
 
     async function safeEmergencyWithdraw(pid, staker) {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) >= withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      }
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
       //increase time for the case there is already pending request ..so make sure start a new one..
-      await utils.increaseTime(1*24*3600);
+      await utils.increaseTime(7*24*3600);
       await hatVaults.withdrawRequest(pid,{from:staker});
       //increase time for pending period
       await utils.increaseTime(7*24*3600);
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
+         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
+      }
       return await hatVaults.emergencyWithdraw(pid,{from:staker});
     }
 
     async function unSafeEmergencyWithdraw(pid, staker) {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) < withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
+        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
       return await hatVaults.emergencyWithdraw(pid,{from:staker});
     }
 
     async function unSafeWithdraw(pid, amount, staker) {
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod;
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod;
-      while (currentBlockNumber % (withdrawPeriod.toNumber() + safetyPeriod.toNumber()) < withdrawPeriod.toNumber()) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
+      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
+        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
       return await hatVaults.withdraw(pid,amount,{from:staker});
     }
@@ -392,14 +388,14 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
 
-      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
       let withdrawPeriod  =  1000;
       let safetyPeriod = 100;
-      while (currentBlockNumber % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
-         await utils.mineBlock();
-         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+
+      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) <  withdrawPeriod) {
+         await utils.increaseTime(withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod)));
       }
-      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
 
       await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
       try {
@@ -410,7 +406,7 @@ contract('HatVaults',  accounts =>  {
       }
 
       await hatVaults.dismissPendingApprovalClaim(0);
-      currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+      let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
 
       let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
       let rewardPerShare = new web3.utils.BN((await hatVaults.poolInfo(0)).rewardPerShare);
@@ -927,7 +923,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000104");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000192");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   }).timeout(40000);
 
@@ -1557,7 +1553,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1357968);
+    assert.equal(tx.receipt.gasUsed, 1358035);
   }).timeout(40000);
 
 
@@ -1581,7 +1577,7 @@ contract('HatVaults',  accounts =>  {
     await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1,200,true,"123");
     await hatVaults.massUpdatePools(0,2);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 645);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 6619);
     try {
       await hatVaults.massUpdatePools(2,1);
       assert(false, 'invalid mass update pools range');
@@ -1627,9 +1623,9 @@ contract('HatVaults',  accounts =>  {
     //set minter back
     await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
     await hatVaults.updatePool(1);
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 30303);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 1177);
     await hatVaults.claimReward(1,{from:staker});
-    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(staker))), 30597);
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(staker))), 1471);
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 0);
   });
 
@@ -1699,7 +1695,7 @@ contract('HatVaults',  accounts =>  {
   });
 
   it("add/set pool on the same block", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+    let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
     let router1 =  await UniSwapV3RouterMock.new();
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
@@ -1741,11 +1737,11 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("0").toString());
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
       assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("16420").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("88260").toString());
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.mineBlock(1);
       await safeWithdraw(0,web3.utils.toWei("1"),staker);
-      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("16420").toString());
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("88260").toString());
   });
   it("check deep alloc history", async () => {
     //await setup(accounts);
