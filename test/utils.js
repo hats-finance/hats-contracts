@@ -41,12 +41,10 @@ const mineBlock = async function() {
       });
     });
 };
-const TIME_LOCK_DELAY_IN_BLOCKS_UNIT = 100;
+const TIME_LOCK_DELAY = 100;
 const setMinter = async function(hatToken,minter,cap) {
     await hatToken.setPendingMinter(minter,cap);
-    for(var i =0;i<TIME_LOCK_DELAY_IN_BLOCKS_UNIT;i++) {
-        await mineBlock();
-    }
+    await increaseTime(TIME_LOCK_DELAY);
     await hatToken.confirmMinter(minter);
 };
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -55,6 +53,6 @@ module.exports = {
   increaseTime,
   setMinter,
   mineBlock,
-  TIME_LOCK_DELAY_IN_BLOCKS_UNIT,
+  TIME_LOCK_DELAY,
   NULL_ADDRESS
 };

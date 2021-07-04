@@ -8,7 +8,7 @@ contract HATToken is IERC20 {
 
     struct PendingMinter {
         uint256 seedAmount;
-        uint256 setMinterPendingAtBlock;
+        uint256 setMinterPendingAt;
     }
 
     /// @notice A checkpoint for marking number of votes from a given block
@@ -31,8 +31,8 @@ contract HATToken is IERC20 {
 
     address public governance;
     address public governancePending;
-    uint256 public setGovernancePendingAtBlock;
-    uint256 public timeLockDelayInBlocksUnits;
+    uint256 public setGovernancePendingAt;
+    uint256 public timeLockDelay;
     uint256 public constant CAP = 10000000e18;
 
     /// @notice Address which may mint new tokens
@@ -74,11 +74,11 @@ contract HATToken is IERC20 {
     keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     /// @notice An event thats emitted when a new minter address is pending
-    event MinterPending(address indexed minter, uint256 seedAmount, uint256 atBlock);
+    event MinterPending(address indexed minter, uint256 seedAmount, uint256 at);
     /// @notice An event thats emitted when the minter address is changed
     event MinterChanged(address indexed minter, uint256 seedAmount);
     /// @notice An event thats emitted when a new governance address is pending
-    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 atBlock);
+    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 at);
     /// @notice An event thats emitted when a new governance address is set
     event GovernanceChanged(address indexed oldGovernance, address indexed newGovernance);
     /// @notice An event thats emitted when an account changes its delegate
@@ -89,43 +89,47 @@ contract HATToken is IERC20 {
     /**
      * @notice Construct a new HAT token
      */
-    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits) {
+    constructor(address _governance, uint256 _timeLockDelay) {
         governance = _governance;
-        timeLockDelayInBlocksUnits = _timeLockDelayInBlocksUnits;
+        timeLockDelay = _timeLockDelay;
     }
 
     function setPendingGovernance(address _governance) external {
         require(msg.sender == governance, "HAT:!governance");
         require(_governance != address(0), "HAT:!_governance");
         governancePending = _governance;
-        setGovernancePendingAtBlock = block.number;
-        emit GovernancePending(governance, _governance, block.number);
+        // solhint-disable-next-line not-rely-on-time
+        setGovernancePendingAt = block.timestamp;
+        emit GovernancePending(governance, _governance, setGovernancePendingAt);
     }
 
     function confirmGovernance() external {
         require(msg.sender == governance, "HAT:!governance");
-        require(setGovernancePendingAtBlock > 0, "HAT:!governancePending");
-        require(block.number - setGovernancePendingAtBlock > timeLockDelayInBlocksUnits,
+        require(setGovernancePendingAt > 0, "HAT:!governancePending");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - setGovernancePendingAt > timeLockDelay,
         "HAT: cannot confirm governance at this time");
         emit GovernanceChanged(governance, governancePending);
         governance = governancePending;
-        setGovernancePendingAtBlock = 0;
+        setGovernancePendingAt = 0;
     }
 
     function setPendingMinter(address _minter, uint256 _cap) external {
         require(msg.sender == governance, "HAT::!governance");
         pendingMinters[_minter].seedAmount = _cap;
-        pendingMinters[_minter].setMinterPendingAtBlock = block.number;
-        emit MinterPending(_minter, _cap, block.number);
+        // solhint-disable-next-line not-rely-on-time
+        pendingMinters[_minter].setMinterPendingAt = block.timestamp;
+        emit MinterPending(_minter, _cap, pendingMinters[_minter].setMinterPendingAt);
     }
 
     function confirmMinter(address _minter) external {
         require(msg.sender == governance, "HAT::mint: only the governance can confirm minter");
-        require(pendingMinters[_minter].setMinterPendingAtBlock > 0, "HAT:: no pending minter was set");
-        require(block.number - pendingMinters[_minter].setMinterPendingAtBlock > timeLockDelayInBlocksUnits,
+        require(pendingMinters[_minter].setMinterPendingAt > 0, "HAT:: no pending minter was set");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - pendingMinters[_minter].setMinterPendingAt > timeLockDelay,
         "HATToken: cannot confirm at this time");
         minters[_minter] = pendingMinters[_minter].seedAmount;
-        pendingMinters[_minter].setMinterPendingAtBlock = 0;
+        pendingMinters[_minter].setMinterPendingAt = 0;
         emit MinterChanged(_minter, pendingMinters[_minter].seedAmount);
     }
 
@@ -239,6 +243,7 @@ contract HATToken is IERC20 {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "HAT::permit: invalid signature");
         require(signatory == owner, "HAT::permit: unauthorized");
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "HAT::permit: signature expired");
 
         allowances[owner][spender] = amount;
@@ -315,6 +320,7 @@ contract HATToken is IERC20 {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "HAT::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "HAT::delegateBySig: invalid nonce");
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= expiry, "HAT::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }

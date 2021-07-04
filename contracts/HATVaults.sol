@@ -36,7 +36,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
         uint256 withdrawPeriod;
-        uint256 safetyPeriod; //withdraw disable period in blocks units
+        uint256 safetyPeriod; //withdraw disable period in seconds
         uint256 setRewardsLevelsDelay;
         uint256 withdrawRequestEnablePeriod;
         uint256 withdrawRequestPendingPeriod;
@@ -152,8 +152,8 @@ contract  HATVaults is Governable, HATMaster {
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
             hatVestingPeriods:90,
-            withdrawPeriod: 3000,
-            safetyPeriod: 240,//withdraw disable period in blocks units
+            withdrawPeriod: 12 hours,
+            safetyPeriod: 1 hours,
             setRewardsLevelsDelay: 2 days,
             withdrawRequestEnablePeriod: 7 days,
             withdrawRequestPendingPeriod: 7 days,
@@ -176,7 +176,8 @@ contract  HATVaults is Governable, HATMaster {
     onlyCommittee(_pid)
     noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod,
         "none safty period");
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
@@ -273,8 +274,8 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
      * @dev setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
-     * @param _withdrawPeriod withdraw enable period - in blocks unit
-     * @param _safetyPeriod withdraw disable period - in blocks unit
+     * @param _withdrawPeriod withdraw enable period
+     * @param _safetyPeriod withdraw disable period
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
         generalParameters.withdrawPeriod = _withdrawPeriod;
@@ -677,10 +678,10 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
-        //disable withdraw for 240 blocks each 3000 blocks.
-        //to enable safe approveClaim period which prevents front running on committee approveClaim calls.
-        require(block.number % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-        generalParameters.withdrawPeriod, 
+      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 12 hours)
+      // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+        generalParameters.withdrawPeriod,
         "safty period");
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&

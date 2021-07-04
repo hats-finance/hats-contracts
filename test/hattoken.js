@@ -15,13 +15,13 @@ function assertVMException(error) {
 contract('HATToken', accounts => {
 
     it("should put 0 tokens in the first account", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         let balance = await token.balanceOf.call(accounts[0]);
         assert.equal(balance.valueOf(), 0);
     });
 
     it("should be owned by its creator", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         let governance = await token.governance();
         assert.equal(governance, accounts[0]);
     });
@@ -29,7 +29,7 @@ contract('HATToken', accounts => {
     it("should mint tokens to minter account", async () => {
         let governance, totalSupply, userSupply;
         governance = accounts[0];
-        const token = await HATToken.new(governance,utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(governance,utils.TIME_LOCK_DELAY);
         totalSupply = await token.totalSupply();
         userSupply = await token.balanceOf(governance);
         assert.equal(totalSupply, 0);
@@ -58,7 +58,7 @@ contract('HATToken', accounts => {
     });
 
     it("should allow minting tokens only by minter", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         let governance = await token.governance();
         let totalSupply = await token.totalSupply();
         await utils.setMinter(token,accounts[0],1000);
@@ -77,7 +77,7 @@ contract('HATToken', accounts => {
     });
 
     it("timelock for governance", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
 
         try {
             await token.confirmGovernance({ 'from': accounts[0]});
@@ -107,9 +107,7 @@ contract('HATToken', accounts => {
         } catch (error) {
             assertVMException(error);
         }
-        for (let i=0;i<utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT -10 ;i++) {
-          await utils.mineBlock();
-        }
+        await utils.increaseTime(utils.TIME_LOCK_DELAY -10);
 
         try {
             await token.confirmGovernance({ 'from': accounts[0]});
@@ -118,9 +116,7 @@ contract('HATToken', accounts => {
             assertVMException(error);
         }
 
-        for (let i=0;i<10 ;i++) {
-          await utils.mineBlock();
-        }
+        await utils.increaseTime(10);
 
         await token.confirmGovernance({ 'from': accounts[0]});
         assert.equal(await token.governance(),accounts[1]);
@@ -133,7 +129,7 @@ contract('HATToken', accounts => {
     });
 
     it("timelock for minter", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
 
         try {
             await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
@@ -147,16 +143,11 @@ contract('HATToken', accounts => {
         } catch (error) {
             assertVMException(error);
         }
-        await token.setPendingMinter(accounts[1],10,{ 'from': accounts[0]});
-        try {
-            await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
-            throw 'an error';
-        } catch (error) {
-            assertVMException(error);
-        }
-        for (let i=0;i<utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT -10 ;i++) {
-          await utils.mineBlock();
-        }
+        var tx = await token.setPendingMinter(accounts[1],10,{ 'from': accounts[0]});
+        assert.equal(tx.logs[0].event,"MinterPending");
+        assert.equal(tx.logs[0].args.minter,accounts[1]);
+        assert.equal(tx.logs[0].args.seedAmount,10);
+        assert.equal(tx.logs[0].args.at,(await web3.eth.getBlock("latest")).timestamp);
 
         try {
             await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
@@ -165,9 +156,17 @@ contract('HATToken', accounts => {
             assertVMException(error);
         }
 
-        for (let i=0;i<10 ;i++) {
-          await utils.mineBlock();
+        await utils.increaseTime(utils.TIME_LOCK_DELAY -10);
+
+        try {
+            await token.confirmMinter(accounts[1],{ 'from': accounts[0]});
+            throw 'an error';
+        } catch (error) {
+            assertVMException(error);
         }
+
+        await utils.increaseTime(10);
+
 
         try {
             await token.confirmMinter(accounts[1],{ 'from': accounts[2]});
@@ -183,7 +182,7 @@ contract('HATToken', accounts => {
 
 
     it("log the Transfer event on mint", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],1000);
         const tx = await token.mint(accounts[1], 1000, { from: accounts[0] });
 
@@ -194,7 +193,7 @@ contract('HATToken', accounts => {
     });
 
     it("mint should be reflected in totalSupply", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],2000);
         await token.mint(accounts[1], 1000, { from: accounts[0] });
         let amount = await token.totalSupply();
@@ -208,7 +207,7 @@ contract('HATToken', accounts => {
     });
 
     it("mint should be reflected in balances", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],1000);
 
         await token.mint(accounts[1], 1000, { from: accounts[0] });
@@ -219,7 +218,7 @@ contract('HATToken', accounts => {
     });
 
     it("totalSupply is 0 on init", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
 
         const totalSupply = await token.totalSupply();
 
@@ -227,7 +226,7 @@ contract('HATToken', accounts => {
     });
 
     it("burn", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],1000);
         await token.mint(accounts[1], 1000, { from: accounts[0] });
         var amount = await token.balanceOf(accounts[1]);
@@ -260,7 +259,7 @@ contract('HATToken', accounts => {
     });
 
     it("getPriorVotes ", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],2000);
 
         try {
@@ -318,7 +317,7 @@ contract('HATToken', accounts => {
     });
 
     it("delegate twice in same block ", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],2000);
 
         // Should start at 0
@@ -334,7 +333,7 @@ contract('HATToken', accounts => {
     });
 
     it("CappedToken ", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         const cap = web3.utils.toWei("10000000");
         await utils.setMinter(token,accounts[0],web3.utils.toWei("16000000"));
         await token.mint(accounts[1], cap);
@@ -361,7 +360,7 @@ contract('HATToken', accounts => {
 
     it("master minting is capped ", async () => {
         const master = accounts[2];
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         const cap = web3.utils.toWei("175000");
         await utils.setMinter(token,master,cap);
 
@@ -390,7 +389,7 @@ contract('HATToken', accounts => {
 
     describe('onlyMinter', () => {
         it('mint by minter', async () => {
-            const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+            const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
             await utils.setMinter(token,accounts[0],10);
             try {
                 await token.mint(accounts[1], 10, { from: accounts[0] });
@@ -400,7 +399,7 @@ contract('HATToken', accounts => {
         });
 
         it('mint by not minter', async () => {
-            const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+            const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
             await utils.setMinter(token,accounts[0],10);
             try {
                 await token.mint(accounts[1], 10, { from: accounts[1] });
@@ -413,7 +412,7 @@ contract('HATToken', accounts => {
     });
 
     it("increase/decrease allowance", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toWei("10");
@@ -451,7 +450,7 @@ contract('HATToken', accounts => {
     });
 
     it("transfer from and to 0 address not allowed", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toWei("10");
@@ -476,7 +475,7 @@ contract('HATToken', accounts => {
     });
 
     it("approve", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toWei("10");
@@ -509,7 +508,7 @@ contract('HATToken', accounts => {
     });
 
     it("approve max", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1));
@@ -537,7 +536,7 @@ contract('HATToken', accounts => {
     });
 
     it("test safe 32", async () => {
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(accounts[1], web3.utils.toWei("100"));
         let value = web3.utils.toBN(2).pow(web3.utils.toBN(32));
@@ -574,7 +573,7 @@ contract('HATToken', accounts => {
 
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -631,7 +630,7 @@ contract('HATToken', accounts => {
 
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -661,7 +660,7 @@ contract('HATToken', accounts => {
     it("can't replay permit", async () => {
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -698,7 +697,7 @@ contract('HATToken', accounts => {
     it("can't use signed permit after deadline", async () => {
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -749,7 +748,7 @@ contract('HATToken', accounts => {
     it("delegateBySig", async () => {
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -783,7 +782,7 @@ contract('HATToken', accounts => {
     it("can't replay delegateBySig", async () => {
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
@@ -816,7 +815,7 @@ contract('HATToken', accounts => {
     it("can't use signed delegation after expiry", async () => {
         const wallet = Wallet.generate();
         const owner = wallet.getAddressString();
-        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY_IN_BLOCKS_UNIT);
+        const token = await HATToken.new(accounts[0],utils.TIME_LOCK_DELAY);
         await utils.setMinter(token,accounts[0],web3.utils.toWei("1000"));
         await token.mint(owner, web3.utils.toWei("100"));
 
