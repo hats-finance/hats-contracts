@@ -306,7 +306,14 @@ contract('HatVaults',  accounts =>  {
       } catch (ex) {
         assertVMException(ex);
       }
+      try {
+          await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+          assert(false, 'cannot set split while there is pending approval');
+      } catch (ex) {
+        assertVMException(ex);
+      }
       await hatVaults.dismissPendingApprovalClaim(0);
+      await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
       await hatVaults.setPendingRewardsLevels(0, [],{from:accounts[1]});
 
       await utils.increaseTime(24*3600*2);
