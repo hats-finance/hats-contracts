@@ -57,6 +57,8 @@ contract  HATVaults is Governable, HATMaster {
     //poolId -> PendingRewardsLevels
     mapping(uint256 => PendingRewardsLevels) public pendingRewardsLevels;
 
+    mapping(uint256 => bool) public poolDepositPause;
+
     GeneralParameters public generalParameters;
 
     //claim fee in ETH
@@ -71,6 +73,15 @@ contract  HATVaults is Governable, HATMaster {
 
     modifier noPendingApproval(uint256 _pid) {
         require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
+        _;
+    }
+
+    modifier noSafetyPeriod() {
+      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 12 hours)
+      // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+        generalParameters.withdrawPeriod,
+        "safty period");
         _;
     }
 
@@ -334,7 +345,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function setRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
     external
-    onlyGovernance noPendingApproval(_pid) {
+    onlyGovernance noPendingApproval(_pid) noSafetyPeriod {
         validateSplit(_rewardsSplit);
         poolsRewards[_pid].rewardsSplit = _rewardsSplit;
         emit SetRewardsSplit(_pid, _rewardsSplit);
@@ -477,17 +488,19 @@ contract  HATVaults is Governable, HATMaster {
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
    * @param _registered does this pool is registered (default true).
+   * @param _depositPause pause pool deposit (default false).
    * This parameter can be used by the UI to include or exclude the pool
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,
                     uint256 _allocPoint,
                     bool _registered,
+                    bool _depositPause,
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
         set(_pid, _allocPoint);
-        //set approver only if commite not checkin.
+        poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
@@ -559,6 +572,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     function deposit(uint256 _pid, uint256 _amount) external {
+        require(!poolDepositPause[_pid], "deposit paused");
         //clear withdraw request
         withdrawRequests[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
@@ -677,12 +691,7 @@ contract  HATVaults is Governable, HATMaster {
         "total split % should be less than 10000");
     }
 
-    function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) {
-      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 12 hours)
-      // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-        generalParameters.withdrawPeriod,
-        "safty period");
+    function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) noSafetyPeriod {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time

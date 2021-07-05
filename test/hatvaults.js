@@ -197,6 +197,7 @@ contract('HatVaults',  accounts =>  {
             assertVMException(ex);
         }
         await hatVaults.committeeCheckIn(1,{from:accounts[1]});
+
         await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
         try {
@@ -313,7 +314,16 @@ contract('HatVaults',  accounts =>  {
         assertVMException(ex);
       }
       await hatVaults.dismissPendingApprovalClaim(0);
+      try {
+          await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+          assert(false, 'cannot set split while in safety period');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await advanceToNoneSaftyPeriod();
+
       await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+
       await hatVaults.setPendingRewardsLevels(0, [],{from:accounts[1]});
 
       await utils.increaseTime(24*3600*2);
@@ -335,6 +345,14 @@ contract('HatVaults',  accounts =>  {
       await stakingToken.mint(staker,web3.utils.toWei("1"));
       assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
       assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+      await hatVaults.setPool(0,100,true,true,"_descriptionHash");
+      try {
+          await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+          assert(false, 'cannot deposit to paused pool');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await hatVaults.setPool(0,100,true,false,"_descriptionHash");
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
       await advanceToSaftyPeriod();
@@ -1190,19 +1208,19 @@ contract('HatVaults',  accounts =>  {
   it("setPool", async () => {
     await setup(accounts);
     try {
-        await hatVaults.setPool(1, 200, true, '_descriptionHash');
+        await hatVaults.setPool(1, 200, true, false, '_descriptionHash');
         assert(false, 'no pool exist');
       } catch (ex) {
         assertVMException(ex);
     }
-    await hatVaults.setPool(0, 200,true, '_descriptionHash');
+    await hatVaults.setPool(0, 200,true,false,'_descriptionHash');
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     assert.equal(await hatToken.balanceOf(staker), 0);
-    await hatVaults.setPool(0, 100,true, '_descriptionHash');
-    await hatVaults.setPool(0, 200,true, '_descriptionHash');
+    await hatVaults.setPool(0, 100,true, false,'_descriptionHash');
+    await hatVaults.setPool(0, 200,true,false,'_descriptionHash');
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
     await hatVaults.claimReward(0, {from:staker});
@@ -1560,7 +1578,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1358035);
+    assert.equal(tx.receipt.gasUsed, 1357968);
   }).timeout(40000);
 
 
@@ -1579,10 +1597,10 @@ contract('HatVaults',  accounts =>  {
     await stakingToken2.mint(staker,web3.utils.toWei("2"));
     await hatVaults.committeeCheckIn(1,{from:accounts[0]});
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
-    await hatVaults.setPool(0,200,true,"123");
+    await hatVaults.setPool(0,200,true,false,"123");
     // Update twice in one block should be same as once
     await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
-    await hatVaults.setPool(1,200,true,"123");
+    await hatVaults.setPool(1,200,true,false,"123");
     await hatVaults.massUpdatePools(0,2);
     assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))), 6619);
     try {
@@ -1598,8 +1616,8 @@ contract('HatVaults',  accounts =>  {
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
     await hatVaults.addPool(0,stakingToken2.address,accounts[0],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
-    await hatVaults.setPool(1,200,true,"123");
-    await hatVaults.setPool(1,0,true,"123");
+    await hatVaults.setPool(1,200,true,false,"123");
+    await hatVaults.setPool(1,0,true,false,"123");
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken2.mint(staker,web3.utils.toWei("2"));
     await hatVaults.committeeCheckIn(1,{from:accounts[0]});
@@ -1684,7 +1702,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.committeeCheckIn(1,{from:accounts[0]});
     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
 
-    await hatVaults.setPool(0,200,true,"123");
+    await hatVaults.setPool(0,200,true,false,"123");
 
     var tx = await hatVaults.massUpdatePools(0,2);
         await hatToken.getPastEvents('Transfer', {
@@ -1722,7 +1740,7 @@ contract('HatVaults',  accounts =>  {
     globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
     assert.equal(globalPoolUpdatesLength,1); //2 got in the same block
     assert.equal(await hatVaults1.poolLength(),2);
-    await poolManager.setPools(hatVaults1.address,[0,1],200,true,"_descriptionHash");
+    await poolManager.setPools(hatVaults1.address,[0,1],200,true,false,"_descriptionHash");
 
     globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
     assert.equal(globalPoolUpdatesLength,2); //2 got in the same block
@@ -1766,7 +1784,7 @@ contract('HatVaults',  accounts =>  {
     //5
     await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
     //5
-    await hatVaults.setPool(1,300,true,"123");
+    await hatVaults.setPool(1,300,true,false,"123");
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(),0);
     assert.equal(await hatVaults.getGlobalPoolUpdatesLength(),3);

@@ -18,7 +18,7 @@ contract PoolsManagerMock {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
             _hatVaults.addPool(_allocPoint,
-                               _lpTokens[i],
+                                _lpTokens[i],
                                 _committee,
                                 _rewardsLevels,
                                 _rewardsSplit,
@@ -31,12 +31,14 @@ contract PoolsManagerMock {
                       uint256[] memory _pids,
                       uint256 _allocPoint,
                       bool _registered,
+                      bool _depositPause,
                       string memory _descriptionHash) external {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
                             _allocPoint,
                             _registered,
+                            _depositPause,
                             _descriptionHash);
         }
     }
