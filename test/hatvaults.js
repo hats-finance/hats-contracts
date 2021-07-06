@@ -286,6 +286,7 @@ contract('HatVaults',  accounts =>  {
       } catch (ex) {
           assertVMException(ex);
       }
+      await advanceToNoneSaftyPeriod();
       await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,0, 800]);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
