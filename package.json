@@ -45,6 +45,7 @@
     "pug": "^2.0.0-rc.4",
     "rimraf": "^2.6.2",
     "run-with-ganache": "^0.1.1",
+    "solc-0.8": "npm:solc@^0.8.6",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.16",
     "uint32": "^0.2.1"
@@ -75,6 +76,7 @@
     "kbpgp": "^2.1.15",
     "math": "0.0.3",
     "openzeppelin-solidity": "4.1.0",
+    "solidity-docgen": "^0.5.13",
     "strip-hex-prefix": "^1.0.0",
     "truffle-flattener": "1.5.0"
   }
