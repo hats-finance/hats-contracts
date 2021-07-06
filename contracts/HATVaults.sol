@@ -81,7 +81,7 @@ contract  HATVaults is Governable, HATMaster {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
-        "safty period");
+        "safety period");
         _;
     }
 
@@ -173,9 +173,9 @@ contract  HATVaults is Governable, HATMaster {
     }
 
       /**
-     * @dev pendingApprovalClaim - called by a commitee to set a pending approval claim.
-     * The pending approval need to be approved or dismissd  by the hats governance.
-     * This function should be called only on a safty period, where withdrawn is disable.
+     * @dev pendingApprovalClaim - called by a committee to set a pending approval claim.
+     * The pending approval need to be approved or dismissed  by the hats governance.
+     * This function should be called only on a safety period, where withdrawn is disable.
      * Upon a call to this function by the committee the pool withdrawn will be disable
      * till governance will approve or dismiss this pending approval.
      * @param _pid pool id
@@ -190,7 +190,7 @@ contract  HATVaults is Governable, HATMaster {
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod,
-        "none safty period");
+        "none safety period");
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
 
         pendingApprovals[_pid] = PendingApproval({
@@ -406,11 +406,16 @@ contract  HATVaults is Governable, HATMaster {
         poolsRewards[_pid].committeeCheckIn = true;
     }
 
-    //use also for committee checkin.
+
+    /**
+   * @dev setCommittee - set new committee address.
+   * @param _pid pool id
+   * @param _committee new committee address
+ */
     function setCommittee(uint256 _pid, address _committee)
     external {
-        require(_committee != address(0), "commitee is zero");
-        //governance can update committee only if commitee was not checked in yet.
+        require(_committee != address(0), "committee is zero");
+        //governance can update committee only if committee was not checked in yet.
         if (msg.sender == governance() && committees[_pid] != msg.sender) {
             require(!poolsRewards[_pid].committeeCheckIn, "Committee already checked in");
         } else {
@@ -423,7 +428,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-   * @dev addPool - onlyGovernance
+   * @dev addPool - only Governance
    * @param _allocPoint the pool allocation point
    * @param _lpToken pool token
    * @param _committee pools committee addresses array
