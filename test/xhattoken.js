@@ -16,6 +16,10 @@ contract('xHATToken', accounts => {
     it("constructor", async () => {
         await setup(accounts);
         assert.equal(await xHatToken.HAT(), hatToken.address);
+        assert.equal(await xHatToken.name(), "xHATToken");
+        assert.equal(await xHatToken.symbol(), "xHAT");
+        assert.equal(await xHatToken.decimals(), 18);
+
     });
 
     it("swapHAT2xHAT", async () => {

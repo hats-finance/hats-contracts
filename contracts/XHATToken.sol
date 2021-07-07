@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 // This contract handles swapping to and from xHAT
-contract XHATToken is ERC20("XHATToken", "xHAT") {
+contract XHATToken is ERC20("xHATToken", "xHAT") {
 
     IERC20 public immutable HAT;
 
