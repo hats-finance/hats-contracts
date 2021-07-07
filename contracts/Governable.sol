@@ -51,7 +51,7 @@ contract Governable {
      * @dev transferGovernorship transfer governorship to the pending governance address.
      * NOTE: transferGovernorship can be called after a time delay of 2 days from the latest setPendingGovernance.
      */
-    function transferGovernorship() external  onlyGovernance {
+    function transferGovernorship() external onlyGovernance {
         require(setGovernancePendingAt > 0, "Governable: no pending governance");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - setGovernancePendingAt > TIME_LOCK_DELAY,

@@ -233,7 +233,6 @@ contract  HATVaults is Governable, HATMaster {
 
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, pendingApproval.severity);
-
         //hacker get its reward to a vesting contract
         address tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
@@ -327,7 +326,7 @@ contract  HATVaults is Governable, HATMaster {
    * @param _periods the vesting periods
  */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
-        require(_duration < 120 days, "vesting duration is too long");
+        require(_duration < 180 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
         generalParameters.hatVestingDuration = _duration;
@@ -351,6 +350,10 @@ contract  HATVaults is Governable, HATMaster {
         emit SetRewardsSplit(_pid, _rewardsSplit);
     }
 
+    /**
+   * @dev setRewardsLevelsDelay - set the timelock delay for setting rewars level
+   * @param _delay time delay
+ */
     function setRewardsLevelsDelay(uint256 _delay)
     external
     onlyGovernance {
@@ -464,7 +467,7 @@ contract  HATVaults is Governable, HATMaster {
         RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
         getDefaultRewardsSplit() : _rewardsSplit;
 
-        validateSplit(_rewardsSplit);
+        validateSplit(rewardsSplit);
         poolsRewards[poolId] = PoolReward({
             rewardsLevels: rewardsLevels,
             pendingLpTokenRewards: 0,
@@ -677,12 +680,12 @@ contract  HATVaults is Governable, HATMaster {
 
     function getDefaultRewardsSplit() public pure returns (RewardsSplit memory) {
         return RewardsSplit({
-            hackerVestedReward: 4500,
-            hackerReward: 4000,
+            hackerVestedReward: 6000,
+            hackerReward: 2000,
             committeeReward: 500,
-            swapAndBurn: 250,
-            governanceHatReward: 250,
-            hackerHatReward: 400
+            swapAndBurn: 0,
+            governanceHatReward: 1000,
+            hackerHatReward: 500
         });
     }
 
@@ -692,8 +695,8 @@ contract  HATVaults is Governable, HATMaster {
             .add(_rewardsSplit.committeeReward)
             .add(_rewardsSplit.swapAndBurn)
             .add(_rewardsSplit.governanceHatReward)
-            .add(_rewardsSplit.hackerHatReward) < REWARDS_LEVEL_DENOMINATOR,
-        "total split % should be less than 10000");
+            .add(_rewardsSplit.hackerHatReward) == REWARDS_LEVEL_DENOMINATOR,
+        "total split % should be 10000");
     }
 
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) noSafetyPeriod {
@@ -736,7 +739,7 @@ contract  HATVaults is Governable, HATMaster {
    * @dev checkRewardsLevels - check rewards levels.
    * each level should be less than 10000
    * if _rewardsLevels length is 0 a default reward levels will be return
-   * default reward levels = [2000, 4000, 6000, 8000, 10000]
+   * default reward levels = [2000, 4000, 6000, 8000]
    * @param _rewardsLevels the reward levels array
    * @return rewardsLevels
  */
@@ -747,14 +750,14 @@ contract  HATVaults is Governable, HATMaster {
 
         uint256 i;
         if (_rewardsLevels.length == 0) {
-            rewardsLevels = new uint256[](5);
-            for (i; i < 5; i++) {
-              //defaultRewardLevels = [2000, 4000, 6000, 8000, 10000];
+            rewardsLevels = new uint256[](4);
+            for (i; i < 4; i++) {
+              //defaultRewardLevels = [2000, 4000, 6000, 8000];
                 rewardsLevels[i] = 2000*(i+1);
             }
         } else {
             for (i; i < _rewardsLevels.length; i++) {
-                require(_rewardsLevels[i] <= REWARDS_LEVEL_DENOMINATOR, "reward level can not be more than 10000");
+                require(_rewardsLevels[i] < REWARDS_LEVEL_DENOMINATOR, "reward level can not be more than 10000");
             }
             rewardsLevels = _rewardsLevels;
         }

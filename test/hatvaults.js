@@ -224,17 +224,24 @@ contract('HatVaults',  accounts =>  {
           assertVMException(ex);
       }
 
-      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 0,100, 0,100, 700]);
+      try {
+          await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 0,100, 0,100, 700]);
+          assert(false, 'cannot init with rewardLevel < 10000');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 1000,100, 100,100, 700]);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 4);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "3000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "5000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "7000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "9000");
-      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerReward.toString(), "0");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerReward.toString(), "1000");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerVestedReward.toString(), "8000");
 
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.committeeReward.toString(), "100");
-      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "0");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "100");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward.toString(), "100");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "700");
 
@@ -256,7 +263,13 @@ contract('HatVaults',  accounts =>  {
       } catch (ex) {
           assertVMException(ex);
       }
-      tx = await hatVaults.setPendingRewardsLevels(0, [1500, 3000, 4500, 9000, 10000],{from:accounts[1]});
+      try {
+          await hatVaults.setPendingRewardsLevels(0, [1500, 3000, 4500, 9000, 10000],{from:accounts[1]});
+          assert(false, "reward level should be less than 10000");
+      } catch (ex) {
+          assertVMException(ex);
+      }
+      tx = await hatVaults.setPendingRewardsLevels(0, [1500, 3000, 4500, 9000, 9999],{from:accounts[1]});
       assert.equal(tx.logs[0].event,"PendingRewardsLevelsLog");
       assert.equal(tx.logs[0].args._pid,0);
       assert.equal(tx.logs[0].args._rewardsLevels[1],3000);
@@ -281,24 +294,24 @@ contract('HatVaults',  accounts =>  {
       assert.equal(tx.logs[0].args._rewardsLevels[1],3000);
 
       try {
-          await hatVaults.setRewardsSplit(0, [7000, 0,1000, 1100,0, 900]);
+          await hatVaults.setRewardsSplit(0, [7000, 0,1000, 1100,0, 901]);
           assert(false, 'cannot init with rewardSplit > 10000');
       } catch (ex) {
           assertVMException(ex);
       }
       await advanceToNoneSaftyPeriod();
-      await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,0, 800]);
+      await hatVaults.setRewardsSplit(0, [6000,0,1000, 2200,0, 800]);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "3000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "4500");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "9000");
-      assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "10000");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "9999");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerReward.toString(), "0");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerVestedReward.toString(), "6000");
 
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.committeeReward.toString(), "1000");
-      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "1100");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "2200");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "800");
       await advanceToSaftyPeriod();
       await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
@@ -323,18 +336,17 @@ contract('HatVaults',  accounts =>  {
       }
       await advanceToNoneSaftyPeriod();
 
-      await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+      await hatVaults.setRewardsSplit(0, [6000,0,1000, 1000,1200, 800]);
 
       await hatVaults.setPendingRewardsLevels(0, [],{from:accounts[1]});
 
       await utils.increaseTime(24*3600*2);
       await hatVaults.setRewardsLevels(0,{from:accounts[1]});
-      assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 4);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "2000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "4000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "6000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "8000");
-      assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "10000");
   });
 
   it("withdrawn", async () => {
@@ -357,7 +369,7 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
       await advanceToSaftyPeriod();
-      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
       try {
           await safeWithdraw(0,web3.utils.toWei("1"),staker);
           assert(false, 'cannot stake without approve');
@@ -423,7 +435,7 @@ contract('HatVaults',  accounts =>  {
          await utils.increaseTime(withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod)));
       }
 
-      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
       try {
           await safeWithdraw(0,web3.utils.toWei("1"),staker);
           assert(false, 'cannot stake without approve');
@@ -870,7 +882,7 @@ contract('HatVaults',  accounts =>  {
     await stakingToken.mint(staker,web3.utils.toWei("1"));
     await stakingToken.mint(staker2,web3.utils.toWei("1"));
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     try {
           await hatVaults.approveClaim(0);
           assert(false, 'lpbalance is zero');
@@ -888,27 +900,27 @@ contract('HatVaults',  accounts =>  {
     await utils.increaseTime(7*24*3600);
     await advanceToNoneSaftyPeriod();
     try {
-          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+          await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
           assert(false, 'none safty period');
         } catch (ex) {
           assertVMException(ex);
       }
     await advanceToSaftyPeriod();
     try {
-          await hatVaults.pendingApprovalClaim(0,accounts[2],5,{from:accounts[1]});
+          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
           assert(false, 'severity is out of range');
         } catch (ex) {
           assertVMException(ex);
       }
 
     try {
-          await hatVaults.pendingApprovalClaim(0,utils.NULL_ADDRESS,4,{from:accounts[1]});
+          await hatVaults.pendingApprovalClaim(0,utils.NULL_ADDRESS,3,{from:accounts[1]});
           assert(false, 'beneficiary is zero');
         } catch (ex) {
           assertVMException(ex);
       }
     try {
-          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[2]});
+          await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[2]});
           assert(false, 'only Committee');
         } catch (ex) {
           assertVMException(ex);
@@ -919,9 +931,9 @@ contract('HatVaults',  accounts =>  {
           } catch (ex) {
             assertVMException(ex);
         }
-    var tx = await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    var tx = await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     try {
-          await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+          await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
           assert(false, 'there is already pending approval');
         } catch (ex) {
           assertVMException(ex);
@@ -943,13 +955,13 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
 
-    assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)),"0.01");
+    assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)),"0.2");
     stakerAmount = await hatVaults.getStakedAmount(0,staker2);
     tx = await safeWithdraw(0,stakerAmount,staker2);
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     //dust
-    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000192");
+    assert.equal(web3.utils.fromWei((await hatToken.balanceOf(hatVaults.address)).toString()), "0.000000000001");
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker2)),"1");
   }).timeout(40000);
 
@@ -966,7 +978,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     var tx = await hatVaults.approveClaim(0);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     let stakerAmount = await hatVaults.getStakedAmount(0,staker);
@@ -984,7 +996,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].event, "SendReward");
     assert.isTrue(tx.logs[0].args.amount.eq(tx.logs[0].args.requestedAmount));
     assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
-    assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)),"0.01");
+    assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)),"0.2");
   });
 
   it("emergencyWithdraw after approve and check reward", async () => {
@@ -1002,7 +1014,7 @@ contract('HatVaults',  accounts =>  {
 
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
     await safeEmergencyWithdraw(0,staker);
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
@@ -1034,12 +1046,12 @@ contract('HatVaults',  accounts =>  {
 
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     var tx = await hatVaults.approveClaim(0);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     tx = await safeEmergencyWithdraw(0,staker);
 
-    assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("0.01"));
+    assert.equal((tx.logs[0].args.amount).toString(),web3.utils.toWei("0.2"));
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
     assert.equal(await hatToken.balanceOf(staker2),0);
 
@@ -1084,7 +1096,7 @@ contract('HatVaults',  accounts =>  {
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
     await safeWithdraw(0,web3.utils.toWei("1"),staker);
-    assert.equal((await stakingToken.balanceOf(staker)).toString(),"364816000000000000");//(0.6)*(0.6)
+    assert.equal((await stakingToken.balanceOf(staker)).toString(),"360000000000000000");//(0.6)*(0.6)
 
     let balanceOfStakerHats = await hatToken.balanceOf(staker);
     assert.equal(balanceOfStakerHats.toString(),
@@ -1124,6 +1136,8 @@ contract('HatVaults',  accounts =>  {
 
   it("approve+ swapBurnSend", async () => {
     await setup(accounts);
+    await setup(accounts, REWARD_PER_BLOCK, 0, [], [8000, 1000,0, 250,350, 400]);
+
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
@@ -1137,16 +1151,16 @@ contract('HatVaults',  accounts =>  {
           assertVMException(ex);
       }
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
     var tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
-    var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("1"))).mul(new web3.utils.BN("25")).div(new web3.utils.BN(1000));
+    var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN("250")).div(new web3.utils.BN(10000));
     assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned.toString());
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
-    var expectedHackerReward = (new web3.utils.BN(web3.utils.toWei("1"))).mul(new web3.utils.BN(4)).div(new web3.utils.BN(100));
+    var expectedHackerReward = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN(4)).div(new web3.utils.BN(100));
     assert.equal(tx.logs[1].args._amountReceived.toString(), expectedHackerReward.toString());
     assert.equal(await vestingTokenLock.canDelegate(),true);
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
@@ -1180,15 +1194,15 @@ contract('HatVaults',  accounts =>  {
           assertVMException(ex);
       }
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(1,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(1,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(1);
     assert.equal(await hatToken.balanceOf(accounts[0]),0);
     var tx = await hatVaults.swapBurnSend(1, accounts[2],0,0,0);
-    //gov gets 0.025
-    assert.equal(await hatToken.balanceOf(accounts[0]),web3.utils.toWei("0.025"));
+    //gov gets 10% out of 80% of the vault value
+    assert.equal((await hatToken.balanceOf(accounts[0])).toString(),web3.utils.toWei("0.08"));
     assert.equal(tx.logs[0].event, "SwapAndBurn");
-    var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("1"))).mul(new web3.utils.BN("25")).div(new web3.utils.BN(1000));
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned.toString());
+    var expectedHatBurned = 0; //default hat burned is 0
+    assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned);
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
@@ -1247,12 +1261,12 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
     assert.equal(
       (
         await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
-        new web3.utils.BN(web3.utils.toWei("1")).mul(
+        new web3.utils.BN(web3.utils.toWei("0.8")).mul(
           (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
           .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
           .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
@@ -1261,17 +1275,17 @@ contract('HatVaults',  accounts =>  {
     var tx = await hatVaults.swapBurnSend(0,accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
-      new web3.utils.BN(web3.utils.toWei("1")).mul(
+      new web3.utils.BN(web3.utils.toWei("0.8")).mul(
         (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
         .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
         .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
       ).div(new web3.utils.BN("10000")).toString()
     );
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+    assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
     ).div(new web3.utils.BN("10000")).toString());
 
-    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
     ).div(new web3.utils.BN("10000")).toString());
     let afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
@@ -1294,12 +1308,12 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
     assert.equal(
       (
         await hatVaults.getPoolRewardsPendingLpToken(0)).toString(),
-        new web3.utils.BN(web3.utils.toWei("1")).mul(
+        new web3.utils.BN(web3.utils.toWei("0.8")).mul(
           (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
           .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
           .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
@@ -1316,7 +1330,7 @@ contract('HatVaults',  accounts =>  {
     var tx = await hatVaults.swapBurnSend(0,accounts[1],0,0,0,{from:accounts[0]});
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
-      new web3.utils.BN(web3.utils.toWei("1")).mul(
+      new web3.utils.BN(web3.utils.toWei("0.8")).mul(
         (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
         .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
       ).div(new web3.utils.BN("10000")).toString()
@@ -1334,7 +1348,7 @@ contract('HatVaults',  accounts =>  {
 
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
-    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+    assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
     ).div(new web3.utils.BN("10000")).toString());
     afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
@@ -1395,13 +1409,13 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     var tx = await hatVaults.approveClaim(0);
     assert.equal(tx.logs[0].event, "ClaimApprove");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
-    var depositValutBN = new web3.utils.BN(web3.utils.toWei("1"));
-    var expectedHackerBalance = depositValutBN.mul(new web3.utils.BN(4500)).div(new web3.utils.BN(10000));
+    var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
+    var expectedHackerBalance = depositValutBNAfterClaim.mul(new web3.utils.BN(6000)).div(new web3.utils.BN(10000));
     assert.isTrue((await stakingToken.balanceOf(vestingTokenLock.address)).eq(expectedHackerBalance));
     assert.isTrue((new web3.utils.BN(tx.logs[0].args._claimReward.hackerVestedReward)).eq(expectedHackerBalance));
     assert.isTrue(expectedHackerBalance.eq(await vestingTokenLock.managedAmount()));
@@ -1443,7 +1457,7 @@ contract('HatVaults',  accounts =>  {
          await utils.increaseTime(8640);
          await vestingTokenLock.release({from:accounts[2]});
          //hacker get also rewards via none vesting
-         var hackerPriviosBalance = new web3.utils.BN("400000000000000000");
+         var hackerPriviosBalance = new web3.utils.BN("160000000000000000");
          assert.isTrue((await stakingToken.balanceOf(accounts[2])).sub(hackerPriviosBalance)
                        .eq(expectedHackerBalance.div(new web3.utils.BN(10))));
 
@@ -1522,8 +1536,8 @@ contract('HatVaults',  accounts =>  {
             assertVMException(ex);
         }
         try {
-              await hatVaults.setHatVestingParams(120*24*3600,7);
-              assert(false, 'duration should be less than 120 days');
+              await hatVaults.setHatVestingParams(180*24*3600,7);
+              assert(false, 'duration should be less than 180 days');
             } catch (ex) {
               assertVMException(ex);
           }
@@ -1562,7 +1576,9 @@ contract('HatVaults',  accounts =>  {
   });
 
   it("massupdate gas test 18 [ @skip-on-coverage ] ", async () => {
-    await setup(accounts);
+    //await setup(accounts);
+    await setup(accounts, REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [3000, 5000, 7000, 9000], [8000, 1000,100, 100,100, 700]);
+
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
@@ -1570,7 +1586,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     for (var i=1;i<18;i++) {
       let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
-      await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+      await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[8000, 1000,100, 100,100, 700],"_descriptionHash",[86400,10]);
       await hatVaults.setCommittee(i,accounts[0],{from:accounts[1]});
       await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
       await stakingToken2.mint(staker,web3.utils.toWei("2"));
@@ -1579,7 +1595,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1357968);
+    assert.equal(tx.receipt.gasUsed, 2073751);
   }).timeout(40000);
 
 
@@ -1822,4 +1838,83 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatVaults.generalParameters()).setRewardsLevelsDelay, 24*3600*100);
   });
 
+
+  it("withdaw+ deposit + addition ", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+      var staker2 = accounts[5];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker2});
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      await stakingToken.mint(staker2,web3.utils.toWei("2"));
+
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.deposit(0,web3.utils.toWei("2"),{from:staker2});
+      await utils.increaseTime(7*24*3600);
+      await advanceToNoneSaftyPeriod();
+
+      await hatVaults.withdrawRequest(0,{from:staker});
+      assert.equal(await hatVaults.withdrawRequests(0,staker),
+      (await web3.eth.getBlock("latest")).timestamp +(7*24*3600));
+      await hatVaults.withdrawRequest(0,{from:staker2});
+
+      await utils.increaseTime(7*24*3600);
+      await stakingToken.mint(hatVaults.address,web3.utils.toWei("3"));
+      assert.equal((await stakingToken.balanceOf(staker)).toString(),0);
+      await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.withdraw(0,web3.utils.toWei("2"),{from:staker2});
+      assert.equal((await stakingToken.balanceOf(staker)).toString(),web3.utils.toWei("2"));
+      assert.equal((await stakingToken.balanceOf(staker2)).toString(),web3.utils.toWei("4"));
+  });
+
+  it("withdaw+ deposit + addition with HAT pool ", async () => {
+      await setup(accounts, REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number);
+      await hatVaults.addPool(0,hatToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+      await hatVaults.committeeCheckIn(1,{from:accounts[1]});
+
+      var staker = accounts[1];
+      var staker2 = accounts[5];
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+      //await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker2});
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      //await stakingToken.mint(staker2,web3.utils.toWei("2"));
+
+      await hatToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+      await hatToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker2});
+
+      await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("6"));
+
+      await hatToken.mint(staker,web3.utils.toWei("1"));
+      await hatToken.mint(staker2,web3.utils.toWei("2"));
+
+      assert.equal(await hatToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.deposit(1,web3.utils.toWei("2"),{from:staker2});
+      await utils.increaseTime(7*24*3600);
+      await advanceToNoneSaftyPeriod();
+
+      await hatVaults.withdrawRequest(1,{from:staker});
+      assert.equal(await hatVaults.withdrawRequests(1,staker),
+      (await web3.eth.getBlock("latest")).timestamp +(7*24*3600));
+      await hatVaults.withdrawRequest(1,{from:staker2});
+
+      await utils.increaseTime(7*24*3600);
+      await hatToken.mint(hatVaults.address,web3.utils.toWei("3"));
+      assert.equal((await hatToken.balanceOf(staker)).toString(),0);
+      for (var i=0;i<10;i++) {
+         await utils.mineBlock();
+      }
+      await hatVaults.updatePool(0);
+      await hatVaults.withdraw(1,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.withdraw(1,web3.utils.toWei("2"),{from:staker2});
+      assert.equal((await hatToken.balanceOf(staker)).toString(),web3.utils.toWei("2"));
+      assert.equal((await hatToken.balanceOf(staker2)).toString(),web3.utils.toWei("4"));
+  });
 });

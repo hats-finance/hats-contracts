@@ -32,7 +32,7 @@ contract HATToken is IERC20 {
     address public governance;
     address public governancePending;
     uint256 public setGovernancePendingAt;
-    uint256 public timeLockDelay;
+    uint256 public immutable timeLockDelay;
     uint256 public constant CAP = 10000000e18;
 
     /// @notice Address which may mint new tokens
