@@ -942,6 +942,7 @@ contract('HatVaults',  accounts =>  {
     tx = await hatVaults.approveClaim(0);
     assert.equal(await hatToken.balanceOf(hatVaults.address),0);
     assert.equal(tx.logs[0].event, "ClaimApprove");
+
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker2});
 
@@ -1135,9 +1136,7 @@ contract('HatVaults',  accounts =>  {
   });
 
   it("approve+ swapBurnSend", async () => {
-    await setup(accounts);
     await setup(accounts, REWARD_PER_BLOCK, 0, [], [8000, 1000,0, 250,350, 400]);
-
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
@@ -1478,6 +1477,26 @@ contract('HatVaults',  accounts =>  {
 
   });
 
+  it("no vesting", async () => {
+    await setup(accounts, REWARD_PER_BLOCK, 0, [], [0, 10000,0,0,0,0]);
+
+    var staker = accounts[4];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+
+    //stake
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    await utils.increaseTime(7*24*3600);
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
+    var tx = await hatVaults.approveClaim(0);
+    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].args._tokenLock, utils.NULL_ADDRESS);
+    assert.equal(await stakingToken.balanceOf(hatVaults.address),web3.utils.toWei("0.2"));
+    assert.equal(await stakingToken.balanceOf(accounts[2]),web3.utils.toWei("0.8"));
+  });
+
+
   it("set vesting params", async () => {
     await setup(accounts);
     assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,86400);
@@ -1672,7 +1691,7 @@ contract('HatVaults',  accounts =>  {
   });
 
   it("setPool x2 v2", async () => {
-    await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
+    await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0,0,0,0,0],10000);
 
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});

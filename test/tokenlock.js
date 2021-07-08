@@ -12,7 +12,9 @@ const setup = async function (
                               accounts,
                               revocable = 1,
                               delegate = false,
-                              startsIn = 0
+                              startsIn = 0,
+                              endTime = 1000,
+                              periods = 5
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
@@ -25,8 +27,8 @@ const setup = async function (
                                          accounts[1],
                                          web3.utils.toWei("1"),
                                          currentBlockTimestamp+startsIn,
-                                         currentBlockTimestamp+startsIn+ 1000,
-                                         5,
+                                         currentBlockTimestamp+startsIn+ endTime,
+                                         periods,
                                          0,
                                          0,
                                          revocable,
@@ -216,6 +218,19 @@ contract('TokenLock',  accounts =>  {
           assertVMException(ex);
         }
         await tokenLockFactory.setMasterCopy(accounts[1]);
+    });
+
+    it("test single period for 1000 seconds", async () => {
+
+        await setup(accounts,1,false,0,1000,1);
+        assert.equal(await tokenLock.releasableAmount(),0);
+        await utils.increaseTime(900);
+        assert.equal(await tokenLock.releasableAmount(),0);
+        await utils.increaseTime(100);
+        assert.equal(await tokenLock.releasableAmount(),web3.utils.toWei("1"));
+        assert.equal(await stakingToken.balanceOf(accounts[1]),0);
+        await tokenLock.release({from:accounts[1]});
+        assert.equal(await stakingToken.balanceOf(accounts[1]),web3.utils.toWei("1"));
     });
 
 });
