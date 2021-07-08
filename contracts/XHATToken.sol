@@ -16,9 +16,9 @@ contract XHATToken is ERC20("xHATToken", "xHAT") {
 
     // Locks HAT and mints xHAT
     function swapHAT2xHAT(uint256 _amount) public {
-        _mint(msg.sender, _amount);
         // Lock HAT in the contract
         HAT.transferFrom(msg.sender, address(this), _amount);
+        _mint(msg.sender, _amount);
     }
 
     // Unlocks HAT and burn xHAT
