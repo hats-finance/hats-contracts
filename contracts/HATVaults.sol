@@ -279,6 +279,7 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
      * @dev addRewardsToDepositors - add pool token to rewards depositors
+     * The rewards will be give to depositors pro rata
      * @param _pid pool id
      * @param _amount amount to add
     */
