@@ -28,11 +28,11 @@ contract PoolsManagerMock {
     }
 
     function setPools(HATVaults _hatVaults,
-                      uint256[] memory _pids,
-                      uint256 _allocPoint,
-                      bool _registered,
-                      bool _depositPause,
-                      string memory _descriptionHash) external {
+                    uint256[] memory _pids,
+                    uint256 _allocPoint,
+                    bool _registered,
+                    bool _depositPause,
+                    string memory _descriptionHash) external {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],

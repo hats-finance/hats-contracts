@@ -233,23 +233,26 @@ contract  HATVaults is Governable, HATMaster {
 
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, pendingApproval.severity);
-        //hacker get its reward to a vesting contract
-        address tokenLock = tokenLockFactory.createTokenLock(
-            address(lpToken),
-            governance(),
-            pendingApproval.beneficiary,
-            claimRewards.hackerVestedReward,
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp, //start
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp + poolReward.vestingDuration, //end
-            poolReward.vestingPeriods,
-            0, //no release start
-            0, //no cliff
-            ITokenLock.Revocability.Disabled,
-            false
-        );
-        lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
+        address tokenLock;
+        if (claimRewards.hackerVestedReward > 0) {
+            //hacker get its reward to a vesting contract
+            tokenLock = tokenLockFactory.createTokenLock(
+                address(lpToken),
+                governance(),
+                pendingApproval.beneficiary,
+                claimRewards.hackerVestedReward,
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp, //start
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp + poolReward.vestingDuration, //end
+                poolReward.vestingPeriods,
+                0, //no release start
+                0, //no cliff
+                ITokenLock.Revocability.Disabled,
+                false
+            );
+            lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
+        }
         lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned
