@@ -62,13 +62,14 @@ contract HATMaster is ReentrancyGuard {
     HATToken public immutable HAT;
     uint256 public immutable REWARD_PER_BLOCK;
     uint256 public immutable START_BLOCK;
-    uint256 public immutable HALVING_AFTER_BLOCK;
+    uint256 public immutable MULTIPLIER_PERIOD;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
     //blockNumber to index in globalPoolUpdates
     mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
     PoolUpdate[] public globalPoolUpdates;
+    mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
@@ -77,19 +78,19 @@ contract HATMaster is ReentrancyGuard {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount);
+    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     constructor(
         HATToken _hat,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
-        uint256 _halvingAfterBlock
+        uint256 _multiplierPeriod
     ) {
         HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;
-        HALVING_AFTER_BLOCK = _halvingAfterBlock;
+        MULTIPLIER_PERIOD = _multiplierPeriod;
     }
 
   /**
@@ -129,7 +130,6 @@ contract HATMaster is ReentrancyGuard {
         reward = amountCanMint < reward ? amountCanMint : reward;
         if (reward > 0) {
             HAT.mint(address(this), reward);
-            pool.rewardBalance = pool.rewardBalance + reward;
         }
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
@@ -148,9 +148,9 @@ contract HATMaster is ReentrancyGuard {
                                             2528, 2231, 1969, 1738, 1534, 1353,
                                             1194, 1054, 930, 821, 724, 639, 0];
         uint256 max = rewardMultipliers.length;
-        uint256 i = (_from - START_BLOCK) / HALVING_AFTER_BLOCK + 1;
+        uint256 i = (_from - START_BLOCK) / MULTIPLIER_PERIOD + 1;
         for (; i < max; i++) {
-            uint256 endBlock = HALVING_AFTER_BLOCK * i + START_BLOCK;
+            uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
             if (_to <= endBlock) {
                 break;
             }
@@ -257,7 +257,9 @@ contract HATMaster is ReentrancyGuard {
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
+        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lpToken is already in pool");
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
+        poolId1[address(_lpToken)] = poolInfo.length + 1;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
@@ -305,13 +307,18 @@ contract HATMaster is ReentrancyGuard {
 
     // -----------------------------
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        //require(_amount <= poolInfo[_pid].rewardBalance, "amount > pool.rewardBalance");
-        if (_amount <= poolInfo[_pid].rewardBalance) {
-            poolInfo[_pid].rewardBalance = poolInfo[_pid].rewardBalance - _amount;
-            HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount);
+        uint256 bal = HAT.balanceOf(address(this));
+        uint256 hatPid1 = poolId1[address(HAT)];
+        if (hatPid1 > 0) {
+            bal = bal - poolInfo[hatPid1-1].balance;
+        }
+
+        if (_amount > bal) {
+            HAT.transfer(_to, bal);
+            emit SendReward(_to, _pid, bal, _amount);
         } else {
-            emit SendReward(_to, _pid, 0);
+            HAT.transfer(_to, _amount);
+            emit SendReward(_to, _pid, _amount, _amount);
         }
     }
 }

@@ -77,7 +77,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     modifier noSafetyPeriod() {
-      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 12 hours)
+      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 11 hours)
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
@@ -137,7 +137,7 @@ contract  HATVaults is Governable, HATMaster {
    * @param _rewardsToken the reward token address (HAT)
    * @param _rewardPerBlock the reward amount per block the contract will reward pools
    * @param _startBlock start block of of which the contract will start rewarding from.
-   * @param _halvingAfterBlock a fix period value. each period will have its own multiplier value.
+   * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
    *        which set the reward for each period. e.g a vaule of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
    *        Some of the contracts functions are limited only to governance :
@@ -151,19 +151,19 @@ contract  HATVaults is Governable, HATMaster {
         address _rewardsToken,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
-        uint256 _halvingAfterBlock,
+        uint256 _multiplierPeriod,
         address _hatGovernance,
         ISwapRouter _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
-    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
             hatVestingPeriods:90,
-            withdrawPeriod: 12 hours,
+            withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
             setRewardsLevelsDelay: 2 days,
             withdrawRequestEnablePeriod: 7 days,
@@ -233,9 +233,17 @@ contract  HATVaults is Governable, HATMaster {
 
         IERC20 lpToken = poolInfo[_poolId].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_poolId, pendingApproval.severity);
-
+        poolInfo[_poolId].balance = poolInfo[_poolId].balance.sub(
+                            claimRewards.hackerReward
+                            .add(claimRewards.hackerVestedReward)
+                            .add(claimRewards.committeeReward)
+                            .add(claimRewards.swapAndBurn)
+                            .add(claimRewards.hackerHatReward)
+                            .add(claimRewards.governanceHatReward));
+        address tokenLock;
+        if (claimRewards.hackerVestedReward > 0) {
         //hacker get its reward to a vesting contract
-        address tokenLock = tokenLockFactory.createTokenLock(
+            tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
             governance(),
             pendingApproval.beneficiary,
@@ -250,18 +258,11 @@ contract  HATVaults is Governable, HATMaster {
             ITokenLock.Revocability.Disabled,
             false
         );
-        poolInfo[_poolId].balance = poolInfo[_poolId].balance.sub(
-                            claimRewards.hackerReward
-                            .add(claimRewards.hackerVestedReward)
-                            .add(claimRewards.committeeReward)
-                            .add(claimRewards.swapAndBurn)
-                            .add(claimRewards.hackerHatReward)
-                            .add(claimRewards.governanceHatReward));
-        lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
+            lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
+        }
         lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
-        //storing the amount of token which can be swap and burned
-        //so it could be swapAndBurn in a seperate tx.
+        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
         governanceHatRewards[address(lpToken)] =
         governanceHatRewards[address(lpToken)].add(claimRewards.governanceHatReward);
