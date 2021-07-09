@@ -233,7 +233,7 @@ contract HATMaster is ReentrancyGuard {
             user.amount = user.amount.sub(_amount);
             uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalUsersAmount);
             pool.balance = pool.balance.sub(amountToWithdraw);
-            pool.lpToken.safeTransfer(address(msg.sender), amountToWithdraw);
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw);
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -250,7 +250,7 @@ contract HATMaster is ReentrancyGuard {
         user.amount = 0;
         user.rewardDebt = 0;
         pool.balance = pool.balance.sub(factoredBalance);
-        pool.lpToken.safeTransfer(address(msg.sender), factoredBalance);
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
@@ -308,6 +308,11 @@ contract HATMaster is ReentrancyGuard {
     // -----------------------------
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         uint256 bal = HAT.balanceOf(address(this));
+        uint256 hatPid1 = poolId1[address(HAT)];
+        if (hatPid1 > 0) {
+            bal = bal - poolInfo[hatPid1-1].balance;
+        }
+
         if (_amount > bal) {
             HAT.transfer(_to, bal);
             emit SendReward(_to, _pid, bal, _amount);
