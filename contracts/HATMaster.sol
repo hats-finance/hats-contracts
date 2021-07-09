@@ -233,7 +233,6 @@ contract HATMaster is ReentrancyGuard {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
-
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);

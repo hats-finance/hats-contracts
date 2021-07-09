@@ -1,5 +1,5 @@
 {
-  "name": "whi",
+  "name": "hats-contracts",
   "version": "0.0.1",
   "description": "White Hat Incentive",
   "files": [
@@ -64,8 +64,8 @@
   "engines": {
     "node": ">=12.16.1"
   },
-  "author": "oren.sokolowsky@gmail.com",
-  "license": "GPL-3.0",
+  "author": "contact@hats.finance",
+  "license": "MIT",
   "dependencies": {
     "eth-ecies": "^1.0.5",
     "eth-sig-util": "^3.0.1",
