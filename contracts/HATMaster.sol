@@ -47,6 +47,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 totalUsersAmount;
         uint256 lastProcessedTotalAllocPoint;
         uint256 balance;
+        uint256 rewardBalance;
     }
 
     // Info of each pool.
@@ -68,7 +69,6 @@ contract HATMaster is ReentrancyGuard {
     //blockNumber to index in globalPoolUpdates
     mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
     PoolUpdate[] public globalPoolUpdates;
-    mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
@@ -77,7 +77,7 @@ contract HATMaster is ReentrancyGuard {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event SendReward(address indexed user, uint256 indexed pid, uint256 amount);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     constructor(
@@ -129,6 +129,7 @@ contract HATMaster is ReentrancyGuard {
         reward = amountCanMint < reward ? amountCanMint : reward;
         if (reward > 0) {
             HAT.mint(address(this), reward);
+            pool.rewardBalance = pool.rewardBalance + reward;
         }
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
@@ -256,11 +257,7 @@ contract HATMaster is ReentrancyGuard {
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
-        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-
-        poolId1[address(_lpToken)] = poolInfo.length + 1;
-
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
@@ -282,7 +279,8 @@ contract HATMaster is ReentrancyGuard {
             rewardPerShare: 0,
             totalUsersAmount: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
-            balance: 0
+            balance: 0,
+            rewardBalance: 0
         }));
     }
 
@@ -307,18 +305,13 @@ contract HATMaster is ReentrancyGuard {
 
     // -----------------------------
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 bal = HAT.balanceOf(address(this));
-        uint256 hatPid1 = poolId1[address(HAT)];
-        if (hatPid1 > 0) {
-            bal = bal - poolInfo[hatPid1-1].balance;
-        }
-
-        if (_amount > bal) {
-            HAT.transfer(_to, bal);
-            emit SendReward(_to, _pid, bal, _amount);
-        } else {
+        //require(_amount <= poolInfo[_pid].rewardBalance, "amount > pool.rewardBalance");
+        if (_amount <= poolInfo[_pid].rewardBalance) {
+            poolInfo[_pid].rewardBalance = poolInfo[_pid].rewardBalance - _amount;
             HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount, _amount);
+            emit SendReward(_to, _pid, _amount);
+        } else {
+            emit SendReward(_to, _pid, 0);
         }
     }
 }

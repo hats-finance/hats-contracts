@@ -582,6 +582,10 @@ contract  HATVaults is Governable, HATMaster {
         HAT.transfer(governance(), hatsReceived.sub(hackerReward).sub(burntHats));
     }
 
+    /**
+    * withdrawRequest submit a withdaw request
+    * @param _pid the pool id
+    **/
     function withdrawRequest(uint256 _pid) external {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
@@ -591,6 +595,11 @@ contract  HATVaults is Governable, HATMaster {
         emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
     }
 
+    /**
+    * deposit deposit to pool
+    * @param _pid the pool id
+    * @param _amount amount of pool's token to deposit
+    **/
     function deposit(uint256 _pid, uint256 _amount) external {
         require(!poolDepositPause[_pid], "deposit paused");
         //clear withdraw request
@@ -598,11 +607,22 @@ contract  HATVaults is Governable, HATMaster {
         _deposit(_pid, _amount);
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) external {
+    /**
+    * withdraw withdaw user's pool share.
+    * user need first to submit a withdaw request.
+    * @param _pid the pool id
+    * @param _shares amount of shares user want to withdraw
+    **/
+    function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
-        _withdraw(_pid, _amount);
+        _withdraw(_pid, _shares);
     }
 
+    /**
+    * emergencyWithdraw withdaw all user's pool share without claim for reward.
+    * user need first to submit a withdaw request.
+    * @param _pid the pool id
+    **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawRequest(_pid);
         _emergencyWithdraw(_pid);
@@ -739,7 +759,7 @@ contract  HATVaults is Governable, HATMaster {
         _minOutputAmount,
         _sqrtPriceLimitX96
         ));
-        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
+        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _minOutputAmount, "wrong amount received");
     }
 
     /**
