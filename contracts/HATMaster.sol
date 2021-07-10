@@ -47,7 +47,6 @@ contract HATMaster is ReentrancyGuard {
         uint256 totalUsersAmount;
         uint256 lastProcessedTotalAllocPoint;
         uint256 balance;
-        uint256 rewardBalance;
     }
 
     // Info of each pool.
@@ -282,7 +281,6 @@ contract HATMaster is ReentrancyGuard {
             totalUsersAmount: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
             balance: 0,
-            rewardBalance: 0
         }));
     }
 
