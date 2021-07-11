@@ -21,12 +21,13 @@ const setup = async function (
                               startBlock=0,
                               rewardsLevels=[],
                               rewardsSplit=[0,0,0,0,0,0],
-                              halvingAfterBlock = 10
+                              halvingAfterBlock = 10,
+                              routerReturnType = 0
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
 
-  router =  await UniSwapV3RouterMock.new();
+  router =  await UniSwapV3RouterMock.new(routerReturnType);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
   hatVaults = await HATVaults.new(hatToken.address,
@@ -1153,6 +1154,14 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
+    await stakingToken.approveDisable(true);
+    try {
+          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          assert(false, 'approve disable');
+        } catch (ex) {
+          assertVMException(ex);
+      }
+    await stakingToken.approveDisable(false);
     var tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN("250")).div(new web3.utils.BN(10000));
@@ -1347,6 +1356,35 @@ contract('HatVaults',  accounts =>  {
       assertVMException(ex);
     }
   });
+
+  it("swapBurnSend return below than minimum should revert", async () => {
+    await setup(accounts, REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [3000, 5000, 7000, 9000], [8000, 1000,100, 100,100, 700],2);
+
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker2});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await stakingToken.mint(staker2,web3.utils.toWei("1"));
+
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
+    await hatVaults.approveClaim(0);
+
+    try {
+        await hatVaults.swapBurnSend(0,accounts[1],web3.utils.toWei("1"),0,0,{from:accounts[0]});
+        assert(false, 'router return less than minimum');
+      } catch (ex) {
+        assert(ex.message.includes("wrong amount received"));
+        assertVMException(ex);
+    }
+  });
+
 
   it("claim", async () => {
     await setup(accounts);
@@ -1791,7 +1829,7 @@ contract('HatVaults',  accounts =>  {
 
   it("add/set pool on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
-    let router1 =  await UniSwapV3RouterMock.new();
+    let router1 =  await UniSwapV3RouterMock.new(0);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var poolManager= await PoolsManagerMock.new();

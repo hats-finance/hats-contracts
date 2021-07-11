@@ -9,12 +9,19 @@ contract ERC20Mock is ERC20 {
     /// @notice A record of each accounts delegate
     mapping (address => address) public delegates;
 
+    bool public approveDisableFlag;
+
     constructor(
         string memory _name,
         string memory _symbol,
         address _owner
     )
     ERC20(_name, _symbol) {
+        approveDisableFlag = false;
+    }
+
+    function approveDisable(bool _approveDisable) external {
+        approveDisableFlag = _approveDisable;
     }
 
     function mint(address _to, uint256 _amount) public {
@@ -28,4 +35,11 @@ contract ERC20Mock is ERC20 {
     function delegate(address delegatee) public {
         delegates[msg.sender] = delegatee;
     }
+
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        require(!approveDisableFlag, "approve fail");
+        _approve(msg.sender, spender, amount);
+        return true;
+    }
+
 }
