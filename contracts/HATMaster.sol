@@ -280,7 +280,7 @@ contract HATMaster is ReentrancyGuard {
             rewardPerShare: 0,
             totalUsersAmount: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
-            balance: 0,
+            balance: 0
         }));
     }
 
