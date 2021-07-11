@@ -1677,12 +1677,6 @@ contract('HatVaults',  accounts =>  {
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
     let stakingToken2 = await ERC20Mock.new("Staking","STK",accounts[0]);
-    try {
-          await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
-          assert(false, 'cannot add pool with already exist token');
-        } catch (ex) {
-          assertVMException(ex);
-      }
       try {
             await hatVaults.addPool(100,stakingToken2.address,utils.NULL_ADDRESS,[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
             assert(false, 'committee cannot be zero');
@@ -1735,38 +1729,65 @@ contract('HatVaults',  accounts =>  {
 
   });
 
-  // it("cannot  addPool with the same token", async () => {
-  //   await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
-  //
-  //   var staker = accounts[1];
-  //   await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
-  //   await stakingToken.mint(staker,web3.utils.toWei("2"));
-  //   await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
-  //   await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
-  //   await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-  //   await hatVaults.committeeCheckIn(1,{from:accounts[0]});
-  //   await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
-  //   await hatVaults.setPool(0,200,true,false,"123");
-  //   var tx = await hatVaults.massUpdatePools(0,2);
-  //       await hatToken.getPastEvents('Transfer', {
-  //             fromBlock: tx.blockNumber,
-  //             toBlock: 'latest'
-  //         })
-  //         .then(function(events){
-  //             assert.equal(events[0].event,"Transfer");
-  //             assert.equal(events[0].args.from,utils.NULL_ADDRESS);
-  //             assert.equal(events[0].args.to,hatVaults.address);
-  //             assert.equal(events.length,2);
-  //         });
-  //   assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),2);
-  //   assert.equal(await stakingToken.balanceOf(staker),0);
-  //
-  //   await safeWithdraw(0,web3.utils.toWei("1"),staker);
-  //   assert.equal(await stakingToken.balanceOf(staker),web3.utils.toWei("1"));
-  //
-  //   await safeWithdraw(1,web3.utils.toWei("1"),staker);
-  //   assert.equal(await stakingToken.balanceOf(staker),web3.utils.toWei("2"));
-  // });
+  it("addPool with the same token", async () => {
+    await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
+
+    var staker = accounts[1];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
+    await stakingToken.mint(staker,web3.utils.toWei("2"));
+    await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+    await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    await hatVaults.committeeCheckIn(1,{from:accounts[0]});
+    await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
+    await hatVaults.setPool(0,200,true,false,"123");
+    var tx = await hatVaults.massUpdatePools(0,2);
+        await hatToken.getPastEvents('Transfer', {
+              fromBlock: tx.blockNumber,
+              toBlock: 'latest'
+          })
+          .then(function(events){
+              assert.equal(events[0].event,"Transfer");
+              assert.equal(events[0].args.from,utils.NULL_ADDRESS);
+              assert.equal(events[0].args.to,hatVaults.address);
+              assert.equal(events.length,2);
+          });
+    assert.equal(Math.round(web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))),2);
+    assert.equal(await stakingToken.balanceOf(staker),0);
+
+    await safeWithdraw(0,web3.utils.toWei("1"),staker);
+    assert.equal(await stakingToken.balanceOf(staker),web3.utils.toWei("1"));
+
+    await safeWithdraw(1,web3.utils.toWei("1"),staker);
+    assert.equal(await stakingToken.balanceOf(staker),web3.utils.toWei("2"));
+  });
+
+  it("addPool with the same token on the same block", async () => {
+    await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number, [], [0,0, 0, 0,0, 0],10000);
+    var poolManagerMock = await PoolsManagerMock.new();
+
+    await stakingToken.mint(poolManagerMock.address,web3.utils.toWei("2"));
+    await hatVaults.addPool(200,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+    await hatVaults.committeeCheckIn(1,{from:accounts[1]});
+    await poolManagerMock.depositDifferentPids(hatVaults.address,stakingToken.address,[0,1],web3.utils.toWei("1"));
+    var i;
+    for (i=0;i<100;i++) {
+        await utils.mineBlock();
+    }
+    assert.equal(await hatToken.balanceOf(poolManagerMock.address),0);
+    var tx = await poolManagerMock.claimDifferentPids(hatVaults.address,[0,1]);
+    var localEvents;
+    await hatVaults.getPastEvents('SendReward', {
+          fromBlock: tx.blockNumber,
+          toBlock: 'latest'
+      })
+      .then(function(events){
+           localEvents = events;
+  });
+  assert.equal(localEvents[0].returnValues.amount*2,localEvents[1].returnValues.amount);
+  assert.equal(await hatToken.balanceOf(poolManagerMock.address),localEvents[0].returnValues.amount*3);
+});
+
 
   it("add/set pool on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
@@ -1870,7 +1891,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatVaults.generalParameters()).setRewardsLevelsDelay, 24*3600*100);
   });
 
-  it("withdaw+ deposit + addition ", async () => {
+  it("withdraw+ deposit + addition ", async () => {
      await setup(accounts);
      var staker = accounts[1];
      var staker2 = accounts[5];
@@ -1894,7 +1915,7 @@ contract('HatVaults',  accounts =>  {
      await hatVaults.withdrawRequest(0,{from:staker2});
 
      await utils.increaseTime(7*24*3600);
-     await hatVaults.addRewardsToDepositors(0,web3.utils.toWei("3"),{from:staker});
+     await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
      await stakingToken.mint(hatVaults.address,web3.utils.toWei("100"));
      assert.equal((await stakingToken.balanceOf(staker)).toString(),0);
      await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});
@@ -1904,7 +1925,7 @@ contract('HatVaults',  accounts =>  {
  });
 
 
- it("withdaw+ deposit + addition HAT ", async () => {
+ it("withdraw+ deposit + addition HAT ", async () => {
     await setup(accounts, REAL_REWARD_PER_BLOCK, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];
@@ -1931,7 +1952,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.withdrawRequest(1,{from:staker2});
 
     await utils.increaseTime(7*24*3600);
-    await hatVaults.addRewardsToDepositors(1,web3.utils.toWei("3"),{from:staker});
+    await hatVaults.rewardDepositors(1,web3.utils.toWei("3"),{from:staker});
     await hatToken.mint(hatVaults.address,web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(),0);
     await advanceToNoneSaftyPeriod();

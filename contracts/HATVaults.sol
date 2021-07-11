@@ -40,7 +40,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 setRewardsLevelsDelay;
         uint256 withdrawRequestEnablePeriod;
         uint256 withdrawRequestPendingPeriod;
-        uint256 claimFee;
+        uint256 claimFee;  //claim fee in ETH
     }
 
     //pid -> committee address
@@ -61,7 +61,6 @@ contract  HATVaults is Governable, HATMaster {
 
     GeneralParameters public generalParameters;
 
-    //claim fee in ETH
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
@@ -279,12 +278,12 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-     * @dev addRewardsToDepositors - add pool token to rewards depositors
+     * @dev rewardDepositors - add pool token to rewards depositors
      * The rewards will be give to depositors pro rata upon withdraw
      * @param _pid pool id
      * @param _amount amount to add
     */
-    function addRewardsToDepositors(uint256 _pid, uint256 _amount) external {
+    function rewardDepositors(uint256 _pid, uint256 _amount) external {
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
     }
@@ -584,7 +583,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * withdrawRequest submit a withdaw request
+    * withdrawRequest submit a withdraw request
     * @param _pid the pool id
     **/
     function withdrawRequest(uint256 _pid) external {
@@ -609,8 +608,8 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * withdraw withdaw user's pool share.
-    * user need first to submit a withdaw request.
+    * withdraw  - withdraw user's pool share.
+    * user need first to submit a withdraw request.
     * @param _pid the pool id
     * @param _shares amount of shares user want to withdraw
     **/
@@ -620,8 +619,8 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * emergencyWithdraw withdaw all user's pool share without claim for reward.
-    * user need first to submit a withdaw request.
+    * emergencyWithdraw withdraw all user's pool share without claim for reward.
+    * user need first to submit a withdraw request.
     * @param _pid the pool id
     **/
     function emergencyWithdraw(uint256 _pid) external {

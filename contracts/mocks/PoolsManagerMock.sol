@@ -54,4 +54,20 @@ contract PoolsManagerMock {
         _target.deposit(_pid, _amount);
     }
 
+    function depositDifferentPids(HATVaults _target, IERC20 _lpToken, uint256[] memory _pids, uint256 _amount)
+    external {
+        _lpToken.approve(address(_target), _amount * _pids.length);
+        uint256  i;
+        for (i = 0; i < _pids.length; i++) {
+            _target.deposit(_pids[i], _amount);
+        }
+    }
+
+    function claimDifferentPids(HATVaults _target, uint256[] memory _pids) external {
+        uint256  i;
+        for (i = 0; i < _pids.length; i++) {
+            _target.claimReward(_pids[i]);
+        }
+    }
+
 }

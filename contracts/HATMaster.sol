@@ -68,7 +68,6 @@ contract HATMaster is ReentrancyGuard {
     //blockNumber to index in globalPoolUpdates
     mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
     PoolUpdate[] public globalPoolUpdates;
-    mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
@@ -256,9 +255,7 @@ contract HATMaster is ReentrancyGuard {
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
-        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lpToken is already in pool");
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-        poolId1[address(_lpToken)] = poolInfo.length + 1;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
@@ -303,17 +300,12 @@ contract HATMaster is ReentrancyGuard {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // -----------------------------
+    // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 bal = HAT.balanceOf(address(this));
-        uint256 hatPid1 = poolId1[address(HAT)];
-        if (hatPid1 > 0) {
-            bal = bal - poolInfo[hatPid1-1].balance;
-        }
-
-        if (_amount > bal) {
-            HAT.transfer(_to, bal);
-            emit SendReward(_to, _pid, bal, _amount);
+        uint256 hatBalance = HAT.balanceOf(address(this));
+        if (_amount > hatBalance) {
+            HAT.transfer(_to, hatBalance);
+            emit SendReward(_to, _pid, hatBalance, _amount);
         } else {
             HAT.transfer(_to, _amount);
             emit SendReward(_to, _pid, _amount, _amount);
