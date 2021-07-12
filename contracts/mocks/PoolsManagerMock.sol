@@ -8,7 +8,7 @@ import "../HATVaults.sol";
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
-                    uint256 _allocPoint,
+                    uint256 _poolRewardShare,
                     address[] memory _lpTokens,
                     address _committee,
                     uint256[] memory _rewardsLevels,
@@ -17,7 +17,7 @@ contract PoolsManagerMock {
                     uint256[2] memory _rewardVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
-            _hatVaults.addPool(_allocPoint,
+            _hatVaults.addPool(_poolRewardShare,
                                 _lpTokens[i],
                                 _committee,
                                 _rewardsLevels,
@@ -29,14 +29,14 @@ contract PoolsManagerMock {
 
     function setPools(HATVaults _hatVaults,
                     uint256[] memory _pids,
-                    uint256 _allocPoint,
+                    uint256 _poolRewardShare,
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash) external {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
-                            _allocPoint,
+                            _poolRewardShare,
                             _registered,
                             _depositPause,
                             _descriptionHash);

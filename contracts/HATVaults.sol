@@ -87,7 +87,7 @@ contract  HATVaults is Governable, HATMaster {
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
 
     event AddPool(uint256 indexed _pid,
-                uint256 indexed _allocPoint,
+                uint256 indexed _poolRewardShare,
                 address indexed _lpToken,
                 string _name,
                 address _committee,
@@ -97,7 +97,7 @@ contract  HATVaults is Governable, HATMaster {
                 uint256 _rewardVestingDuration,
                 uint256 _rewardVestingPeriods);
 
-    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
+    event SetPool(uint256 indexed _pid, uint256 indexed _poolRewardShare, bool indexed _registered, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
     event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
@@ -446,7 +446,7 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
    * @dev addPool - only Governance
-   * @param _allocPoint the pool allocation point
+   * @param _poolRewardShare the pool allocation point
    * @param _lpToken pool token
    * @param _committee pools committee addresses array
    * @param _rewardsLevels pool reward levels(sevirities)
@@ -460,7 +460,7 @@ contract  HATVaults is Governable, HATMaster {
    *        _rewardVestingParams[0] - vesting duration
    *        _rewardVestingParams[1] - vesting periods
  */
-    function addPool(uint256 _allocPoint,
+    function addPool(uint256 _poolRewardShare,
                     address _lpToken,
                     address _committee,
                     uint256[] memory _rewardsLevels,
@@ -473,7 +473,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_rewardVestingParams[1] > 0, "vesting periods cannot be zero");
         require(_rewardVestingParams[0] >= _rewardVestingParams[1], "vesting duration smaller than periods");
         require(_committee != address(0), "committee is zero");
-        add(_allocPoint, IERC20(_lpToken));
+        add(_poolRewardShare, IERC20(_lpToken));
         uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
         uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
@@ -493,7 +493,7 @@ contract  HATVaults is Governable, HATMaster {
         string memory name = ERC20(_lpToken).name();
 
         emit AddPool(poolId,
-                    _allocPoint,
+                    _poolRewardShare,
                     address(_lpToken),
                     name,
                     _committee,
@@ -507,22 +507,22 @@ contract  HATVaults is Governable, HATMaster {
     /**
    * @dev setPool
    * @param _pid the pool id
-   * @param _allocPoint the pool allocation point
+   * @param _poolRewardShare the pool allocation point
    * @param _registered does this pool is registered (default true).
    * @param _depositPause pause pool deposit (default false).
    * This parameter can be used by the UI to include or exclude the pool
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,
-                    uint256 _allocPoint,
+                    uint256 _poolRewardShare,
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfo[_pid].lpToken != IERC20(address(0)), "pool does not exist");
-        set(_pid, _allocPoint);
+        set(_pid, _poolRewardShare);
         poolDepositPause[_pid] = _depositPause;
-        emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
+        emit SetPool(_pid, _poolRewardShare, _registered, _descriptionHash);
     }
 
     /**
@@ -644,8 +644,8 @@ contract  HATVaults is Governable, HATMaster {
         } else {
             return (multiplier
                 .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].allocPoint)
-                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
+                .mul(poolInfo[pid1 - 1].poolShares)
+                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalRewardShares))
                 .div(100);
         }
     }

@@ -1,5 +1,3 @@
-
-
 # <img src="https://raw.githubusercontent.com/hats-finance/icons/main/hats.svg" alt="Hats.Finance" text="sds" height="40px"> Hats.Finance | Contracts
 
 [![Coverage Status](https://coveralls.io/repos/github/hats-finance/hats-contracts/badge.svg?t=Ko4Ndz&kill_cache=2)](https://coveralls.io/github/hats-finance/hats-contracts)
@@ -9,6 +7,18 @@ The Hats protocol is designed to give white hats hackers the opportunity to gain
 ## Overview
 
 ### Usage
+
+Installation:
+
+```
+npm install
+```
+
+Run the tests:
+
+```
+npx hardhat test
+```
 
 ## Security
 

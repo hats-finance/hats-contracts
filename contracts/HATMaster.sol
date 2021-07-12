@@ -20,7 +20,7 @@ contract HATMaster is ReentrancyGuard {
 
     struct PoolUpdate {
         uint256 blockNumber;// update blocknumber
-        uint256 totalAllocPoint; //totalAllocPoint
+        uint256 totalRewardShares; //totalRewardShares
     }
 
     struct RewardsSplit {
@@ -41,11 +41,11 @@ contract HATMaster is ReentrancyGuard {
     // Info of each pool.
     struct PoolInfo {
         IERC20 lpToken;
-        uint256 allocPoint;
+        uint256 poolShares;
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
         uint256 totalUsersAmount;
-        uint256 lastProcessedTotalAllocPoint;
+        uint256 lastPoolUpdate;
         uint256 balance;
     }
 
@@ -59,14 +59,17 @@ contract HATMaster is ReentrancyGuard {
     }
 
     HATToken public immutable HAT;
+    // base unit of reward per block for the combined pools. The actual rewards per block are a multiple of this value
     uint256 public immutable REWARD_PER_BLOCK;
+    // the block at which rewards will start to be minted
     uint256 public immutable START_BLOCK;
+    // the period after which the multiplier fo the rewards per block is updates - expressed in blocks
     uint256 public immutable MULTIPLIER_PERIOD;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
-    //blockNumber to index in globalPoolUpdates
-    mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
+    // map blockNumber to index in globalPoolUpdates
+    mapping(uint256 => uint256) public totalPoolSharesUpdatedAtIndex;
     PoolUpdate[] public globalPoolUpdates;
     mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
@@ -121,7 +124,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 lastPoolUpdate = globalPoolUpdates.length-1;
         if (totalUsersAmount == 0) {
             pool.lastRewardBlock = block.number;
-            pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+            pool.lastPoolUpdate = lastPoolUpdate;
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
@@ -132,7 +135,7 @@ contract HATMaster is ReentrancyGuard {
         }
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
-        pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+        pool.lastPoolUpdate = lastPoolUpdate;
     }
 
     /**
@@ -159,11 +162,11 @@ contract HATMaster is ReentrancyGuard {
         result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
     }
 
-    function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
+    function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _poolRewardShare, uint256 _totalRewardShares)
     public
     view
     returns (uint256) {
-        return getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+        return getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_poolRewardShare).div(_totalRewardShares).div(100);
     }
 
     /**
@@ -176,21 +179,21 @@ contract HATMaster is ReentrancyGuard {
      * @return reward
      */
     function calcPoolReward(uint256 _pid, uint256 _from, uint256 _lastPoolUpdate) public view returns(uint256 reward) {
-        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
-        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
+        uint256 poolShares = poolInfo[_pid].poolShares;
+        uint256 i = poolInfo[_pid].lastPoolUpdate;
         for (; i < _lastPoolUpdate; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
             reward.add(getRewardForBlocksRange(_from,
                                             nextUpdateBlock,
-                                            poolAllocPoint,
-                                            globalPoolUpdates[i].totalAllocPoint));
+                                            poolShares,
+                                            globalPoolUpdates[i].totalRewardShares));
             _from = nextUpdateBlock;
         }
         return reward.add(getRewardForBlocksRange(_from,
                                                 block.number,
-                                                poolAllocPoint,
-                                                globalPoolUpdates[i].totalAllocPoint));
+                                                poolShares,
+                                                globalPoolUpdates[i].totalRewardShares));
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
@@ -255,52 +258,52 @@ contract HATMaster is ReentrancyGuard {
     }
 
     // -------- For manage pool ---------
-    function add(uint256 _allocPoint, IERC20 _lpToken) internal {
+    function add(uint256 _poolRewardShare, IERC20 _lpToken) internal {
         require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lpToken is already in pool");
         poolId1[address(_lpToken)] = poolInfo.length + 1;
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
+        uint256 totalRewardShares = (globalPoolUpdates.length == 0) ? _poolRewardShare :
+        globalPoolUpdates[globalPoolUpdates.length-1].totalRewardShares.add(_poolRewardShare);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (totalPoolSharesUpdatedAtIndex[block.number] != 0) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[totalPoolSharesUpdatedAtIndex[block.number]-1].totalRewardShares = totalRewardShares;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
+                totalRewardShares: totalRewardShares
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
+            totalPoolSharesUpdatedAtIndex[block.number] = globalPoolUpdates.length;
         }
 
         poolInfo.push(PoolInfo({
             lpToken: _lpToken,
-            allocPoint: _allocPoint,
+            poolShares: _poolRewardShare,
             lastRewardBlock: lastRewardBlock,
             rewardPerShare: 0,
             totalUsersAmount: 0,
-            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
+            lastPoolUpdate: globalPoolUpdates.length-1,
             balance: 0
         }));
     }
 
-    function set(uint256 _pid, uint256 _allocPoint) internal {
+    function set(uint256 _pid, uint256 _poolRewardShare) internal {
         updatePool(_pid);
-        uint256 totalAllocPoint =
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        .sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        uint256 totalRewardShares =
+        globalPoolUpdates[globalPoolUpdates.length-1].totalRewardShares
+        .sub(poolInfo[_pid].poolShares).add(_poolRewardShare);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (totalPoolSharesUpdatedAtIndex[block.number] != 0) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[totalPoolSharesUpdatedAtIndex[block.number]-1].totalRewardShares = totalRewardShares;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
+                totalRewardShares: totalRewardShares
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
+            totalPoolSharesUpdatedAtIndex[block.number] = globalPoolUpdates.length;
         }
-        poolInfo[_pid].allocPoint = _allocPoint;
+        poolInfo[_pid].poolShares = _poolRewardShare;
     }
 
     // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
