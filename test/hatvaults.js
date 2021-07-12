@@ -393,20 +393,24 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await hatVaults.setPendingRewardsLevels(
+      await hatVaults.setPendingRewardLevels(
         0,
         [1500, 3000, 4500, 9000, 11000],
-        { from: accounts[1] }
+        {
+          from: accounts[1],
+        }
       );
       assert(false, "reward level can't be more than 10000");
     } catch (ex) {
       assertVMException(ex);
     }
     try {
-      await hatVaults.setPendingRewardsLevels(
+      await hatVaults.setPendingRewardLevels(
         0,
         [1500, 3000, 4500, 9000, 10000],
-        { from: accounts[2] }
+        {
+          from: accounts[2],
+        }
       );
       assert(false, "only committee");
     } catch (ex) {
@@ -419,19 +423,23 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex);
     }
     try {
-      await hatVaults.setPendingRewardsLevels(
+      await hatVaults.setPendingRewardLevels(
         0,
         [1500, 3000, 4500, 9000, 10000],
-        { from: accounts[1] }
+        {
+          from: accounts[1],
+        }
       );
       assert(false, "reward level should be less than 10000");
     } catch (ex) {
       assertVMException(ex);
     }
-    tx = await hatVaults.setPendingRewardsLevels(
+    tx = await hatVaults.setPendingRewardLevels(
       0,
       [1500, 3000, 4500, 9000, 9999],
-      { from: accounts[1] }
+      {
+        from: accounts[1],
+      }
     );
     assert.equal(tx.logs[0].event, "PendingRewardsLevelsLog");
     assert.equal(tx.logs[0].args._pid, 0);
@@ -517,7 +525,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     try {
-      await hatVaults.setPendingRewardsLevels(0, [], { from: accounts[1] });
+      await hatVaults.setPendingRewardLevels(0, [], { from: accounts[1] });
       assert(false, "there is already pending approval");
     } catch (ex) {
       assertVMException(ex);
@@ -539,7 +547,7 @@ contract("HatVaults", (accounts) => {
 
     await hatVaults.setRewardsSplit(0, [6000, 0, 1000, 1000, 1200, 800]);
 
-    await hatVaults.setPendingRewardsLevels(0, [], { from: accounts[1] });
+    await hatVaults.setPendingRewardLevels(0, [], { from: accounts[1] });
 
     await utils.increaseTime(24 * 3600 * 2);
     await hatVaults.setRewardsLevels(0, { from: accounts[1] });
@@ -2045,7 +2053,7 @@ contract("HatVaults", (accounts) => {
     let someHash = "0x00000000000000000000000000000000000001";
     let fee = web3.utils.toWei("1");
     var tx = await hatVaults.claim(someHash, { from: accounts[3] });
-    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].event, "ClaimSubmitted");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
 
@@ -2070,7 +2078,7 @@ contract("HatVaults", (accounts) => {
       await web3.eth.getBalance(accounts[0])
     );
     assert.equal(govBalanceAfter.sub(govBalanceBefore), fee);
-    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].event, "ClaimSubmitted");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
   });
