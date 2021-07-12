@@ -109,7 +109,7 @@ contract  HATVaults is Governable, HATMaster {
                     uint256 _amountReceived,
                     address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurnet);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
@@ -137,7 +137,7 @@ contract  HATVaults is Governable, HATMaster {
    * @param _rewardPerBlock the reward amount per block the contract will reward pools
    * @param _startBlock start block of of which the contract will start rewarding from.
    * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
-   *        which set the reward for each period. e.g a vaule of 100000 means that each such period is 100000 blocks.
+   *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
    *        Some of the contracts functions are limited only to governance :
    *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
@@ -377,7 +377,7 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
    * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
-   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the reward level represent the percentage of the pool's token which will be splitted as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
    * each level should be less than 10000
@@ -396,7 +396,7 @@ contract  HATVaults is Governable, HATMaster {
   /**
    * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
    * see pendingRewardsLevels
-   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the reward level represent the percentage of the pool's token which will be split as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
    * each level should be less than 10000

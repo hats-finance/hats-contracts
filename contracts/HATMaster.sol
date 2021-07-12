@@ -30,7 +30,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 hackerReward;
         // the percentage of the total reward to be sent to the committee
         uint256 committeeReward;
-        // the percentage of the total reward to be swap to HAT and burnet
+        // the percentage of the total reward to be swap to HAT and to be burned
         uint256 swapAndBurn;
         // the percentage of the total reward to be swap to HAT and sent to governance
         uint256 governanceHatReward;
@@ -93,7 +93,7 @@ contract HATMaster is ReentrancyGuard {
     }
 
   /**
-   * @dev massUpdatePools - Update reward vairables for all pools
+   * @dev massUpdatePools - Update reward variables for all pools
    * Be careful of gas spending!
    * @param _fromPid update pools range from this pool id
    * @param _toPid update pools range to this pool id
@@ -168,7 +168,7 @@ contract HATMaster is ReentrancyGuard {
 
     /**
      * @dev calcPoolReward -
-     * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
+     * calculate rewards for a pool by iterating over the history of totalAllocPoints updates.
      * and sum up all rewards periods from pool.lastRewardBlock till current block number.
      * @param _pid pool id
      * @param _from block starting calculation

@@ -907,7 +907,7 @@ contract('HatVaults',  accounts =>  {
     await advanceToNoneSaftyPeriod();
     try {
           await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
-          assert(false, 'none safty period');
+          assert(false, 'none safety period');
         } catch (ex) {
           assertVMException(ex);
       }
@@ -1165,7 +1165,7 @@ contract('HatVaults',  accounts =>  {
     var tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN("250")).div(new web3.utils.BN(10000));
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned.toString());
+    assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned.toString());
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
@@ -1211,7 +1211,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatToken.balanceOf(accounts[0])).toString(),web3.utils.toWei("0.08"));
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = 0; //default hat burned is 0
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), expectedHatBurned);
+    assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned);
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
@@ -1279,7 +1279,7 @@ contract('HatVaults',  accounts =>  {
         .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
       ).div(new web3.utils.BN("10000")).toString()
     );
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
+    assert.equal(tx.logs[0].args._amountBurned.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
     ).div(new web3.utils.BN("10000")).toString());
 
@@ -1323,7 +1323,7 @@ contract('HatVaults',  accounts =>  {
         .add(new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward))
       ).div(new web3.utils.BN("10000")).toString()
     );
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
+    assert.equal(tx.logs[0].args._amountBurned.toString(), new web3.utils.BN(web3.utils.toWei("1")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn))
     ).div(new web3.utils.BN("10000")).toString());
     assert.equal(tx.logs[1].event, "SwapAndSend");
@@ -1335,7 +1335,7 @@ contract('HatVaults',  accounts =>  {
     tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0,{from:accounts[0]});
 
     assert.equal(tx.logs[0].event, "SwapAndBurn");
-    assert.equal(tx.logs[0].args._amountBurnet.toString(), '0');
+    assert.equal(tx.logs[0].args._amountBurned.toString(), '0');
     assert.equal(tx.logs[1].args._amountReceived.toString(), new web3.utils.BN(web3.utils.toWei("0.8")).mul(
       (new web3.utils.BN((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward))
     ).div(new web3.utils.BN("10000")).toString());
