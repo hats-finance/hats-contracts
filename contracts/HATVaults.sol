@@ -134,9 +134,9 @@ contract  HATVaults is Governable, HATMaster {
     /**
    * @dev constructor -
    * @param _rewardsToken the reward token address (HAT)
-   * @param _rewardPerBlock the reward amount per block the contract will reward pools
+   * @param _rewardPerBlock the reward amount per block the contract will reward pool
    * @param _startBlock start block of of which the contract will start rewarding from.
-   * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
+   * @param _multiplierPeriod a fixed period value. each period will have its own multiplier value.
    *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
    *        Some of the contracts functions are limited only to governance :
@@ -611,7 +611,7 @@ contract  HATVaults is Governable, HATMaster {
     * withdraw  - withdraw user's pool share.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
-    * @param _shares amount of shares user want to withdraw
+    * @param _shares amount of shares user wants to withdraw
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
@@ -644,7 +644,7 @@ contract  HATVaults is Governable, HATMaster {
         } else {
             return (multiplier
                 .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].poolShares)
+                .mul(poolInfo[pid1 - 1].poolRewardShares)
                 .div(globalPoolUpdates[globalPoolUpdates.length-1].totalRewardShares))
                 .div(100);
         }
@@ -655,20 +655,20 @@ contract  HATVaults is Governable, HATMaster {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
-        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
+        if (block.number > pool.lastRewardBlock && pool.totalUserShares > 0) {
             uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
+            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUserShares));
         }
-        return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
+        return user.shares.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {
         return globalPoolUpdates.length;
     }
 
-    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
+    function getUserShares(uint _pid, address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
-        return  user.amount;
+        return  user.shares;
     }
 
     function poolLength() external view returns (uint256) {

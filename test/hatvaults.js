@@ -132,12 +132,12 @@ contract("HatVaults", (accounts) => {
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
-    let poolShares = (await hatVaults.poolInfo(0)).poolShares;
+    let poolRewardShares = (await hatVaults.poolInfo(0)).poolRewardShares;
     let rewardPerShare = new web3.utils.BN(
       (await hatVaults.poolInfo(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(0, staker)).amount;
+    let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
     let globalUpdatesLen = await hatVaults.getGlobalPoolUpdatesLength();
     let totalRewardShares = (
       await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)
@@ -145,7 +145,7 @@ contract("HatVaults", (accounts) => {
     let poolReward = await hatVaults.getRewardForBlocksRange(
       lastRewardBlock,
       currentBlockNumber + 1 + operationBlocksIncrement,
-      poolShares,
+      poolRewardShares,
       totalRewardShares
     );
     let lpSupply = await stakingToken.balanceOf(hatVaults.address);
@@ -1233,7 +1233,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     assert.equal(await stakingToken.balanceOf(staker), 0);
-    let stakerAmount = await hatVaults.getStakedAmount(0, staker);
+    let stakerAmount = await hatVaults.getUserShares(0, staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
 
     // Can emergency withdraw 1 token
@@ -1368,7 +1368,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
 
     assert.equal(await stakingToken.balanceOf(staker), 0);
-    let stakerAmount = await hatVaults.getStakedAmount(0, staker);
+    let stakerAmount = await hatVaults.getUserShares(0, staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     tx = await safeWithdraw(0, stakerAmount, staker);
 
@@ -1380,7 +1380,7 @@ contract("HatVaults", (accounts) => {
       web3.utils.fromWei(await stakingToken.balanceOf(staker)),
       "0.2"
     );
-    stakerAmount = await hatVaults.getStakedAmount(0, staker2);
+    stakerAmount = await hatVaults.getUserShares(0, staker2);
     tx = await safeWithdraw(0, stakerAmount, staker2);
     assert.equal(tx.logs[0].event, "SendReward");
     //dust
@@ -1422,7 +1422,7 @@ contract("HatVaults", (accounts) => {
     });
     var tx = await hatVaults.approveClaim(0);
     assert.equal(tx.logs[0].event, "ClaimApprove");
-    let stakerAmount = await hatVaults.getStakedAmount(0, staker);
+    let stakerAmount = await hatVaults.getUserShares(0, staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     tx = await safeWithdraw(0, stakerAmount, staker);
     await hatToken
@@ -1518,12 +1518,12 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "ClaimApprove");
     tx = await safeEmergencyWithdraw(0, staker);
 
-    assert.equal(tx.logs[0].args.amount.toString(), web3.utils.toWei("0.2"));
+    assert.equal(tx.logs[0].args.shares.toString(), web3.utils.toWei("0.2"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
     assert.equal(await hatToken.balanceOf(staker2), 0);
 
     tx = await safeEmergencyWithdraw(0, staker2);
-    assert.equal(tx.logs[0].args.amount.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[0].args.shares.toString(), web3.utils.toWei("1"));
 
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
