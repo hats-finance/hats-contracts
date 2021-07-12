@@ -114,7 +114,7 @@ contract  HATVaults is Governable, HATMaster {
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
     event ClaimApprove(address indexed _approver,
-                    uint256 indexed _poolId,
+                    uint256 indexed _pid,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
@@ -214,25 +214,25 @@ contract  HATVaults is Governable, HATMaster {
 
   /**
    * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
-   * @param _poolId pool id
+   * @param _pid pool id
   */
-    function dismissPendingApprovalClaim(uint256 _poolId) external onlyGovernance {
-        delete pendingApprovals[_poolId];
+    function dismissPendingApprovalClaim(uint256 _pid) external onlyGovernance {
+        delete pendingApprovals[_pid];
     }
 
     /**
    * @dev approveClaim - called by hats governance to approve a pending approval claim.
-   * @param _poolId pool id
+   * @param _pid pool id
  */
-    function approveClaim(uint256 _poolId) external onlyGovernance nonReentrant {
-        require(pendingApprovals[_poolId].beneficiary != address(0), "no pending approval");
-        PoolReward storage poolReward = poolsRewards[_poolId];
-        PendingApproval memory pendingApproval = pendingApprovals[_poolId];
-        delete pendingApprovals[_poolId];
+    function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
+        require(pendingApprovals[_pid].beneficiary != address(0), "no pending approval");
+        PoolReward storage poolReward = poolsRewards[_pid];
+        PendingApproval memory pendingApproval = pendingApprovals[_pid];
+        delete pendingApprovals[_pid];
 
-        IERC20 lpToken = poolInfo[_poolId].lpToken;
-        ClaimReward memory claimRewards = calcClaimRewards(_poolId, pendingApproval.severity);
-        poolInfo[_poolId].balance = poolInfo[_poolId].balance.sub(
+        IERC20 lpToken = poolInfo[_pid].lpToken;
+        ClaimReward memory claimRewards = calcClaimRewards(_pid, pendingApproval.severity);
+        poolInfo[_pid].balance = poolInfo[_pid].balance.sub(
                             claimRewards.hackerReward
                             .add(claimRewards.hackerVestedReward)
                             .add(claimRewards.committeeReward)
@@ -269,12 +269,12 @@ contract  HATVaults is Governable, HATMaster {
         hackersHatRewards[pendingApproval.beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
 
         emit ClaimApprove(msg.sender,
-                        _poolId,
+                        _pid,
                         pendingApproval.beneficiary,
                         pendingApproval.severity,
                         tokenLock,
                         claimRewards);
-        assert(poolInfo[_poolId].balance > 0);
+        assert(poolInfo[_pid].balance > 0);
     }
 
     /**
@@ -377,7 +377,7 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
    * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
-   * the reward level represent the percentage of the pool's token which will be splitted as a reward.
+   * the reward level represent the percentage of the pool's token which will be split as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
    * each level should be less than 10000
@@ -628,12 +628,12 @@ contract  HATVaults is Governable, HATMaster {
         _emergencyWithdraw(_pid);
     }
 
-    function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
-        return poolsRewards[_poolId].rewardsLevels;
+    function getPoolRewardsLevels(uint256 _pid) external view returns(uint256[] memory) {
+        return poolsRewards[_pid].rewardsLevels;
     }
 
-    function getPoolRewards(uint256 _poolId) external view returns(PoolReward memory) {
-        return poolsRewards[_poolId];
+    function getPoolRewards(uint256 _pid) external view returns(PoolReward memory) {
+        return poolsRewards[_pid];
     }
 
     // GET INFO for UI
@@ -675,33 +675,33 @@ contract  HATVaults is Governable, HATMaster {
         return poolInfo.length;
     }
 
-    function calcClaimRewards(uint256 _poolId, uint256 _severity)
+    function calcClaimRewards(uint256 _pid, uint256 _severity)
     public
     view
     returns(ClaimReward memory claimRewards) {
-        uint256 totalSupply = poolInfo[_poolId].balance;
+        uint256 totalSupply = poolInfo[_pid].balance;
         require(totalSupply > 0, "totalSupply is zero");
-        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
+        require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
         //hackingRewardAmount
         uint256 claimRewardAmount =
-        totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_severity]);
+        totalSupply.mul(poolsRewards[_pid].rewardsLevels[_severity]);
         claimRewards.hackerVestedReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerVestedReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerVestedReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.hackerReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.committeeReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.committeeReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.committeeReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.swapAndBurn =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.swapAndBurn)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.swapAndBurn)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.governanceHatReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.governanceHatReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.governanceHatReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.hackerHatReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerHatReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerHatReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
     }
 
