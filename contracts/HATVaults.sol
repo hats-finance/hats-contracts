@@ -611,7 +611,7 @@ contract  HATVaults is Governable, HATMaster {
     * withdraw  - withdraw user's pool share.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
-    * @param _shares amount of shares user want to withdraw
+    * @param _shares amount of shares user wants to withdraw
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);

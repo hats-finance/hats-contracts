@@ -14,8 +14,19 @@ contract HATMaster is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
-        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 amount;     // The user share of the pool based on the amount of lpToken the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
+      //
+      // We do some fancy math here. Basically, any point in time, the amount of HATs
+      // entitled to a user but is pending to be distributed is:
+      //
+      //   pending reward = (user.amount * pool.rewardPerShare) - user.rewardDebt
+      //
+      // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+      //   1. The pool's `rewardPerShare` (and `lastRewardBlock`) gets updated.
+      //   2. User receives the pending reward sent to his/her address.
+      //   3. User's `amount` gets updated.
+      //   4. User's `rewardDebt` gets updated.
     }
 
     struct PoolUpdate {
