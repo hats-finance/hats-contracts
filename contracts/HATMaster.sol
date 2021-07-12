@@ -65,8 +65,6 @@ contract HATMaster is ReentrancyGuard {
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
-    //blockNumber to index in globalPoolUpdates
-    mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
     PoolUpdate[] public globalPoolUpdates;
     mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
@@ -172,7 +170,7 @@ contract HATMaster is ReentrancyGuard {
      * and sum up all rewards periods from pool.lastRewardBlock till current block number.
      * @param _pid pool id
      * @param _from block starting calculation
-     * @param _lastPoolUpdate lastPoolUpdate (globalUpdates length)
+     * @param _lastPoolUpdate lastPoolUpdate
      * @return reward
      */
     function calcPoolReward(uint256 _pid, uint256 _from, uint256 _lastPoolUpdate) public view returns(uint256 reward) {
@@ -262,15 +260,15 @@ contract HATMaster is ReentrancyGuard {
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (globalPoolUpdates.length > 0 &&
+            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
 
         poolInfo.push(PoolInfo({
@@ -290,15 +288,14 @@ contract HATMaster is ReentrancyGuard {
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
         .sub(poolInfo[_pid].allocPoint).add(_allocPoint);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
         poolInfo[_pid].allocPoint = _allocPoint;
     }
