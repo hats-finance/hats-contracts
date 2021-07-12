@@ -13,8 +13,7 @@ contract ERC20Mock is ERC20 {
 
     constructor(
         string memory _name,
-        string memory _symbol,
-        address _owner
+        string memory _symbol
     )
     ERC20(_name, _symbol) {
         approveDisableFlag = false;
