@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+// Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
+
 pragma solidity 0.8.6;
 import "./interfaces/ISwapRouter.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
