@@ -10,6 +10,19 @@ The Hats protocol is designed to give white hats hackers the opportunity to gain
 
 ### Usage
 
+
+ Installation:
+
+ ```
+ npm install
+ ```
+
+ Run the tests:
+
+ ```
+ npx hardhat test
+ ```
+
 ## Security
 
 The latest audit was done on June 21.
