@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.MD
+// Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
 pragma solidity 0.8.6;
 
