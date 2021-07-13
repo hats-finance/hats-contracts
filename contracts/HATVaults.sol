@@ -40,7 +40,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 setRewardsLevelsDelay;
         uint256 withdrawRequestEnablePeriod;
         uint256 withdrawRequestPendingPeriod;
-        uint256 claimFee;
+        uint256 claimFee;  //claim fee in ETH
     }
 
     //pid -> committee address
@@ -61,7 +61,6 @@ contract  HATVaults is Governable, HATMaster {
 
     GeneralParameters public generalParameters;
 
-    //claim fee in ETH
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
@@ -77,7 +76,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     modifier noSafetyPeriod() {
-      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 12 hours)
+      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 11 hours)
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
@@ -110,12 +109,12 @@ contract  HATVaults is Governable, HATMaster {
                     uint256 _amountReceived,
                     address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurnet);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
     event ClaimApprove(address indexed _approver,
-                    uint256 indexed _poolId,
+                    uint256 indexed _pid,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
@@ -137,8 +136,8 @@ contract  HATVaults is Governable, HATMaster {
    * @param _rewardsToken the reward token address (HAT)
    * @param _rewardPerBlock the reward amount per block the contract will reward pools
    * @param _startBlock start block of of which the contract will start rewarding from.
-   * @param _halvingAfterBlock a fix period value. each period will have its own multiplier value.
-   *        which set the reward for each period. e.g a vaule of 100000 means that each such period is 100000 blocks.
+   * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
+   *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
    *        Some of the contracts functions are limited only to governance :
    *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
@@ -151,19 +150,19 @@ contract  HATVaults is Governable, HATMaster {
         address _rewardsToken,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
-        uint256 _halvingAfterBlock,
+        uint256 _multiplierPeriod,
         address _hatGovernance,
         ISwapRouter _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
-    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _halvingAfterBlock) {
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
             hatVestingPeriods:90,
-            withdrawPeriod: 12 hours,
+            withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
             setRewardsLevelsDelay: 2 days,
             withdrawRequestEnablePeriod: 7 days,
@@ -215,66 +214,78 @@ contract  HATVaults is Governable, HATMaster {
 
   /**
    * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
-   * @param _poolId pool id
+   * @param _pid pool id
   */
-    function dismissPendingApprovalClaim(uint256 _poolId) external onlyGovernance {
-        delete pendingApprovals[_poolId];
+    function dismissPendingApprovalClaim(uint256 _pid) external onlyGovernance {
+        delete pendingApprovals[_pid];
     }
 
     /**
    * @dev approveClaim - called by hats governance to approve a pending approval claim.
-   * @param _poolId pool id
+   * @param _pid pool id
  */
-    function approveClaim(uint256 _poolId) external onlyGovernance nonReentrant {
-        require(pendingApprovals[_poolId].beneficiary != address(0), "no pending approval");
-        PoolReward storage poolReward = poolsRewards[_poolId];
-        PendingApproval memory pendingApproval = pendingApprovals[_poolId];
-        delete pendingApprovals[_poolId];
+    function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
+        require(pendingApprovals[_pid].beneficiary != address(0), "no pending approval");
+        PoolReward storage poolReward = poolsRewards[_pid];
+        PendingApproval memory pendingApproval = pendingApprovals[_pid];
+        delete pendingApprovals[_pid];
 
-        IERC20 lpToken = poolInfo[_poolId].lpToken;
-        ClaimReward memory claimRewards = calcClaimRewards(_poolId, pendingApproval.severity);
+        IERC20 lpToken = poolInfo[_pid].lpToken;
+        ClaimReward memory claimRewards = calcClaimRewards(_pid, pendingApproval.severity);
+        poolInfo[_pid].balance = poolInfo[_pid].balance.sub(
+                            claimRewards.hackerReward
+                            .add(claimRewards.hackerVestedReward)
+                            .add(claimRewards.committeeReward)
+                            .add(claimRewards.swapAndBurn)
+                            .add(claimRewards.hackerHatReward)
+                            .add(claimRewards.governanceHatReward));
         address tokenLock;
         if (claimRewards.hackerVestedReward > 0) {
-            //hacker get its reward to a vesting contract
+        //hacker get its reward to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
-                address(lpToken),
-                governance(),
-                pendingApproval.beneficiary,
-                claimRewards.hackerVestedReward,
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp, //start
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp + poolReward.vestingDuration, //end
-                poolReward.vestingPeriods,
-                0, //no release start
-                0, //no cliff
-                ITokenLock.Revocability.Disabled,
-                false
-            );
+            address(lpToken),
+            governance(),
+            pendingApproval.beneficiary,
+            claimRewards.hackerVestedReward,
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp, //start
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp + poolReward.vestingDuration, //end
+            poolReward.vestingPeriods,
+            0, //no release start
+            0, //no cliff
+            ITokenLock.Revocability.Disabled,
+            false
+        );
             lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
         }
         lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
-        //storing the amount of token which can be swap and burned
-        //so it could be swapAndBurn in a seperate tx.
+        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
         governanceHatRewards[address(lpToken)] =
         governanceHatRewards[address(lpToken)].add(claimRewards.governanceHatReward);
         hackersHatRewards[pendingApproval.beneficiary][address(lpToken)] =
         hackersHatRewards[pendingApproval.beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
-        poolReward.pendingLpTokenRewards =
-        poolReward.pendingLpTokenRewards
-        .add(claimRewards.swapAndBurn)
-        .add(claimRewards.hackerHatReward)
-        .add(claimRewards.governanceHatReward);
 
         emit ClaimApprove(msg.sender,
-                        _poolId,
+                        _pid,
                         pendingApproval.beneficiary,
                         pendingApproval.severity,
                         tokenLock,
                         claimRewards);
-        assert(lpToken.balanceOf(address(this)).sub(poolReward.pendingLpTokenRewards) > 0);
+        assert(poolInfo[_pid].balance > 0);
+    }
+
+    /**
+     * @dev rewardDepositors - add pool token to rewards depositors
+     * The rewards will be give to depositors pro rata upon withdraw
+     * @param _pid pool id
+     * @param _amount amount to add
+    */
+    function rewardDepositors(uint256 _pid, uint256 _amount) external {
+        poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
+        poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
     }
 
     /**
@@ -366,7 +377,7 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
    * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
-   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the reward level represent the percentage of the pool's token which will be split as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
    * each level should be less than 10000
@@ -385,7 +396,7 @@ contract  HATVaults is Governable, HATMaster {
   /**
    * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
    * see pendingRewardsLevels
-   * the reward level represent the percentage of the pool's token which will be splited as a reward.
+   * the reward level represent the percentage of the pool's token which will be split as a reward.
    * the function can be called only by the pool committee.
    * cannot be called if there already pending approval.
    * each level should be less than 10000
@@ -473,7 +484,6 @@ contract  HATVaults is Governable, HATMaster {
         validateSplit(rewardsSplit);
         poolsRewards[poolId] = PoolReward({
             rewardsLevels: rewardsLevels,
-            pendingLpTokenRewards: 0,
             rewardsSplit: rewardsSplit,
             committeeCheckIn: false,
             vestingDuration: _rewardVestingParams[0],
@@ -542,7 +552,6 @@ contract  HATVaults is Governable, HATMaster {
         governanceHatRewards[address(token)] = 0;
         hackersHatRewards[_beneficiary][address(token)] = 0;
         uint256 hatsReceived = swapTokenForHAT(amount, token, _fee, _minOutputAmount, _sqrtPriceLimitX96);
-        poolsRewards[_pid].pendingLpTokenRewards = poolsRewards[_pid].pendingLpTokenRewards.sub(amount);
         uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -573,6 +582,10 @@ contract  HATVaults is Governable, HATMaster {
         HAT.transfer(governance(), hatsReceived.sub(hackerReward).sub(burntHats));
     }
 
+    /**
+    * withdrawRequest submit a withdraw request
+    * @param _pid the pool id
+    **/
     function withdrawRequest(uint256 _pid) external {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
@@ -582,6 +595,11 @@ contract  HATVaults is Governable, HATMaster {
         emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
     }
 
+    /**
+    * deposit deposit to pool
+    * @param _pid the pool id
+    * @param _amount amount of pool's token to deposit
+    **/
     function deposit(uint256 _pid, uint256 _amount) external {
         require(!poolDepositPause[_pid], "deposit paused");
         //clear withdraw request
@@ -589,26 +607,33 @@ contract  HATVaults is Governable, HATMaster {
         _deposit(_pid, _amount);
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) external {
+    /**
+    * withdraw  - withdraw user's pool share.
+    * user need first to submit a withdraw request.
+    * @param _pid the pool id
+    * @param _shares amount of shares user wants to withdraw
+    **/
+    function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
-        _withdraw(_pid, _amount);
+        _withdraw(_pid, _shares);
     }
 
+    /**
+    * emergencyWithdraw withdraw all user's pool share without claim for reward.
+    * user need first to submit a withdraw request.
+    * @param _pid the pool id
+    **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawRequest(_pid);
         _emergencyWithdraw(_pid);
     }
 
-    function getPoolRewardsLevels(uint256 _poolId) external view returns(uint256[] memory) {
-        return poolsRewards[_poolId].rewardsLevels;
+    function getPoolRewardsLevels(uint256 _pid) external view returns(uint256[] memory) {
+        return poolsRewards[_pid].rewardsLevels;
     }
 
-    function getPoolRewardsPendingLpToken(uint256 _poolId) external view returns(uint256) {
-        return poolsRewards[_poolId].pendingLpTokenRewards;
-    }
-
-    function getPoolRewards(uint256 _poolId) external view returns(PoolReward memory) {
-        return poolsRewards[_poolId];
+    function getPoolRewards(uint256 _pid) external view returns(PoolReward memory) {
+        return poolsRewards[_pid];
     }
 
     // GET INFO for UI
@@ -650,34 +675,33 @@ contract  HATVaults is Governable, HATMaster {
         return poolInfo.length;
     }
 
-    function calcClaimRewards(uint256 _poolId, uint256 _severity)
+    function calcClaimRewards(uint256 _pid, uint256 _severity)
     public
     view
     returns(ClaimReward memory claimRewards) {
-        IERC20 lpToken = poolInfo[_poolId].lpToken;
-        uint256 totalSupply = lpToken.balanceOf(address(this)).sub(poolsRewards[_poolId].pendingLpTokenRewards);
+        uint256 totalSupply = poolInfo[_pid].balance;
         require(totalSupply > 0, "totalSupply is zero");
-        require(_severity < poolsRewards[_poolId].rewardsLevels.length, "_severity is not in the range");
+        require(_severity < poolsRewards[_pid].rewardsLevels.length, "_severity is not in the range");
         //hackingRewardAmount
         uint256 claimRewardAmount =
-        totalSupply.mul(poolsRewards[_poolId].rewardsLevels[_severity]);
+        totalSupply.mul(poolsRewards[_pid].rewardsLevels[_severity]);
         claimRewards.hackerVestedReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerVestedReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerVestedReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.hackerReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.committeeReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.committeeReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.committeeReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.swapAndBurn =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.swapAndBurn)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.swapAndBurn)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.governanceHatReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.governanceHatReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.governanceHatReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
         claimRewards.hackerHatReward =
-        claimRewardAmount.mul(poolsRewards[_poolId].rewardsSplit.hackerHatReward)
+        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerHatReward)
         .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
     }
 
@@ -735,7 +759,7 @@ contract  HATVaults is Governable, HATMaster {
         _minOutputAmount,
         _sqrtPriceLimitX96
         ));
-        require(HAT.balanceOf(address(this)) == hatBalanceBefore.add(hatsReceived), "wrong amount received");
+        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _minOutputAmount, "wrong amount received");
     }
 
     /**

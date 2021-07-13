@@ -38,7 +38,7 @@
     "ethereum-waffle": "^3.2.0",
     "ethereumjs-abi": "^0.6.5",
     "ethers": "^5.0.21",
-    "hardhat": "2.1.2",
+    "hardhat": "2.4.3",
     "mocha": "^7.1.1",
     "pm2": "^4.2.3",
     "promisify": "^0.0.3",

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
 
@@ -14,8 +14,19 @@ contract HATMaster is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
-        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 amount;     // The user share of the pool based on the amount of lpToken the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
+      //
+      // We do some fancy math here. Basically, any point in time, the amount of HATs
+      // entitled to a user but is pending to be distributed is:
+      //
+      //   pending reward = (user.amount * pool.rewardPerShare) - user.rewardDebt
+      //
+      // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+      //   1. The pool's `rewardPerShare` (and `lastRewardBlock`) gets updated.
+      //   2. User receives the pending reward sent to his/her address.
+      //   3. User's `amount` gets updated.
+      //   4. User's `rewardDebt` gets updated.
     }
 
     struct PoolUpdate {
@@ -30,7 +41,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 hackerReward;
         // the percentage of the total reward to be sent to the committee
         uint256 committeeReward;
-        // the percentage of the total reward to be swap to HAT and burnet
+        // the percentage of the total reward to be swap to HAT and to be burned
         uint256 swapAndBurn;
         // the percentage of the total reward to be swap to HAT and sent to governance
         uint256 governanceHatReward;
@@ -46,12 +57,12 @@ contract HATMaster is ReentrancyGuard {
         uint256 rewardPerShare;
         uint256 totalUsersAmount;
         uint256 lastProcessedTotalAllocPoint;
+        uint256 balance;
     }
 
     // Info of each pool.
     struct PoolReward {
         RewardsSplit rewardsSplit;
-        uint256 pendingLpTokenRewards;
         uint256[]  rewardsLevels;
         bool committeeCheckIn;
         uint256 vestingDuration;
@@ -61,12 +72,10 @@ contract HATMaster is ReentrancyGuard {
     HATToken public immutable HAT;
     uint256 public immutable REWARD_PER_BLOCK;
     uint256 public immutable START_BLOCK;
-    uint256 public immutable HALVING_AFTER_BLOCK;
+    uint256 public immutable MULTIPLIER_PERIOD;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
-    //blockNumber to index in globalPoolUpdates
-    mapping(uint256 => uint256) public totalAllocPointUpdatedAtBlock;
     PoolUpdate[] public globalPoolUpdates;
     mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
@@ -84,16 +93,16 @@ contract HATMaster is ReentrancyGuard {
         HATToken _hat,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
-        uint256 _halvingAfterBlock
+        uint256 _multiplierPeriod
     ) {
         HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startBlock;
-        HALVING_AFTER_BLOCK = _halvingAfterBlock;
+        MULTIPLIER_PERIOD = _multiplierPeriod;
     }
 
   /**
-   * @dev massUpdatePools - Update reward vairables for all pools
+   * @dev massUpdatePools - Update reward variables for all pools
    * Be careful of gas spending!
    * @param _fromPid update pools range from this pool id
    * @param _toPid update pools range to this pool id
@@ -147,9 +156,9 @@ contract HATMaster is ReentrancyGuard {
                                             2528, 2231, 1969, 1738, 1534, 1353,
                                             1194, 1054, 930, 821, 724, 639, 0];
         uint256 max = rewardMultipliers.length;
-        uint256 i = (_from - START_BLOCK) / HALVING_AFTER_BLOCK + 1;
+        uint256 i = (_from - START_BLOCK) / MULTIPLIER_PERIOD + 1;
         for (; i < max; i++) {
-            uint256 endBlock = HALVING_AFTER_BLOCK * i + START_BLOCK;
+            uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
             if (_to <= endBlock) {
                 break;
             }
@@ -168,11 +177,11 @@ contract HATMaster is ReentrancyGuard {
 
     /**
      * @dev calcPoolReward -
-     * calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
+     * calculate rewards for a pool by iterating over the history of totalAllocPoints updates.
      * and sum up all rewards periods from pool.lastRewardBlock till current block number.
      * @param _pid pool id
      * @param _from block starting calculation
-     * @param _lastPoolUpdate lastPoolUpdate (globalUpdates length)
+     * @param _lastPoolUpdate lastPoolUpdate
      * @return reward
      */
     function calcPoolReward(uint256 _pid, uint256 _from, uint256 _lastPoolUpdate) public view returns(uint256 reward) {
@@ -205,8 +214,9 @@ contract HATMaster is ReentrancyGuard {
             }
         }
         if (_amount > 0) {
-            uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
+            uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            pool.balance = pool.balance.add(_amount);
             uint256 factoredAmount = _amount;
             if (pool.totalUsersAmount > 0) {
                 factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
@@ -221,7 +231,6 @@ contract HATMaster is ReentrancyGuard {
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
         require(user.amount >= _amount, "withdraw: not enough user balance");
 
         updatePool(_pid);
@@ -231,7 +240,9 @@ contract HATMaster is ReentrancyGuard {
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
-            pool.lpToken.safeTransfer(address(msg.sender), _amount.mul(lpSupply).div(pool.totalUsersAmount));
+            uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalUsersAmount);
+            pool.balance = pool.balance.sub(amountToWithdraw);
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw);
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -243,35 +254,32 @@ contract HATMaster is ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount > 0, "user.amount = 0");
-
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this)).sub(poolsRewards[_pid].pendingLpTokenRewards);
-        uint256 factoredBalance = user.amount.mul(lpSupply).div(pool.totalUsersAmount);
+        uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
-        pool.lpToken.safeTransfer(address(msg.sender), factoredBalance);
+        pool.balance = pool.balance.sub(factoredBalance);
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
-        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lp is already in pool");
-        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-
+        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lpToken is already in pool");
         poolId1[address(_lpToken)] = poolInfo.length + 1;
-
+        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (globalPoolUpdates.length > 0 &&
+            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
 
         poolInfo.push(PoolInfo({
@@ -280,7 +288,8 @@ contract HATMaster is ReentrancyGuard {
             lastRewardBlock: lastRewardBlock,
             rewardPerShare: 0,
             totalUsersAmount: 0,
-            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1
+            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
+            balance: 0
         }));
     }
 
@@ -290,25 +299,24 @@ contract HATMaster is ReentrancyGuard {
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
         .sub(poolInfo[_pid].allocPoint).add(_allocPoint);
 
-        if (totalAllocPointUpdatedAtBlock[block.number] != 0) {
+        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
-            globalPoolUpdates[totalAllocPointUpdatedAtBlock[block.number]-1].totalAllocPoint = totalAllocPoint;
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
         } else {
             globalPoolUpdates.push(PoolUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
-            totalAllocPointUpdatedAtBlock[block.number] = globalPoolUpdates.length;
         }
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // -----------------------------
+    // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 bal = HAT.balanceOf(address(this));
-        if (_amount > bal) {
-            HAT.transfer(_to, bal);
-            emit SendReward(_to, _pid, bal, _amount);
+        uint256 hatBalance = HAT.balanceOf(address(this));
+        if (_amount > hatBalance) {
+            HAT.transfer(_to, hatBalance);
+            emit SendReward(_to, _pid, hatBalance, _amount);
         } else {
             HAT.transfer(_to, _amount);
             emit SendReward(_to, _pid, _amount, _amount);

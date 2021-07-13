@@ -16,7 +16,7 @@ const setup = async function (
                               endTime = 1000,
                               periods = 5
                             ) {
-  stakingToken = await ERC20Mock.new("Staking","STK",accounts[0]);
+  stakingToken = await ERC20Mock.new("Staking","STK");
 
   tokenLockParent = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLockParent.address);
