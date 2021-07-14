@@ -22,7 +22,8 @@ const setup = async function (
                               rewardsLevels=[],
                               rewardsSplit=[0,0,0,0,0,0],
                               halvingAfterBlock = 10,
-                              routerReturnType = 0
+                              routerReturnType = 0,
+                              allocPoint = 100
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK");
@@ -40,7 +41,7 @@ const setup = async function (
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
-  await hatVaults.addPool(100,stakingToken.address,accounts[1],rewardsLevels,rewardsSplit,"_descriptionHash",[86400,10]);
+  await hatVaults.addPool(allocPoint,stakingToken.address,accounts[1],rewardsLevels,rewardsSplit,"_descriptionHash",[86400,10]);
   await hatVaults.committeeCheckIn(0,{from:accounts[1]});
 };
 
@@ -348,6 +349,21 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "4000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "6000");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "8000");
+  });
+  it("zero totalAllocPoints", async () => {
+      await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 1000,100, 100,100, 700],10,0,0);
+
+      //await hatVaults.setPool(0,100,true,false,"_descriptionHash");
+      var staker = accounts[1];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.updatePool(0);
   });
 
   it("withdrawn", async () => {
@@ -1632,7 +1648,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1514618);
+    assert.equal(tx.receipt.gasUsed, 1517867);
   }).timeout(40000);
 
 
