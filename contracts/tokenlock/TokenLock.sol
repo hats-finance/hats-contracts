@@ -187,6 +187,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Current block timestamp
      */
     function currentTime() public override view returns (uint256) {
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp;
     }
 

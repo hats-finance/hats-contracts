@@ -15,6 +15,7 @@ contract ERC20Mock is ERC20 {
         string memory _name,
         string memory _symbol
     )
+    // solhint-disable-next-line func-visibility
     ERC20(_name, _symbol) {
         approveDisableFlag = false;
     }

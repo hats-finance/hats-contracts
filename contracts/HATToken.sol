@@ -89,6 +89,7 @@ contract HATToken is IERC20 {
     /**
      * @notice Construct a new HAT token
      */
+    // solhint-disable-next-line func-visibility
     constructor(address _governance, uint256 _timeLockDelay) {
         governance = _governance;
         timeLockDelay = _timeLockDelay;
@@ -492,6 +493,7 @@ contract HATToken is IERC20 {
 
     function getChainId() internal view returns (uint) {
         uint256 chainId;
+        // solhint-disable-next-line no-inline-assembly
         assembly { chainId := chainid() }
         return chainId;
     }

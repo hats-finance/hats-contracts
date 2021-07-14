@@ -13,6 +13,7 @@ contract UniSwapV3RouterMock {
 
     constructor(
         ReturnType _returnType
+    // solhint-disable-next-line func-visibility
     ) {
         returnType = _returnType;
     }

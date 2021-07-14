@@ -2,7 +2,8 @@
 pragma solidity 0.8.6;
 
 import "../HATToken.sol";
-
+//solhint-disable func-visibility 
+//solhint-disable no-empty-blocks
 
 contract HATTokenMock is HATToken {
     constructor(address _governance, uint256 _timeLockDelayInBlocksUnits)
