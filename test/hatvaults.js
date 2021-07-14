@@ -353,7 +353,6 @@ contract('HatVaults',  accounts =>  {
   it("zero totalAllocPoints", async () => {
       await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [8000, 1000,100, 100,100, 700],10,0,0);
 
-      //await hatVaults.setPool(0,100,true,false,"_descriptionHash");
       var staker = accounts[1];
 
       await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
