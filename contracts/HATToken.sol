@@ -18,12 +18,15 @@ contract HATToken is IERC20 {
     }
 
     /// @notice EIP-20 token name for this token
+    // solhint-disable-next-line const-name-snakecase
     string public constant name = "HATToken";
 
     /// @notice EIP-20 token symbol for this token
+    // solhint-disable-next-line const-name-snakecase
     string public constant symbol = "HAT";
 
     /// @notice EIP-20 token decimals for this token
+    // solhint-disable-next-line const-name-snakecase
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
