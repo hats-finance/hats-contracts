@@ -16,10 +16,10 @@ async function main() {
     await deployer.getAddress()
   );
 
-  //const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
   //rinkeby hattoken deployment
   const timelockDelay =  (3600*24*2); // 2 days
-  const governance  = await deployer.getAddress();
+  //const governance  = await deployer.getAddress();
   //const timelockDelay = 1;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());

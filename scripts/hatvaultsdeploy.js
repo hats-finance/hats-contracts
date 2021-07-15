@@ -22,8 +22,8 @@ async function main() {
   const rewardPerBlock  = "16185644800000000";
   const startBlock =  await ethers.provider.getBlockNumber();
   const multiplierPeriod = "195200";
-  //const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
-  const governance  = await deployer.getAddress()
+  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  //const governance  = await deployer.getAddress();
   //v3 router
   const uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
   const tokenLockFactory  = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
