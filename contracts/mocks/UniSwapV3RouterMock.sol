@@ -44,7 +44,7 @@ contract UniSwapV3RouterMock {
         address tokennIn = toAddress(_params.path, 0);
         ERC20(tokennIn).transferFrom(msg.sender, address(this), _params.amountIn);
         //swap 1 to 1...
-        address tokenOut = toAddress(_params.path, NEXT_OFFSET*2);
+        address tokenOut = toAddress(_params.path, NEXT_OFFSET*numPools(_params.path));
         IERC20(tokenOut).transfer(_params.recipient, amountToSendBack);
         return amountToSendBack;
     }
@@ -60,5 +60,13 @@ contract UniSwapV3RouterMock {
         }
 
         return tempAddress;
+    }
+
+    /// @notice Returns the number of pools in the path
+   /// @param path The encoded swap path
+   /// @return The number of pools in the path
+    function numPools(bytes memory path) internal pure returns (uint256) {
+           // Ignore the first token address. From then on every fee and token offset indicates a pool.
+        return ((path.length - ADDR_SIZE) / NEXT_OFFSET);
     }
 }

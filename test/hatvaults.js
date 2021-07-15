@@ -23,7 +23,8 @@ const setup = async function (
                               rewardsSplit=[0,0,0,0,0,0],
                               halvingAfterBlock = 10,
                               routerReturnType = 0,
-                              allocPoint = 100
+                              allocPoint = 100,
+                              weth  =  utils.NULL_ADDRESS
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK");
@@ -37,7 +38,7 @@ const setup = async function (
                                   halvingAfterBlock,
                                   accounts[0],
                                   router.address,
-                                  utils.NULL_ADDRESS,
+                                  weth,
                                   tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
@@ -1228,6 +1229,34 @@ contract('HatVaults',  accounts =>  {
       }
 
   });
+
+  it("approve+ swapBurnSend  weth pool", async () => {
+    await setup(accounts, REWARD_PER_BLOCK, 0, [], [8000, 1000,0, 250,350, 400],10,0,100,stakingToken.address);
+    var staker = accounts[4];
+    await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+    await stakingToken.mint(staker,web3.utils.toWei("1"));
+    await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+    assert.equal(await hatToken.balanceOf(staker),0);
+    await utils.increaseTime(7*24*3600);
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
+    await hatVaults.approveClaim(0);
+    await stakingToken.approveDisable(true);
+
+    await stakingToken.approveDisable(false);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
+    assert.equal(tx.logs[0].event, "SwapAndBurn");
+    var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN("250")).div(new web3.utils.BN(10000));
+    assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned.toString());
+    assert.equal(tx.logs[1].event, "SwapAndSend");
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
+    var expectedHackerReward = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN(4)).div(new web3.utils.BN(100));
+    assert.equal(tx.logs[1].args._amountReceived.toString(), expectedHackerReward.toString());
+
+
+  });
+
 
   it("approve+ swapBurnSend with HAT Pool", async () => {
     await setup(accounts);

@@ -751,8 +751,14 @@ contract  HATVaults is Governable, HATMaster {
         }
         require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        bytes memory path;
+        if (address(_token) == WETH) {
+            path = abi.encodePacked(address(_token), _fees[0], address(HAT));
+        } else {
+            path = abi.encodePacked(address(_token), _fees[0], WETH, _fees[1], address(HAT));
+        }
         hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
-            path: abi.encodePacked(address(_token), _fees[0], WETH, _fees[1], address(HAT)),
+            path: path,
             recipient: address(this),
             // solhint-disable-next-line not-rely-on-time
             deadline: block.timestamp,
