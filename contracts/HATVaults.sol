@@ -91,7 +91,6 @@ contract  HATVaults is Governable, HATMaster {
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
-                string _name,
                 address _committee,
                 string _descriptionHash,
                 uint256[] _rewardsLevels,
@@ -455,7 +454,7 @@ contract  HATVaults is Governable, HATMaster {
      each level is a number between 0 and 10000.
    * @param _rewardsSplit pool reward split.
      each entry is a number between 0 and 10000.
-     total splits should be less than 10000
+     total splits should be equal to 10000
    * @param _committee pools committee addresses array
    * @param _descriptionHash the hash of the pool description.
    * @param _rewardVestingParams vesting params
@@ -492,12 +491,9 @@ contract  HATVaults is Governable, HATMaster {
             vestingPeriods: _rewardVestingParams[1]
         });
 
-        string memory name = ERC20(_lpToken).name();
-
         emit AddPool(poolId,
                     _allocPoint,
                     address(_lpToken),
-                    name,
                     _committee,
                     _descriptionHash,
                     rewardsLevels,

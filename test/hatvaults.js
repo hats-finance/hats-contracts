@@ -212,6 +212,36 @@ contract('HatVaults',  accounts =>  {
         await hatVaults.setCommittee(1,accounts[1],{from:accounts[2]});
     });
 
+    it("custom rewardsLevels with 0", async () => {
+      var staker = accounts[1];
+      await setup(accounts, REWARD_PER_BLOCK, 0, [0, 0, 0, 0], [8000, 1000,100, 100,100, 700]);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 4);
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "0");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "0");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[2].toString(), "0");
+      assert.equal((await hatVaults.getPoolRewardsLevels(0))[3].toString(), "0");
+      tx = await hatVaults.setPendingRewardsLevels(0, [1500, 3000, 4500, 9000, 0],{from:accounts[1]});
+      assert.equal(tx.logs[0].event,"PendingRewardsLevelsLog");
+      assert.equal(tx.logs[0].args._pid,0);
+      assert.equal(tx.logs[0].args._rewardsLevels[1],3000);
+
+      await utils.increaseTime(1);
+      await utils.increaseTime(3600*24*2);
+      tx = await hatVaults.setRewardsLevels(0,{from:accounts[1]});
+      assert.equal(tx.logs[0].args._rewardsLevels[4],0);
+      await advanceToSaftyPeriod();
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      await hatVaults.dismissPendingApprovalClaim(0);
+      await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
+      assert.equal(await stakingToken.balanceOf(hatVaults.address),web3.utils.toWei("1"));
+      await hatVaults.approveClaim(0);
+      assert.equal(await stakingToken.balanceOf(hatVaults.address),web3.utils.toWei("1"));
+
+  });
+
     it("custom rewardsSplit and rewardsLevels", async () => {
       try {
           await setup(accounts, REWARD_PER_BLOCK, 0, [3000, 5000, 7000, 9000], [9000,0, 200, 0,100, 800]);
