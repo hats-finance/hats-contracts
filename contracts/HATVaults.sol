@@ -92,7 +92,6 @@ contract  HATVaults is Governable, HATMaster {
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
-                string _name,
                 address _committee,
                 string _descriptionHash,
                 uint256[] _rewardsLevels,
@@ -458,7 +457,7 @@ contract  HATVaults is Governable, HATMaster {
      each level is a number between 0 and 10000.
    * @param _rewardsSplit pool reward split.
      each entry is a number between 0 and 10000.
-     total splits should be less than 10000
+     total splits should be equal to 10000
    * @param _committee pools committee addresses array
    * @param _descriptionHash the hash of the pool description.
    * @param _rewardVestingParams vesting params
@@ -495,12 +494,9 @@ contract  HATVaults is Governable, HATMaster {
             vestingPeriods: _rewardVestingParams[1]
         });
 
-        string memory name = ERC20(_lpToken).name();
-
         emit AddPool(poolId,
                     _allocPoint,
                     address(_lpToken),
-                    name,
                     _committee,
                     _descriptionHash,
                     rewardsLevels,
@@ -586,7 +582,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * withdrawRequest submit a withdraw request
+    * @dev withdrawRequest submit a withdraw request
     * @param _pid the pool id
     **/
     function withdrawRequest(uint256 _pid) external {
@@ -599,7 +595,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * deposit deposit to pool
+    * @dev deposit deposit to pool
     * @param _pid the pool id
     * @param _amount amount of pool's token to deposit
     **/
@@ -611,7 +607,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * withdraw  - withdraw user's pool share.
+    * @dev withdraw  - withdraw user's pool share.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
     * @param _shares amount of shares user wants to withdraw
@@ -622,7 +618,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * emergencyWithdraw withdraw all user's pool share without claim for reward.
+    * @dev emergencyWithdraw withdraw all user's pool share without claim for reward.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
     **/
@@ -640,16 +636,21 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     // GET INFO for UI
-    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
-        uint256 multiplier = getMultiplier(block.number-1, block.number);
-        if (pid1 == 0) {
-            return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
+    /**
+    * @dev getRewardPerBlock return the current pool reward per block
+    * @param _pid1 the pool id.
+    *        if _pid1 = 0 , it return the current block reward for whole pools.
+    *        otherwise it return the current block reward for _pid1-1.
+    * @return rewardPerBlock
+    **/
+    function getRewardPerBlock(uint256 _pid1) external view returns (uint256) {
+        if (_pid1 == 0) {
+            return getRewardForBlocksRange(block.number-1, block.number, 1, 1);
         } else {
-            return (multiplier
-                .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].allocPoint)
-                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
-                .div(100);
+            return getRewardForBlocksRange(block.number-1,
+                                        block.number,
+                                        poolInfo[_pid1 - 1].allocPoint,
+                                        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint);
         }
     }
 

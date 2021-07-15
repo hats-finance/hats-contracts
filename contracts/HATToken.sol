@@ -19,7 +19,7 @@ contract HATToken is IERC20 {
 
     /// @notice EIP-20 token name for this token
     // solhint-disable-next-line const-name-snakecase
-    string public constant name = "HATToken";
+    string public constant name = "hats.finance";
 
     /// @notice EIP-20 token symbol for this token
     // solhint-disable-next-line const-name-snakecase
