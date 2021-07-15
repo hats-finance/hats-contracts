@@ -96,6 +96,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _multiplierPeriod
+    // solhint-disable-next-line func-visibility
     ) {
         HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;

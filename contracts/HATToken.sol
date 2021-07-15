@@ -18,12 +18,15 @@ contract HATToken is IERC20 {
     }
 
     /// @notice EIP-20 token name for this token
+    // solhint-disable-next-line const-name-snakecase
     string public constant name = "HATToken";
 
     /// @notice EIP-20 token symbol for this token
+    // solhint-disable-next-line const-name-snakecase
     string public constant symbol = "HAT";
 
     /// @notice EIP-20 token decimals for this token
+    // solhint-disable-next-line const-name-snakecase
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
@@ -89,6 +92,7 @@ contract HATToken is IERC20 {
     /**
      * @notice Construct a new HAT token
      */
+    // solhint-disable-next-line func-visibility
     constructor(address _governance, uint256 _timeLockDelay) {
         governance = _governance;
         timeLockDelay = _timeLockDelay;
@@ -457,16 +461,16 @@ contract HATToken is IERC20 {
     }
 
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
-      uint32 blockNumber = safe32(block.number, "HAT::_writeCheckpoint: block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "HAT::_writeCheckpoint: block number exceeds 32 bits");
 
-      if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
-          checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
-      } else {
-          checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
-          numCheckpoints[delegatee] = nCheckpoints + 1;
-      }
+        if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
+            checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
+        } else {
+            checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
+            numCheckpoints[delegatee] = nCheckpoints + 1;
+        }
 
-      emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
+        emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
     function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
@@ -492,6 +496,7 @@ contract HATToken is IERC20 {
 
     function getChainId() internal view returns (uint) {
         uint256 chainId;
+        // solhint-disable-next-line no-inline-assembly
         assembly { chainId := chainid() }
         return chainId;
     }

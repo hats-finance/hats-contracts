@@ -30,6 +30,7 @@ import "./ITokenLock.sol";
  * perform the first release on the configured time. After that it will continue with the
  * default schedule.
  */
+// solhint-disable-next-line indent
 abstract contract TokenLock is OwnableInitializable, ITokenLock {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -186,6 +187,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Current block timestamp
      */
     function currentTime() public override view returns (uint256) {
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp;
     }
 
