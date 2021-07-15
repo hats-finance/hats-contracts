@@ -66,6 +66,7 @@ contract  HATVaults is Governable, HATMaster {
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
+    address public immutable WETH;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -155,6 +156,7 @@ contract  HATVaults is Governable, HATMaster {
         uint256 _multiplierPeriod,
         address _hatGovernance,
         ISwapRouter _uniSwapRouter,
+        address _weth,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
@@ -171,6 +173,7 @@ contract  HATVaults is Governable, HATMaster {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
+        WETH = _weth;
     }
 
       /**
@@ -528,21 +531,19 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * swapBurnSend swap lptoken to HAT.
+    * @dev swapBurnSend swap lptoken to HAT.
     * send to beneficiary and governance its hats rewards .
     * burn the rest of HAT.
     * only governance are authorized to call this function.
     * @param _pid the pool id
     * @param _beneficiary beneficiary
-    * @param _minOutputAmount minimum output of HATs at swap
-    * @param _fee the fee of the token pool for the pair
-    * @param _sqrtPriceLimitX96 the price limit of the pool that cannot be exceeded by the swap
+    * @param _amountOutMinimum minimum output of HATs at swap
+    * @param _fees the fees for the multi path swap
     **/
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
-                        uint256 _minOutputAmount,
-                        uint24 _fee,
-                        uint160 _sqrtPriceLimitX96)
+                        uint256 _amountOutMinimum,
+                        uint24[2] memory _fees)
     external
     onlyGovernance {
         IERC20 token = poolInfo[_pid].lpToken;
@@ -553,7 +554,7 @@ contract  HATVaults is Governable, HATMaster {
         swapAndBurns[address(token)] = 0;
         governanceHatRewards[address(token)] = 0;
         hackersHatRewards[_beneficiary][address(token)] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, token, _fee, _minOutputAmount, _sqrtPriceLimitX96);
+        uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
         uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -739,9 +740,8 @@ contract  HATVaults is Governable, HATMaster {
 
     function swapTokenForHAT(uint256 _amount,
                             IERC20 _token,
-                            uint24 _fee,
-                            uint256 _minOutputAmount,
-                            uint160 _sqrtPriceLimitX96)
+                            uint24[2] memory _fees,
+                            uint256 _amountOutMinimum)
     internal
     returns (uint256 hatsReceived)
     {
@@ -750,18 +750,15 @@ contract  HATVaults is Governable, HATMaster {
         }
         require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        hatsReceived = uniSwapRouter.exactInputSingle(ISwapRouter.ExactInputSingleParams(
-        address(_token),
-        address(HAT),
-        _fee,
-        address(this),
-        // solhint-disable-next-line not-rely-on-time
-        block.timestamp,
-        _amount,
-        _minOutputAmount,
-        _sqrtPriceLimitX96
-        ));
-        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _minOutputAmount, "wrong amount received");
+        hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
+            path: abi.encodePacked(address(_token), _fees[0], WETH, _fees[1], address(HAT)),
+            recipient: address(this),
+            // solhint-disable-next-line not-rely-on-time
+            deadline: block.timestamp,
+            amountIn: _amount,
+            amountOutMinimum: _amountOutMinimum
+        }));
+        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "wrong amount received");
     }
 
     /**

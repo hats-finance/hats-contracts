@@ -36,6 +36,7 @@ const setup = async function (
                                   halvingAfterBlock,
                                   accounts[0],
                                   router.address,
+                                  utils.NULL_ADDRESS,
                                   tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
@@ -1146,7 +1147,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(await hatToken.balanceOf(staker),0);
     await utils.increaseTime(7*24*3600);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
           assert(false, 'cannot swapBurnSend before approve');
         } catch (ex) {
           assertVMException(ex);
@@ -1156,13 +1157,13 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.approveClaim(0);
     await stakingToken.approveDisable(true);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
           assert(false, 'approve disable');
         } catch (ex) {
           assertVMException(ex);
       }
     await stakingToken.approveDisable(false);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN("250")).div(new web3.utils.BN(10000));
     assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned.toString());
@@ -1175,7 +1176,7 @@ contract('HatVaults',  accounts =>  {
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
           assert(false, 'cannot swapBurnSend twice');
         } catch (ex) {
           assertVMException(ex);
@@ -1197,7 +1198,7 @@ contract('HatVaults',  accounts =>  {
 
     await utils.increaseTime(7*24*3600);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
           assert(false, 'cannot swapBurnSend before approve');
         } catch (ex) {
           assertVMException(ex);
@@ -1206,7 +1207,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.pendingApprovalClaim(1,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(1);
     assert.equal(await hatToken.balanceOf(accounts[0]),0);
-    var tx = await hatVaults.swapBurnSend(1, accounts[2],0,0,0);
+    var tx = await hatVaults.swapBurnSend(1, accounts[2],0,[0,0]);
     //gov gets 10% out of 80% of the vault value
     assert.equal((await hatToken.balanceOf(accounts[0])).toString(),web3.utils.toWei("0.08"));
     assert.equal(tx.logs[0].event, "SwapAndBurn");
@@ -1221,7 +1222,7 @@ contract('HatVaults',  accounts =>  {
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
     try {
-          await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
+          await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
           assert(false, 'cannot swapBurnSend twice');
         } catch (ex) {
           assertVMException(ex);
@@ -1270,7 +1271,7 @@ contract('HatVaults',  accounts =>  {
     await advanceToSaftyPeriod();
     await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
     await hatVaults.approveClaim(0);
-    var tx = await hatVaults.swapBurnSend(0,accounts[2],0,0,0);
+    var tx = await hatVaults.swapBurnSend(0,accounts[2],0,[0,0]);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(
@@ -1309,13 +1310,13 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.approveClaim(0);
 
     try {
-        await hatVaults.swapBurnSend(0, accounts[1],0,0,0,{from:accounts[3]});
+        await hatVaults.swapBurnSend(0, accounts[1],0,[0,0],{from:accounts[3]});
         assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
     }
 
-    var tx = await hatVaults.swapBurnSend(0,accounts[1],0,0,0,{from:accounts[0]});
+    var tx = await hatVaults.swapBurnSend(0,accounts[1],0,[0,0],{from:accounts[0]});
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountSwaped.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(
@@ -1332,7 +1333,7 @@ contract('HatVaults',  accounts =>  {
     let afterRewardBalance = (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString();
     assert.equal(tx.logs[1].args._tokenLock, '0x0000000000000000000000000000000000000000');
 
-    tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0,{from:accounts[0]});
+    tx = await hatVaults.swapBurnSend(0, accounts[2],0,[0,0],{from:accounts[0]});
 
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurned.toString(), '0');
@@ -1343,14 +1344,14 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[1].args._amountReceived.toString(), afterRewardBalance);
 
     try {
-        tx = await hatVaults.swapBurnSend(0, accounts[1],0,0,0,{from:accounts[0]});
+        tx = await hatVaults.swapBurnSend(0, accounts[1],0,[0,0],{from:accounts[0]});
         assert(false, 'can claim only once, nothing to redeem or burn');
       } catch (ex) {
         assertVMException(ex);
     }
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[2],0,0,0,{from:accounts[0]});
+      tx = await hatVaults.swapBurnSend(0, accounts[2],0,[0,0],{from:accounts[0]});
       assert(false, 'can claim only once, nothing to redeem or burn');
     } catch (ex) {
       assertVMException(ex);
@@ -1377,7 +1378,7 @@ contract('HatVaults',  accounts =>  {
     await hatVaults.approveClaim(0);
 
     try {
-        await hatVaults.swapBurnSend(0,accounts[1],web3.utils.toWei("1"),0,0,{from:accounts[0]});
+        await hatVaults.swapBurnSend(0,accounts[1],web3.utils.toWei("1"),[0,0],{from:accounts[0]});
         assert(false, 'router return less than minimum');
       } catch (ex) {
         assert(ex.message.includes("wrong amount received"));
@@ -1632,7 +1633,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1514618);
+    assert.equal(tx.receipt.gasUsed, 1514551);
   }).timeout(40000);
 
 
@@ -1845,6 +1846,7 @@ contract('HatVaults',  accounts =>  {
                                     10,
                                     poolManager.address,
                                     router1.address,
+                                    utils.NULL_ADDRESS,
                                     tokenLockFactory1.address);
     let stakingToken2 = await ERC20Mock.new("Staking","STK");
     let stakingToken3 = await ERC20Mock.new("Staking","STK");

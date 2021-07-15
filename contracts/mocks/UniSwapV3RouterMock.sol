@@ -7,6 +7,13 @@ import "../interfaces/ISwapRouter.sol";
 
 contract UniSwapV3RouterMock {
 
+   /// @dev The length of the bytes encoded address
+    uint256 private constant ADDR_SIZE = 20;
+   /// @dev The length of the bytes encoded fee
+    uint256 private constant FEE_SIZE = 3;
+    /// @dev The offset of a single token address and pool fee
+    uint256 private constant NEXT_OFFSET = ADDR_SIZE + FEE_SIZE;
+
     enum ReturnType {ONE_TO_ONE, MINIMUM, BELOW_MINIMUM}
 
     ReturnType public returnType;
@@ -18,8 +25,8 @@ contract UniSwapV3RouterMock {
         returnType = _returnType;
     }
 
-    function exactInputSingle(
-        ISwapRouter.ExactInputSingleParams memory _params
+    function exactInput(
+        ISwapRouter.ExactInputParams memory _params
     ) external returns (uint256 amount) {
         uint256 amountToSendBack;
 
@@ -34,9 +41,24 @@ contract UniSwapV3RouterMock {
         if (returnType == ReturnType.BELOW_MINIMUM) {
             amountToSendBack = _params.amountOutMinimum - 1;
         }
-        ERC20(_params.tokenIn).transferFrom(msg.sender, address(this), _params.amountIn);
+        address tokennIn = toAddress(_params.path, 0);
+        ERC20(tokennIn).transferFrom(msg.sender, address(this), _params.amountIn);
         //swap 1 to 1...
-        IERC20(_params.tokenOut).transfer(_params.recipient, amountToSendBack);
+        address tokenOut = toAddress(_params.path, NEXT_OFFSET*2);
+        IERC20(tokenOut).transfer(_params.recipient, amountToSendBack);
         return amountToSendBack;
+    }
+
+    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
+        require(_start + 20 >= _start, "toAddress_overflow");
+        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
+        }
+
+        return tempAddress;
     }
 }
