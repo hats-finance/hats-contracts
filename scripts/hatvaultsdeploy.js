@@ -17,23 +17,23 @@ async function main() {
   );
 
   //constructor params for test
-
-  const rewardsToken = "0xAcc2224F96A26F4e852D4e57fe7dE1a14E09D768";
-  const rewardPerBlock  = "30000000000000000";
+  //rinkeby hat
+  const rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365";
+  const rewardPerBlock  = "16185644800000000";
   const startBlock =  await ethers.provider.getBlockNumber();
-  const halvingAfterBlock = "6000";
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
-  //const governance  = await deployer.getAddress()
+  const multiplierPeriod = "195200";
+  //const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  const governance  = await deployer.getAddress()
   //v3 router
   const uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-  const tokenLockFactory  = "0xF5e06c0093395AFb0ddEcf18a1041533ED11043c";
+  const tokenLockFactory  = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
   const hatVaults = await HATVaults.deploy(rewardsToken,
                                            rewardPerBlock ,
                                            startBlock ,
-                                           halvingAfterBlock,
+                                           multiplierPeriod,
                                            governance,
                                            uniSwapRouter,
                                            tokenLockFactory);
@@ -48,7 +48,7 @@ async function main() {
                                                      '"',rewardsToken,'"',
                                                      '"',rewardPerBlock,'"',
                                                      '"',startBlock,'"',
-                                                     '"',halvingAfterBlock,'"',
+                                                     '"',multiplierPeriod,'"',
                                                      '"', governance,'"',
                                                      '"',uniSwapRouter,'"',
                                                      '"',tokenLockFactory,'"');

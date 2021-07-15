@@ -16,15 +16,16 @@ async function main() {
     await deployer.getAddress()
   );
 
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
-  const timelockblocks =  12000;
-  //const governance  = await deployer.getAddress();
-  //const timelockblocks = 1;
+  //const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  //rinkeby hattoken deployment
+  const timelockDelay =  (3600*24*2); // 2 days
+  const governance  = await deployer.getAddress();
+  //const timelockDelay = 1;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const HATToken = await ethers.getContractFactory("HATToken");
-  const hatToken = await HATToken.deploy(governance, timelockblocks);
+  const hatToken = await HATToken.deploy(governance, timelockDelay);
   await hatToken.deployed();
 
   console.log("hatToken address:", hatToken.address);
