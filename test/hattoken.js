@@ -565,7 +565,7 @@ contract('HATToken', accounts => {
     const buildDataPermit = (chainId, verifyingContract, owner, spender, value, nonce, deadline) => ({
         primaryType: 'Permit',
         types: { EIP712Domain, Permit },
-        domain: { name: "HATToken", chainId, verifyingContract },
+        domain: { name: "hats.finance", chainId, verifyingContract },
         message: { owner, spender, value, nonce, deadline },
     });
 
@@ -741,7 +741,7 @@ contract('HATToken', accounts => {
     const buildDataDelegation = (chainId, verifyingContract, delegatee, nonce, expiry) => ({
         primaryType: 'Delegation',
         types: { EIP712Domain, Delegation },
-        domain: { name: "HATToken", chainId, verifyingContract },
+        domain: { name: "hats.finance", chainId, verifyingContract },
         message: { delegatee, nonce, expiry },
     });
 
