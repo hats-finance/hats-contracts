@@ -24,7 +24,7 @@ const setup = async function (
                               halvingAfterBlock = 10,
                               routerReturnType = 0,
                               allocPoint = 100,
-                              weth  =  utils.NULL_ADDRESS
+                              weth  = false
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK");
@@ -32,13 +32,17 @@ const setup = async function (
   router =  await UniSwapV3RouterMock.new(routerReturnType);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
+  var wethAddress = utils.NULL_ADDRESS;
+  if (weth) {
+     wethAddress = stakingToken.address;
+  }
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
                                   halvingAfterBlock,
                                   accounts[0],
                                   router.address,
-                                  weth,
+                                  wethAddress,
                                   tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
@@ -1232,6 +1236,7 @@ contract('HatVaults',  accounts =>  {
 
   it("approve+ swapBurnSend  weth pool", async () => {
     await setup(accounts, REWARD_PER_BLOCK, 0, [], [8000, 1000,0, 250,350, 400],10,0,100,stakingToken.address);
+    assert.equal(await hatVaults.WETH(),stakingToken.address);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
