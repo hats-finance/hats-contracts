@@ -1218,6 +1218,12 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[1].args._amountReceived.toString(), expectedHackerReward.toString());
     assert.equal(await vestingTokenLock.canDelegate(),true);
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
+    try {
+          await vestingTokenLock.cancelLock();
+          assert(false, 'cannot cancel lock');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
     try {
           await hatVaults.swapBurnSend(0, accounts[2],0,0,0);
