@@ -145,6 +145,7 @@ contract  HATVaults is Governable, HATMaster {
    *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
    *         setHatVestingParams,setVestingParams,setRewardsSplit
    * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
+   * @param _weth WETH contract address , used by swapTokenForHAT for multihop swap (lpToken->WETH->HAT)
    * @param _tokenLockFactory address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
  */
