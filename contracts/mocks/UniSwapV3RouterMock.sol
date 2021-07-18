@@ -17,12 +17,15 @@ contract UniSwapV3RouterMock {
     enum ReturnType {ONE_TO_ONE, MINIMUM, BELOW_MINIMUM}
 
     ReturnType public returnType;
+    address public immutable WETH9;
 
     constructor(
-        ReturnType _returnType
+        ReturnType _returnType,
+        address _weth9
     // solhint-disable-next-line func-visibility
     ) {
         returnType = _returnType;
+        WETH9 = _weth9;
     }
 
     function exactInput(
@@ -69,4 +72,5 @@ contract UniSwapV3RouterMock {
            // Ignore the first token address. From then on every fee and token offset indicates a pool.
         return ((path.length - ADDR_SIZE) / NEXT_OFFSET);
     }
+
 }

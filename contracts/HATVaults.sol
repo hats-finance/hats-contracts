@@ -66,7 +66,6 @@ contract  HATVaults is Governable, HATMaster {
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
-    address public immutable WETH;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -145,7 +144,6 @@ contract  HATVaults is Governable, HATMaster {
    *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
    *         setHatVestingParams,setVestingParams,setRewardsSplit
    * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
-   * @param _weth WETH contract address , used by swapTokenForHAT for multihop swap (lpToken->WETH->HAT)
    * @param _tokenLockFactory address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
  */
@@ -156,7 +154,6 @@ contract  HATVaults is Governable, HATMaster {
         uint256 _multiplierPeriod,
         address _hatGovernance,
         ISwapRouter _uniSwapRouter,
-        address _weth,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
@@ -173,7 +170,6 @@ contract  HATVaults is Governable, HATMaster {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        WETH = _weth;
     }
 
       /**
@@ -752,11 +748,12 @@ contract  HATVaults is Governable, HATMaster {
         }
         require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        address weth = uniSwapRouter.WETH9();
         bytes memory path;
-        if (address(_token) == WETH) {
+        if (address(_token) == weth) {
             path = abi.encodePacked(address(_token), _fees[0], address(HAT));
         } else {
-            path = abi.encodePacked(address(_token), _fees[0], WETH, _fees[1], address(HAT));
+            path = abi.encodePacked(address(_token), _fees[0], weth, _fees[1], address(HAT));
         }
         hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
             path: path,
