@@ -28,21 +28,20 @@ const setup = async function (
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking","STK");
-
-  router =  await UniSwapV3RouterMock.new(routerReturnType);
-  var tokenLock = await HATTokenLock.new();
-  tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
   var wethAddress = utils.NULL_ADDRESS;
   if (weth) {
      wethAddress = stakingToken.address;
   }
+  router =  await UniSwapV3RouterMock.new(routerReturnType,wethAddress);
+  var tokenLock = await HATTokenLock.new();
+  tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
+
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
                                   halvingAfterBlock,
                                   accounts[0],
                                   router.address,
-                                  wethAddress,
                                   tokenLockFactory.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
@@ -1236,7 +1235,7 @@ contract('HatVaults',  accounts =>  {
 
   it("approve+ swapBurnSend  weth pool", async () => {
     await setup(accounts, REWARD_PER_BLOCK, 0, [], [8000, 1000,0, 250,350, 400],10,0,100,stakingToken.address);
-    assert.equal(await hatVaults.WETH(),stakingToken.address);
+    assert.equal(await router.WETH9(),stakingToken.address);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("1"));
@@ -1915,7 +1914,7 @@ contract('HatVaults',  accounts =>  {
 
   it("add/set pool on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
-    let router1 =  await UniSwapV3RouterMock.new(0);
+    let router1 =  await UniSwapV3RouterMock.new(0,utils.NULL_ADDRESS);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var poolManager= await PoolsManagerMock.new();
@@ -1925,7 +1924,6 @@ contract('HatVaults',  accounts =>  {
                                     10,
                                     poolManager.address,
                                     router1.address,
-                                    utils.NULL_ADDRESS,
                                     tokenLockFactory1.address);
     let stakingToken2 = await ERC20Mock.new("Staking","STK");
     let stakingToken3 = await ERC20Mock.new("Staking","STK");
