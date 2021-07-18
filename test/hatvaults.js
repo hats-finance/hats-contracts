@@ -1213,7 +1213,7 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned.toString());
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
-    assert.equal(await vestingTokenLock.owner(),"0x000000000000000000000000000000000000dEaD")
+    assert.equal(await vestingTokenLock.owner(),"0x000000000000000000000000000000000000dEaD");
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
     var expectedHackerReward = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN(4)).div(new web3.utils.BN(100));
     assert.equal(tx.logs[1].args._amountReceived.toString(), expectedHackerReward.toString());
