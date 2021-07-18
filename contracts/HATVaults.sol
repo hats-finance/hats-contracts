@@ -245,7 +245,7 @@ contract  HATVaults is Governable, HATMaster {
         //hacker get its reward to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
-            governance(),
+            0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
             pendingApproval.beneficiary,
             claimRewards.hackerVestedReward,
             // solhint-disable-next-line not-rely-on-time
@@ -559,7 +559,7 @@ contract  HATVaults is Governable, HATMaster {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(HAT),
-                governance(),
+                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
                 _beneficiary,
                 hackerReward,
                 // solhint-disable-next-line not-rely-on-time

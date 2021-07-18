@@ -1218,11 +1218,18 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned.toString());
     assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal(await vestingTokenLock.owner(),"0x000000000000000000000000000000000000dEaD");
     assert.equal((await hatToken.balanceOf(vestingTokenLock.address)).toString(),tx.logs[1].args._amountReceived.toString());
     var expectedHackerReward = (new web3.utils.BN(web3.utils.toWei("0.8"))).mul(new web3.utils.BN(4)).div(new web3.utils.BN(100));
     assert.equal(tx.logs[1].args._amountReceived.toString(), expectedHackerReward.toString());
     assert.equal(await vestingTokenLock.canDelegate(),true);
     await vestingTokenLock.delegate(accounts[4],{from:accounts[2]});
+    try {
+          await vestingTokenLock.cancelLock();
+          assert(false, 'cannot cancel lock');
+        } catch (ex) {
+          assertVMException(ex);
+      }
     assert.equal(await hatToken.delegates(vestingTokenLock.address),accounts[4]);
     try {
           await hatVaults.swapBurnSend(0, accounts[2],0,[0,0]);
