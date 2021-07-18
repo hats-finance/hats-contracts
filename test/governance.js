@@ -25,7 +25,6 @@ const setup = async function (
                                   10,
                                   accounts[0],
                                   accounts[1], //as uniSwapRouter
-                                  accounts[1], //weth
                                   tokenLockFactory.address);
 };
 
