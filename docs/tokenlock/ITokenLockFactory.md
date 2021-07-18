@@ -1,6 +1,7 @@
 
 
 
+
 ## Functions
 ### setMasterCopy
 ```solidity

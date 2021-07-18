@@ -1,3 +1,4 @@
+
 Contract that manages an unlocking schedule of tokens.
 
 The contract lock manage a number of tokens deposited into the contract to ensure that
@@ -93,6 +94,7 @@ Returns the amount of tokens currently held by the contract
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Tokens`|  | held in the contract
+
 ### currentTime
 ```solidity
   function currentTime(
@@ -106,6 +108,7 @@ Returns the current block timestamp
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Current`|  | block timestamp
+
 ### duration
 ```solidity
   function duration(
@@ -119,6 +122,7 @@ Gets duration of contract from start to end in seconds
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of seconds from contract startTime to endTime
+
 ### sinceStartTime
 ```solidity
   function sinceStartTime(
@@ -133,6 +137,7 @@ Returns zero if called before conctract starTime
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Seconds`|  | elapsed from contract startTime
+
 ### amountPerPeriod
 ```solidity
   function amountPerPeriod(
@@ -146,6 +151,7 @@ Returns amount available to be released after each period according to schedule
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of tokens available after each period
+
 ### periodDuration
 ```solidity
   function periodDuration(
@@ -172,6 +178,7 @@ Gets the current period based on the schedule
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`A`|  | number that represents the current period
+
 ### passedPeriods
 ```solidity
   function passedPeriods(
@@ -185,6 +192,7 @@ Gets the number of periods that passed since the first period
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`A`|  | number of periods that passed since the schedule started
+
 ### availableAmount
 ```solidity
   function availableAmount(
@@ -199,6 +207,7 @@ Implements the step-by-step schedule based on periods for available tokens
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of tokens available according to the schedule
+
 ### vestedAmount
 ```solidity
   function vestedAmount(
@@ -227,6 +236,7 @@ Considers the schedule and takes into account already released tokens
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of tokens ready to be released
+
 ### totalOutstandingAmount
 ```solidity
   function totalOutstandingAmount(
@@ -241,6 +251,7 @@ Does not consider schedule but just global amounts tracked
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of outstanding tokens for the lifetime of the contract
+
 ### surplusAmount
 ```solidity
   function surplusAmount(
@@ -255,6 +266,7 @@ All funds over outstanding amount is considered surplus that can be withdrawn by
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Amount`|  | of tokens considered as surplus
+
 ### release
 ```solidity
   function release(
@@ -336,6 +348,3 @@ Vesting schedule is always calculated based on managed tokens
   event LockCanceled(
   )
 ```
-
-
-

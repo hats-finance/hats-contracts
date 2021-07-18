@@ -1,4 +1,5 @@
 
+
 Contract module which provides a basic access control mechanism, where
 there is an account (an governance) that can be granted exclusive access to
 specific functions.
@@ -64,5 +65,3 @@ An event thats emitted when a new governance address is set
   )
 ```
 An event thats emitted when a new governance address is pending
-
-

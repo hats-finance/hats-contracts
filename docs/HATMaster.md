@@ -1,6 +1,7 @@
 
 
 
+
 ## Functions
 ### constructor
 ```solidity
@@ -19,7 +20,7 @@
   ) external
 ```
 
-massUpdatePools - Update reward vairables for all pools
+massUpdatePools - Update reward variables for all pools
 Be careful of gas spending!
 
 #### Parameters:
@@ -60,16 +61,13 @@ getMultiplier - multiply blocks with relevant multiplier for specific range
 | Name | Type | Description                                                          |
 | :--- | :--- | :------------------------------------------------------------------- |
 |`_from` | uint256 | range's from block
-|`_to` | uint256 | range's to block
-will revert if from < START_BLOCK or _to < _from
+|`_to` | uint256 | range's to block .will revert if from < START_BLOCK or _to < _from
 
 ### getRewardForBlocksRange
 ```solidity
   function getRewardForBlocksRange(
-  ) public returns (uint256)
+  ) public returns (uint256 reward)
 ```
-
-
 
 
 ### calcPoolReward
@@ -82,7 +80,7 @@ will revert if from < START_BLOCK or _to < _from
 ```
 
 calcPoolReward -
-calculate rewards for a pool by iterate over the history of totalAllocPoints updates.
+calculate rewards for a pool by iterating over the history of totalAllocPoints updates.
 and sum up all rewards periods from pool.lastRewardBlock till current block number.
 
 #### Parameters:
@@ -90,7 +88,7 @@ and sum up all rewards periods from pool.lastRewardBlock till current block numb
 | :--- | :--- | :------------------------------------------------------------------- |
 |`_pid` | uint256 | pool id
 |`_from` | uint256 | block starting calculation
-|`_lastPoolUpdate` | uint256 | lastPoolUpdate (globalUpdates length)
+|`_lastPoolUpdate` | uint256 | lastPoolUpdate
 
 
 ### _deposit
@@ -185,6 +183,3 @@ and sum up all rewards periods from pool.lastRewardBlock till current block numb
   event MassUpdatePools(
   )
 ```
-
-
-

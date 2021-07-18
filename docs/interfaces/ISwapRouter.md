@@ -1,3 +1,4 @@
+
 Functions for swapping tokens via Uniswap V3
 
 
@@ -20,6 +21,7 @@ Swaps `amountIn` of one token for as much as possible of another token
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`amountOut`| struct ISwapRouter.ExactInputSingleParams | The amount of the received token
+
 ### exactInput
 ```solidity
   function exactInput(
@@ -38,6 +40,7 @@ Swaps `amountIn` of one token for as much as possible of another along the speci
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`amountOut`| struct ISwapRouter.ExactInputParams | The amount of the received token
+
 ### exactOutputSingle
 ```solidity
   function exactOutputSingle(
@@ -56,6 +59,7 @@ Swaps as little as possible of one token for `amountOut` of another token
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`amountIn`| struct ISwapRouter.ExactOutputSingleParams | The amount of the input token
+
 ### exactOutput
 ```solidity
   function exactOutput(
@@ -74,3 +78,9 @@ Swaps as little as possible of one token for `amountOut` of another along the sp
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`amountIn`| struct ISwapRouter.ExactOutputParams | The amount of the input token
+
+### WETH9
+```solidity
+  function WETH9(
+  ) external returns (address)
+```

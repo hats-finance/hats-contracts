@@ -1,6 +1,7 @@
 
 
 
+
 ## Functions
 ### currentBalance
 ```solidity

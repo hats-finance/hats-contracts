@@ -1,6 +1,7 @@
 
 
 
+
 ## Functions
 ### constructor
 ```solidity
@@ -85,6 +86,7 @@ Get the number of tokens `spender` is approved to spend on behalf of `account`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`The`| address | number of tokens approved
+
 ### approve
 ```solidity
   function approve(
@@ -107,6 +109,7 @@ This will overwrite the approval amount for `spender`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Whether`| address | or not the approval succeeded
+
 ### increaseAllowance
 ```solidity
   function increaseAllowance(
@@ -189,6 +192,7 @@ Get the number of tokens held by the `account`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`The`| address | number of tokens held
+
 ### transfer
 ```solidity
   function transfer(
@@ -209,6 +213,7 @@ Transfer `amount` tokens from `msg.sender` to `dst`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Whether`| address | or not the transfer succeeded
+
 ### transferFrom
 ```solidity
   function transferFrom(
@@ -231,6 +236,7 @@ Transfer `amount` tokens from `src` to `dst`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`Whether`| address | or not the transfer succeeded
+
 ### delegate
 ```solidity
   function delegate(
@@ -287,6 +293,7 @@ Gets the current votes balance for `account`
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`The`| address | number of current votes for `account`
+
 ### getPriorVotes
 ```solidity
   function getPriorVotes(
@@ -308,6 +315,7 @@ Block number must be a finalized block or else this function will revert to prev
 | Name                           | Type          | Description                                                                  |
 | :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
 |`The`| address | number of votes the account had as of the given block
+
 ### _mint
 ```solidity
   function _mint(
@@ -468,5 +476,3 @@ An event thats emitted when an account changes its delegate
   )
 ```
 An event thats emitted when a delegate account's vote balance changes
-
-

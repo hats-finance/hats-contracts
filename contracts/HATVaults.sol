@@ -449,13 +449,12 @@ contract  HATVaults is Governable, HATMaster {
    * @dev addPool - only Governance
    * @param _allocPoint the pool allocation point
    * @param _lpToken pool token
-   * @param _committee pools committee addresses array
+   * @param _committee pool committee address
    * @param _rewardsLevels pool reward levels(sevirities)
      each level is a number between 0 and 10000.
    * @param _rewardsSplit pool reward split.
      each entry is a number between 0 and 10000.
      total splits should be equal to 10000
-   * @param _committee pools committee addresses array
    * @param _descriptionHash the hash of the pool description.
    * @param _rewardVestingParams vesting params
    *        _rewardVestingParams[0] - vesting duration
