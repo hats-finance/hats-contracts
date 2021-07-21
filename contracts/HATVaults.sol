@@ -614,7 +614,7 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
-        _withdraw(_pid, _shares);
+        _withdraw(_pid, _shares * 1e12);
     }
 
     /**
@@ -672,7 +672,7 @@ contract  HATVaults is Governable, HATMaster {
 
     function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
-        return  user.amount;
+        return  user.amount.div(1e12);
     }
 
     function poolLength() external view returns (uint256) {

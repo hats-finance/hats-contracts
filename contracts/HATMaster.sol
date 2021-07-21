@@ -142,7 +142,7 @@ contract HATMaster is ReentrancyGuard {
         if (reward > 0) {
             HAT.mint(address(this), reward);
         }
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e24).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
@@ -213,7 +213,7 @@ contract HATMaster is ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
@@ -222,14 +222,14 @@ contract HATMaster is ReentrancyGuard {
             uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             pool.balance = pool.balance.add(_amount);
-            uint256 factoredAmount = _amount;
+            uint256 factoredAmount = _amount.mul(1e12);
             if (pool.totalUsersAmount > 0) {
-                factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
+                factoredAmount = pool.totalUsersAmount.mul(_amount).mul(1e12).div(lpSupply);
             }
             user.amount = user.amount.add(factoredAmount);
             pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
         }
-        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -259,7 +259,7 @@ contract HATMaster is ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount > 0, "user.amount = 0");
-        uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount);
+        uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount).div(1e12);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
