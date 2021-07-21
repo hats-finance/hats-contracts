@@ -2034,6 +2034,12 @@ contract('HatVaults',  accounts =>  {
 
      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("4"));
      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+     try {
+             await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
+             assert(false, 'no depositors  yet');
+           } catch (ex) {
+             assertVMException(ex);
+     }
      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
      await hatVaults.deposit(0,web3.utils.toWei("2"),{from:staker2});
      await utils.increaseTime(7*24*3600);
@@ -2045,7 +2051,11 @@ contract('HatVaults',  accounts =>  {
      await hatVaults.withdrawRequest(0,{from:staker2});
 
      await utils.increaseTime(7*24*3600);
-     await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
+     var tx = await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
+     assert.equal(tx.logs[0].event,"RewardDepositors");
+     assert.equal(tx.logs[0].args._pid,0);
+     assert.equal(tx.logs[0].args._amount,web3.utils.toWei("3"));
+     assert.equal((await hatVaults.poolInfo(0)).balance,web3.utils.toWei("6"));
      await stakingToken.mint(hatVaults.address,web3.utils.toWei("100"));
      assert.equal((await stakingToken.balanceOf(staker)).toString(),0);
      await hatVaults.withdraw(0,web3.utils.toWei("1"),{from:staker});

@@ -132,6 +132,8 @@ contract  HATVaults is Governable, HATMaster {
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
 
+    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+
     /**
    * @dev constructor -
    * @param _rewardsToken the reward token address (HAT)
@@ -279,14 +281,16 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-     * @dev rewardDepositors - add pool token to rewards depositors
-     * The rewards will be give to depositors pro rata upon withdraw
+     * @dev rewardDepositors - add funds to pool to reward depositors.
+     * The funds will be given to depositors pro rata upon withdraw
      * @param _pid pool id
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
+        require(poolInfo[_pid].totalUsersAmount > 0, "no depositors to reward");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
+        emit RewardDepositors(_pid, _amount);
     }
 
     /**
