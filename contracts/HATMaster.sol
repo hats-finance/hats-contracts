@@ -142,7 +142,7 @@ contract HATMaster is ReentrancyGuard {
         if (reward > 0) {
             HAT.mint(address(this), reward);
         }
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e24).div(totalUsersAmount));
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount.div(1e12)));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
@@ -213,7 +213,7 @@ contract HATMaster is ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.amount.div(1e12).mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
@@ -229,7 +229,7 @@ contract HATMaster is ReentrancyGuard {
             user.amount = user.amount.add(factoredAmount);
             pool.totalUsersAmount = pool.totalUsersAmount.add(factoredAmount);
         }
-        user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12).div(1e12);
+        user.rewardDebt = user.amount.div(1e12).mul(pool.rewardPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -239,7 +239,7 @@ contract HATMaster is ReentrancyGuard {
         require(user.amount >= _amount, "withdraw: not enough user balance");
 
         updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+        uint256 pending = user.amount.div(1e12).mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
             safeTransferReward(msg.sender, pending, _pid);
         }
