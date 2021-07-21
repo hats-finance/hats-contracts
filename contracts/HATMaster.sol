@@ -259,7 +259,7 @@ contract HATMaster is ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount > 0, "user.amount = 0");
-        uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount);
+        uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount).div(1e12);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
