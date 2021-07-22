@@ -400,6 +400,26 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.updatePool(0);
   });
 
+  it("deposit less than 1e6", async () => {
+      await setup(accounts);
+      var staker = accounts[1];
+
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
+
+      try {
+          await hatVaults.deposit(0,"999999",{from:staker});
+          assert(false, 'cannot deposit to paused pool');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await hatVaults.deposit(0,"1000000",{from:staker});
+      assert.equal(await stakingToken.balanceOf(hatVaults.address), "1000000");
+  });
+
   it("withdrawn", async () => {
       await setup(accounts);
       var staker = accounts[1];
@@ -417,6 +437,12 @@ contract('HatVaults',  accounts =>  {
         assertVMException(ex);
       }
       await hatVaults.setPool(0,100,true,false,"_descriptionHash");
+      try {
+          await hatVaults.deposit(0,"999999",{from:staker});
+          assert(false, 'cannot deposit less than 1e6');
+      } catch (ex) {
+          assertVMException(ex);
+      }
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
       await advanceToSaftyPeriod();
