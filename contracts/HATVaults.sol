@@ -287,7 +287,8 @@ contract  HATVaults is Governable, HATMaster {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require(poolInfo[_pid].totalUsersAmount > 0, "no depositors to reward");
+        require((poolInfo[_pid].balance + _amount)/1e6 < poolInfo[_pid].totalUsersAmount,
+        "amount to reward is too big");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
         emit RewardDepositors(_pid, _amount);
