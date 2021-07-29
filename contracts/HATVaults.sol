@@ -66,6 +66,7 @@ contract  HATVaults is Governable, HATMaster {
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
+    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -287,7 +288,8 @@ contract  HATVaults is Governable, HATMaster {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require(poolInfo[_pid].totalUsersAmount > 0, "no depositors to reward");
+        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalUsersAmount,
+        "amount to reward is too big");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
         emit RewardDepositors(_pid, _amount);
@@ -601,6 +603,7 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function deposit(uint256 _pid, uint256 _amount) external {
         require(!poolDepositPause[_pid], "deposit paused");
+        require(_amount >= MINIMUM_DEPOSIT, "amount less than 1e6");
         //clear withdraw request
         withdrawRequests[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);

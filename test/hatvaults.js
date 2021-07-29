@@ -1744,7 +1744,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1517872);
+    assert.equal(tx.receipt.gasUsed, 1517939);
   }).timeout(40000);
 
 
@@ -1943,7 +1943,7 @@ contract('HatVaults',  accounts =>  {
 //   assert.equal(localEvents[0].returnValues.amount*2,localEvents[1].returnValues.amount);
 //   assert.equal(await hatToken.balanceOf(poolManagerMock.address),localEvents[0].returnValues.amount*3);
 // });
-//
+
 
   it("add/set pool on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
@@ -2051,19 +2051,23 @@ contract('HatVaults',  accounts =>  {
      await setup(accounts);
      var staker = accounts[1];
      var staker2 = accounts[5];
+     var rewarder = accounts[6];
 
+     await stakingToken.approve(hatVaults.address,web3.utils.toWei("3000000"),{from:rewarder});
      await stakingToken.approve(hatVaults.address,web3.utils.toWei("4"),{from:staker});
      await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker2});
 
-     await stakingToken.mint(staker,web3.utils.toWei("4"));
+     await stakingToken.mint(rewarder,web3.utils.toWei("3000000"));
+     await stakingToken.mint(staker,web3.utils.toWei("1"));
      await stakingToken.mint(staker2,web3.utils.toWei("2"));
 
-     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("4"));
+     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
      assert.equal(await hatToken.balanceOf(hatVaults.address), 0);
      try {
-             await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
+             await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:rewarder});
              assert(false, 'no depositors  yet');
            } catch (ex) {
+             assert(ex.message.includes("amount to reward is too big"));
              assertVMException(ex);
      }
      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
@@ -2077,7 +2081,16 @@ contract('HatVaults',  accounts =>  {
      await hatVaults.withdrawRequest(0,{from:staker2});
 
      await utils.increaseTime(7*24*3600);
-     var tx = await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:staker});
+
+     try {
+            await hatVaults.rewardDepositors(0,web3.utils.toWei("3000000"),{from:rewarder});
+            assert(false, 'amount to reward is too big');
+          } catch (ex) {
+            assert(ex.message.includes("amount to reward is too big"));
+            assertVMException(ex);
+     }
+
+     var tx = await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:rewarder});
      assert.equal(tx.logs[0].event,"RewardDepositors");
      assert.equal(tx.logs[0].args._pid,0);
      assert.equal(tx.logs[0].args._amount,web3.utils.toWei("3"));
