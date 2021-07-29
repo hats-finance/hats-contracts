@@ -96,6 +96,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _multiplierPeriod
+    // solhint-disable-next-line func-visibility
     ) {
         HAT = _hat;
         REWARD_PER_BLOCK = _rewardPerBlock;
@@ -173,8 +174,10 @@ contract HATMaster is ReentrancyGuard {
     function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
     public
     view
-    returns (uint256) {
-        return getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+    returns (uint256 reward) {
+        if (_totalAllocPoint > 0) {
+            reward = getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+        }
     }
 
     /**

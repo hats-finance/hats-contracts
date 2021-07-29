@@ -66,6 +66,7 @@ contract  HATVaults is Governable, HATMaster {
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
+    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -91,7 +92,6 @@ contract  HATVaults is Governable, HATMaster {
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
                 address indexed _lpToken,
-                string _name,
                 address _committee,
                 string _descriptionHash,
                 uint256[] _rewardsLevels,
@@ -132,6 +132,8 @@ contract  HATVaults is Governable, HATMaster {
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+
+    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
 
     /**
    * @dev constructor -
@@ -246,7 +248,7 @@ contract  HATVaults is Governable, HATMaster {
         //hacker get its reward to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
-            governance(),
+            0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
             pendingApproval.beneficiary,
             claimRewards.hackerVestedReward,
             // solhint-disable-next-line not-rely-on-time
@@ -280,14 +282,17 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-     * @dev rewardDepositors - add pool token to rewards depositors
-     * The rewards will be give to depositors pro rata upon withdraw
+     * @dev rewardDepositors - add funds to pool to reward depositors.
+     * The funds will be given to depositors pro rata upon withdraw
      * @param _pid pool id
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
+        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalUsersAmount,
+        "amount to reward is too big");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
+        emit RewardDepositors(_pid, _amount);
     }
 
     /**
@@ -450,13 +455,12 @@ contract  HATVaults is Governable, HATMaster {
    * @dev addPool - only Governance
    * @param _allocPoint the pool allocation point
    * @param _lpToken pool token
-   * @param _committee pools committee addresses array
+   * @param _committee pool committee address
    * @param _rewardsLevels pool reward levels(sevirities)
      each level is a number between 0 and 10000.
    * @param _rewardsSplit pool reward split.
      each entry is a number between 0 and 10000.
-     total splits should be less than 10000
-   * @param _committee pools committee addresses array
+     total splits should be equal to 10000
    * @param _descriptionHash the hash of the pool description.
    * @param _rewardVestingParams vesting params
    *        _rewardVestingParams[0] - vesting duration
@@ -492,12 +496,9 @@ contract  HATVaults is Governable, HATMaster {
             vestingPeriods: _rewardVestingParams[1]
         });
 
-        string memory name = ERC20(_lpToken).name();
-
         emit AddPool(poolId,
                     _allocPoint,
                     address(_lpToken),
-                    name,
                     _committee,
                     _descriptionHash,
                     rewardsLevels,
@@ -528,21 +529,19 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * swapBurnSend swap lptoken to HAT.
+    * @dev swapBurnSend swap lptoken to HAT.
     * send to beneficiary and governance its hats rewards .
     * burn the rest of HAT.
     * only governance are authorized to call this function.
     * @param _pid the pool id
     * @param _beneficiary beneficiary
-    * @param _minOutputAmount minimum output of HATs at swap
-    * @param _fee the fee of the token pool for the pair
-    * @param _sqrtPriceLimitX96 the price limit of the pool that cannot be exceeded by the swap
+    * @param _amountOutMinimum minimum output of HATs at swap
+    * @param _fees the fees for the multi path swap
     **/
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
-                        uint256 _minOutputAmount,
-                        uint24 _fee,
-                        uint160 _sqrtPriceLimitX96)
+                        uint256 _amountOutMinimum,
+                        uint24[2] memory _fees)
     external
     onlyGovernance {
         IERC20 token = poolInfo[_pid].lpToken;
@@ -553,7 +552,7 @@ contract  HATVaults is Governable, HATMaster {
         swapAndBurns[address(token)] = 0;
         governanceHatRewards[address(token)] = 0;
         hackersHatRewards[_beneficiary][address(token)] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, token, _fee, _minOutputAmount, _sqrtPriceLimitX96);
+        uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
         uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -565,7 +564,7 @@ contract  HATVaults is Governable, HATMaster {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(HAT),
-                governance(),
+                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
                 _beneficiary,
                 hackerReward,
                 // solhint-disable-next-line not-rely-on-time
@@ -585,7 +584,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * withdrawRequest submit a withdraw request
+    * @dev withdrawRequest submit a withdraw request
     * @param _pid the pool id
     **/
     function withdrawRequest(uint256 _pid) external {
@@ -598,19 +597,20 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * deposit deposit to pool
+    * @dev deposit deposit to pool
     * @param _pid the pool id
     * @param _amount amount of pool's token to deposit
     **/
     function deposit(uint256 _pid, uint256 _amount) external {
         require(!poolDepositPause[_pid], "deposit paused");
+        require(_amount >= MINIMUM_DEPOSIT, "amount less than 1e6");
         //clear withdraw request
         withdrawRequests[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
     }
 
     /**
-    * withdraw  - withdraw user's pool share.
+    * @dev withdraw  - withdraw user's pool share.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
     * @param _shares amount of shares user wants to withdraw
@@ -621,7 +621,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * emergencyWithdraw withdraw all user's pool share without claim for reward.
+    * @dev emergencyWithdraw withdraw all user's pool share without claim for reward.
     * user need first to submit a withdraw request.
     * @param _pid the pool id
     **/
@@ -639,16 +639,21 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     // GET INFO for UI
-    function getRewardPerBlock(uint256 pid1) external view returns (uint256) {
-        uint256 multiplier = getMultiplier(block.number-1, block.number);
-        if (pid1 == 0) {
-            return (multiplier.mul(REWARD_PER_BLOCK)).div(100);
+    /**
+    * @dev getRewardPerBlock return the current pool reward per block
+    * @param _pid1 the pool id.
+    *        if _pid1 = 0 , it return the current block reward for whole pools.
+    *        otherwise it return the current block reward for _pid1-1.
+    * @return rewardPerBlock
+    **/
+    function getRewardPerBlock(uint256 _pid1) external view returns (uint256) {
+        if (_pid1 == 0) {
+            return getRewardForBlocksRange(block.number-1, block.number, 1, 1);
         } else {
-            return (multiplier
-                .mul(REWARD_PER_BLOCK)
-                .mul(poolInfo[pid1 - 1].allocPoint)
-                .div(globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint))
-                .div(100);
+            return getRewardForBlocksRange(block.number-1,
+                                        block.number,
+                                        poolInfo[_pid1 - 1].allocPoint,
+                                        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint);
         }
     }
 
@@ -739,9 +744,8 @@ contract  HATVaults is Governable, HATMaster {
 
     function swapTokenForHAT(uint256 _amount,
                             IERC20 _token,
-                            uint24 _fee,
-                            uint256 _minOutputAmount,
-                            uint160 _sqrtPriceLimitX96)
+                            uint24[2] memory _fees,
+                            uint256 _amountOutMinimum)
     internal
     returns (uint256 hatsReceived)
     {
@@ -750,18 +754,22 @@ contract  HATVaults is Governable, HATMaster {
         }
         require(_token.approve(address(uniSwapRouter), _amount), "token approve failed");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        hatsReceived = uniSwapRouter.exactInputSingle(ISwapRouter.ExactInputSingleParams(
-        address(_token),
-        address(HAT),
-        _fee,
-        address(this),
-        // solhint-disable-next-line not-rely-on-time
-        block.timestamp,
-        _amount,
-        _minOutputAmount,
-        _sqrtPriceLimitX96
-        ));
-        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _minOutputAmount, "wrong amount received");
+        address weth = uniSwapRouter.WETH9();
+        bytes memory path;
+        if (address(_token) == weth) {
+            path = abi.encodePacked(address(_token), _fees[0], address(HAT));
+        } else {
+            path = abi.encodePacked(address(_token), _fees[0], weth, _fees[1], address(HAT));
+        }
+        hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
+            path: path,
+            recipient: address(this),
+            // solhint-disable-next-line not-rely-on-time
+            deadline: block.timestamp,
+            amountIn: _amount,
+            amountOutMinimum: _amountOutMinimum
+        }));
+        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "wrong amount received");
     }
 
     /**

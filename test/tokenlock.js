@@ -170,6 +170,12 @@ contract('TokenLock',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
         }
+        try {
+            await tokenLock.changeBeneficiary(utils.NULL_ADDRESS,{from:accounts[1]});
+            assert(false, 'cannot be zero address');
+        } catch (ex) {
+          assertVMException(ex);
+        }
         await tokenLock.changeBeneficiary(accounts[3],{from:accounts[1]});
         assert.equal(await tokenLock.beneficiary(),accounts[3]);
     });
