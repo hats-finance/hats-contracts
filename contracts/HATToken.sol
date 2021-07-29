@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
-import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
+
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
@@ -143,7 +143,7 @@ contract HATToken is IERC20 {
 
     function mint(address _account, uint _amount) external {
         require(minters[msg.sender] >= _amount, "HATToken: amount greater than limitation");
-        minters[msg.sender] = SafeMath.sub(minters[msg.sender], _amount);
+        minters[msg.sender] = minters[msg.sender] - _amount;
         _mint(_account, _amount);
     }
 
@@ -387,11 +387,11 @@ contract HATToken is IERC20 {
      */
     function _mint(address dst, uint rawAmount) internal {
         require(dst != address(0), "HAT::mint: cannot transfer to the zero address");
-        require(SafeMath.add(totalSupply, rawAmount) <= CAP, "ERC20Capped: CAP exceeded");
+        require(totalSupply + rawAmount <= CAP, "ERC20Capped: CAP exceeded");
 
         // mint the amount
         uint96 amount = safe96(rawAmount, "HAT::mint: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.add(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
+        totalSupply = safe96(totalSupply + amount, "HAT::mint: totalSupply exceeds 96 bits");
 
         // transfer the amount to the recipient
         balances[dst] = add96(balances[dst], amount, "HAT::mint: transfer amount overflows");
@@ -411,7 +411,7 @@ contract HATToken is IERC20 {
 
         // burn the amount
         uint96 amount = safe96(rawAmount, "HAT::burn: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.sub(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
+        totalSupply = safe96(totalSupply - amount, "HAT::mint: totalSupply exceeds 96 bits");
 
         // reduce the amount from src address
         balances[src] = sub96(balances[src], amount, "HAT::burn: burn amount exceeds balance");
