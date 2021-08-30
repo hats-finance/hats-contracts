@@ -25,7 +25,7 @@ The Hats protocol is designed to give white hats hackers the opportunity to gain
 
 ## Security
 
-The latest audit was done on June 21.
+The latest audit was done on August 21.
 
 Please report any security issues you find to contact@hats.finance
 
