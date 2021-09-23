@@ -5,13 +5,12 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
- // This contract handles swapping to and from xHAT
+ // Wrap an ERC20 token with other ERC20 token.
 contract WrapToken is ERC20 {
 
     IERC20 public immutable token;
     uint8 public tokenDecimals;
 
-     // Define the xHAT token contract
     constructor(address _token,
                 string memory _name,
                 string memory _symbol)
@@ -22,7 +21,6 @@ contract WrapToken is ERC20 {
 
      // Locks token and mints wrapToken for the msg.sender
     function wrapToken(uint256 _amount) external {
-         // Lock token in the contract
         token.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
     }
