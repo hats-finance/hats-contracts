@@ -9,7 +9,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 contract WrapToken is ERC20 {
 
     IERC20 public immutable token;
-    uint8 public tokenDecimals;
+    uint8 public immutable tokenDecimals;
 
     constructor(address _token,
                 string memory _name,
