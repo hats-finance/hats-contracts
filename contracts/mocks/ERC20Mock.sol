@@ -10,14 +10,21 @@ contract ERC20Mock is ERC20 {
     mapping (address => address) public delegates;
 
     bool public approveDisableFlag;
+    uint8 public tokenDecimals;
 
     constructor(
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint8 _decimals
     )
     // solhint-disable-next-line func-visibility
     ERC20(_name, _symbol) {
         approveDisableFlag = false;
+        tokenDecimals = _decimals;
+    }
+
+    function decimals() public view override returns (uint8) {
+        return tokenDecimals;
     }
 
     function approveDisable(bool _approveDisable) external {

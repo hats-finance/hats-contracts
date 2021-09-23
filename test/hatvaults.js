@@ -27,7 +27,7 @@ const setup = async function (
                               weth  = false
                             ) {
   hatToken = await HATTokenMock.new(accounts[0],utils.TIME_LOCK_DELAY);
-  stakingToken = await ERC20Mock.new("Staking","STK");
+  stakingToken = await ERC20Mock.new("Staking","STK",18);
   var wethAddress = utils.NULL_ADDRESS;
   if (weth) {
      wethAddress = stakingToken.address;
@@ -181,7 +181,7 @@ contract('HatVaults',  accounts =>  {
         //set other pool with different committee
         let rewardsLevels=[];
         let rewardsSplit=[0,0,0,0,0,0];
-        var stakingToken2 = await ERC20Mock.new("Staking","STK");
+        var stakingToken2 = await ERC20Mock.new("Staking","STK",18);
         await hatVaults.addPool(100,stakingToken2.address,accounts[1],rewardsLevels,rewardsSplit,"_descriptionHash",[86400,10]);
 
         await hatVaults.setCommittee(1,accounts[1]);
@@ -1734,7 +1734,7 @@ contract('HatVaults',  accounts =>  {
 
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
     for (var i=1;i<18;i++) {
-      let stakingToken2 = await ERC20Mock.new("Staking","STK");
+      let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
       await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[8000, 1000,100, 100,100, 700],"_descriptionHash",[86400,10]);
       await hatVaults.setCommittee(i,accounts[0],{from:accounts[1]});
       await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
@@ -1756,7 +1756,7 @@ contract('HatVaults',  accounts =>  {
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
     await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
     await hatVaults.addPool(100,stakingToken2.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
     await hatVaults.setCommittee(1,accounts[0],{from:accounts[1]});
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
@@ -1780,7 +1780,7 @@ contract('HatVaults',  accounts =>  {
   it("addPool with zero alloc point", async () => {
     await setup(accounts,REWARD_PER_BLOCK,(await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
     await hatVaults.addPool(0,stakingToken2.address,accounts[0],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
     await hatVaults.setPool(1,200,true,false,"123");
     await hatVaults.setPool(1,0,true,false,"123");
@@ -1802,7 +1802,7 @@ contract('HatVaults',  accounts =>  {
     await utils.setMinter(hatToken,hatVaults.address,0);
     //await  utils.mineBlock()
     var staker = accounts[1];
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
     await hatVaults.addPool(200,stakingToken2.address,accounts[0],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken2.mint(staker,web3.utils.toWei("2"));
@@ -1826,7 +1826,7 @@ contract('HatVaults',  accounts =>  {
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
     try {
           await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
           assert(false, 'add pool with the same token is not allowed');
@@ -1958,8 +1958,8 @@ contract('HatVaults',  accounts =>  {
                                     poolManager.address,
                                     router1.address,
                                     tokenLockFactory1.address);
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
-    let stakingToken3 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
+    let stakingToken3 = await ERC20Mock.new("Staking","STK",18);
     var globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
     assert.equal(globalPoolUpdatesLength,0);
     await poolManager.addPools(hatVaults1.address,100,[stakingToken2.address,stakingToken3.address],accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
@@ -2001,7 +2001,7 @@ contract('HatVaults',  accounts =>  {
     var staker = accounts[1];
     await stakingToken.approve(hatVaults.address,web3.utils.toWei("2"),{from:staker});
     await stakingToken.mint(staker,web3.utils.toWei("2"));
-    let stakingToken2 = await ERC20Mock.new("Staking","STK");
+    let stakingToken2 = await ERC20Mock.new("Staking","STK",18);
     await stakingToken2.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
     await stakingToken2.mint(staker,web3.utils.toWei("1"));
     var tx  = await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
