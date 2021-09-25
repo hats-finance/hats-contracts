@@ -16,7 +16,7 @@ contract('WrapToken', accounts => {
 
     it("constructor", async () => {
         await setup(accounts);
-        assert.equal(await wrapedToken.token(), hatToken.address);
+        assert.equal(await wrapedToken.tokenToWrap(), hatToken.address);
         assert.equal(await wrapedToken.name(), "xHATToken");
         assert.equal(await wrapedToken.symbol(), "xhat");
         assert.equal(await wrapedToken.decimals(), 18);
