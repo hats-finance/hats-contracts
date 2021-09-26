@@ -220,7 +220,7 @@ contract HATMaster is ReentrancyGuard {
         }
         if (_amount > 0) {
             uint256 lpSupply = pool.balance;
-            pool.lpToken.transferFrom(address(msg.sender), address(this), _amount);
+            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             pool.balance = pool.balance.add(_amount);
             uint256 factoredAmount = _amount;
             if (pool.totalUsersAmount > 0) {
