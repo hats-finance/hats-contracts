@@ -38,15 +38,18 @@
     "ethereumjs-abi": "^0.6.5",
     "ethers": "^5.0.21",
     "hardhat": "2.4.3",
+    "highlight.js": ">=10.4.1",
     "mocha": "^7.1.1",
-    "pm2": "^4.2.3",
+    "pac-resolver": ">=5.0.0",
+    "pm2": "^5.1.2",
     "promisify": "^0.0.3",
     "pug": ">=3.0.1",
     "rimraf": "^2.6.2",
     "solc-0.8": "npm:solc@^0.8.6",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.16",
-    "uint32": "^0.2.1"
+    "uint32": "^0.2.1",
+    "underscore": ">=1.12.1"
   },
   "repository": {
     "type": "git",
