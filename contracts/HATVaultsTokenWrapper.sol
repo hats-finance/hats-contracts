@@ -28,24 +28,26 @@ contract HATVaultsTokenWrapper is ERC20 {
   }
 
   function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
-    // wrapped tokens 
+    // if the recipient is the poolContract, we create new wrapped tokens, and add the sender to the list of stakers
+    // if the recipient is a staker, we unwrap the tokens and send them to the staker
+    // in all other cases, we just use the ERC20 transferFrom
     if (_recipient == poolContract) {
       wrappedToken.safeTransferFrom(_sender, address(this), _amount);
       _mint(_recipient, _amount);
       stakers[_sender] = true;
     } else {
-      if (stakers[_recipient]) {
-        _burn(msg.sender, _amount);
-        wrappedToken.safeTransfer(_recipient, _amount);
-      } else {
+      // if (stakers[_recipient]) {
+      //   _burn(_sender, _amount);
+      //   wrappedToken.safeTransfer(_recipient, _amount);
+      // } else {
         super.transferFrom(_sender, _recipient, _amount);
-      }
+      // }
     }
     return true;
   }
-  // send funds from msg.sender to recipient
-  // if msg.sender is a a wrapped account, we transfer the tokens to the lll
   function transfer(address _recipient, uint256 _amount) public override returns (bool) {
+    // if recipient is a staker, we unwrap the tokens 
+    // in other case, we just call the usual transfer
     if (stakers[_recipient]) {
       _burn(msg.sender, _amount);
       wrappedToken.safeTransfer(_recipient, _amount);
@@ -54,7 +56,6 @@ contract HATVaultsTokenWrapper is ERC20 {
     }
     return true;
   }
-
   function unwrapTokens() public {
       uint256 amount = balanceOf(msg.sender);
       _burn(msg.sender, amount);
