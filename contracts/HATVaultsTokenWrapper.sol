@@ -6,41 +6,59 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
- // Wrap an ERC20 token with other ERC20 token.
-contract HATVaultsTokenWrapper {
-    using SafeERC20 for IERC20;
+/** - user calls approve the vault on tokenwrapper
+- user calls "deposit" on vault -> tokens go from token --> wrapper
+- vault lp = wrapped token
+-------------
+- vault creates lock, calls lpToken.transfer(---)  (wrapper --> wrapper)
+- lock expires --> lock calls lpToken.transfer(lock --> user, hacker, etc)
 
-    IERC20 public immutable wrappedToken;
-    address public immutable poolContract;
-     constructor(address _tokenToWrap, address _poolContract) {
-        wrappedToken = IERC20(_tokenToWrap);
-        poolContract = _poolContract;
+***/
 
-     }
+contract HATVaultsTokenWrapper is ERC20 {
+  using SafeERC20 for IERC20;
 
-  function transferFrom(address _sender, address _recipient, uint256 _amount) public returns (bool) {
-    require(msg.sender == poolContract, "only poolContract can call transferFrom");
-    require(_recipient != address(this));
+  IERC20 public immutable wrappedToken;
+  address public immutable poolContract;
 
-    address recipient = _recipient;
+  mapping (address => bool) public stakers;
+  constructor(address _tokenToWrap, address _poolContract, string memory name_, string memory symbol_) ERC20(name_, symbol_) {
+    wrappedToken = IERC20(_tokenToWrap);
+    poolContract = _poolContract;
+  }
+
+  function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
+    // wrapped tokens 
     if (_recipient == poolContract) {
-      recipient = address(this);
+      wrappedToken.safeTransferFrom(_sender, address(this), _amount);
+      _mint(_recipient, _amount);
+      stakers[_sender] = true;
+    } else {
+      if (stakers[_recipient]) {
+        _burn(msg.sender, _amount);
+        wrappedToken.safeTransfer(_recipient, _amount);
+      } else {
+        super.transferFrom(_sender, _recipient, _amount);
+      }
     }
-    wrappedToken.safeTransferFrom(_sender, recipient, _amount);
     return true;
   }
-  function transfer(address recipient, uint256 amount) public returns (bool) {
-    require(msg.sender == poolContract);
-    wrappedToken.safeTransfer(recipient, amount);
+  // send funds from msg.sender to recipient
+  // if msg.sender is a a wrapped account, we transfer the tokens to the lll
+  function transfer(address _recipient, uint256 _amount) public override returns (bool) {
+    if (stakers[_recipient]) {
+      _burn(msg.sender, _amount);
+      wrappedToken.safeTransfer(_recipient, _amount);
+    } else {
+      _transfer(msg.sender, _recipient, _amount);
+    }
     return true;
   }
 
-  function approve(address spender, uint256 amount) public returns (bool)  {
-    require(msg.sender == poolContract);
-    return wrappedToken.approve(spender, amount);
+  function unwrapTokens() public {
+      uint256 amount = balanceOf(msg.sender);
+      _burn(msg.sender, amount);
+      wrappedToken.safeTransfer(msg.sender, amount);
   }
-   function balanceOf(address account) public view returns (uint256) {
-      return wrappedToken.balanceOf(account);
-    }
-
+  
 }
