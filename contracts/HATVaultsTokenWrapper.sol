@@ -6,13 +6,15 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
-/** - user calls approve the vault on tokenwrapper
-- user calls "deposit" on vault -> tokens go from token --> wrapper
-- vault lp = wrapped token
--------------
-- vault creates lock, calls lpToken.transfer(---)  (wrapper --> wrapper)
-- lock expires --> lock calls lpToken.transfer(lock --> user, hacker, etc)
+/** 
+ERC20 Token Wrapper is a custom wrapper contract that is meant to work toegether with the HatVaults pool contract.
 
+It has two types of accounts:
+
+- "normal" accounts that can send and receive wrapper tokens
+- "transparent" accounts: if tokens are transfered to these accounts, they are automatically unwrapped
+
+The only way to create a transparent account, and the only way to wrap tokens, by transfering tokens to the poolContract, by calling a method on the poolContrat (e.g. when calling the deposit function on the pool contract)
 ***/
 
 contract HATVaultsTokenWrapper is ERC20 {
@@ -21,45 +23,37 @@ contract HATVaultsTokenWrapper is ERC20 {
   IERC20 public immutable wrappedToken;
   address public immutable poolContract;
 
-  mapping (address => bool) public stakers;
-  constructor(address _tokenToWrap, address _poolContract, string memory name_, string memory symbol_) ERC20(name_, symbol_) {
+  mapping (address => bool) public transparentAccounts;
+  constructor(address _tokenToWrap, address _poolContract, string memory name_, string memory symbol_) 
+    ERC20(name_, symbol_) {
     wrappedToken = IERC20(_tokenToWrap);
     poolContract = _poolContract;
   }
 
   function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
-    // if the recipient is the poolContract, we create new wrapped tokens, and add the sender to the list of stakers
-    // if the recipient is a staker, we unwrap the tokens and send them to the staker
-    // in all other cases, we just use the ERC20 transferFrom
-    if (_recipient == poolContract) {
+    if (_recipient == poolContract && msg.sender == poolContract) {
+      transparentAccounts[_sender] = true;
       wrappedToken.safeTransferFrom(_sender, address(this), _amount);
       _mint(_recipient, _amount);
-      stakers[_sender] = true;
     } else {
-      // if (stakers[_recipient]) {
-      //   _burn(_sender, _amount);
-      //   wrappedToken.safeTransfer(_recipient, _amount);
-      // } else {
-        super.transferFrom(_sender, _recipient, _amount);
-      // }
+      super.transferFrom(_sender, _recipient, _amount);
     }
     return true;
   }
-  function transfer(address _recipient, uint256 _amount) public override returns (bool) {
-    // if recipient is a staker, we unwrap the tokens 
-    // in other case, we just call the usual transfer
-    if (stakers[_recipient]) {
-      _burn(msg.sender, _amount);
-      wrappedToken.safeTransfer(_recipient, _amount);
+  function _transfer(address _sender, address _recipient, uint256 _amount) internal override {
+    if (transparentAccounts[_recipient]) {
+      _unwrapTokensFor(_sender, _recipient, _amount);
     } else {
-      _transfer(msg.sender, _recipient, _amount);
+      super._transfer(_sender, _recipient, _amount);
     }
-    return true;
+  }
+
+  function _unwrapTokensFor(address _sender, address _recipient, uint256 _amount) private {
+      _burn(_sender, _amount);
+      wrappedToken.safeTransfer(_recipient, _amount);
   }
   function unwrapTokens() public {
       uint256 amount = balanceOf(msg.sender);
-      _burn(msg.sender, amount);
-      wrappedToken.safeTransfer(msg.sender, amount);
+      _unwrapTokensFor(msg.sender, msg.sender, amount);
   }
-  
 }
