@@ -68,6 +68,19 @@ contract  HATVaults is Governable, HATMaster {
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
+    // General parameters setting delays
+    GeneralParameters public generalParametersPending;
+    uint256 public setclaimFeePendingAt;
+    uint256 public setWithdrawSafetyPeriodPendingAt;
+    uint256 public setHatVestingParamsPendingAt;
+
+    // Pools parameters setting delays
+    mapping(uint256 => uint256) public poolsRewardDurationPendings;
+    mapping(uint256 => uint256) public poolsRewardsPeriodsPendings;
+    mapping(uint256 => uint256) public poolsRewardsPendingAts;
+    mapping(uint256 => RewardsSplit) public rewardsSplitsPending;
+    mapping(uint256 => uint256) public rewardsSplitsPendingAt;
+
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
         _;
@@ -87,6 +100,16 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+    modifier checkDelayPassed(uint256 _updateRequestedAt) {
+        require(_updateRequestedAt > 0, "HATVaults: no pending update");
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp - _updateRequestedAt > TIME_LOCK_DELAY,
+            "HATVaults: must wait the update delay"
+        );
+        _;
+    }
+
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
 
     event AddPool(uint256 indexed _pid,
@@ -101,6 +124,7 @@ contract  HATVaults is Governable, HATMaster {
 
     event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
+    event RewardsSplitPending(uint256 indexed _pid, RewardsSplit indexed _newRewardsSplit);
     event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
     event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
     event PendingRewardsLevelsLog(uint256 indexed _pid, uint256[] _rewardsLevels, uint256 _timeStamp);
@@ -112,7 +136,9 @@ contract  HATVaults is Governable, HATMaster {
                     address _tokenLock);
 
     event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
+    event VestingParamsPending(uint256 indexed _pid, uint256 indexed _newDuration, uint256 indexed _newPeriods);
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
+    event HatVestingParamsPending(uint256 indexed _newDuration, uint256 indexed _newPeriods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
     event ClaimApprove(address indexed _approver,
@@ -131,9 +157,14 @@ contract  HATVaults is Governable, HATMaster {
                         address indexed _beneficiary,
                         uint256 indexed _withdrawEnableTime);
 
+    event WithdrawSafetyPeriodPending(uint256 indexed _newWithdrawPeriod, uint256 indexed _newSafetyPeriod);
+
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
 
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+
+    event ClaimFeePending(uint256 indexed _newFee);
+    event SetClaimFee(uint256 indexed _fee);
 
     /**
    * @dev constructor -
@@ -297,21 +328,54 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
      * @dev setClaimFee - called by hats governance to set claim fee
+     * the change only takes place by calling the setClaimFee function after the required delay has passed.
      * @param _fee claim fee in ETH
     */
-    function setClaimFee(uint256 _fee) external onlyGovernance {
-        generalParameters.claimFee = _fee;
+    function setClaimFeePending(uint256 _fee) external onlyGovernance {
+        generalParametersPending.claimFee = _fee;
+        // solhint-disable-next-line not-rely-on-time
+        setclaimFeePendingAt = block.timestamp;
+        emit ClaimFeePending(_fee);
     }
 
     /**
-     * @dev setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
+     * @dev setClaimFee - called by hats governance to activate the change of the claim fee after commiting to 
+     * the new value in the setClaimFeePending and after the required delay has passed.
+    */
+    function setClaimFee() external checkDelayPassed(setclaimFeePendingAt) onlyGovernance {        
+        generalParameters.claimFee = generalParametersPending.claimFee;
+        setclaimFeePendingAt = 0;
+        emit SetClaimFee(generalParametersPending.claimFee);
+    }
+
+    /**
+     * @dev setWithdrawSafetyPeriod - called by hats governance to set new withdraw and safety periods
+     * the change only takes place by calling the setWithdrawSafetyPeriod function after the required delay has passed.
      * @param _withdrawPeriod withdraw enable period
      * @param _safetyPeriod withdraw disable period
     */
-    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
-        generalParameters.withdrawPeriod = _withdrawPeriod;
-        generalParameters.safetyPeriod = _safetyPeriod;
-        emit SetWithdrawSafetyPeriod(generalParameters.withdrawPeriod, generalParameters.safetyPeriod);
+    function setPendingWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
+        require(1 hours <= _withdrawPeriod, "HATVaults: withdrawe period must be longer than 1 hour");
+        require(
+            30 minutes <= _safetyPeriod && _safetyPeriod <= 3 hours,
+            "HATVaults: safety period must be longer than 30 minutes and shorter than 3 hours"
+        );
+        generalParametersPending.withdrawPeriod = _withdrawPeriod;
+        generalParametersPending.safetyPeriod = _safetyPeriod;
+        // solhint-disable-next-line not-rely-on-time
+        setWithdrawSafetyPeriodPendingAt = block.timestamp;
+        emit WithdrawSafetyPeriodPending(_withdrawPeriod, _safetyPeriod);
+    }
+
+    /**
+     * @dev setWithdrawSafetyPeriod - called by hats governance to activate a change in the withdraw and safety periods
+     * after commiting to the new values in the setPendingWithdrawSafetyPeriod and after the required delay has passed.
+    */
+    function setWithdrawSafetyPeriod() external checkDelayPassed(setWithdrawSafetyPeriodPendingAt) onlyGovernance {
+        generalParameters.withdrawPeriod = generalParametersPending.withdrawPeriod;
+        generalParameters.safetyPeriod = generalParametersPending.safetyPeriod;
+        setWithdrawSafetyPeriodPendingAt = 0;
+        emit SetWithdrawSafetyPeriod(generalParametersPending.withdrawPeriod, generalParametersPending.safetyPeriod);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -326,49 +390,96 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-   * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
-   * @param _pid pool id
-   * @param _duration duration of the vesting period
-   * @param _periods the vesting periods
- */
-    function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
+    * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
+    * the change only takes place by calling the setVestingParams function after the required delay has passed.
+    * @param _pid pool id
+    * @param _duration duration of the vesting period
+    * @param _periods the vesting periods
+    */
+    function setPendingVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
         require(_duration < 120 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
-        poolsRewards[_pid].vestingDuration = _duration;
-        poolsRewards[_pid].vestingPeriods = _periods;
-        emit SetVestingParams(_pid, _duration, _periods);
+        poolsRewardDurationPendings[_pid] = _duration;
+        poolsRewardsPeriodsPendings[_pid] = _periods;
+        // solhint-disable-next-line not-rely-on-time
+        poolsRewardsPendingAts[_pid] = block.timestamp;
+        emit VestingParamsPending(_pid, _duration, _periods);
     }
 
     /**
-   * @dev setHatVestingParams - set HAT vesting params for rewarding claim reporter with HAT token
-   * the function can be called only by governance.
-   * @param _duration duration of the vesting period
-   * @param _periods the vesting periods
- */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
+    * @dev setVestingParams - called by hats governance to activate a change in a pool vesting params
+    * for rewarding claim reporter with the pool token after commiting to the new values in the
+    * setPendingVestingParams and after the required delay has passed.
+    * @param _pid pool id
+    */
+    function setVestingParams(uint256 _pid) external checkDelayPassed(poolsRewardsPendingAts[_pid]) onlyGovernance {
+        poolsRewards[_pid].vestingDuration = poolsRewardDurationPendings[_pid];
+        poolsRewards[_pid].vestingPeriods = poolsRewardsPeriodsPendings[_pid];
+        poolsRewardsPendingAts[_pid] = 0;
+        emit SetVestingParams(_pid, poolsRewardDurationPendings[_pid], poolsRewardsPeriodsPendings[_pid]);
+    }
+    
+    /**
+    * @dev setHatVestingParams - set HAT vesting params for rewarding claim reporter with HAT token
+    * the change only takes place by calling the setHatVestingParams function after the required delay has passed.
+    * the function can be called only by governance.
+    * @param _duration duration of the vesting period
+    * @param _periods the vesting periods
+    */
+    function setPendingHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
         require(_duration < 180 days, "vesting duration is too long");
         require(_periods > 0, "vesting periods cannot be zero");
         require(_duration >= _periods, "vesting duration smaller than periods");
-        generalParameters.hatVestingDuration = _duration;
-        generalParameters.hatVestingPeriods = _periods;
-        emit SetHatVestingParams(_duration, _periods);
+        generalParametersPending.hatVestingDuration = _duration;
+        generalParametersPending.hatVestingPeriods = _periods;
+        // solhint-disable-next-line not-rely-on-time
+        setHatVestingParamsPendingAt = block.timestamp;
+        emit HatVestingParamsPending(_duration, _periods);
     }
 
     /**
-   * @dev setRewardsSplit - set the pool token rewards split upon an approval
-   * the function can be called only by governance.
-   * the sum of the rewards split should be less than 10000 (less than 100%)
-   * @param _pid pool id
-   * @param _rewardsSplit split
-   * and sent to the hacker(claim reported)
- */
-    function setRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
+    * @dev setHatVestingParams - called by hats governance to activate a change in the HAT vesting params
+    * for rewarding claim reporter with HAT token after commiting to the new values in the
+    * setPendingHatVestingParams and after the required delay has passed.
+    */
+    function setHatVestingParams() external checkDelayPassed(setHatVestingParamsPendingAt) onlyGovernance {
+        generalParameters.hatVestingDuration = generalParametersPending.hatVestingDuration;
+        generalParameters.hatVestingPeriods = generalParametersPending.hatVestingPeriods;
+        setHatVestingParamsPendingAt = 0;
+        emit SetHatVestingParams(generalParametersPending.hatVestingDuration, generalParametersPending.hatVestingPeriods);
+    }
+
+    /**
+    * @dev setPendingRewardsSplit - set the pool token rewards split upon an approval
+    * the function can be called only by governance.
+    * the sum of the rewards split should be less than 10000 (less than 100%)
+    * the change only takes place by calling the setRewardsSplit function after the required delay has passed.
+    * @param _pid pool id
+    * @param _rewardsSplit split
+    */
+    function setPendingRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
     external
-    onlyGovernance noPendingApproval(_pid) noSafetyPeriod {
+    onlyGovernance {
         validateSplit(_rewardsSplit);
-        poolsRewards[_pid].rewardsSplit = _rewardsSplit;
-        emit SetRewardsSplit(_pid, _rewardsSplit);
+        rewardsSplitsPending[_pid] = _rewardsSplit;
+        // solhint-disable-next-line not-rely-on-time
+        rewardsSplitsPendingAt[_pid] = block.timestamp;
+        emit RewardsSplitPending(_pid, _rewardsSplit);
+    }
+
+    /**
+    * @dev setRewardsSplit - activates a change of a pool token rewards split upon an approval
+    * the function can be called only by governance.
+    * the sum of the rewards split should be less than 10000 (less than 100%)
+    * used after commiting to the new values in the setPendingRewardsSplit and after the required delay has passed.
+    */
+    function setRewardsSplit(uint256 _pid)
+    external
+    checkDelayPassed(rewardsSplitsPendingAt[_pid]) onlyGovernance noPendingApproval(_pid) noSafetyPeriod {
+        poolsRewards[_pid].rewardsSplit = rewardsSplitsPending[_pid];
+        rewardsSplitsPendingAt[_pid] = 0;
+        emit SetRewardsSplit(_pid, rewardsSplitsPending[_pid]);
     }
 
     /**
