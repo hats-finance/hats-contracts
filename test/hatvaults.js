@@ -1,4 +1,5 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
+const HATVaultsParametersManager = artifacts.require("./HATVaultsParametersManager.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
@@ -8,6 +9,7 @@ const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
+var hatVaultsParametersManager;
 var hatToken;
 var router;
 var stakingToken;
@@ -43,6 +45,7 @@ const setup = async function (
                                   accounts[0],
                                   router.address,
                                   tokenLockFactory.address);
+  hatVaultsParametersManager = await HATVaultsParametersManager.at(await hatVaults.hatVaultsParametersManager());
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
@@ -62,8 +65,8 @@ contract('HatVaults',  accounts =>  {
     //this function will increment 4 blocks in local testnet
     async function safeWithdraw(pid, amount, staker) {
 
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod  =  new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
 
       //increase time for the case there is already pending request ..so make sure start a new one..
       await utils.increaseTime(7*24*3600);
@@ -80,8 +83,8 @@ contract('HatVaults',  accounts =>  {
     async function advanceToSaftyPeriod() {
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod  = new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
 
       if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) <  withdrawPeriod) {
          await utils.increaseTime(withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod)));
@@ -91,8 +94,8 @@ contract('HatVaults',  accounts =>  {
     //advanced time to a withdraw enable period
     async function advanceToNoneSaftyPeriod() {
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod  = new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
       if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
@@ -116,8 +119,8 @@ contract('HatVaults',  accounts =>  {
     }
 
     async function safeEmergencyWithdraw(pid, staker) {
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod = new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
       //increase time for the case there is already pending request ..so make sure start a new one..
       await utils.increaseTime(7*24*3600);
       await hatVaults.withdrawRequest(pid,{from:staker});
@@ -132,8 +135,8 @@ contract('HatVaults',  accounts =>  {
 
     async function unSafeEmergencyWithdraw(pid, staker) {
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod  =  new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
       if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
@@ -142,8 +145,8 @@ contract('HatVaults',  accounts =>  {
 
     async function unSafeWithdraw(pid, amount, staker) {
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
+      let withdrawPeriod  =  new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();
+      let safetyPeriod = new web3.utils.BN((await hatVaults.generalParameters()).safetyPeriod).toNumber();
       if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
       }
@@ -331,13 +334,56 @@ contract('HatVaults',  accounts =>  {
       assert.equal(tx.logs[0].args._rewardsLevels[1],3000);
 
       try {
-          await hatVaults.setRewardsSplit(0, [7000, 0,1000, 1100,0, 901]);
+        await hatVaults.setRewardsSplit(0, [6000,0,1000, 2200,0, 800]);
+        assert(false, 'cannot call rewardSplit directly');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      try {
+        await hatVaultsParametersManager.setRewardsSplit(0);
+        assert(false, 'cannot call rewardSplit with no pending params');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      try {
+          await hatVaultsParametersManager.setPendingRewardsSplit(0, [7000, 0,1000, 1100,0, 901]);
           assert(false, 'cannot init with rewardSplit > 10000');
       } catch (ex) {
           assertVMException(ex);
       }
+
+      try {
+        await hatVaultsParametersManager.setPendingRewardsSplit(0, [6000,0,1000, 2200,0, 800],{from:accounts[1]});
+        assert(false, 'only governance can call setPendingRewardsSplit');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
       await advanceToNoneSaftyPeriod();
-      await hatVaults.setRewardsSplit(0, [6000,0,1000, 2200,0, 800]);
+      tx = await hatVaultsParametersManager.setPendingRewardsSplit(0, [6000,0,1000, 2200,0, 800]);
+      assert.equal((await hatVaultsParametersManager.rewardsSplitsPending(0)).hackerReward.toString(), "0");
+      assert.equal((await hatVaultsParametersManager.rewardsSplitsPending(0)).hackerVestedReward.toString(), "6000");
+      assert.equal((await hatVaultsParametersManager.rewardsSplitsPending(0)).committeeReward.toString(), "1000");
+      assert.equal((await hatVaultsParametersManager.rewardsSplitsPending(0)).swapAndBurn.toString(), "2200");
+      assert.equal((await hatVaultsParametersManager.rewardsSplitsPending(0)).hackerHatReward.toString(), "800");
+      assert.equal(tx.logs[0].event,"RewardsSplitPending");
+      assert.equal(tx.logs[0].args._pid,0);
+
+      try {
+        await hatVaultsParametersManager.setRewardsSplit(0);
+        assert(false, 'cannot call rewardSplit before delay passed');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      await utils.increaseTime(1);
+      await utils.increaseTime(3600*24*2);
+
+      tx = await hatVaultsParametersManager.setRewardsSplit(0);
+      assert.equal(tx.logs[0].event,"SetRewardsSplit");
+      assert.equal(tx.logs[0].args._pid,0);
       assert.equal((await hatVaults.getPoolRewardsLevels(0)).length, 5);
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[0].toString(), "1500");
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[1].toString(), "3000");
@@ -346,10 +392,14 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getPoolRewardsLevels(0))[4].toString(), "9999");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerReward.toString(), "0");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerVestedReward.toString(), "6000");
-
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.committeeReward.toString(), "1000");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "2200");
       assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "800");
+
+      await hatVaultsParametersManager.setPendingRewardsSplit(0, [6000,0,1000, 1100,1100, 800]);
+      await utils.increaseTime(1);
+      await utils.increaseTime(3600*24*2);
+
       await advanceToSaftyPeriod();
       await hatVaults.pendingApprovalClaim(0,accounts[2],4,{from:accounts[1]});
       try {
@@ -359,21 +409,29 @@ contract('HatVaults',  accounts =>  {
         assertVMException(ex);
       }
       try {
-          await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+          await hatVaultsParametersManager.setRewardsSplit(0);
           assert(false, 'cannot set split while there is pending approval');
       } catch (ex) {
         assertVMException(ex);
       }
       await hatVaults.dismissPendingApprovalClaim(0);
       try {
-          await hatVaults.setRewardsSplit(0, [6000,0,1000, 1100,1, 800]);
+          await hatVaultsParametersManager.setRewardsSplit(0);
           assert(false, 'cannot set split while in safety period');
       } catch (ex) {
         assertVMException(ex);
       }
       await advanceToNoneSaftyPeriod();
 
-      await hatVaults.setRewardsSplit(0, [6000,0,1000, 1000,1200, 800]);
+      tx = await hatVaultsParametersManager.setRewardsSplit(0);
+      assert.equal(tx.logs[0].event,"SetRewardsSplit");
+      assert.equal(tx.logs[0].args._pid,0);
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerReward.toString(), "0");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerVestedReward.toString(), "6000");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.committeeReward.toString(), "1000");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn.toString(), "1100");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.governanceHatReward.toString(), "1100");
+      assert.equal((await hatVaults.getPoolRewards(0)).rewardsSplit.hackerHatReward.toString(), "800");
 
       await hatVaults.setPendingRewardsLevels(0, [],{from:accounts[1]});
 
@@ -480,18 +538,72 @@ contract('HatVaults',  accounts =>  {
   it("setWithdrawSafetyPeriod", async () => {
       await setup(accounts);
       try {
-          await hatVaults.setWithdrawSafetyPeriod(1000,100,{from:accounts[1]});
+          await hatVaultsParametersManager.setPendingWithdrawSafetyPeriod(60*60,60*30,{from:accounts[1]});
           assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
-      var tx = await hatVaults.setWithdrawSafetyPeriod(1000,100);
 
-      assert.equal((await hatVaults.generalParameters()).withdrawPeriod,1000);
-      assert.equal((await hatVaults.generalParameters()).safetyPeriod,100);
+      try {
+        await hatVaultsParametersManager.setPendingWithdrawSafetyPeriod(60*60-1,60*30);
+          assert(false, 'withdraw period must be >= 1 hour');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await hatVaultsParametersManager.setPendingWithdrawSafetyPeriod(60*60,60*30-1);
+          assert(false, 'safety period must be >= 30 minutes');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await hatVaultsParametersManager.setPendingWithdrawSafetyPeriod(60*60,60*60*3+1);
+          assert(false, 'safety period must be <= 3 hours');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      var tx = await hatVaultsParametersManager.setPendingWithdrawSafetyPeriod(60*60,60*30);
+      
+      assert.equal((await hatVaultsParametersManager.generalParametersPending()).withdrawPeriod,60*60);
+      assert.equal((await hatVaultsParametersManager.generalParametersPending()).safetyPeriod,60*30);
+      assert.equal(tx.logs[0].event,"WithdrawSafetyPeriodPending");
+      assert.equal(tx.logs[0].args._newWithdrawPeriod,60*60);
+      assert.equal(tx.logs[0].args._newSafetyPeriod,60*30);
+
+      try {
+        await hatVaultsParametersManager.setWithdrawSafetyPeriod();
+          assert(false, 'cant update before delay passed');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      await utils.increaseTime(1);
+      await utils.increaseTime(3600*24*2);
+
+      try {
+        await hatVaultsParametersManager.setWithdrawSafetyPeriod({from:accounts[1]});
+          assert(false, 'only gov');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      tx = await hatVaultsParametersManager.setWithdrawSafetyPeriod();
+
+      assert.equal((await hatVaults.generalParameters()).withdrawPeriod,60*60);
+      assert.equal((await hatVaults.generalParameters()).safetyPeriod,60*30);
       assert.equal(tx.logs[0].event,"SetWithdrawSafetyPeriod");
-      assert.equal(tx.logs[0].args._withdrawPeriod,1000);
-      assert.equal(tx.logs[0].args._safetyPeriod,100);
+      assert.equal(tx.logs[0].args._withdrawPeriod,60*60);
+      assert.equal(tx.logs[0].args._safetyPeriod,60*30);
+
+      try {
+        await hatVaultsParametersManager.setWithdrawSafetyPeriod({from:accounts[1]});
+          assert(false, 'cant set with no parameters pending');
+      } catch (ex) {
+        assertVMException(ex);
+      }
 
       var staker = accounts[1];
 
@@ -503,8 +615,8 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
 
-      let withdrawPeriod  =  1000;
-      let safetyPeriod = 100;
+      let withdrawPeriod = 60*60;
+      let safetyPeriod = 60*30;
 
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
@@ -547,13 +659,14 @@ contract('HatVaults',  accounts =>  {
       await setup(accounts);
       assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, (7*24*3600));
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, (7*24*3600));
+      // TODO: Add requires for min and max value + delay tests
       try {
-          await hatVaults.setWithdrawRequestParams(1,1,{from:accounts[4]});
+          await hatVaultsParametersManager.setWithdrawRequestParams(1,1,{from:accounts[4]});
           assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
-      await hatVaults.setWithdrawRequestParams(1,1,{from:accounts[0]});
+      await hatVaultsParametersManager.setWithdrawRequestParams(1,1,{from:accounts[0]});
       assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, 1);
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, 1);
 
@@ -1507,7 +1620,37 @@ contract('HatVaults',  accounts =>  {
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
 
-    await hatVaults.setClaimFee(fee);
+    try {
+      await hatVaultsParametersManager.setClaimFeePending(fee, {from:accounts[1]});
+      assert(false, 'only governance can set claim fee');
+    } catch (ex) {
+        assertVMException(ex);
+    }
+
+    try {
+      await hatVaultsParametersManager.setClaimFee();
+      assert(false, 'cannot set claim fee with no pending parameters');
+    } catch (ex) {
+        assertVMException(ex);
+    }
+
+    tx = await hatVaultsParametersManager.setClaimFeePending(fee);
+    assert.equal(tx.logs[0].event, "ClaimFeePending");
+    assert.equal(tx.logs[0].args._newFee, fee);
+
+    try {
+      await hatVaultsParametersManager.setClaimFee();
+      assert(false, 'cannot set claim fee before delay passed');
+    } catch (ex) {
+        assertVMException(ex);
+    }
+
+    await utils.increaseTime(1);
+    await utils.increaseTime(3600*24*2);
+    
+    tx = await hatVaultsParametersManager.setClaimFee();
+    assert.equal(tx.logs[0].event, "SetClaimFee");
+    assert.equal(tx.logs[0].args._fee, fee);
     var govBalanceBefore = new web3.utils.BN(await web3.eth.getBalance(accounts[0]));
     try {
           await hatVaults.claim(someHash,{from:accounts[3],value:web3.utils.toWei("0.9")});
@@ -1633,35 +1776,63 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,10);
 
     try {
-          await hatVaults.setVestingParams(0,21000,7,{from:accounts[2]});
-          assert(false, 'only gov can set vesting params');
-        } catch (ex) {
-          assertVMException(ex);
-      }
-      try {
-            await hatVaults.setVestingParams(0,21000,0);
-            assert(false, 'period should not be zero');
-          } catch (ex) {
-            assertVMException(ex);
-        }
-        try {
-              await hatVaults.setVestingParams(0,120*24*3600,7);
-              assert(false, 'duration should be less than 120 days');
-            } catch (ex) {
-              assertVMException(ex);
-          }
-          try {
-                await hatVaults.setVestingParams(0,6,7);
-                assert(false, 'duration should be greater than period');
-              } catch (ex) {
-                assertVMException(ex);
-            }
-    var tx = await hatVaults.setVestingParams(0,21000,7);
+      await hatVaultsParametersManager.setPendingVestingParams(0,21000,7,{from:accounts[2]});
+      assert(false, 'only gov can set vesting params');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    try {
+        await hatVaultsParametersManager.setPendingVestingParams(0,21000,0);
+        assert(false, 'period should not be zero');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+      await hatVaultsParametersManager.setPendingVestingParams(0,120*24*3600,7);
+      assert(false, 'duration should be less than 120 days');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    try {
+        await hatVaultsParametersManager.setPendingVestingParams(0,6,7);
+        assert(false, 'duration should be greater than period');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+      await hatVaults.setVestingParams(0,21000,7);
+      assert(false, 'cannot set vesting params directly');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    try {
+      await hatVaultsParametersManager.setVestingParams(0);
+      assert(false, 'cant set vesting params before setting pending params');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    var tx = await hatVaultsParametersManager.setPendingVestingParams(0,21000,7);
+    
+    assert.equal(tx.logs[0].event, "VestingParamsPending");
+    assert.equal(tx.logs[0].args._newDuration, 21000);
+    assert.equal(tx.logs[0].args._newPeriods, 7);
+
+    try {
+      await hatVaultsParametersManager.setVestingParams(0);
+      assert(false, 'cant set vesting params before delay has passed');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await utils.increaseTime(1);
+    await utils.increaseTime(3600*24*2);
+
+    tx = await hatVaultsParametersManager.setVestingParams(0);
+    
     assert.equal(tx.logs[0].event, "SetVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
     assert.equal(tx.logs[0].args._periods, 7);
-
-
     assert.equal((await hatVaults.getPoolRewards(0)).vestingDuration,21000);
     assert.equal((await hatVaults.getPoolRewards(0)).vestingPeriods,7);
 
@@ -1673,30 +1844,51 @@ contract('HatVaults',  accounts =>  {
     assert.equal((await hatVaults.generalParameters()).hatVestingPeriods,90);
 
     try {
-          await hatVaults.setHatVestingParams(21000,7,{from:accounts[2]});
-          assert(false, 'only gov can set vesting params');
-        } catch (ex) {
-          assertVMException(ex);
-      }
-      try {
-            await hatVaults.setHatVestingParams(21000,0);
-            assert(false, 'period should not be zero');
-          } catch (ex) {
-            assertVMException(ex);
-        }
-        try {
-              await hatVaults.setHatVestingParams(180*24*3600,7);
-              assert(false, 'duration should be less than 180 days');
-            } catch (ex) {
-              assertVMException(ex);
-          }
-          try {
-                await hatVaults.setHatVestingParams(6,7);
-                assert(false, 'duration should be greater than period');
-              } catch (ex) {
-                assertVMException(ex);
-            }
-    var tx = await hatVaults.setHatVestingParams(21000,7);
+        await hatVaultsParametersManager.setPendingHatVestingParams(21000,7,{from:accounts[2]});
+        assert(false, 'only gov can set vesting params');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+        await hatVaultsParametersManager.setPendingHatVestingParams(21000,0);
+        assert(false, 'period should not be zero');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+        await hatVaultsParametersManager.setPendingHatVestingParams(180*24*3600,7);
+        assert(false, 'duration should be less than 180 days');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+        await hatVaultsParametersManager.setPendingHatVestingParams(6,7);
+        assert(false, 'duration should be greater than period');
+      } catch (ex) {
+        assertVMException(ex);
+    }
+    try {
+      await hatVaultsParametersManager.setHatVestingParams();
+      assert(false, 'cant call set hat vesting params before pending params were set');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    var tx = await hatVaultsParametersManager.setPendingHatVestingParams(21000,7);
+    assert.equal(tx.logs[0].event, "HatVestingParamsPending");
+    assert.equal(tx.logs[0].args._newDuration, 21000);
+    assert.equal(tx.logs[0].args._newPeriods, 7);
+
+    try {
+      await hatVaultsParametersManager.setHatVestingParams();
+      assert(false, 'cant call set hat vesting params before delay has passed');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await utils.increaseTime(1);
+    await utils.increaseTime(3600*24*2);
+
+    tx = await hatVaultsParametersManager.setHatVestingParams();
     assert.equal(tx.logs[0].event, "SetHatVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
     assert.equal(tx.logs[0].args._periods, 7);
@@ -1744,7 +1936,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1517939);
+    assert.equal(tx.receipt.gasUsed, 1517894);
   }).timeout(40000);
 
 
@@ -2030,20 +2222,20 @@ contract('HatVaults',  accounts =>  {
   it("set pending rewards level delay", async () => {
     await setup(accounts);
     try {
-            await hatVaults.setRewardsLevelsDelay(24*3600*2,{from:accounts[1]});
-            assert(false, 'only gov');
-          } catch (ex) {
-            assertVMException(ex);
+      await hatVaultsParametersManager.setRewardsLevelsDelay(24*3600*2,{from:accounts[1]});
+      assert(false, 'only gov');
+    } catch (ex) {
+      assertVMException(ex);
     }
 
     try {
-            await hatVaults.setRewardsLevelsDelay(100,{from:accounts[0]});
-            assert(false, 'too small');
-          } catch (ex) {
-            assertVMException(ex);
+      await hatVaultsParametersManager.setRewardsLevelsDelay(100,{from:accounts[0]});
+      assert(false, 'too small');
+    } catch (ex) {
+      assertVMException(ex);
     }
     assert.equal((await hatVaults.generalParameters()).setRewardsLevelsDelay, 24*3600*2);
-    await hatVaults.setRewardsLevelsDelay(24*3600*100,{from:accounts[0]});
+    await hatVaultsParametersManager.setRewardsLevelsDelay(24*3600*100,{from:accounts[0]});
     assert.equal((await hatVaults.generalParameters()).setRewardsLevelsDelay, 24*3600*100);
   });
 

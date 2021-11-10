@@ -144,10 +144,10 @@ contract HATVaultsParametersManager {
      * @param _safetyPeriod withdraw disable period
     */
     function setPendingWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
-        require(1 hours <= _withdrawPeriod, "HATVaultsParametersManager: withdrawe period must be longer than 1 hour");
+        require(1 hours <= _withdrawPeriod, "HATVaultsParametersManager: withdrawe period must be >= 1 hour");
         require(
             30 minutes <= _safetyPeriod && _safetyPeriod <= 3 hours,
-            "HATVaultsParametersManager: safety period must be longer than 30 minutes and shorter than 3 hours"
+            "HATVaultsParametersManager: safety period must be >= 30 minutes and <= 3 hours"
         );
         _generalParametersPending.withdrawPeriod = _withdrawPeriod;
         _generalParametersPending.safetyPeriod = _safetyPeriod;

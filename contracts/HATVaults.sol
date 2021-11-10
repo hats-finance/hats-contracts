@@ -70,7 +70,7 @@ contract  HATVaults is Governable, HATMaster {
 
     modifier noSafetyPeriod() {
         //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 11 hours)
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
@@ -172,7 +172,7 @@ contract  HATVaults is Governable, HATMaster {
     onlyCommittee(_pid)
     noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod,
@@ -269,7 +269,7 @@ contract  HATVaults is Governable, HATMaster {
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external payable {
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         if (generalParameters.claimFee > 0) {
             require(msg.value >= generalParameters.claimFee, "not enough fee payed");
             // solhint-disable-next-line indent
@@ -334,7 +334,7 @@ contract  HATVaults is Governable, HATMaster {
     external
     onlyCommittee(_pid) noPendingApproval(_pid) {
         require(pendingRewardsLevels[_pid].timestamp > 0, "no pending set rewards levels");
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - pendingRewardsLevels[_pid].timestamp > generalParameters.setRewardsLevelsDelay,
         "cannot confirm setRewardsLevels at this time");
@@ -482,7 +482,7 @@ contract  HATVaults is Governable, HATMaster {
         emit SwapAndBurn(_pid, amount, burntHats);
         address tokenLock;
         uint256 hackerReward = hatsReceived.mul(amountForHackersHatRewards).div(amount);
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         if (hackerReward > 0) {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
@@ -511,7 +511,7 @@ contract  HATVaults is Governable, HATMaster {
     * @param _pid the pool id
     **/
     function withdrawRequest(uint256 _pid) external {
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
         "pending withdraw request exist");
@@ -647,8 +647,12 @@ contract  HATVaults is Governable, HATMaster {
         });
     }
 
+    function generalParameters() public view returns (HATVaultsParametersManager.GeneralParameters memory) {
+        return hatVaultsParametersManager.generalParameters();
+    }
+
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) noSafetyPeriod {
-        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
         // solhint-disable-next-line not-rely-on-time
