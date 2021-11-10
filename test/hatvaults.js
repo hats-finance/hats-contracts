@@ -661,15 +661,52 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, (7*24*3600));
       // TODO: Add requires for min and max value + delay tests
       try {
-          await hatVaultsParametersManager.setWithdrawRequestParams(1,1,{from:accounts[4]});
-          assert(false, 'only gov');
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,90*24*3600,{from:accounts[4]});
+        assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
-      await hatVaultsParametersManager.setWithdrawRequestParams(1,1,{from:accounts[0]});
-      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, 1);
-      assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, 1);
+      try {
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(90*24*3600+1,90*24*3600);
+        assert(false, 'pending period must be <= 90 days');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      try {
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,90*24*3600 - 1);
+        assert(false, 'enable period must be >= 90 days');
+      } catch (ex) {
+        assertVMException(ex);
+      }
 
+      try {
+        await hatVaultsParametersManager.setWithdrawRequestParams();
+        assert(false, 'cant set withdraw request params before setting pending params');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      var tx = await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,90*24*3600,{from:accounts[0]});
+      assert.equal(tx.logs[0].event, "WithdrawRequestParamsPending");
+      assert.equal(tx.logs[0].args._newWithdrawRequestPendingPeriod, 1);
+      assert.equal(tx.logs[0].args._newWithdrawRequestEnablePeriod, 90*24*3600);
+
+      try {
+        await hatVaultsParametersManager.setWithdrawRequestParams();
+        assert(false, 'cant set withdraw request params before delay has passed');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      await utils.increaseTime(1);
+      await utils.increaseTime(3600*24*91);
+
+      tx = await hatVaultsParametersManager.setWithdrawRequestParams();
+      assert.equal(tx.logs[0].event, "SetWithdrawRequestParams");
+      assert.equal(tx.logs[0].args._withdrawRequestPendingPeriod, 1);
+      assert.equal(tx.logs[0].args._withdrawRequestEnablePeriod, 90*24*3600);
+      assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, 1);
+      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, 90*24*3600);
   });
 
   it("deposit cancle withdrawn request ", async () => {
