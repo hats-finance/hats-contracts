@@ -3,11 +3,12 @@
 
 pragma solidity 0.8.6;
 
+import "./HATMaster.sol";
 import "./HATVaults.sol";
 
 
 contract HATVaultsParametersManager {
-    using SafeMath  for uint256;
+    using SafeMath for uint256;
 
     struct GeneralParameters {
         uint256 hatVestingDuration;
@@ -39,7 +40,7 @@ contract HATVaultsParametersManager {
 
     // Pools parameters setting delays
     mapping(uint256 => VestingParamsPendingStruct) public poolsRewardVestingParamsPendings;
-    mapping(uint256 => HATVaults.RewardsSplit) public rewardsSplitsPending;
+    mapping(uint256 => HATMaster.RewardsSplit) public rewardsSplitsPending;
     mapping(uint256 => uint256) public rewardsSplitsPendingAt;
 
     HATVaults public hatVaults;
@@ -60,12 +61,12 @@ contract HATVaultsParametersManager {
 
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     
-    event RewardsSplitPending(uint256 indexed _pid, HATVaults.RewardsSplit indexed _newRewardsSplit);
+    event RewardsSplitPending(uint256 indexed _pid, HATMaster.RewardsSplit indexed _newRewardsSplit);
     
-    event SetRewardsSplit(uint256 indexed _pid, HATVaults.RewardsSplit _rewardsSplit);
+    event SetRewardsSplit(uint256 indexed _pid, HATMaster.RewardsSplit _rewardsSplit);
 
     modifier onlyGovernance() {
-        require(hatVaults.governance() == msg.sender, "GeneralParametersManager: caller is not the HATVaults governance");
+        require(hatVaults.governance() == msg.sender, "HATVaultsParametersManager: caller is not the HATVaults governance");
         _;
     }
 
@@ -74,7 +75,7 @@ contract HATVaultsParametersManager {
         require(
             // solhint-disable-next-line not-rely-on-time
             block.timestamp - _updateRequestedAt > TIME_LOCK_DELAY,
-            "GeneralParametersManager: must wait the update delay"
+            "HATVaultsParametersManager: must wait the update delay"
         );
         _;
     }
@@ -143,10 +144,10 @@ contract HATVaultsParametersManager {
      * @param _safetyPeriod withdraw disable period
     */
     function setPendingWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
-        require(1 hours <= _withdrawPeriod, "HATVaults: withdrawe period must be longer than 1 hour");
+        require(1 hours <= _withdrawPeriod, "HATVaultsParametersManager: withdrawe period must be longer than 1 hour");
         require(
             30 minutes <= _safetyPeriod && _safetyPeriod <= 3 hours,
-            "HATVaults: safety period must be longer than 30 minutes and shorter than 3 hours"
+            "HATVaultsParametersManager: safety period must be longer than 30 minutes and shorter than 3 hours"
         );
         _generalParametersPending.withdrawPeriod = _withdrawPeriod;
         _generalParametersPending.safetyPeriod = _safetyPeriod;
@@ -249,7 +250,7 @@ contract HATVaultsParametersManager {
     * @param _pid pool id
     * @param _rewardsSplit split
     */
-    function setPendingRewardsSplit(uint256 _pid, HATVaults.RewardsSplit memory _rewardsSplit)
+    function setPendingRewardsSplit(uint256 _pid, HATMaster.RewardsSplit memory _rewardsSplit)
     external
     onlyGovernance {
         validateSplit(_rewardsSplit);
@@ -272,7 +273,7 @@ contract HATVaultsParametersManager {
         hatVaults.setRewardsSplit(_pid, rewardsSplitsPending[_pid]);
         emit SetRewardsSplit(_pid, rewardsSplitsPending[_pid]);
     }
-    function validateSplit(HATVaults.RewardsSplit memory _rewardsSplit) public pure {
+    function validateSplit(HATMaster.RewardsSplit memory _rewardsSplit) public pure {
         require(_rewardsSplit.hackerVestedReward
             .add(_rewardsSplit.hackerReward)
             .add(_rewardsSplit.committeeReward)
