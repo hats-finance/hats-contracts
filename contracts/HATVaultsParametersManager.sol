@@ -6,7 +6,9 @@ pragma solidity 0.8.6;
 import "./HATVaults.sol";
 
 
-contract GeneralParametersManager {
+contract HATVaultsParametersManager {
+    using SafeMath  for uint256;
+
     struct GeneralParameters {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
@@ -18,7 +20,14 @@ contract GeneralParametersManager {
         uint256 claimFee;  //claim fee in ETH
     }
 
+    struct VestingParamsPendingStruct {
+        uint256 duration;
+        uint256 periods;
+        uint256 pendingAt;
+    }
+
     uint256 public constant TIME_LOCK_DELAY = 2 days;
+    uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
 
     GeneralParameters internal _generalParameters;
     
@@ -27,6 +36,11 @@ contract GeneralParametersManager {
     uint256 public setclaimFeePendingAt;
     uint256 public setWithdrawSafetyPeriodPendingAt;
     uint256 public setHatVestingParamsPendingAt;
+
+    // Pools parameters setting delays
+    mapping(uint256 => VestingParamsPendingStruct) public poolsRewardVestingParamsPendings;
+    mapping(uint256 => HATVaults.RewardsSplit) public rewardsSplitsPending;
+    mapping(uint256 => uint256) public rewardsSplitsPendingAt;
 
     HATVaults public hatVaults;
 
@@ -41,6 +55,14 @@ contract GeneralParametersManager {
     event HatVestingParamsPending(uint256 indexed _newDuration, uint256 indexed _newPeriods);
 
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
+
+    event VestingParamsPending(uint256 indexed _pid, uint256 indexed _newDuration, uint256 indexed _newPeriods);
+
+    event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
+    
+    event RewardsSplitPending(uint256 indexed _pid, HATVaults.RewardsSplit indexed _newRewardsSplit);
+    
+    event SetRewardsSplit(uint256 indexed _pid, HATVaults.RewardsSplit _rewardsSplit);
 
     modifier onlyGovernance() {
         require(hatVaults.governance() == msg.sender, "GeneralParametersManager: caller is not the HATVaults governance");
@@ -185,4 +207,78 @@ contract GeneralParametersManager {
         _generalParameters.setRewardsLevelsDelay = _delay;
     }
 
+    // -----------------------------------------------------------------------
+    
+    /**
+    * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
+    * the change only takes place by calling the setVestingParams function after the required delay has passed.
+    * @param _pid pool id
+    * @param _duration duration of the vesting period
+    * @param _periods the vesting periods
+    */
+    function setPendingVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
+        require(_duration < 120 days, "vesting duration is too long");
+        require(_periods > 0, "vesting periods cannot be zero");
+        require(_duration >= _periods, "vesting duration smaller than periods");
+        poolsRewardVestingParamsPendings[_pid] = VestingParamsPendingStruct({
+            duration: _duration,
+            periods: _periods,
+            // solhint-disable-next-line not-rely-on-time
+            pendingAt: block.timestamp
+        });
+        emit VestingParamsPending(_pid, _duration, _periods);
+    }
+
+    /**
+    * @dev setVestingParams - called by hats governance to activate a change in a pool vesting params
+    * for rewarding claim reporter with the pool token after commiting to the new values in the
+    * setPendingVestingParams and after the required delay has passed.
+    * @param _pid pool id
+    */
+    function setVestingParams(uint256 _pid) external checkDelayPassed(poolsRewardVestingParamsPendings[_pid].pendingAt) onlyGovernance {
+        poolsRewardVestingParamsPendings[_pid].pendingAt = 0;
+        hatVaults.setVestingParams(_pid, poolsRewardVestingParamsPendings[_pid].duration, poolsRewardVestingParamsPendings[_pid].periods);
+        emit SetVestingParams(_pid, poolsRewardVestingParamsPendings[_pid].duration, poolsRewardVestingParamsPendings[_pid].periods);
+    }
+
+    /**
+    * @dev setPendingRewardsSplit - set the pool token rewards split upon an approval
+    * the function can be called only by governance.
+    * the sum of the rewards split should be less than 10000 (less than 100%)
+    * the change only takes place by calling the setRewardsSplit function after the required delay has passed.
+    * @param _pid pool id
+    * @param _rewardsSplit split
+    */
+    function setPendingRewardsSplit(uint256 _pid, HATVaults.RewardsSplit memory _rewardsSplit)
+    external
+    onlyGovernance {
+        validateSplit(_rewardsSplit);
+        rewardsSplitsPending[_pid] = _rewardsSplit;
+        // solhint-disable-next-line not-rely-on-time
+        rewardsSplitsPendingAt[_pid] = block.timestamp;
+        emit RewardsSplitPending(_pid, _rewardsSplit);
+    }
+
+    /**
+    * @dev setRewardsSplit - activates a change of a pool token rewards split upon an approval
+    * the function can be called only by governance.
+    * the sum of the rewards split should be less than 10000 (less than 100%)
+    * used after commiting to the new values in the setPendingRewardsSplit and after the required delay has passed.
+    */
+    function setRewardsSplit(uint256 _pid)
+    external
+    checkDelayPassed(rewardsSplitsPendingAt[_pid]) onlyGovernance {
+        rewardsSplitsPendingAt[_pid] = 0;
+        hatVaults.setRewardsSplit(_pid, rewardsSplitsPending[_pid]);
+        emit SetRewardsSplit(_pid, rewardsSplitsPending[_pid]);
+    }
+    function validateSplit(HATVaults.RewardsSplit memory _rewardsSplit) public pure {
+        require(_rewardsSplit.hackerVestedReward
+            .add(_rewardsSplit.hackerReward)
+            .add(_rewardsSplit.committeeReward)
+            .add(_rewardsSplit.swapAndBurn)
+            .add(_rewardsSplit.governanceHatReward)
+            .add(_rewardsSplit.hackerHatReward) == REWARDS_LEVEL_DENOMINATOR,
+        "total split % should be 10000");
+    }
 }

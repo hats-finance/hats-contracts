@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
 import "./tokenlock/ITokenLockFactory.sol";
-import "./GeneralParametersManager.sol";
+import "./HATVaultsParametersManager.sol";
 import "./Governable.sol";
 
 
@@ -51,19 +51,12 @@ contract  HATVaults is Governable, HATMaster {
 
     mapping(uint256 => bool) public poolDepositPause;
 
-    GeneralParametersManager public generalParametersManager;
+    HATVaultsParametersManager public hatVaultsParametersManager;
 
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
-
-    // Pools parameters setting delays
-    mapping(uint256 => uint256) public poolsRewardDurationPendings;
-    mapping(uint256 => uint256) public poolsRewardsPeriodsPendings;
-    mapping(uint256 => uint256) public poolsRewardsPendingAts;
-    mapping(uint256 => RewardsSplit) public rewardsSplitsPending;
-    mapping(uint256 => uint256) public rewardsSplitsPendingAt;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -77,7 +70,7 @@ contract  HATVaults is Governable, HATMaster {
 
     modifier noSafetyPeriod() {
         //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 11 hours)
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
@@ -85,13 +78,8 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
-    modifier checkDelayPassed(uint256 _updateRequestedAt) {
-        require(_updateRequestedAt > 0, "HATVaults: no pending update");
-        require(
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp - _updateRequestedAt > TIME_LOCK_DELAY,
-            "GeneralParametersManager: must wait the update delay"
-        );
+    modifier onlyParamsManager() {
+        require(msg.sender == address(hatVaultsParametersManager), "only parameters manager");
         _;
     }
 
@@ -109,8 +97,6 @@ contract  HATVaults is Governable, HATMaster {
 
     event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
-    event RewardsSplitPending(uint256 indexed _pid, RewardsSplit indexed _newRewardsSplit);
-    event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
     event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
     event PendingRewardsLevelsLog(uint256 indexed _pid, uint256[] _rewardsLevels, uint256 _timeStamp);
 
@@ -121,8 +107,6 @@ contract  HATVaults is Governable, HATMaster {
                     address _tokenLock);
 
     event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
-    event VestingParamsPending(uint256 indexed _pid, uint256 indexed _newDuration, uint256 indexed _newPeriods);
-    event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
 
     event ClaimApprove(address indexed _approver,
                     uint256 indexed _pid,
@@ -170,7 +154,7 @@ contract  HATVaults is Governable, HATMaster {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
-        generalParametersManager = new GeneralParametersManager();
+        hatVaultsParametersManager = new HATVaultsParametersManager();
     }
 
       /**
@@ -188,7 +172,7 @@ contract  HATVaults is Governable, HATMaster {
     onlyCommittee(_pid)
     noPendingApproval(_pid) {
         require(_beneficiary != address(0), "beneficiary is zero");
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod,
@@ -285,7 +269,7 @@ contract  HATVaults is Governable, HATMaster {
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
     function claim(string memory _descriptionHash) external payable {
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         if (generalParameters.claimFee > 0) {
             require(msg.value >= generalParameters.claimFee, "not enough fee payed");
             // solhint-disable-next-line indent
@@ -295,52 +279,16 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
-    * the change only takes place by calling the setVestingParams function after the required delay has passed.
+    * @dev setVestingParams - called by the parameters manager to activate a change in a pool vesting params
+    * for rewarding claim reporter with the pool token after commiting to the new values in the
+    * setPendingVestingParams and after the required delay has passed.
     * @param _pid pool id
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
     */
-    function setPendingVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
-        require(_duration < 120 days, "vesting duration is too long");
-        require(_periods > 0, "vesting periods cannot be zero");
-        require(_duration >= _periods, "vesting duration smaller than periods");
-        poolsRewardDurationPendings[_pid] = _duration;
-        poolsRewardsPeriodsPendings[_pid] = _periods;
-        // solhint-disable-next-line not-rely-on-time
-        poolsRewardsPendingAts[_pid] = block.timestamp;
-        emit VestingParamsPending(_pid, _duration, _periods);
-    }
-
-    /**
-    * @dev setVestingParams - called by hats governance to activate a change in a pool vesting params
-    * for rewarding claim reporter with the pool token after commiting to the new values in the
-    * setPendingVestingParams and after the required delay has passed.
-    * @param _pid pool id
-    */
-    function setVestingParams(uint256 _pid) external checkDelayPassed(poolsRewardsPendingAts[_pid]) onlyGovernance {
-        poolsRewards[_pid].vestingDuration = poolsRewardDurationPendings[_pid];
-        poolsRewards[_pid].vestingPeriods = poolsRewardsPeriodsPendings[_pid];
-        poolsRewardsPendingAts[_pid] = 0;
-        emit SetVestingParams(_pid, poolsRewardDurationPendings[_pid], poolsRewardsPeriodsPendings[_pid]);
-    }
-
-    /**
-    * @dev setPendingRewardsSplit - set the pool token rewards split upon an approval
-    * the function can be called only by governance.
-    * the sum of the rewards split should be less than 10000 (less than 100%)
-    * the change only takes place by calling the setRewardsSplit function after the required delay has passed.
-    * @param _pid pool id
-    * @param _rewardsSplit split
-    */
-    function setPendingRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
-    external
-    onlyGovernance {
-        validateSplit(_rewardsSplit);
-        rewardsSplitsPending[_pid] = _rewardsSplit;
-        // solhint-disable-next-line not-rely-on-time
-        rewardsSplitsPendingAt[_pid] = block.timestamp;
-        emit RewardsSplitPending(_pid, _rewardsSplit);
+    function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyParamsManager {
+        poolsRewards[_pid].vestingDuration = _duration;
+        poolsRewards[_pid].vestingPeriods = _periods;
     }
 
     /**
@@ -349,23 +297,21 @@ contract  HATVaults is Governable, HATMaster {
     * the sum of the rewards split should be less than 10000 (less than 100%)
     * used after commiting to the new values in the setPendingRewardsSplit and after the required delay has passed.
     */
-    function setRewardsSplit(uint256 _pid)
+    function setRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
     external
-    checkDelayPassed(rewardsSplitsPendingAt[_pid]) onlyGovernance noPendingApproval(_pid) noSafetyPeriod {
-        poolsRewards[_pid].rewardsSplit = rewardsSplitsPending[_pid];
-        rewardsSplitsPendingAt[_pid] = 0;
-        emit SetRewardsSplit(_pid, rewardsSplitsPending[_pid]);
+    onlyParamsManager noPendingApproval(_pid) noSafetyPeriod {
+        poolsRewards[_pid].rewardsSplit = _rewardsSplit;
     }
 
     /**
-   * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
-   * the reward level represent the percentage of the pool's token which will be split as a reward.
-   * the function can be called only by the pool committee.
-   * cannot be called if there already pending approval.
-   * each level should be less than 10000
-   * @param _pid pool id
-   * @param _rewardsLevels the reward levels array
- */
+    * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
+    * the reward level represent the percentage of the pool's token which will be split as a reward.
+    * the function can be called only by the pool committee.
+    * cannot be called if there already pending approval.
+    * each level should be less than 10000
+    * @param _pid pool id
+    * @param _rewardsLevels the reward levels array
+    */
     function setPendingRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyCommittee(_pid) noPendingApproval(_pid) {
@@ -375,20 +321,20 @@ contract  HATVaults is Governable, HATMaster {
         emit PendingRewardsLevelsLog(_pid, _rewardsLevels, pendingRewardsLevels[_pid].timestamp);
     }
 
-  /**
-   * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
-   * see pendingRewardsLevels
-   * the reward level represent the percentage of the pool's token which will be split as a reward.
-   * the function can be called only by the pool committee.
-   * cannot be called if there already pending approval.
-   * each level should be less than 10000
-   * @param _pid pool id
- */
+    /**
+    * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
+    * see pendingRewardsLevels
+    * the reward level represent the percentage of the pool's token which will be split as a reward.
+    * the function can be called only by the pool committee.
+    * cannot be called if there already pending approval.
+    * each level should be less than 10000
+    * @param _pid pool id
+    */
     function setRewardsLevels(uint256 _pid)
     external
     onlyCommittee(_pid) noPendingApproval(_pid) {
         require(pendingRewardsLevels[_pid].timestamp > 0, "no pending set rewards levels");
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - pendingRewardsLevels[_pid].timestamp > generalParameters.setRewardsLevelsDelay,
         "cannot confirm setRewardsLevels at this time");
@@ -463,7 +409,7 @@ contract  HATVaults is Governable, HATMaster {
         RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
         getDefaultRewardsSplit() : _rewardsSplit;
 
-        validateSplit(rewardsSplit);
+        hatVaultsParametersManager.validateSplit(rewardsSplit);
         poolsRewards[poolId] = PoolReward({
             rewardsLevels: rewardsLevels,
             rewardsSplit: rewardsSplit,
@@ -536,7 +482,7 @@ contract  HATVaults is Governable, HATMaster {
         emit SwapAndBurn(_pid, amount, burntHats);
         address tokenLock;
         uint256 hackerReward = hatsReceived.mul(amountForHackersHatRewards).div(amount);
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         if (hackerReward > 0) {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
@@ -565,7 +511,7 @@ contract  HATVaults is Governable, HATMaster {
     * @param _pid the pool id
     **/
     function withdrawRequest(uint256 _pid) external {
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
         "pending withdraw request exist");
@@ -701,18 +647,8 @@ contract  HATVaults is Governable, HATMaster {
         });
     }
 
-    function validateSplit(RewardsSplit memory _rewardsSplit) internal pure {
-        require(_rewardsSplit.hackerVestedReward
-            .add(_rewardsSplit.hackerReward)
-            .add(_rewardsSplit.committeeReward)
-            .add(_rewardsSplit.swapAndBurn)
-            .add(_rewardsSplit.governanceHatReward)
-            .add(_rewardsSplit.hackerHatReward) == REWARDS_LEVEL_DENOMINATOR,
-        "total split % should be 10000");
-    }
-
     function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) noSafetyPeriod {
-        GeneralParametersManager.GeneralParameters memory generalParameters = generalParametersManager.generalParameters();
+        HATVaultsParametersManager.GeneralParameters memory generalParameters = hatVaultsParametersManager.generalParameters();
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
         // solhint-disable-next-line not-rely-on-time
