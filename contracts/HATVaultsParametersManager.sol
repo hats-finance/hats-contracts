@@ -85,7 +85,8 @@ contract HATVaultsParametersManager {
         );
         _;
     }
-
+    
+    // solhint-disable-next-line func-visibility
     constructor () {
         hatVaults = HATVaults(msg.sender);
         _generalParameters = GeneralParameters({
