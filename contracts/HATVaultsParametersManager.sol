@@ -28,7 +28,7 @@ contract HATVaultsParametersManager {
     }
 
     uint256 public constant TIME_LOCK_DELAY = 2 days;
-    uint256 public constant WITHDRAW_REQUEST_PARAMS_DELAY = 91 days;
+    uint256 public constant WITHDRAW_REQUEST_PARAMS_DELAY = 61 days;
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
 
     GeneralParameters internal _generalParameters;
@@ -118,8 +118,8 @@ contract HATVaultsParametersManager {
         uint256 _withdrawRequestPendingPeriod,
         uint256  _withdrawRequestEnablePeriod
     ) external onlyGovernance {
-        require(90 days >= _withdrawRequestPendingPeriod, "HATVaultsParametersManager: withdrawe request pending period must be <= 3 months");
-        require(90 days <= _withdrawRequestEnablePeriod, "HATVaultsParametersManager: withdrawe request enabled period must be >= 3 months");
+        require(60 days >= _withdrawRequestPendingPeriod, "HATVaultsParametersManager: withdrawe request pending period must be <= 2 months");
+        require(1 hours <= _withdrawRequestEnablePeriod, "HATVaultsParametersManager: withdrawe request enabled period must be >= 1 hour");
         _generalParametersPending.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         _generalParametersPending.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
         // solhint-disable-next-line not-rely-on-time

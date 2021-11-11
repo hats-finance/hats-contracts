@@ -661,20 +661,20 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, (7*24*3600));
       // TODO: Add requires for min and max value + delay tests
       try {
-        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,90*24*3600,{from:accounts[4]});
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,60*24*3600,{from:accounts[4]});
         assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatVaultsParametersManager.setPendingWithdrawRequestParams(90*24*3600+1,90*24*3600);
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(60*24*3600+1,60*24*3600);
         assert(false, 'pending period must be <= 90 days');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,90*24*3600 - 1);
-        assert(false, 'enable period must be >= 90 days');
+        await hatVaultsParametersManager.setPendingWithdrawRequestParams(1,3600 - 1);
+        assert(false, 'enable period must be >= 1 hour');
       } catch (ex) {
         assertVMException(ex);
       }
