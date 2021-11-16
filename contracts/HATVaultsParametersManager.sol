@@ -289,7 +289,7 @@ contract HATVaultsParametersManager {
     }
 
     /**
-    * @dev setRewardsSplit - activates a change of a pool token rewards split upon an approval
+    * @dev setRewardsSplit - activates a change of a pool token rewards split
     * the function can be called only by governance.
     * the sum of the rewards split should be less than 10000 (less than 100%)
     * used after commiting to the new values in the setPendingRewardsSplit and after the required delay has passed.
