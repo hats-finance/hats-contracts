@@ -239,7 +239,7 @@ contract HATVaultsParametersManager {
     // -----------------------------------------------------------------------
     
     /**
-    * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
+    * @dev setPendingVestingParams - set pool vesting params for rewarding claim reporter with the pool token
     * the change only takes place by calling the setVestingParams function after the required delay has passed.
     * @param _pid pool id
     * @param _duration duration of the vesting period
