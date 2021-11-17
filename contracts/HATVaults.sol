@@ -191,7 +191,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
+    * @dev dismissPendingApprovalClaim - called by hats governance or after a long delay by anyone to dismiss a pending approval claim and make withdrawals enabled again.
     * @param _pid pool id
     */
     function dismissPendingApprovalClaim(uint256 _pid) external {
