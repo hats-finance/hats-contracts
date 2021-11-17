@@ -28,7 +28,7 @@ contract HATVaultsParametersManager {
     }
 
     uint256 public constant TIME_LOCK_DELAY = 2 days;
-    uint256 public constant WITHDRAW_REQUEST_PARAMS_DELAY = 61 days;
+    uint256 public constant LONG_DELAY = 61 days;
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
 
     GeneralParameters internal _generalParameters;
@@ -134,7 +134,7 @@ contract HATVaultsParametersManager {
      * after commiting to the new values in the setPendingWithdrawRequestParams and after the required delay has passed.
     */
     function setWithdrawRequestParams() external 
-    checkDelayPassed(setWithdrawRequestParamsPendingAt, WITHDRAW_REQUEST_PARAMS_DELAY) onlyGovernance {
+    checkDelayPassed(setWithdrawRequestParamsPendingAt, LONG_DELAY) onlyGovernance {
         _generalParameters.withdrawRequestPendingPeriod = _generalParametersPending.withdrawRequestPendingPeriod;
         _generalParameters.withdrawRequestEnablePeriod = _generalParametersPending.withdrawRequestEnablePeriod;
         setWithdrawRequestParamsPendingAt = 0;
