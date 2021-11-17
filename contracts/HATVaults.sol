@@ -78,6 +78,7 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+    // limit the call to parameter changing functions to the parameters manager
     modifier onlyParamsManager() {
         require(msg.sender == address(hatVaultsParametersManager), "only parameters manager");
         _;

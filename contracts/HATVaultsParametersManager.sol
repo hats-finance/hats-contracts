@@ -71,6 +71,7 @@ contract HATVaultsParametersManager {
     
     event SetRewardsSplit(uint256 indexed _pid, HATMaster.RewardsSplit _rewardsSplit);
 
+    // limit the call to parameter changing functions to the hats governance
     modifier onlyGovernance() {
         require(hatVaults.governance() == msg.sender, "HATVaultsParametersManager: caller is not the HATVaults governance");
         _;
