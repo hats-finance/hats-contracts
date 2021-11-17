@@ -58,7 +58,6 @@ contract  HATVaults is Governable, HATMaster {
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
-    uint256 public constant LONG_DELAY = 61 days;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -197,7 +196,7 @@ contract  HATVaults is Governable, HATMaster {
     */
     function dismissPendingApprovalClaim(uint256 _pid) external {
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == governance() || pendingApprovals[_pid].createdAt + LONG_DELAY < block.timestamp);
+        require(msg.sender == governance() || pendingApprovals[_pid].createdAt + hatVaultsParametersManager.longDelay() < block.timestamp);
         delete pendingApprovals[_pid];
     }
 

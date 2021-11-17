@@ -27,11 +27,13 @@ contract HATVaultsParametersManager {
         uint256 pendingAt;
     }
 
-    uint256 public constant TIME_LOCK_DELAY = 2 days;
-    uint256 public constant LONG_DELAY = 61 days;
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
 
     GeneralParameters internal _generalParameters;
+
+    // Delays duration parameters
+    uint256 public shortDelay = 2 days;
+    uint256 public longDelay = 61 days;
     
     // General parameters setting delays
     GeneralParameters internal _generalParametersPending;
@@ -47,6 +49,10 @@ contract HATVaultsParametersManager {
 
     HATVaults public hatVaults;
 
+    event SetShortDelay(uint256 indexed _previousShortDelay, uint256 indexed _newShortDelay);
+    
+    event SetLongDelay(uint256 indexed _previousLongDelay, uint256 indexed _newLongDelay);
+    
     event ClaimFeePending(uint256 indexed _newFee);
 
     event SetClaimFee(uint256 indexed _fee);
@@ -111,6 +117,26 @@ contract HATVaultsParametersManager {
     }
 
     /**
+     * @dev setShortDelay - called by hats governance to set the short delay for updating parameters
+     * @param _delay the new delay for changes based on the short delay
+    */
+    function setShortDelay(uint256 _delay) external onlyGovernance {
+        require(_delay >= 2 days && _delay <= 14 days, "short delay must be between 2 and 14 days");
+        emit SetShortDelay(shortDelay, _delay);
+        shortDelay = _delay;
+    }
+
+    /**
+     * @dev setLongDelay - called by hats governance to set the long delay for updating parameters
+     * @param _delay the new delay for changes based on the long delay
+    */
+    function setLongDelay(uint256 _delay) external onlyGovernance {
+        require(_delay >= 14 days && _delay <= 90 days, "long delay must be between 2 weeks and 3 months");
+        emit SetLongDelay(longDelay, _delay);
+        longDelay = _delay;
+    }
+
+    /**
      * @dev setPendingWithdrawRequestParams - called by hats governance to set new withdraw request parameters
      * the change only takes place by calling the setWithdrawRequestParams function after the required delay has passed.
      * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
@@ -134,7 +160,7 @@ contract HATVaultsParametersManager {
      * after commiting to the new values in the setPendingWithdrawRequestParams and after the required delay has passed.
     */
     function setWithdrawRequestParams() external 
-    checkDelayPassed(setWithdrawRequestParamsPendingAt, LONG_DELAY) onlyGovernance {
+    checkDelayPassed(setWithdrawRequestParamsPendingAt, longDelay) onlyGovernance {
         _generalParameters.withdrawRequestPendingPeriod = _generalParametersPending.withdrawRequestPendingPeriod;
         _generalParameters.withdrawRequestEnablePeriod = _generalParametersPending.withdrawRequestEnablePeriod;
         setWithdrawRequestParamsPendingAt = 0;
@@ -160,7 +186,7 @@ contract HATVaultsParametersManager {
      * @dev setClaimFee - called by hats governance to activate the change of the claim fee after commiting to 
      * the new value in the setClaimFeePending and after the required delay has passed.
     */
-    function setClaimFee() external checkDelayPassed(setclaimFeePendingAt, TIME_LOCK_DELAY) onlyGovernance {        
+    function setClaimFee() external checkDelayPassed(setclaimFeePendingAt, shortDelay) onlyGovernance {        
         _generalParameters.claimFee = _generalParametersPending.claimFee;
         setclaimFeePendingAt = 0;
         emit SetClaimFee(_generalParametersPending.claimFee);
@@ -189,7 +215,7 @@ contract HATVaultsParametersManager {
      * @dev setWithdrawSafetyPeriod - called by hats governance to activate a change in the withdraw and safety periods
      * after commiting to the new values in the setPendingWithdrawSafetyPeriod and after the required delay has passed.
     */
-    function setWithdrawSafetyPeriod() external checkDelayPassed(setWithdrawSafetyPeriodPendingAt, TIME_LOCK_DELAY) onlyGovernance {
+    function setWithdrawSafetyPeriod() external checkDelayPassed(setWithdrawSafetyPeriodPendingAt, shortDelay) onlyGovernance {
         _generalParameters.withdrawPeriod = _generalParametersPending.withdrawPeriod;
         _generalParameters.safetyPeriod = _generalParametersPending.safetyPeriod;
         setWithdrawSafetyPeriodPendingAt = 0;
@@ -219,7 +245,7 @@ contract HATVaultsParametersManager {
     * for rewarding claim reporter with HAT token after commiting to the new values in the
     * setPendingHatVestingParams and after the required delay has passed.
     */
-    function setHatVestingParams() external checkDelayPassed(setHatVestingParamsPendingAt, TIME_LOCK_DELAY) onlyGovernance {
+    function setHatVestingParams() external checkDelayPassed(setHatVestingParamsPendingAt, shortDelay) onlyGovernance {
         _generalParameters.hatVestingDuration = _generalParametersPending.hatVestingDuration;
         _generalParameters.hatVestingPeriods = _generalParametersPending.hatVestingPeriods;
         setHatVestingParamsPendingAt = 0;
@@ -265,7 +291,7 @@ contract HATVaultsParametersManager {
     * setPendingVestingParams and after the required delay has passed.
     * @param _pid pool id
     */
-    function setVestingParams(uint256 _pid) external checkDelayPassed(poolsRewardVestingParamsPendings[_pid].pendingAt, TIME_LOCK_DELAY) onlyGovernance {
+    function setVestingParams(uint256 _pid) external checkDelayPassed(poolsRewardVestingParamsPendings[_pid].pendingAt, shortDelay) onlyGovernance {
         poolsRewardVestingParamsPendings[_pid].pendingAt = 0;
         hatVaults.setVestingParams(_pid, poolsRewardVestingParamsPendings[_pid].duration, poolsRewardVestingParamsPendings[_pid].periods);
         emit SetVestingParams(_pid, poolsRewardVestingParamsPendings[_pid].duration, poolsRewardVestingParamsPendings[_pid].periods);
@@ -297,7 +323,7 @@ contract HATVaultsParametersManager {
     */
     function setRewardsSplit(uint256 _pid)
     external
-    checkDelayPassed(rewardsSplitsPendingAt[_pid], TIME_LOCK_DELAY) onlyGovernance {
+    checkDelayPassed(rewardsSplitsPendingAt[_pid], shortDelay) onlyGovernance {
         rewardsSplitsPendingAt[_pid] = 0;
         hatVaults.setRewardsSplit(_pid, rewardsSplitsPending[_pid]);
         emit SetRewardsSplit(_pid, rewardsSplitsPending[_pid]);
