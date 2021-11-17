@@ -19,6 +19,7 @@ contract  HATVaults is Governable, HATMaster {
         address beneficiary;
         uint256 severity;
         address approver;
+        uint256 createdAt;
     }
 
     struct ClaimReward {
@@ -57,6 +58,7 @@ contract  HATVaults is Governable, HATMaster {
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
+    uint256 public constant LONG_DELAY = 61 days;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "only committee");
@@ -78,7 +80,6 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
-    // limit the call to parameter changing functions to the parameters manager
     modifier onlyParamsManager() {
         require(msg.sender == address(hatVaultsParametersManager), "only parameters manager");
         _;
@@ -183,16 +184,20 @@ contract  HATVaults is Governable, HATMaster {
         pendingApprovals[_pid] = PendingApproval({
             beneficiary: _beneficiary,
             severity: _severity,
-            approver: msg.sender
+            approver: msg.sender,
+            // solhint-disable-next-line not-rely-on-time
+            createdAt: block.timestamp
         });
         emit PendingApprovalLog(_pid, _beneficiary, _severity, msg.sender);
     }
 
-  /**
-   * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
-   * @param _pid pool id
-  */
-    function dismissPendingApprovalClaim(uint256 _pid) external onlyGovernance {
+    /**
+    * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
+    * @param _pid pool id
+    */
+    function dismissPendingApprovalClaim(uint256 _pid) external {
+        // solhint-disable-next-line not-rely-on-time
+        require(msg.sender == governance() || pendingApprovals[_pid].createdAt + LONG_DELAY < block.timestamp);
         delete pendingApprovals[_pid];
     }
 
