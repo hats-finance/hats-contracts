@@ -6,6 +6,7 @@ import "./interfaces/ISwapRouter.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
+import "./HATGovernance.sol";
 import "./tokenlock/ITokenLockFactory.sol";
 import "./Governable.sol";
 
@@ -160,7 +161,7 @@ contract  HATVaults is Governable, HATMaster {
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
-        Governable.initialize(_hatGovernance);
+        Governable.initialize(address(new HATGovernance(_hatGovernance, HATToken(_rewardsToken))));
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
