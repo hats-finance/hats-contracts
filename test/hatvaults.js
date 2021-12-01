@@ -122,59 +122,105 @@ contract('HatVaults',  accounts =>  {
       await setup(accounts);
       assert.equal((await hatGovernance.shortDelay()), (2*24*3600));
       try {
-        await hatGovernance.setShortDelay(7*24*3600,{from:accounts[4]});
+        await hatGovernance.setShortDelayPending(7*24*3600,{from:accounts[4]});
         assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatGovernance.setShortDelay(14*24*3600+1);
+        await hatGovernance.setShortDelayPending(14*24*3600+1);
         assert(false, 'short delay must be <= 2 weeks');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatGovernance.setShortDelay(2*24*3600 - 1);
+        await hatGovernance.setShortDelayPending(2*24*3600 - 1);
         assert(false, 'short delay must be >= 2 days');
       } catch (ex) {
         assertVMException(ex);
       }
 
-      var tx = await hatGovernance.setShortDelay(7*24*3600);
+      var tx = await hatGovernance.setShortDelayPending(7*24*3600);
+      assert.equal(tx.logs[0].event, "ShortDelayPending");
+      assert.equal(tx.logs[0].args._previousShortDelay, 2*24*3600);
+      assert.equal(tx.logs[0].args._newShortDelay, 7*24*3600);
+      assert.equal((await hatGovernance.shortDelay()), (2*24*3600));
+
+      try {
+        await hatGovernance.setShortDelay();
+        assert(false, 'cannot set short delay before delay passed');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      try {
+        await hatGovernance.setShortDelay({from:accounts[4]});
+        assert(false, 'only governance');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      await utils.increaseTime(1);
+      await utils.increaseTime((await hatGovernance.shortDelay()).toNumber());
+
+      tx = await hatGovernance.setShortDelay();
       assert.equal(tx.logs[0].event, "SetShortDelay");
       assert.equal(tx.logs[0].args._previousShortDelay, 2*24*3600);
       assert.equal(tx.logs[0].args._newShortDelay, 7*24*3600);
       assert.equal((await hatGovernance.shortDelay()), (7*24*3600));
-    }); 
+    });
 
     it("set long delay", async () => {
       await setup(accounts);
       assert.equal((await hatGovernance.longDelay()), (61*24*3600));
       try {
-        await hatGovernance.setLongDelay(60*24*3600,{from:accounts[4]});
+        await hatGovernance.setLongDelayPending(60*24*3600,{from:accounts[4]});
         assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatGovernance.setLongDelay(90*24*3600+1);
+        await hatGovernance.setLongDelayPending(90*24*3600+1);
         assert(false, 'long delay must be <= 90 days');
       } catch (ex) {
         assertVMException(ex);
       }
       try {
-        await hatGovernance.setLongDelay(14*24*3600 - 1);
+        await hatGovernance.setLongDelayPending(14*24*3600 - 1);
         assert(false, 'long delay must be >= 2 weeks');
       } catch (ex) {
         assertVMException(ex);
       }
 
-      var tx = await hatGovernance.setLongDelay(60*24*3600);
+      var tx = await hatGovernance.setLongDelayPending(60*24*3600);
+      assert.equal(tx.logs[0].event, "LongDelayPending");
+      assert.equal(tx.logs[0].args._previousLongDelay, 61*24*3600);
+      assert.equal(tx.logs[0].args._newLongDelay, 60*24*3600);
+      assert.equal((await hatGovernance.longDelay()), (61*24*3600));
+
+      try {
+        await hatGovernance.setLongDelay();
+        assert(false, 'cannot set long delay before delay passed');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      try {
+        await hatGovernance.setLongDelay({from:accounts[4]});
+        assert(false, 'only governance');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+
+      await utils.increaseTime(1);
+      await utils.increaseTime((await hatGovernance.longDelay()).toNumber());
+
+      tx = await hatGovernance.setLongDelay();
       assert.equal(tx.logs[0].event, "SetLongDelay");
       assert.equal(tx.logs[0].args._previousLongDelay, 61*24*3600);
       assert.equal(tx.logs[0].args._newLongDelay, 60*24*3600);
       assert.equal((await hatGovernance.longDelay()), (60*24*3600));
-    });  
+    }); 
 
     async function safeEmergencyWithdraw(pid, staker) {
       let withdrawPeriod = new web3.utils.BN((await hatVaults.generalParameters()).withdrawPeriod).toNumber();

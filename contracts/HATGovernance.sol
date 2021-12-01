@@ -18,9 +18,15 @@ contract HATGovernance is Governable {
     // Delays duration parameters
     uint256 public shortDelay = 2 days;
     uint256 public longDelay = 61 days;
+
+    // Delays duration parameters
+    uint256 public shortDelayPending;
+    uint256 public longDelayPending;
     
     // General parameters setting delays
     HATVaults.GeneralParameters public generalParametersPending;
+    uint256 public setShortDelayPendingAt;
+    uint256 public setLongDelayPendingAt;
     uint256 public setWithdrawRequestParamsPendingAt;
     uint256 public setclaimFeePendingAt;
     uint256 public setWithdrawSafetyPeriodPendingAt;
@@ -39,8 +45,12 @@ contract HATGovernance is Governable {
 
     HATVaults public hatVaults;
 
+    event ShortDelayPending(uint256 indexed _previousShortDelay, uint256 indexed _newShortDelay);
+
     event SetShortDelay(uint256 indexed _previousShortDelay, uint256 indexed _newShortDelay);
     
+    event LongDelayPending(uint256 indexed _previousLongDelay, uint256 indexed _newLongDelay);
+
     event SetLongDelay(uint256 indexed _previousLongDelay, uint256 indexed _newLongDelay);
 
     event ClaimFeePending(uint256 indexed _newFee);
@@ -85,25 +95,46 @@ contract HATGovernance is Governable {
     }
 
 
-    // TODO: Set delay here or it will be effectively always the shortest delay...
     /**
-     * @dev setShortDelay - called by hats governance to set the short delay for updating parameters
+     * @dev setShortDelayPending - called by hats governance to set the short delay for updating parameters
      * @param _delay the new delay for changes based on the short delay
     */
-    function setShortDelay(uint256 _delay) external onlyGovernance {
+    function setShortDelayPending(uint256 _delay) external onlyGovernance {
         require(_delay >= 2 days && _delay <= 14 days, "short delay must be between 2 and 14 days");
-        emit SetShortDelay(shortDelay, _delay);
-        shortDelay = _delay;
+        shortDelayPending = _delay;
+        // solhint-disable-next-line not-rely-on-time
+        setShortDelayPendingAt = block.timestamp;
+        emit ShortDelayPending(shortDelay, _delay);
+    }
+
+    /**
+     * @dev setShortDelay - called by hats governance to set the short delay for updating parameters
+    */
+    function setShortDelay() external onlyGovernance checkDelayPassed(setShortDelayPendingAt, shortDelay) {
+        emit SetShortDelay(shortDelay, shortDelayPending);
+        shortDelay = shortDelayPending;
+        setShortDelayPendingAt = 0;
+    }
+
+    /**
+     * @dev setLongDelayPending - called by hats governance to set the long delay for updating parameters
+     * @param _delay the new delay for changes based on the long delay
+    */
+    function setLongDelayPending(uint256 _delay) external onlyGovernance {
+        require(_delay >= 14 days && _delay <= 90 days, "long delay must be between 2 weeks and 3 months");
+        longDelayPending = _delay;
+        // solhint-disable-next-line not-rely-on-time
+        setLongDelayPendingAt = block.timestamp;
+        emit LongDelayPending(longDelay, _delay);
     }
 
     /**
      * @dev setLongDelay - called by hats governance to set the long delay for updating parameters
-     * @param _delay the new delay for changes based on the long delay
     */
-    function setLongDelay(uint256 _delay) external onlyGovernance {
-        require(_delay >= 14 days && _delay <= 90 days, "long delay must be between 2 weeks and 3 months");
-        emit SetLongDelay(longDelay, _delay);
-        longDelay = _delay;
+    function setLongDelay() external onlyGovernance checkDelayPassed(setLongDelayPendingAt, longDelay) {
+        emit SetLongDelay(longDelay, longDelayPending);
+        longDelay = longDelayPending;
+        setLongDelayPendingAt = 0;
     }
 
     /**
@@ -373,4 +404,6 @@ contract HATGovernance is Governable {
 
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
+
+    // TODO: Implement logic to transfer ownership of the hatvaults
 }
