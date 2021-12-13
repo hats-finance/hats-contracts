@@ -15,7 +15,7 @@ contract HATTimelockController is TimelockController {
         uint256 _minDelay,
         address[] memory _proposers,
         address[] memory _executors
-    // solhint-disable-next-line no-empty-blocks
+    // solhint-disable-next-line func-visibility, no-empty-blocks
     ) TimelockController(_minDelay, _proposers, _executors) {
     }
 
@@ -27,9 +27,9 @@ contract HATTimelockController is TimelockController {
     
     // Whitelisted functions
 
-     function approveClaim(uint256 _pid) external onlyRole(EXECUTOR_ROLE) {
-         hatVaults.approveClaim(_pid);
-     }
+    function approveClaim(uint256 _pid) external onlyRole(EXECUTOR_ROLE) {
+        hatVaults.approveClaim(_pid);
+    }
 
     function addPool(uint256 _allocPoint,
                     address _lpToken,

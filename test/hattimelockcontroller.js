@@ -5,7 +5,6 @@ const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
-const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -14,10 +13,8 @@ var hatToken;
 var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "10";
-var REAL_REWARD_PER_BLOCK = "0.0161856448";
 var tokenLockFactory;
 var hatGovernanceDelay = 60*60*24*7;
-let safeWithdrawBlocksIncrement = 3;
 const setup = async function (
                               accounts,
                               reward_per_block=REWARD_PER_BLOCK,
@@ -67,24 +64,6 @@ function assertVMException(error) {
 
 contract('HatVaults',  accounts =>  {
 
-    //this function will increment 4 blocks in local testnet
-    async function safeWithdraw(pid, amount, staker) {
-
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
-
-      //increase time for the case there is already pending request ..so make sure start a new one..
-      await utils.increaseTime(7*24*3600);
-      await hatVaults.withdrawRequest(pid,{from:staker});
-      //increase time for pending period
-      await utils.increaseTime(7*24*3600);
-      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
-         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
-      }
-      return await hatVaults.withdraw(pid,amount,{from:staker});
-    }
-
     async function advanceToSaftyPeriod() {
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
@@ -94,17 +73,6 @@ contract('HatVaults',  accounts =>  {
       if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) <  withdrawPeriod) {
          await utils.increaseTime(withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod)));
       }
-    }
-
-    //advanced time to a withdraw enable period
-    async function advanceToNoneSaftyPeriod() {
-      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
-      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
-        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
-      }
-
     }
 
     async function calculateExpectedReward(staker,operationBlocksIncrement = 0) {
@@ -121,41 +89,6 @@ contract('HatVaults',  accounts =>  {
       rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
       let rewardDebt = (await hatVaults.userInfo(0,staker)).rewardDebt;
       return stakerAmount.mul(rewardPerShare).div(onee12).sub(rewardDebt);
-    }
-
-    async function safeEmergencyWithdraw(pid, staker) {
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
-      //increase time for the case there is already pending request ..so make sure start a new one..
-      await utils.increaseTime(7*24*3600);
-      await hatVaults.withdrawRequest(pid,{from:staker});
-      //increase time for pending period
-      await utils.increaseTime(7*24*3600);
-      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
-         await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
-      }
-      return await hatVaults.emergencyWithdraw(pid,{from:staker});
-    }
-
-    async function unSafeEmergencyWithdraw(pid, staker) {
-      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
-      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
-        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
-      }
-      return await hatVaults.emergencyWithdraw(pid,{from:staker});
-    }
-
-    async function unSafeWithdraw(pid, amount, staker) {
-      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-      let withdrawPeriod  =  (await hatVaults.generalParameters()).withdrawPeriod.toNumber();
-      let safetyPeriod = (await hatVaults.generalParameters()).safetyPeriod.toNumber();
-      if (currentTimeStamp %  (withdrawPeriod + safetyPeriod) >=  withdrawPeriod) {
-        await utils.increaseTime((currentTimeStamp % (withdrawPeriod + safetyPeriod) )+ safetyPeriod - withdrawPeriod);
-      }
-      return await hatVaults.withdraw(pid,amount,{from:staker});
     }
 
     it("constructor and initialize", async () => {
