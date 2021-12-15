@@ -12,22 +12,20 @@ contract HATTimelockController is TimelockController {
     HATVaults public hatVaults;
 
     constructor(
+        HATVaults _hatVaults,
         uint256 _minDelay,
         address[] memory _proposers,
         address[] memory _executors
-    // solhint-disable-next-line func-visibility, no-empty-blocks
+    // solhint-disable-next-line func-visibility
     ) TimelockController(_minDelay, _proposers, _executors) {
-    }
-
-    function initializeHATVaults(HATVaults _hatVaults) external onlyRole(EXECUTOR_ROLE) {
         require(address(_hatVaults) != address(0), "HATTimelockController: HATVaults address must not be 0");
-        require(address(hatVaults) == address(0), "HATTimelockController: Cannot update HATVaults address");
         hatVaults = _hatVaults;
+
     }
     
     // Whitelisted functions
 
-    function approveClaim(uint256 _pid) external onlyRole(EXECUTOR_ROLE) {
+    function approveClaim(uint256 _pid) external onlyRole(PROPOSER_ROLE) {
         hatVaults.approveClaim(_pid);
     }
 
@@ -39,7 +37,7 @@ contract HATTimelockController is TimelockController {
                     string memory _descriptionHash,
                     uint256[2] memory _rewardVestingParams)
     external
-    onlyRole(EXECUTOR_ROLE) {
+    onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
             _allocPoint,
             _lpToken,
@@ -56,7 +54,7 @@ contract HATTimelockController is TimelockController {
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
-    external onlyRole(EXECUTOR_ROLE) {
+    external onlyRole(PROPOSER_ROLE) {
         hatVaults.setPool(
             _pid,
             _allocPoint,
@@ -71,7 +69,7 @@ contract HATTimelockController is TimelockController {
                         uint256 _amountOutMinimum,
                         uint24[2] memory _fees)
     external
-    onlyRole(EXECUTOR_ROLE) {
+    onlyRole(PROPOSER_ROLE) {
         hatVaults.swapBurnSend(
             _pid,
             _beneficiary,

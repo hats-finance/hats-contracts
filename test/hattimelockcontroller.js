@@ -35,19 +35,21 @@ const setup = async function (
   router =  await UniSwapV3RouterMock.new(routerReturnType,wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-
-  hatTimelockController = await HATTimelockController.new(
-    hatGovernanceDelay,
-    [accounts[0]],
-    [accounts[0]]);
   hatVaults = await HATVaults.new(hatToken.address,
                                   web3.utils.toWei(reward_per_block),
                                   startBlock,
                                   halvingAfterBlock,
-                                  hatTimelockController.address,
+                                  accounts[0],
                                   router.address,
                                   tokenLockFactory.address);
-  await hatTimelockController.initializeHATVaults(hatVaults.address);
+  hatTimelockController = await HATTimelockController.new(
+                                  hatVaults.address,
+                                  hatGovernanceDelay,
+                                  [accounts[0]],
+                                  [accounts[0]]);
+  await hatVaults.setPendingGovernance(hatTimelockController.address);
+  await utils.increaseTime(2*24*3600);
+  tx = await hatVaults.transferGovernorship();
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
@@ -98,19 +100,6 @@ contract('HatVaults',  accounts =>  {
         assert.equal(await hatTimelockController.hatVaults(), hatVaults.address);
         assert.equal(await hatTimelockController.hasRole(await hatTimelockController.PROPOSER_ROLE(), accounts[0]), true);
         assert.equal(await hatTimelockController.hasRole(await hatTimelockController.EXECUTOR_ROLE(), accounts[0]), true);
-        try {
-            await hatTimelockController.initializeHATVaults(accounts[0]);
-            assert(false, 'cant set hat vaults if already set');
-          } catch (ex) {
-            assertVMException(ex);
-        }
-
-        try {
-            await hatTimelockController.initializeHATVaults('0x0000000000000000000000000000000000000000');
-            assert(false, 'cant set hat vaults to 0');
-          } catch (ex) {
-            assertVMException(ex);
-        }
     });
 
     it("addPool", async () => {
