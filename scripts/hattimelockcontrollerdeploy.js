@@ -15,7 +15,7 @@ async function main() {
     await deployer.getAddress()
   );
 
-  //constructor params for test
+  //constructor params for mainnet
   const governance  = "0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef";
   const hatGovernanceDelay = 60*60*24*7;
   const hatVaultsAddress = "0x571f39d351513146248AcafA9D0509319A327C4D";
@@ -41,7 +41,6 @@ async function main() {
   console.log("hatTimelockController address:", hatTimelockController.address);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatVaults,"HATVaults");
   saveFrontendFiles(hatTimelockController,"HATTimelockController");
   //verify
 
