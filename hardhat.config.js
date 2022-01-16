@@ -35,13 +35,14 @@ module.exports = {
   },
   networks: {
   rinkeby: {
-     url: `https://rinkeby.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+    
+     url: `https://eth-rinkeby.alchemyapi.io/v2/${PRIVATE["ALCHEMY_KEY"]}`,
      accounts: [PRIVATE["PRIVATE_KEY"]],
      gasPrice: 10000000000,
      gas: 2500000
   },
   mainnet: {
-     url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+     url: `https://mainnet.alchemyapi.io/v2/${PRIVATE["ALCHEMY_KEY"]}`,
      accounts: [PRIVATE["PRIVATE_KEY"]],
      gasPrice:40000000000,
      gas: 2543177

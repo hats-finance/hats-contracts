@@ -20,3 +20,9 @@ node_modules
 #Hardhat files
 cache
 artifacts
+output.sol
+.private.json
+contracts/.DS_Store
+docs/.DS_Store
+.DS_Store
+arguments.js
