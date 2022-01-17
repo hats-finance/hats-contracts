@@ -170,5 +170,14 @@ module.exports = {
       tasks: ["test"],
       files: ["./test", "./contracts", "./scripts"],
     },
+    check: {
+      tasks: [
+        {
+          command: "run",
+          params: { script: "./scripts/checks/hattimelockcontroller.js" },
+        },
+      ],
+      files: ["./test", "./contracts", "./scripts"],
+    },
   },
 };
