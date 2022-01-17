@@ -38,7 +38,6 @@ async function main() {
                                             executors);
   await hatTimelockController.deployed();
 
-  await hatTimelockController.grantRole("0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5", governance);
   await hatTimelockController.renounceRole("0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5", await deployer.getAddress());
 
   console.log("hatTimelockController address:", hatTimelockController.address);
