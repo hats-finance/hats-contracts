@@ -10,7 +10,7 @@ async function main() {
     throw Error(`No deploymnet addresses found on network "${network.name}"`);
   }
 
-  const hatTimelockControllerAddress = addresses.HATTimelockController;
+  const hatTimelockControllerAddress = addresses.timelock;
 
   const hatTimelockController = await HatTimelockController.at(
     hatTimelockControllerAddress
@@ -25,6 +25,7 @@ async function main() {
   const checks = [];
 
   async function checkResult(description, f) {
+    console.log(`... checking ${description}..`);
     checks.push({ description, result: await f() });
   }
 
@@ -58,6 +59,13 @@ async function main() {
         hatTimelockController.address
       )
   );
+
+  await checkResult(
+    `Some executors have the executor role (${addresses.executors[0]})`,
+    async () =>
+      await hatTimelockController.hasRole(EXECUTOR_ROLE, addresses.executors[0])
+  );
+
   await checkResult(`Timelock is HATVaults governance`, async () => {
     const currentGov = await hatVaults.governance();
     if (currentGov === hatTimelockControllerAddress) {
@@ -102,9 +110,13 @@ async function main() {
   }
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
+
+module.exports = { checkTimeLock: main };

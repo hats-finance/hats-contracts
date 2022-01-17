@@ -14,6 +14,8 @@ Installation:
 npm install
 ```
 
+Create `.env` and `.private.json` files as needed.
+
 Run the tests:
 
 ```
@@ -27,6 +29,8 @@ The latest audit was done on August 21.
 Please report any security issues you find to contact@hats.finance
 
 ## Check deployment
+
+`npx hardhat run --network {rinkeby|mainnet} scripts/checks/check.js`
 
 ## Contribute
 
