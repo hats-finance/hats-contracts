@@ -14,6 +14,7 @@ coverage.json
 cache/
 yarn*
 frontend/
+.env
 
 node_modules
 

@@ -4,6 +4,8 @@ require("@nomiclabs/hardhat-solhint");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-contract-sizer');
+require('hardhat-gas-reporter');
+require('dotenv').config();
 
 
 const PRIVATE = require("./.private.json");
@@ -32,6 +34,11 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: PRIVATE["ETHERSCAN_API_KEY"]
+  },
+  gasReporter: {
+    currency: 'ETH',
+    coinmarketcap: process.env.COINMARKETCAP,
+    gasPrice: 100,
   },
   networks: {
   rinkeby: {
