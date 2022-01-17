@@ -14,7 +14,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint --fix": "eslint --fix .",
-    "coveralls": "hardhat coverage && cat coverage/lcov.info | coveralls"
+    "coveralls": "hardhat coverage"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
@@ -29,6 +29,7 @@
     "chai": "^4.2.0",
     "coveralls": "^3.1.0",
     "default-options": "^1.0.0",
+    "dotenv": "^14.1.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
@@ -38,6 +39,7 @@
     "ethereumjs-abi": "^0.6.5",
     "ethers": "^5.0.21",
     "hardhat": "^2.4.3",
+    "hardhat-gas-reporter": "^1.0.7",
     "highlight.js": ">=10.4.1",
     "mocha": "^7.1.1",
     "pac-resolver": ">=5.0.0",
@@ -47,7 +49,7 @@
     "rimraf": "^2.6.2",
     "solc-0.8": "npm:solc@^0.8.6",
     "solhint": "^3.3.6",
-    "solidity-coverage": "^0.7.16",
+    "solidity-coverage": "^0.7.17",
     "uint32": "^0.2.1",
     "underscore": ">=1.12.1"
   },
@@ -77,7 +79,7 @@
     "hardhat-watcher": "^2.1.1",
     "kbpgp": "^2.1.15",
     "math": "0.0.3",
-    "openzeppelin-solidity": "4.1.0",
+    "openzeppelin-solidity": "4.4.2",
     "solidity-docgen": "^0.5.13",
     "strip-hex-prefix": "^1.0.0",
     "truffle-flattener": "1.5.0"
