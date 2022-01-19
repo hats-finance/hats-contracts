@@ -1,5 +1,4 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
-const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
