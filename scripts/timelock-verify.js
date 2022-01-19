@@ -1,5 +1,5 @@
 const { network } = require("hardhat");
-const CONFIG = require("./settings.js");
+const CONFIG = require("./addresses.js");
 
 async function main(config) {
   // This is just a convenience check

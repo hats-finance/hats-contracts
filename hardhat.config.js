@@ -42,13 +42,15 @@ module.exports = {
   },
   networks: {
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY ||
+        PRIVATE["INFURA_KEY"]}`,
       accounts: [process.env.RINKEBY_PK || PRIVATE["RINKEBY_PK"]],
       gasPrice: "auto",
       gas: "auto",
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY ||
+        PRIVATE["INFURA_KEY"]}`,
       accounts: [process.env.PRIVATE_KEY || PRIVATE["PRIVATE_KEY"]],
       gasPrice: 100e9,
       gas: "auto",
