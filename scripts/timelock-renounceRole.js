@@ -1,5 +1,5 @@
 const { network } = require("hardhat");
-const CONFIG = require("./config.js");
+const CONFIG = require("./settings.js");
 const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 
 async function main(config) {

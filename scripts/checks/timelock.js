@@ -1,9 +1,8 @@
 const HatTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATVaults = artifacts.require("./HATVaults.sol");
-const ADDRESSES = require("./addresses.js");
+const ADDRESSES = require("../addresses.js");
 async function main() {
-  // This is just a convenience check
-  console.log(`Do sanity check of deployed contracts`);
+  console.log(`Do sanity check of deployed HatTimelockController contract`);
 
   const addresses = ADDRESSES[network.name];
   if (!addresses) {

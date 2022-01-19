@@ -1,5 +1,5 @@
 const { network } = require("hardhat");
-const CONFIG = require("./config.js");
+const CONFIG = require("./addresses.js");
 const { verifyTimelock } = require("./timelock-verify.js");
 const { renounceRole } = require("./timelock-renounceRole.js");
 
@@ -8,22 +8,13 @@ async function main(config) {
   if (!config) {
     config = CONFIG[network.name];
   }
-  // if (network.name === "hardhat") {
-  //   console.warn(
-  //     "You are trying to deploy a contract to the Hardhat Network, which" +
-  //       "gets automatically created and destroyed every time. Use the Hardhat" +
-  //       " option '--network localhost'"
-  //   );
-  // }
 
-  // ethers is available in the global scope
   const [deployer] = await ethers.getSigners();
   console.log(
     "Deploying the contracts with the account:",
     await deployer.getAddress()
   );
 
-  //constructor params for mainnet
   const governance = config.governance;
   var hatGovernanceDelay;
   if (config.minDelay) {
@@ -50,6 +41,7 @@ async function main(config) {
     );
     await hatTimelockController.deployed();
   } else {
+    // if network is hardhat, then we are running a test, and we use a different deploymnet method
     const HATTimelockControllerArtifact = artifacts.require(
       "./HATTimelockController.sol"
     );
