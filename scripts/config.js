@@ -11,6 +11,7 @@ module.exports = {
     ],
     oldTimelock: "0x66922e992e07030CEaC25E1919E9C31153F85b6f",
     timelock: "0xFd4255F16378306CA83E37015Df01a1700DAc296",
+    newTimelock: "0xFd4255F16378306CA83E37015Df01a1700DAc296",
   },
   rinkeby: {
     governance: "0xd6eC2F1D35C4a21D3a25E95CC40D67b4D0af995E",

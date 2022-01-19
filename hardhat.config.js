@@ -44,15 +44,16 @@ module.exports = {
   networks: {
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
-      accounts: [PRIVATE["RINKEBY_PK"]],
+      accounts: [process.env.RINKEBY_PK || PRIVATE["RINKEBY_PK"]],
       gasPrice: "auto",
       gas: "auto",
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
-      accounts: [PRIVATE["PRIVATE_KEY"]],
-      gasPrice: 100e9,
-      gas: 100e9,
+      accounts: [process.env.PRIVATE_KEY || PRIVATE["PRIVATE_KEY"]],
+      // gasPrice: 100e9,
+      // gasPrice: "auto",
+      // gas: "auto",
     },
     hardhat: {
       accounts: [
