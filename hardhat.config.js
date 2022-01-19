@@ -33,8 +33,7 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    // apiKey: process.env.ETHERSCAN_API_KEY | PRIVATE["ETHERSCAN_API_KEY"],
-    apiKey: "HMPWT6CG2RUWDBQRSWDW8HDB1Y4AVR33N1",
+    apiKey: process.env.ETHERSCAN_API_KEY || PRIVATE["ETHERSCAN_API_KEY"],
   },
   gasReporter: {
     currency: "USD",
@@ -51,9 +50,8 @@ module.exports = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${PRIVATE["INFURA_KEY"]}`,
       accounts: [process.env.PRIVATE_KEY || PRIVATE["PRIVATE_KEY"]],
-      // gasPrice: 100e9,
-      // gasPrice: "auto",
-      // gas: "auto",
+      gasPrice: 100e9,
+      gas: "auto",
     },
     hardhat: {
       accounts: [
