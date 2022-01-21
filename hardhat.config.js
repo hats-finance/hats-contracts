@@ -52,7 +52,7 @@ module.exports = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY ||
         PRIVATE["INFURA_KEY"]}`,
       accounts: [process.env.PRIVATE_KEY || PRIVATE["PRIVATE_KEY"]],
-      gasPrice: 100e9,
+      gasPrice: "auto",
       gas: "auto",
     },
     hardhat: {

@@ -97,7 +97,7 @@ async function main() {
   console.log(`Checks`);
   for (i in checks) {
     const check = checks[i];
-    console.log(` * `, check.description, check.result);
+    console.log(` * ${check.description}: ${check.result}`);
     if (!check.result) {
       failed += 1;
     }
