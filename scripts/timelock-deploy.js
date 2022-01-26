@@ -8,14 +8,16 @@ async function main(config) {
   if (!config) {
     config = CONFIG[network.name];
   }
+  const addresses = config;
 
   const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+  const deployerAddress = await deployer.getAddress();
 
-  const governance = config.governance;
+  let governance = addresses.governance;
+  if (!governance && network.name === "hardhat") {
+    governance = deployerAddress;
+  }
+
   var hatGovernanceDelay;
   if (config.minDelay) {
     hatGovernanceDelay = config.minDelay;
@@ -23,7 +25,7 @@ async function main(config) {
     hatGovernanceDelay = 60 * 60 * 24 * 7; // 7 days
   }
   const hatVaultsAddress = config.hatVaultsAddress;
-  const executors = config.executors;
+  let executors = config.executors;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
@@ -31,6 +33,7 @@ async function main(config) {
     "HATTimelockController"
   );
   console.log(`waiting for HATTimeLockController to deploy..`);
+  console.log("Deploying the contracts with the account:", deployerAddress);
   var hatTimelockController;
   if (network.name !== "hardhat") {
     hatTimelockController = await HATTimelockController.deploy(
@@ -45,6 +48,9 @@ async function main(config) {
     const HATTimelockControllerArtifact = artifacts.require(
       "./HATTimelockController.sol"
     );
+    if (!executors) {
+      executors = [deployerAddress];
+    }
     hatTimelockController = await HATTimelockControllerArtifact.new(
       hatVaultsAddress,
       hatGovernanceDelay, // minDelay

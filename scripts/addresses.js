@@ -17,5 +17,7 @@ module.exports = {
     timelock: "0xe8FF8B05961ECBAc067A9f5abDD4E7103aD75D40", // this is patched timelock
     executors: ["0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"],
   },
-  hardhat: {},
+  hardhat: {
+    hatVaultsAddress: "0x7c2C195CD6D34B8F845992d380aADB2730bB9C6F",
+  },
 };
