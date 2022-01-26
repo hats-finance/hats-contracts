@@ -1,4 +1,4 @@
-require("dotenv").config();
+const ADDRESSES = require("./addresses.js");
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -9,12 +9,10 @@ async function main() {
     );
   }
 
+  const addresses = ADDRESSES[network.name];
   // ethers is avaialble in the global scope
   const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+  const deployerAddress = await deployer.getAddress();
 
   //constructor params for test
   //rinkeby hat
@@ -22,11 +20,17 @@ async function main() {
   const rewardPerBlock = "16185644800000000";
   const startBlock = await ethers.provider.getBlockNumber();
   const multiplierPeriod = "195200";
-  const governance = process.env.HAT_MULT_SIG_ADDRESS;
+  let governance = addresses.governance;
+  if (!governance && network.name === "hardhat") {
+    governance = deployerAddress;
+  }
+
   //const governance  = await deployer.getAddress();
   //v3 router
   const uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
   const tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
+
+  console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const HATVaults = await ethers.getContractFactory("HATVaults");

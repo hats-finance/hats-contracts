@@ -2,6 +2,9 @@ const { network } = require("hardhat");
 const CONFIG = require("./addresses.js");
 
 async function main(config) {
+  if (network.name == "hardhat") {
+    throw Error(`Cannot verity contracts on local network "hardhat"`);
+  }
   // This is just a convenience check
   if (!config) {
     config = CONFIG[network.name];

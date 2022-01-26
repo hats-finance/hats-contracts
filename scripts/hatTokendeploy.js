@@ -1,4 +1,5 @@
-require("dotenv").config();
+const { network } = require("hardhat");
+const ADDRESSES = require("./addresses.js");
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -8,20 +9,22 @@ async function main() {
         " option '--network localhost'"
     );
   }
+  const addresses = ADDRESSES[network.name];
 
   // ethers is avaialble in the global scope
   const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+  const deployerAddress = await deployer.getAddress();
 
-  const governance = process.env.HAT_MULT_SIG_ADDRESS;
+  let governance = addresses.governance;
+  if (!governance && network.name === "hardhat") {
+    governance = deployerAddress;
+  }
   //rinkeby hattoken deployment
   const timelockDelay = 3600 * 24 * 2; // 2 days
   //const governance  = await deployer.getAddress();
   //const timelockDelay = 1;
 
+  console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const HATToken = await ethers.getContractFactory("HATToken");

@@ -9,16 +9,13 @@ module.exports = {
       "0xb3E7828EC7Ce2B270E3008B6400597C3a203809e",
       "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8",
     ],
-    oldTimelock: "0x66922e992e07030CEaC25E1919E9C31153F85b6f",
     timelock: "0xFd4255F16378306CA83E37015Df01a1700DAc296",
-    newTimelock: "0xFd4255F16378306CA83E37015Df01a1700DAc296",
   },
   rinkeby: {
     governance: "0xd6eC2F1D35C4a21D3a25E95CC40D67b4D0af995E",
     hatVaultsAddress: "0x59D4316A4691ceB657347dc7b0849e0CB38ed106",
     timelock: "0xe8FF8B05961ECBAc067A9f5abDD4E7103aD75D40", // this is patched timelock
-    newTimelock: "0xe8FF8B05961ECBAc067A9f5abDD4E7103aD75D40", // this is patched timelock
     executors: ["0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"],
-    oldTimeLock: "0x44c1ECD046221a32c8CFb4dD38F7792CfFb820F4",
   },
+  hardhat: {},
 };
