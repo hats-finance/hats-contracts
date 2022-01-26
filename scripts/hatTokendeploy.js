@@ -1,4 +1,4 @@
-const PRIVATE = require("../.private.json");
+require("dotenv").config();
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -16,9 +16,9 @@ async function main() {
     await deployer.getAddress()
   );
 
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  const governance = process.env.HAT_MULT_SIG_ADDRESS;
   //rinkeby hattoken deployment
-  const timelockDelay =  (3600*24*2); // 2 days
+  const timelockDelay = 3600 * 24 * 2; // 2 days
   //const governance  = await deployer.getAddress();
   //const timelockDelay = 1;
 
@@ -39,7 +39,7 @@ function saveFrontendFiles(hatToken) {
   const contractsDir = __dirname + "/../frontend/src/contracts";
 
   if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir,{recursive: true});
+    fs.mkdirSync(contractsDir, { recursive: true });
   }
 
   fs.writeFileSync(

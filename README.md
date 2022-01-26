@@ -14,7 +14,7 @@ Installation:
 npm install
 ```
 
-Create `.env` and `.private.json` files as needed.
+Create `.env` files as needed.
 
 Run the tests:
 

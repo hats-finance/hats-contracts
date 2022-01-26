@@ -8,8 +8,6 @@ require("hardhat-watcher");
 require("hardhat-gas-reporter");
 require("dotenv").config();
 
-const PRIVATE = require("./.private.json");
-
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async () => {
@@ -33,7 +31,7 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_API_KEY || PRIVATE["ETHERSCAN_API_KEY"],
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   gasReporter: {
     currency: "USD",
@@ -42,16 +40,14 @@ module.exports = {
   },
   networks: {
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY ||
-        PRIVATE["INFURA_KEY"]}`,
-      accounts: [process.env.RINKEBY_PK || PRIVATE["RINKEBY_PK"]],
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.RINKEBY_PK],
       gasPrice: "auto",
       gas: "auto",
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY ||
-        PRIVATE["INFURA_KEY"]}`,
-      accounts: [process.env.PRIVATE_KEY || PRIVATE["PRIVATE_KEY"]],
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.PRIVATE_KEY],
       gasPrice: "auto",
       gas: "auto",
     },
