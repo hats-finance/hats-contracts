@@ -217,6 +217,26 @@ contract('HatVaults',  accounts =>  {
         await hatVaults.setCommittee(1,accounts[1],{from:accounts[2]});
     });
 
+    it("dismiss can be called by anyone after 5 weeks delay", async () => {
+      var staker = accounts[1];
+      await setup(accounts, REWARD_PER_BLOCK, 0, [0, 0, 0, 0], [8000, 1000,100, 100,100, 700]);
+
+      await advanceToSaftyPeriod();
+      await stakingToken.approve(hatVaults.address,web3.utils.toWei("1"),{from:staker});
+      await stakingToken.mint(staker,web3.utils.toWei("1"));
+      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
+      await hatVaults.pendingApprovalClaim(0,accounts[2],3,{from:accounts[1]});
+      try {
+        await hatVaults.dismissPendingApprovalClaim(0 ,{from:accounts[1]});
+        assert(false, 'only governance can dismiss before delay');
+      } catch (ex) {
+          assertVMException(ex);
+      }
+      await utils.increaseTime(1);
+      await utils.increaseTime(5 * 7 * 24 * 60 * 60);
+      await hatVaults.dismissPendingApprovalClaim(0 ,{from:accounts[1]});
+    });
+
     it("custom rewardsLevels with 0", async () => {
       var staker = accounts[1];
       await setup(accounts, REWARD_PER_BLOCK, 0, [0, 0, 0, 0], [8000, 1000,100, 100,100, 700]);
@@ -480,18 +500,33 @@ contract('HatVaults',  accounts =>  {
   it("setWithdrawSafetyPeriod", async () => {
       await setup(accounts);
       try {
-          await hatVaults.setWithdrawSafetyPeriod(1000,100,{from:accounts[1]});
+          await hatVaults.setWithdrawSafetyPeriod(60 * 60, 60 * 30, {from:accounts[1]});
           assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
-      var tx = await hatVaults.setWithdrawSafetyPeriod(1000,100);
 
-      assert.equal((await hatVaults.generalParameters()).withdrawPeriod,1000);
-      assert.equal((await hatVaults.generalParameters()).safetyPeriod,100);
+      try {
+        await hatVaults.setWithdrawSafetyPeriod(60 * 60 - 1, 60 * 30);
+          assert(false, 'withdraw period must be >= 1 hour');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await hatVaults.setWithdrawSafetyPeriod(60 * 60, 60 * 60 * 6 + 1);
+          assert(false, 'safety period must be <= 6 hours');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      var tx = await hatVaults.setWithdrawSafetyPeriod(60 * 60, 60 * 30);
+
+      assert.equal((await hatVaults.generalParameters()).withdrawPeriod, 60 * 60);
+      assert.equal((await hatVaults.generalParameters()).safetyPeriod, 60 * 30);
       assert.equal(tx.logs[0].event,"SetWithdrawSafetyPeriod");
-      assert.equal(tx.logs[0].args._withdrawPeriod,1000);
-      assert.equal(tx.logs[0].args._safetyPeriod,100);
+      assert.equal(tx.logs[0].args._withdrawPeriod, 60 * 60);
+      assert.equal(tx.logs[0].args._safetyPeriod, 60 * 30);
 
       var staker = accounts[1];
 
@@ -503,8 +538,8 @@ contract('HatVaults',  accounts =>  {
       await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
       await utils.increaseTime(7*24*3600);
 
-      let withdrawPeriod  =  1000;
-      let safetyPeriod = 100;
+      let withdrawPeriod = 60*60;
+      let safetyPeriod = 60*30;
 
       let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
@@ -545,21 +580,34 @@ contract('HatVaults',  accounts =>  {
 
   it("set withdrawn request params ", async () => {
       await setup(accounts);
-      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, (7*24*3600));
+      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, (7 * 24 * 3600));
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, (7*24*3600));
       try {
-          await hatVaults.setWithdrawRequestParams(1,1,{from:accounts[4]});
+        await hatVaults.setWithdrawRequestParams(90 * 24 * 3600 + 1, 7 * 24 * 3600);
+        assert(false, 'pending period must be <= 90 days');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await hatVaults.setWithdrawRequestParams(1, 6 * 60 * 60 - 1);
+        assert(false, 'enable period must be >= 6 hour');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+          await hatVaults.setWithdrawRequestParams(1, 60 * 24 * 3600, {from:accounts[4]});
           assert(false, 'only gov');
       } catch (ex) {
         assertVMException(ex);
       }
-      await hatVaults.setWithdrawRequestParams(1,1,{from:accounts[0]});
-      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, 1);
+      await hatVaults.setWithdrawRequestParams(1, 60 * 24 * 3600, {from:accounts[0]});
       assert.equal((await hatVaults.generalParameters()).withdrawRequestPendingPeriod, 1);
-
+      assert.equal((await hatVaults.generalParameters()).withdrawRequestEnablePeriod, 60 * 24 * 3600);
   });
 
-  it("deposit cancle withdrawn request ", async () => {
+  it("deposit cancel withdrawn request ", async () => {
       await setup(accounts);
       var staker = accounts[1];
 
@@ -1492,7 +1540,7 @@ contract('HatVaults',  accounts =>  {
         await hatVaults.swapBurnSend(0,accounts[1],web3.utils.toWei("1"),[0,0],{from:accounts[0]});
         assert(false, 'router return less than minimum');
       } catch (ex) {
-        assert(ex.message.includes("wrong amount received"));
+        assert(ex.message.includes("HVE32"));
         assertVMException(ex);
     }
   });
@@ -2067,7 +2115,7 @@ contract('HatVaults',  accounts =>  {
              await hatVaults.rewardDepositors(0,web3.utils.toWei("3"),{from:rewarder});
              assert(false, 'no depositors  yet');
            } catch (ex) {
-             assert(ex.message.includes("amount to reward is too big"));
+             assert(ex.message.includes("HVE11"));
              assertVMException(ex);
      }
      await hatVaults.deposit(0,web3.utils.toWei("1"),{from:staker});
@@ -2086,7 +2134,7 @@ contract('HatVaults',  accounts =>  {
             await hatVaults.rewardDepositors(0,web3.utils.toWei("3000000"),{from:rewarder});
             assert(false, 'amount to reward is too big');
           } catch (ex) {
-            assert(ex.message.includes("amount to reward is too big"));
+            assert(ex.message.includes("HVE11"));
             assertVMException(ex);
      }
 
