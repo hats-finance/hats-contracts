@@ -914,25 +914,50 @@ contract('HatVaults',  accounts =>  {
       assert.equal((await hatVaults.getMultiplier(0, 0)).toNumber(), 0);
     });
 
+    it("setRewardMultipliers", async () => {
+        var rewardMultipliers = [...Array(25)].map(()=>Math.random()*10000|0);
+
+        await setup(accounts, REWARD_PER_BLOCK, 0);
+        try {
+          await hatVaults.setRewardMultipliers(rewardMultipliers ,{from:accounts[1]});
+          assert(false, 'only governance');
+        } catch (ex) {
+            assertVMException(ex);
+        }
+
+        await hatVaults.setRewardMultipliers(rewardMultipliers);
+
+        assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), rewardMultipliers[0] * 10);
+        assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (rewardMultipliers[0]* 10) + rewardMultipliers[1] * 5);
+        assert.equal((await hatVaults.getMultiplier(0, 20)).toNumber(), (rewardMultipliers[0] * 10) + (rewardMultipliers[1] * 10));
+        var multiplier = 0;
+        for (let i=0;i<25;i++) {
+          multiplier += rewardMultipliers[i]*10;
+        }
+        multiplier += 750 * rewardMultipliers[rewardMultipliers.length - 1];
+        assert.equal((await hatVaults.getMultiplier(0, 1000)).toNumber(), multiplier);
+    });
+
     it("getMultiplier - ", async () => {
 
-      var rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065, 5353, 4724,
-                               4169, 3679, 3247, 2865, 2528, 2231,
-                               1969, 1738, 1534, 1353, 1194, 1054,
-                              930, 821, 724, 639, 0];
-      await setup(accounts, REWARD_PER_BLOCK, 0);
-      assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), rewardMultipliers[0] * 10);
-      assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (rewardMultipliers[0]* 10) + rewardMultipliers[1] * 5);
-      assert.equal((await hatVaults.getMultiplier(0, 20)).toNumber(), (rewardMultipliers[0] * 10) + (rewardMultipliers[1] * 10));
-      var multiplier =0;
-      for (let i=0;i<24;i++) {
-        multiplier += rewardMultipliers[i]*10;
-      }
-      assert.equal((await hatVaults.getMultiplier(0, 1000)).toNumber(), multiplier);
-      var staker = accounts[1];
-      assert.equal((await hatVaults.pendingReward(0, staker)).toNumber(), 0);
+        var rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065, 5353, 4724,
+                                4169, 3679, 3247, 2865, 2528, 2231,
+                                1969, 1738, 1534, 1353, 1194, 1054,
+                                930, 821, 724, 639, 0];
+        await setup(accounts, REWARD_PER_BLOCK, 0);
+        assert.equal((await hatVaults.getMultiplier(0, 10)).toNumber(), rewardMultipliers[0] * 10);
+        assert.equal((await hatVaults.getMultiplier(0, 15)).toNumber(), (rewardMultipliers[0]* 10) + rewardMultipliers[1] * 5);
+        assert.equal((await hatVaults.getMultiplier(0, 20)).toNumber(), (rewardMultipliers[0] * 10) + (rewardMultipliers[1] * 10));
+        var multiplier =0;
+        for (let i=0;i<25;i++) {
+          multiplier += rewardMultipliers[i]*10;
+        }
+        multiplier += 750 * rewardMultipliers[rewardMultipliers.length - 1];
+        assert.equal((await hatVaults.getMultiplier(0, 1000)).toNumber(), multiplier);
+        var staker = accounts[1];
+        assert.equal((await hatVaults.pendingReward(0, staker)).toNumber(), 0);
 
-  });
+    });
 
   it("pendingReward + getRewardPerBlock", async () => {
     await setup(accounts);
@@ -1792,7 +1817,7 @@ contract('HatVaults',  accounts =>  {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0,18);
-    assert.equal(tx.receipt.gasUsed, 1517939);
+    assert.equal(tx.receipt.gasUsed, 1446604);
   }).timeout(40000);
 
 

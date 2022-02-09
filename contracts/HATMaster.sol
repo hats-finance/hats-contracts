@@ -75,10 +75,17 @@ contract HATMaster is ReentrancyGuard {
     uint256 public immutable REWARD_PER_BLOCK;
     uint256 public immutable START_BLOCK;
     uint256 public immutable MULTIPLIER_PERIOD;
+    uint256 public constant MULTIPLIERS_LENGTH = 25;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
     PoolUpdate[] public globalPoolUpdates;
+
+    // Reward Multipliers
+    uint256[25] public rewardMultipliers = [uint256(4413), 4413, 8825, 7788, 6873, 6065,
+                                            5353, 4724, 4169, 3679, 3247, 2865,
+                                            2528, 2231, 1969, 1738, 1534, 1353,
+                                            1194, 1054, 930, 821, 724, 639, 0];
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
@@ -153,13 +160,8 @@ contract HATMaster is ReentrancyGuard {
      * will revert if from < START_BLOCK or _to < _from
      */
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-        uint256[25] memory rewardMultipliers = [uint256(4413), 4413, 8825, 7788, 6873, 6065,
-                                            5353, 4724, 4169, 3679, 3247, 2865,
-                                            2528, 2231, 1969, 1738, 1534, 1353,
-                                            1194, 1054, 930, 821, 724, 639, 0];
-        uint256 max = rewardMultipliers.length;
         uint256 i = (_from - START_BLOCK) / MULTIPLIER_PERIOD + 1;
-        for (; i < max; i++) {
+        for (; i < MULTIPLIERS_LENGTH; i++) {
             uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
             if (_to <= endBlock) {
                 break;
@@ -167,7 +169,7 @@ contract HATMaster is ReentrancyGuard {
             result += (endBlock - _from) * rewardMultipliers[i-1];
             _from = endBlock;
         }
-        result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
+        result += (_to - _from) * rewardMultipliers[i > MULTIPLIERS_LENGTH ? (MULTIPLIERS_LENGTH-1) : (i-1)];
     }
 
     function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
