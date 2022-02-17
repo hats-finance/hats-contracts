@@ -47,9 +47,7 @@ const setup = async function (
                                   hatGovernanceDelay,
                                   [accounts[0]],
                                   [accounts[0]]);
-  await hatVaults.setPendingGovernance(hatTimelockController.address);
-  await utils.increaseTime(2*24*3600);
-  tx = await hatVaults.transferGovernorship();
+  tx = await hatVaults.transferGovernance(hatTimelockController.address);
   await utils.setMinter(hatToken,hatVaults.address,web3.utils.toWei("2500000"));
   await utils.setMinter(hatToken,accounts[0],web3.utils.toWei("2500000"));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
