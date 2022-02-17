@@ -14,7 +14,7 @@ module.exports = {
   rinkeby: {
     governance: "0xd6eC2F1D35C4a21D3a25E95CC40D67b4D0af995E",
     hatVaultsAddress: "0x59D4316A4691ceB657347dc7b0849e0CB38ed106",
-    timelock: "0xe8FF8B05961ECBAc067A9f5abDD4E7103aD75D40", // this is patched timelock
+    timelock: "0xe8FF8B05961ECBAc067A9f5abDD4E7103aD75D40",
     executors: ["0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"],
   },
   hardhat: {

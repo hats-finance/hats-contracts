@@ -14,7 +14,7 @@ Installation:
 npm install
 ```
 
-Create `.env` files as needed.
+Create `.env` files as needed. There is a file called `.env.example` that you can use as a template.
 
 Run the tests:
 
@@ -24,7 +24,7 @@ npx hardhat test
 
 ## Security
 
-The latest audit was done on August 21.
+The latest audit was done on August 21, 2021
 
 Please report any security issues you find to contact@hats.finance
 
