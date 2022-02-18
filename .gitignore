@@ -10,7 +10,6 @@ site/
 coverage/
 coverage.json
 .covera*
-.private.json
 cache/
 yarn*
 frontend/
@@ -21,4 +20,6 @@ node_modules
 #Hardhat files
 cache
 artifacts
+.private.json
+remix-compiler.config.js
 .DS_Store

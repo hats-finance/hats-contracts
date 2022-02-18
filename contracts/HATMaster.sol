@@ -82,7 +82,7 @@ contract HATMaster is ReentrancyGuard {
     PoolUpdate[] public globalPoolUpdates;
 
     // Reward Multipliers
-    uint256[25] public rewardMultipliers = [uint256(4413), 4413, 8825, 7788, 6873, 6065,
+    uint256[25] public rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
                                             5353, 4724, 4169, 3679, 3247, 2865,
                                             2528, 2231, 1969, 1738, 1534, 1353,
                                             1194, 1054, 930, 821, 724, 639, 0];
