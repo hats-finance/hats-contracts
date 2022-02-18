@@ -1,4 +1,4 @@
-const PRIVATE = require("../.private.json");
+const ADDRESSES = require("./addresses.js");
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -9,62 +9,88 @@ async function main() {
     );
   }
 
+  const addresses = ADDRESSES[network.name];
   // ethers is avaialble in the global scope
   const [deployer] = await ethers.getSigners();
-  console.log(
-    "Deploying the contracts with the account:",
-    await deployer.getAddress()
-  );
+  const deployerAddress = await deployer.getAddress();
 
   //constructor params for test
   //rinkeby hat
   const rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365";
-  const rewardPerBlock  = "16185644800000000";
-  const startBlock =  await ethers.provider.getBlockNumber();
+  const rewardPerBlock = "16185644800000000";
+  const startBlock = await ethers.provider.getBlockNumber();
   const multiplierPeriod = "195200";
-  const governance  = PRIVATE["HAT_MULT_SIG_ADDRESS"];
+  let governance = addresses.governance;
+  if (!governance && network.name === "hardhat") {
+    governance = deployerAddress;
+  }
+
   //const governance  = await deployer.getAddress();
   //v3 router
   const uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-  const tokenLockFactory  = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
+  const tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
+
+  console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
-  const hatVaults = await HATVaults.deploy(rewardsToken,
-                                           rewardPerBlock ,
-                                           startBlock ,
-                                           multiplierPeriod,
-                                           governance,
-                                           uniSwapRouter,
-                                           tokenLockFactory);
+  const hatVaults = await HATVaults.deploy(
+    rewardsToken,
+    rewardPerBlock,
+    startBlock,
+    multiplierPeriod,
+    governance,
+    uniSwapRouter,
+    tokenLockFactory
+  );
   await hatVaults.deployed();
 
   console.log("hatVaults address:", hatVaults.address);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatVaults,"HATVaults");
+  saveFrontendFiles(hatVaults, "HATVaults");
   //verify
-  console.log("npx hardhat verify --network rinkeby",hatVaults.address,
-                                                     '"',rewardsToken,'"',
-                                                     '"',rewardPerBlock,'"',
-                                                     '"',startBlock,'"',
-                                                     '"',multiplierPeriod,'"',
-                                                     '"', governance,'"',
-                                                     '"',uniSwapRouter,'"',
-                                                     '"',tokenLockFactory,'"');
-
+  console.log(
+    "npx hardhat verify --network rinkeby",
+    hatVaults.address,
+    '"',
+    rewardsToken,
+    '"',
+    '"',
+    rewardPerBlock,
+    '"',
+    '"',
+    startBlock,
+    '"',
+    '"',
+    multiplierPeriod,
+    '"',
+    '"',
+    governance,
+    '"',
+    '"',
+    uniSwapRouter,
+    '"',
+    '"',
+    tokenLockFactory,
+    '"'
+  );
 }
 
-function saveFrontendFiles(contract,name) {
+function saveFrontendFiles(contract, name) {
   const fs = require("fs");
   const contractsDir = __dirname + "/../frontend/src/contracts";
 
   if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir,{recursive: true});
+    fs.mkdirSync(contractsDir, { recursive: true });
   }
 
-  var data = JSON.parse(fs.readFileSync(contractsDir + "/contract-address.json",
-                             {encoding:'utf8', flag:'r'}));
+  var data = JSON.parse(
+    fs.readFileSync(contractsDir + "/contract-address.json", {
+      encoding: "utf8",
+      flag: "r",
+    })
+  );
   data[name] = contract.address;
 
   fs.writeFileSync(
