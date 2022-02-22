@@ -16,12 +16,12 @@ import "./Governable.sol";
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
 // HVE06: _severity is not in the range
-// HVE07: Withdrawe request pending period must be <= 3 months
-// HVE08: Withdrawe request enabled period must be >= 6 hour
+// HVE07: Withdraw request pending period must be <= 3 months
+// HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
 // HVE10: No pending approval
 // HVE11: Amount to reward is too big
-// HVE12: Withdrawe period must be >= 1 hour
+// HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
 // HVE14: Not enough fee paid
 // HVE15: Vesting duration is too long
@@ -43,6 +43,7 @@ import "./Governable.sol";
 // HVE31: Token approve failed
 // HVE32: Wrong amount received
 // HVE33: Reward level can not be more than 10000
+// HVE34: LP token is zero
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -108,7 +109,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     modifier noPendingApproval(uint256 _pid) {
-        require(pendingApprovals[_pid].beneficiary == address(0), "pending approval exist");
+        require(pendingApprovals[_pid].beneficiary == address(0), "HVE02");
         _;
     }
 
@@ -528,6 +529,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_rewardVestingParams[1] > 0, "HVE16");
         require(_rewardVestingParams[0] >= _rewardVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
+        require(_lpToken != address(0), "HVE34");
         add(_allocPoint, IERC20(_lpToken));
         uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
@@ -571,7 +573,7 @@ contract  HATVaults is Governable, HATMaster {
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyGovernance {
-        require(poolInfo[_pid].lpToken != IERC20(address(0)), "HVE23");
+        require(poolInfo.length > _pid, "HVE23");
         set(_pid, _allocPoint);
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);

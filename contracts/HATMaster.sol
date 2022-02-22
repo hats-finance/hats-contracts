@@ -10,7 +10,12 @@ import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 
-
+// Errors:
+// HME01: Pool range is too big
+// HME02: Invalid pool range
+// HME03: Committee not checked in yet
+// HME04: Withdraw: not enough user balance
+// HME05: User amount must be greater than 0
 contract HATMaster is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -117,8 +122,8 @@ contract HATMaster is ReentrancyGuard {
    * @param _toPid update pools range to this pool id
    */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfo.length, "pool range is too big");
-        require(_fromPid <= _toPid, "invalid pool range");
+        require(_toPid <= poolInfo.length, "HME01");
+        require(_fromPid <= _toPid, "HME02");
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }
@@ -209,7 +214,7 @@ contract HATMaster is ReentrancyGuard {
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
-        require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
+        require(poolsRewards[_pid].committeeCheckIn, "HME03");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -237,7 +242,7 @@ contract HATMaster is ReentrancyGuard {
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: not enough user balance");
+        require(user.amount >= _amount, "HME04");
 
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
@@ -259,7 +264,7 @@ contract HATMaster is ReentrancyGuard {
     function _emergencyWithdraw(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount > 0, "user.amount = 0");
+        require(user.amount > 0, "HME05");
         uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
