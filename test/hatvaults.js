@@ -2822,6 +2822,12 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     try {
+      await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
+      assert(false, 'add pool with the same token is not allowed');
+    } catch (ex) {
+      assertVMException(ex, "HME06");
+    }
+    try {
       await hatVaults.addPool(
         100,
         stakingToken2.address,
@@ -2933,16 +2939,6 @@ contract("HatVaults", (accounts) => {
         web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))
       ),
       2
-    );
-    // Should be able to add another pool of the same token
-    await hatVaults.addPool(
-      100,
-      stakingToken2.address,
-      accounts[1],
-      [],
-      [0, 0, 0, 0, 0, 0],
-      "_descriptionHash",
-      [86400, 10]
     );
   });
 
