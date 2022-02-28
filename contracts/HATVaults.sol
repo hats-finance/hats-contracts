@@ -256,7 +256,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
   /**
-   * @dev dismissPendingApprovalClaim - called by hats governance to dismiss a pending approval claim.
+   * @dev dismiss a pending claim - called either by hats govenrance, or by anyone if the claim is over 5 weeks old
    * @param _pid pool id
   */
     function dismissPendingApprovalClaim(uint256 _pid) external {
