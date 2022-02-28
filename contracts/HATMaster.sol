@@ -10,7 +10,13 @@ import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 
-
+// Errors:
+// HME01: Pool range is too big
+// HME02: Invalid pool range
+// HME03: Committee not checked in yet
+// HME04: Withdraw: not enough user balance
+// HME05: User amount must be greater than 0
+// HME06: lpToken is already in pool
 contract HATMaster is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -75,10 +81,17 @@ contract HATMaster is ReentrancyGuard {
     uint256 public immutable REWARD_PER_BLOCK;
     uint256 public immutable START_BLOCK;
     uint256 public immutable MULTIPLIER_PERIOD;
+    uint256 public constant MULTIPLIERS_LENGTH = 25;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
     PoolUpdate[] public globalPoolUpdates;
+
+    // Reward Multipliers
+    uint256[25] public rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
+                                            5353, 4724, 4169, 3679, 3247, 2865,
+                                            2528, 2231, 1969, 1738, 1534, 1353,
+                                            1194, 1054, 930, 821, 724, 639, 0];
     mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
@@ -111,8 +124,8 @@ contract HATMaster is ReentrancyGuard {
    * @param _toPid update pools range to this pool id
    */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfo.length, "pool range is too big");
-        require(_fromPid <= _toPid, "invalid pool range");
+        require(_toPid <= poolInfo.length, "HME01");
+        require(_fromPid <= _toPid, "HME02");
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }
@@ -154,13 +167,8 @@ contract HATMaster is ReentrancyGuard {
      * will revert if from < START_BLOCK or _to < _from
      */
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-        uint256[25] memory rewardMultipliers = [uint256(4413), 4413, 8825, 7788, 6873, 6065,
-                                            5353, 4724, 4169, 3679, 3247, 2865,
-                                            2528, 2231, 1969, 1738, 1534, 1353,
-                                            1194, 1054, 930, 821, 724, 639, 0];
-        uint256 max = rewardMultipliers.length;
         uint256 i = (_from - START_BLOCK) / MULTIPLIER_PERIOD + 1;
-        for (; i < max; i++) {
+        for (; i < MULTIPLIERS_LENGTH; i++) {
             uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
             if (_to <= endBlock) {
                 break;
@@ -168,7 +176,7 @@ contract HATMaster is ReentrancyGuard {
             result += (endBlock - _from) * rewardMultipliers[i-1];
             _from = endBlock;
         }
-        result += (_to - _from) * rewardMultipliers[i > max ? (max-1) : (i-1)];
+        result += (_to - _from) * rewardMultipliers[i > MULTIPLIERS_LENGTH ? (MULTIPLIERS_LENGTH-1) : (i-1)];
     }
 
     function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
@@ -208,7 +216,7 @@ contract HATMaster is ReentrancyGuard {
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
-        require(poolsRewards[_pid].committeeCheckIn, "committee not checked in yet");
+        require(poolsRewards[_pid].committeeCheckIn, "HME03");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -236,7 +244,7 @@ contract HATMaster is ReentrancyGuard {
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: not enough user balance");
+        require(user.amount >= _amount, "HME04");
 
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
@@ -258,7 +266,7 @@ contract HATMaster is ReentrancyGuard {
     function _emergencyWithdraw(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount > 0, "user.amount = 0");
+        require(user.amount > 0, "HME05");
         uint256 factoredBalance = user.amount.mul(pool.balance).div(pool.totalUsersAmount);
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
@@ -270,7 +278,7 @@ contract HATMaster is ReentrancyGuard {
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
-        require(poolId1[address(_lpToken)] == 0, "HATMaster::add: lpToken is already in pool");
+        require(poolId1[address(_lpToken)] == 0, "HME06");
         poolId1[address(_lpToken)] = poolInfo.length + 1;
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :

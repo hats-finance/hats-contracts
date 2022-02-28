@@ -1,11 +1,11 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
+const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const utils = require("./utils.js");
-const { deployTimelock } = require("../scripts/timelock-deploy.js");
 
 var hatVaults;
 var hatTimelockController;
@@ -44,20 +44,13 @@ const setup = async function(
     router.address,
     tokenLockFactory.address
   );
-  // hatTimelockController = await HATTimelockController.new(
-  //                                 hatVaults.address,
-  //                                 hatGovernanceDelay,
-  //                                 [accounts[0]],
-  //                                 [accounts[0]]);
-  hatTimelockController = await deployTimelock({
-    hatVaultsAddress: hatVaults.address,
-    minDelay: hatGovernanceDelay,
-    governance: accounts[0],
-    executors: [accounts[0]],
-  });
-  await hatVaults.setPendingGovernance(hatTimelockController.address);
-  await utils.increaseTime(2 * 24 * 3600);
-  tx = await hatVaults.transferGovernorship();
+  hatTimelockController = await HATTimelockController.new(
+    hatVaults.address,
+    hatGovernanceDelay,
+    [accounts[0]],
+    [accounts[0]]
+  );
+  tx = await hatVaults.transferGovernance(hatTimelockController.address);
   await utils.setMinter(
     hatToken,
     hatVaults.address,
