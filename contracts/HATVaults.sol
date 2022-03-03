@@ -340,7 +340,7 @@ contract  HATVaults is Governable, HATMaster {
      * @dev setRewardMultipliers - called by hats governance to set reward multipliers
      * @param _rewardMultipliers reward multipliers
     */
-    function setRewardMultipliers(uint256[25] memory _rewardMultipliers) external onlyGovernance {
+    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyGovernance {
         rewardMultipliers = _rewardMultipliers;
     }
 
