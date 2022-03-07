@@ -1323,7 +1323,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("setRewardMultipliers", async () => {
-    var rewardMultipliers = [...Array(25)].map(
+    var rewardMultipliers = [...Array(24)].map(
       () => (Math.random() * 10000) | 0
     );
 
@@ -1352,10 +1352,9 @@ contract("HatVaults", (accounts) => {
       rewardMultipliers[0] * 10 + rewardMultipliers[1] * 10
     );
     var multiplier = 0;
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 24; i++) {
       multiplier += rewardMultipliers[i] * 10;
     }
-    multiplier += 750 * rewardMultipliers[rewardMultipliers.length - 1];
     assert.equal(
       (await hatVaults.getMultiplier(0, 1000)).toNumber(),
       multiplier
@@ -1388,7 +1387,6 @@ contract("HatVaults", (accounts) => {
       821,
       724,
       639,
-      0,
     ];
     await setup(accounts, REWARD_PER_BLOCK, 0);
     assert.equal(
@@ -1404,10 +1402,10 @@ contract("HatVaults", (accounts) => {
       rewardMultipliers[0] * 10 + rewardMultipliers[1] * 10
     );
     var multiplier = 0;
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 24; i++) {
       multiplier += rewardMultipliers[i] * 10;
     }
-    multiplier += 750 * rewardMultipliers[rewardMultipliers.length - 1];
+
     assert.equal(
       (await hatVaults.getMultiplier(0, 1000)).toNumber(),
       multiplier
@@ -2644,7 +2642,7 @@ contract("HatVaults", (accounts) => {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0, 18);
-    assert.equal(tx.receipt.gasUsed, 1446604);
+    assert.equal(tx.receipt.gasUsed, 1445818);
   }).timeout(40000);
 
   it("setPool x2", async () => {
