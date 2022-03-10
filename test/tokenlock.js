@@ -14,7 +14,8 @@ const setup = async function (
                               delegate = false,
                               startsIn = 0,
                               endTime = 1000,
-                              periods = 5
+                              periods = 5,
+                              vestingCliffTime = 0
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK");
 
@@ -30,7 +31,7 @@ const setup = async function (
                                          currentBlockTimestamp+startsIn+ endTime,
                                          periods,
                                          0,
-                                         0,
+                                         vestingCliffTime,
                                          revocable,
                                          delegate
                                        );
@@ -190,6 +191,19 @@ contract('TokenLock',  accounts =>  {
           assertVMException(ex);
         }
     });
+
+    it("vested amount with cliff", async () => {
+      let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+      let cliffTime = 7*24*3600;
+      let endTime = (cliffTime * 2);
+      await setup(accounts, 1, false, 0, endTime, 5, currentBlockTimestamp + cliffTime);
+      assert.equal(await tokenLock.vestingCliffTime(),currentBlockTimestamp + cliffTime);
+      assert.equal(await tokenLock.vestedAmount(),web3.utils.toWei("0"));
+      await utils.increaseTime(cliffTime / 2);
+      assert.equal(await tokenLock.vestedAmount(),web3.utils.toWei("0"));
+      await utils.increaseTime(cliffTime + cliffTime / 2);
+      assert.equal(await tokenLock.vestedAmount(),web3.utils.toWei("1"));
+  });
 
     it("no delegate", async () => {
         await setup(accounts,2);
