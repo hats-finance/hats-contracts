@@ -2286,6 +2286,124 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("swapBurnSend 2 pools with same token", async () => {
+    await setup(accounts);
+
+    await hatVaults.addPool(
+      100,
+      stakingToken.address,
+      accounts[1],
+      [1000, 4000, 6000, 8000],
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10]
+    );
+    await hatVaults.committeeCheckIn(1, { from: accounts[1] });
+
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.mint(staker2, web3.utils.toWei("2"));
+
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0, accounts[2], 3, {
+      from: accounts[1],
+    });
+    await hatVaults.pendingApprovalClaim(1, accounts[2], 3, {
+      from: accounts[1],
+    });
+    await hatVaults.approveClaim(0);
+    await hatVaults.approveClaim(1);
+
+    for (i = 0; i < 2; i++) {
+      var tx = await hatVaults.swapBurnSend(i, accounts[1], 0, [0, 0], {
+        from: accounts[0],
+      });
+      assert.equal(tx.logs[0].event, "SwapAndBurn");
+      assert.equal(
+        tx.logs[0].args._amountSwaped.toString(),
+        new web3.utils.BN(web3.utils.toWei("0.8"))
+          .mul(
+            new web3.utils.BN(
+              (await hatVaults.getPoolRewards(i)).rewardsSplit.swapAndBurn
+            ).add(
+              new web3.utils.BN(
+                (
+                  await hatVaults.getPoolRewards(i)
+                ).rewardsSplit.governanceHatReward
+              )
+            )
+          )
+          .div(new web3.utils.BN("10000"))
+          .toString()
+      );
+      assert.equal(
+        tx.logs[0].args._amountBurned.toString(),
+        new web3.utils.BN(web3.utils.toWei("0.8"))
+          .mul(
+            new web3.utils.BN(
+              (await hatVaults.getPoolRewards(i)).rewardsSplit.swapAndBurn
+            )
+          )
+          .div(new web3.utils.BN("10000"))
+          .toString()
+      );
+      assert.equal(tx.logs[1].event, "SwapAndSend");
+      assert.equal(tx.logs[1].args._amountReceived.toString(), "0");
+      // Not real beneficiary should not get tokens
+      let afterRewardBalance = (
+        await hatToken.balanceOf(tx.logs[1].args._tokenLock)
+      ).toString();
+      assert.equal(
+        tx.logs[1].args._tokenLock,
+        "0x0000000000000000000000000000000000000000"
+      );
+      assert.equal(
+        tx.logs[1].args._amountReceived.toString(),
+        afterRewardBalance
+      );
+    }
+
+    for (i = 0; i < 2; i++) {
+      tx = await hatVaults.swapBurnSend(i, accounts[2], 0, [0, 0], {
+        from: accounts[0],
+      });
+
+      assert.equal(tx.logs[0].event, "SwapAndBurn");
+      assert.equal(tx.logs[0].args._amountBurned.toString(), "0");
+      assert.equal(
+        tx.logs[1].args._amountReceived.toString(),
+        new web3.utils.BN(web3.utils.toWei("0.8"))
+          .mul(
+            new web3.utils.BN(
+              (await hatVaults.getPoolRewards(i)).rewardsSplit.hackerHatReward
+            )
+          )
+          .div(new web3.utils.BN("10000"))
+          .toString()
+      );
+      afterRewardBalance = (
+        await hatToken.balanceOf(tx.logs[1].args._tokenLock)
+      ).toString();
+      assert.equal(
+        tx.logs[1].args._amountReceived.toString(),
+        afterRewardBalance
+      );
+    }
+  });
+
   it("swapBurnSend return below than minimum should revert", async () => {
     await setup(
       accounts,
@@ -2819,12 +2937,6 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    try {
-      await hatVaults.addPool(100,stakingToken.address,accounts[1],[],[0,0,0,0,0,0],"_descriptionHash",[86400,10]);
-      assert(false, 'add pool with the same token is not allowed');
-    } catch (ex) {
-      assertVMException(ex, "HME06");
-    }
     try {
       await hatVaults.addPool(
         100,

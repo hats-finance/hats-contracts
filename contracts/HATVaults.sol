@@ -82,11 +82,12 @@ contract  HATVaults is Governable, HATMaster {
 
     //pid -> committee address
     mapping(uint256=>address) public committees;
-    mapping(address => uint256) public swapAndBurns;
-    //hackerAddress ->(token->amount)
-    mapping(address => mapping(address => uint256)) public hackersHatRewards;
-    //token -> amount
-    mapping(address => uint256) public governanceHatRewards;
+    //pid -> amount
+    mapping(uint256 => uint256) public swapAndBurns;
+    //hackerAddress ->(pid->amount)
+    mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
+    //pid -> amount
+    mapping(uint256 => uint256) public governanceHatRewards;
     //pid -> PendingApproval
     mapping(uint256 => PendingApproval) public pendingApprovals;
     //poolId -> (address -> requestTime)
@@ -307,11 +308,11 @@ contract  HATVaults is Governable, HATMaster {
         lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
-        swapAndBurns[address(lpToken)] = swapAndBurns[address(lpToken)].add(claimRewards.swapAndBurn);
-        governanceHatRewards[address(lpToken)] =
-        governanceHatRewards[address(lpToken)].add(claimRewards.governanceHatReward);
-        hackersHatRewards[pendingApproval.beneficiary][address(lpToken)] =
-        hackersHatRewards[pendingApproval.beneficiary][address(lpToken)].add(claimRewards.hackerHatReward);
+        swapAndBurns[_pid] = swapAndBurns[_pid].add(claimRewards.swapAndBurn);
+        governanceHatRewards[_pid] =
+        governanceHatRewards[_pid].add(claimRewards.governanceHatReward);
+        hackersHatRewards[pendingApproval.beneficiary][_pid] =
+        hackersHatRewards[pendingApproval.beneficiary][_pid].add(claimRewards.hackerHatReward);
 
         emit ClaimApprove(msg.sender,
                         _pid,
@@ -596,13 +597,13 @@ contract  HATVaults is Governable, HATMaster {
     external
     onlyGovernance {
         IERC20 token = poolInfo[_pid].lpToken;
-        uint256 amountToSwapAndBurn = swapAndBurns[address(token)];
-        uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][address(token)];
-        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(governanceHatRewards[address(token)]);
+        uint256 amountToSwapAndBurn = swapAndBurns[_pid];
+        uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
+        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(governanceHatRewards[_pid]);
         require(amount > 0, "HVE24");
-        swapAndBurns[address(token)] = 0;
-        governanceHatRewards[address(token)] = 0;
-        hackersHatRewards[_beneficiary][address(token)] = 0;
+        swapAndBurns[_pid] = 0;
+        governanceHatRewards[_pid] = 0;
+        hackersHatRewards[_beneficiary][_pid] = 0;
         uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
         uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
         if (burntHats > 0) {

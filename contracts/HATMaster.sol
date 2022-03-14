@@ -16,7 +16,6 @@ import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 // HME03: Committee not checked in yet
 // HME04: Withdraw: not enough user balance
 // HME05: User amount must be greater than 0
-// HME06: lpToken is already in pool
 contract HATMaster is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -92,7 +91,7 @@ contract HATMaster is ReentrancyGuard {
                                             5353, 4724, 4169, 3679, 3247, 2865,
                                             2528, 2231, 1969, 1738, 1534, 1353,
                                             1194, 1054, 930, 821, 724, 639];
-    mapping(address => uint256) public poolId1; // poolId1 count from 1, subtraction 1 before using with poolInfo
+
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
@@ -278,8 +277,6 @@ contract HATMaster is ReentrancyGuard {
 
     // -------- For manage pool ---------
     function add(uint256 _allocPoint, IERC20 _lpToken) internal {
-        require(poolId1[address(_lpToken)] == 0, "HME06");
-        poolId1[address(_lpToken)] = poolInfo.length + 1;
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
