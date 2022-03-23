@@ -297,6 +297,13 @@ contract('TokenLock',  accounts =>  {
       assert.equal(await accidentToken.balanceOf(tokenLock.address), 0);
       assert.equal(await accidentToken.balanceOf(accounts[0]), web3.utils.toWei("1"));
       assert.equal(await accidentToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
+
+      // Sweep with 0 balance does nothing
+      await tokenLock.sweepToken(accidentToken.address, {from:accounts[1]});
+
+      assert.equal(await accidentToken.balanceOf(tokenLock.address), 0);
+      assert.equal(await accidentToken.balanceOf(accounts[0]), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
   });
 
 });
