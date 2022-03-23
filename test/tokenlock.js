@@ -253,4 +253,50 @@ contract('TokenLock',  accounts =>  {
         assert.equal(await stakingToken.balanceOf(accounts[1]),web3.utils.toWei("1"));
     });
 
+    it("sweep tokens", async () => {
+      await setup(accounts);
+      try {
+        await tokenLock.sweepToken(stakingToken.address);
+        assert(false, 'cannot sweep vested token');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      accidentToken = await ERC20Mock.new("Accident", "ACT");
+      await accidentToken.mint(tokenLock.address, web3.utils.toWei("1"));
+
+      assert.equal(await accidentToken.balanceOf(tokenLock.address), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[0]), 0);
+      assert.equal(await accidentToken.balanceOf(accounts[1]), 0);
+      try {
+        await tokenLock.sweepToken(accidentToken.address, {from:accounts[1]});
+        assert(false, 'only owner can sweep tokens (if exists)');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await tokenLock.sweepToken(accidentToken.address);
+      assert.equal(await accidentToken.balanceOf(tokenLock.address), 0);
+      assert.equal(await accidentToken.balanceOf(accounts[0]), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[1]), 0);
+
+      await accidentToken.mint(tokenLock.address, web3.utils.toWei("1"));
+
+      assert.equal(await accidentToken.balanceOf(tokenLock.address), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[0]), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[1]), 0);
+
+      await tokenLock.renounceOwnership();      
+
+      try {
+        await tokenLock.sweepToken(accidentToken.address, {from:accounts[0]});
+        assert(false, 'only beneficiary can sweep tokens when owner does not exist');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await tokenLock.sweepToken(accidentToken.address, {from:accounts[1]});
+
+      assert.equal(await accidentToken.balanceOf(tokenLock.address), 0);
+      assert.equal(await accidentToken.balanceOf(accounts[0]), web3.utils.toWei("1"));
+      assert.equal(await accidentToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
+  });
+
 });

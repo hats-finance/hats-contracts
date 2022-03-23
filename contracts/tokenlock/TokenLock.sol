@@ -382,4 +382,19 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
         emit TokensRevoked(beneficiary, unvestedAmount);
     }
+
+    /// @dev sweeps out accidentally sent tokens
+    /// @param _token Address of token to sweep
+    function sweepToken(IERC20 _token) external {
+        require(msg.sender == owner() || (owner() == address(0) && msg.sender == beneficiary), "!auth");
+        require(_token != token, "cannot sweep vested token");
+        uint256 tokenBalance = _token.balanceOf(address(this));
+        if (tokenBalance > 0) {
+            if (owner() != address(0)) {
+                _token.safeTransfer(owner(), tokenBalance);
+            } else {
+                _token.safeTransfer(beneficiary, tokenBalance);
+            }
+        }
+    }
 }
