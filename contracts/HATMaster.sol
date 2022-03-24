@@ -65,6 +65,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 totalUsersAmount;
         uint256 lastProcessedTotalAllocPoint;
         uint256 balance;
+        uint256 fee;
     }
 
     // Info of each pool.
@@ -81,6 +82,7 @@ contract HATMaster is ReentrancyGuard {
     uint256 public immutable START_BLOCK;
     uint256 public immutable MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
+    uint256 public constant HUNDRED_PERCENT = 10000;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -240,7 +242,7 @@ contract HATMaster is ReentrancyGuard {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
+    function _withdraw(uint256 _pid, uint256 _amount, address _feeReceiver) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "HME04");
@@ -253,8 +255,12 @@ contract HATMaster is ReentrancyGuard {
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalUsersAmount);
+            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
             pool.balance = pool.balance.sub(amountToWithdraw);
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw);
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(_feeReceiver, fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -299,7 +305,8 @@ contract HATMaster is ReentrancyGuard {
             rewardPerShare: 0,
             totalUsersAmount: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
-            balance: 0
+            balance: 0,
+            fee: 0
         }));
     }
 
