@@ -83,6 +83,7 @@ contract HATMaster is ReentrancyGuard {
     uint256 public immutable MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     // Info of each pool.
     PoolInfo[] public poolInfo;

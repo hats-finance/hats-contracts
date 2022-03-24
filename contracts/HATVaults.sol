@@ -46,7 +46,7 @@ import "./Governable.sol";
 // HVE34: LP token is zero
 // HVE35: Token approve reset failed
 // HVE36: Only fee setter
-// HVE37: Fee must be less than 100%
+// HVE37: Fee must be less than 2%
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -598,7 +598,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
-        require(_newFee < HUNDRED_PERCENT, "HVE36");
+        require(_newFee < MAX_FEE, "HVE36");
         poolInfo[_pid].fee = _newFee;
         emit SetPoolFee(_pid, _newFee);
     }
