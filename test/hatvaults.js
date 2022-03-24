@@ -1038,6 +1038,81 @@ contract("HatVaults", (accounts) => {
     await hatVaults.withdrawRequest(0, { from: staker });
   });
 
+  it("Set fee and fee setter", async () => {
+    await setup(accounts);
+    try {
+      await hatVaults.setFeeSetter(accounts[1], {
+        from: accounts[1],
+      });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "only governance");
+    }
+
+    try {
+      await hatVaults.setPoolFee(0, 100, {
+        from: accounts[1],
+      });
+      assert(false, "only governance when fee setter is 0");
+    } catch (ex) {
+      assertVMException(ex, "HVE35");
+    }
+
+    var tx = await hatVaults.setPoolFee(0, 200);
+    assert.equal((await hatVaults.poolInfo(0)).fee, 200);
+    assert.equal(tx.logs[0].event, "SetPoolFee");
+    assert.equal(tx.logs[0].args._pid, 0);
+    assert.equal(tx.logs[0].args._newFee, 200);
+
+    tx = await hatVaults.setFeeSetter(accounts[1]);
+
+    assert.equal((await hatVaults.feeSetter()), accounts[1]);
+    assert.equal(tx.logs[0].event, "SetFeeSetter");
+    assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
+    
+    try {
+      await hatVaults.setPoolFee(0, 100);
+      assert(false, "only fee setter");
+    } catch (ex) {
+      assertVMException(ex, "HVE35");
+    }
+
+    try {
+      await hatVaults.setPoolFee(0, 10000, {
+        from: accounts[1],
+      });
+      assert(false, "fee must be lower than 100%");
+    } catch (ex) {
+      assertVMException(ex, "HVE36");
+    }
+
+    tx = await hatVaults.setPoolFee(0, 100, {
+      from: accounts[1],
+    });
+
+    assert.equal((await hatVaults.poolInfo(0)).fee, 100);
+    assert.equal(tx.logs[0].event, "SetPoolFee");
+    assert.equal(tx.logs[0].args._pid, 0);
+    assert.equal(tx.logs[0].args._newFee, 100);
+    
+    var staker = accounts[2];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+
+    let governanceBalance = await stakingToken.balanceOf(accounts[0]);
+
+    await safeWithdraw(0, web3.utils.toWei("1"), staker);
+
+    // Staker got back the reward minus the fee
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.99"));
+    // Governance received the fee
+    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.01"))).toString());
+  });
+
   it("stake", async () => {
     await setup(accounts);
     var staker = accounts[1];
@@ -2796,7 +2871,7 @@ contract("HatVaults", (accounts) => {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0, 18);
-    assert.equal(tx.receipt.gasUsed, 1291081);
+    assert.equal(tx.receipt.gasUsed, 1445840);
   }).timeout(40000);
 
   it("setPool x2", async () => {

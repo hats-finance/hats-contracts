@@ -45,6 +45,8 @@ import "./Governable.sol";
 // HVE33: Reward level can not be more than 10000
 // HVE34: LP token is zero
 // HVE35: Token approve reset failed
+// HVE36: Only fee setter
+// HVE37: Fee must be less than 100%
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -100,6 +102,8 @@ contract  HATVaults is Governable, HATMaster {
 
     GeneralParameters public generalParameters;
 
+    address public feeSetter;
+
     uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
@@ -124,6 +128,11 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+    modifier onlyFeeSetter() {
+        require(feeSetter == msg.sender || (governance() == msg.sender && feeSetter == address(0)), "HVE35");
+        _;
+    }
+
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
 
     event AddPool(uint256 indexed _pid,
@@ -140,6 +149,8 @@ contract  HATVaults is Governable, HATMaster {
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
     event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
+    event SetFeeSetter(address indexed _newFeeSetter);
+    event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
     event PendingRewardsLevelsLog(uint256 indexed _pid, uint256[] _rewardsLevels, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
@@ -581,6 +592,17 @@ contract  HATVaults is Governable, HATMaster {
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
+    function setFeeSetter(address _newFeeSetter) external onlyGovernance {
+        feeSetter = _newFeeSetter;
+        emit SetFeeSetter(_newFeeSetter);
+    }
+
+    function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
+        require(_newFee < HUNDRED_PERCENT, "HVE36");
+        poolInfo[_pid].fee = _newFee;
+        emit SetPoolFee(_pid, _newFee);
+    }
+
     /**
     * @dev swapBurnSend swap lptoken to HAT.
     * send to beneficiary and governance its hats rewards .
@@ -669,7 +691,7 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
-        _withdraw(_pid, _shares);
+        _withdraw(_pid, _shares, governance());
     }
 
     /**
