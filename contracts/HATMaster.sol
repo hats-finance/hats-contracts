@@ -9,6 +9,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
+import "./Governable.sol";
+
 
 // Errors:
 // HME01: Pool range is too big
@@ -16,7 +18,7 @@ import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 // HME03: Committee not checked in yet
 // HME04: Withdraw: not enough user balance
 // HME05: User amount must be greater than 0
-contract HATMaster is ReentrancyGuard {
+contract HATMaster is Governable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -243,7 +245,7 @@ contract HATMaster is ReentrancyGuard {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function _withdraw(uint256 _pid, uint256 _amount, address _feeReceiver) internal nonReentrant {
+    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "HME04");
@@ -259,7 +261,7 @@ contract HATMaster is ReentrancyGuard {
             uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
             pool.balance = pool.balance.sub(amountToWithdraw);
             if (fee > 0) {
-                pool.lpToken.safeTransfer(_feeReceiver, fee);
+                pool.lpToken.safeTransfer(governance(), fee);
             }
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);

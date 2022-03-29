@@ -1057,11 +1057,11 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE35");
     }
 
-    var tx = await hatVaults.setPoolFee(0, 150);
-    assert.equal((await hatVaults.poolInfo(0)).fee, 150);
+    var tx = await hatVaults.setPoolFee(0, 100);
+    assert.equal((await hatVaults.poolInfo(0)).fee, 100);
     assert.equal(tx.logs[0].event, "SetPoolFee");
     assert.equal(tx.logs[0].args._pid, 0);
-    assert.equal(tx.logs[0].args._newFee, 150);
+    assert.equal(tx.logs[0].args._newFee, 100);
 
     tx = await hatVaults.setFeeSetter(accounts[1]);
 
@@ -1077,22 +1077,22 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaults.setPoolFee(0, 200, {
+      await hatVaults.setPoolFee(0, 201, {
         from: accounts[1],
       });
-      assert(false, "fee must be lower than 2%");
+      assert(false, "fee must be lower than or equal to 2%");
     } catch (ex) {
       assertVMException(ex, "HVE36");
     }
 
-    tx = await hatVaults.setPoolFee(0, 100, {
+    tx = await hatVaults.setPoolFee(0, 200, {
       from: accounts[1],
     });
 
-    assert.equal((await hatVaults.poolInfo(0)).fee, 100);
+    assert.equal((await hatVaults.poolInfo(0)).fee, 200);
     assert.equal(tx.logs[0].event, "SetPoolFee");
     assert.equal(tx.logs[0].args._pid, 0);
-    assert.equal(tx.logs[0].args._newFee, 100);
+    assert.equal(tx.logs[0].args._newFee, 200);
     
     var staker = accounts[2];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -1107,9 +1107,9 @@ contract("HatVaults", (accounts) => {
     await safeWithdraw(0, web3.utils.toWei("1"), staker);
 
     // Staker got back the reward minus the fee
-    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.99"));
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.98"));
     // Governance received the fee
-    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.01"))).toString());
+    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString());
   });
 
   it("stake", async () => {

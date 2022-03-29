@@ -7,7 +7,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
 import "./tokenlock/ITokenLockFactory.sol";
-import "./Governable.sol";
 
 // Errors:
 // HVE01: Only committee
@@ -46,7 +45,7 @@ import "./Governable.sol";
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than 2%
-contract  HATVaults is Governable, HATMaster {
+contract  HATVaults is HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
@@ -103,7 +102,6 @@ contract  HATVaults is Governable, HATMaster {
 
     address public feeSetter;
 
-    uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
@@ -597,7 +595,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
-        require(_newFee < MAX_FEE, "HVE36");
+        require(_newFee <= MAX_FEE, "HVE36");
         poolInfo[_pid].fee = _newFee;
         emit SetPoolFee(_pid, _newFee);
     }
@@ -690,7 +688,7 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawRequest(_pid);
-        _withdraw(_pid, _shares, governance());
+        _withdraw(_pid, _shares);
     }
 
     /**
@@ -767,22 +765,22 @@ contract  HATVaults is Governable, HATMaster {
         totalSupply.mul(poolsRewards[_pid].rewardsLevels[_severity]);
         claimRewards.hackerVestedReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerVestedReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.hackerReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.committeeReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.committeeReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.swapAndBurn =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.swapAndBurn)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.governanceHatReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.governanceHatReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.hackerHatReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerHatReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
     }
 
     function getDefaultRewardsSplit() public pure returns (RewardsSplit memory) {
@@ -802,7 +800,7 @@ contract  HATVaults is Governable, HATMaster {
             .add(_rewardsSplit.committeeReward)
             .add(_rewardsSplit.swapAndBurn)
             .add(_rewardsSplit.governanceHatReward)
-            .add(_rewardsSplit.hackerHatReward) == REWARDS_LEVEL_DENOMINATOR,
+            .add(_rewardsSplit.hackerHatReward) == HUNDRED_PERCENT,
         "HVE29");
     }
 
@@ -867,7 +865,7 @@ contract  HATVaults is Governable, HATMaster {
             }
         } else {
             for (i; i < _rewardsLevels.length; i++) {
-                require(_rewardsLevels[i] < REWARDS_LEVEL_DENOMINATOR, "HVE33");
+                require(_rewardsLevels[i] < HUNDRED_PERCENT, "HVE33");
             }
             rewardsLevels = _rewardsLevels;
         }
