@@ -16,11 +16,9 @@ import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 // HME03: Committee not checked in yet
 // HME04: Withdraw: not enough user balance
 // HME05: User amount must be greater than 0
-// HME06: HAT token cannot be used as the LP token
 contract HATMaster is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    using SafeERC20 for HATToken;
 
     struct UserInfo {
         uint256 amount;     // The user share of the pool based on the amount of lpToken the user has provided.
@@ -122,7 +120,7 @@ contract HATMaster is ReentrancyGuard {
 
     function depositHATReward(uint256 _amount) external {
         rewardAvailable += _amount;
-        HAT.safeTransferFrom(address(msg.sender), address(this), _amount);
+        HAT.transferFrom(address(msg.sender), address(this), _amount);
     }
     
   /**
@@ -327,15 +325,11 @@ contract HATMaster is ReentrancyGuard {
 
     // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 _rewardAvailable = rewardAvailable;
-        if (_amount > _rewardAvailable) {
-            rewardAvailable = 0;
-            HAT.transfer(_to, _rewardAvailable);
-            emit SendReward(_to, _pid, _rewardAvailable, _amount);
-        } else {
-            rewardAvailable = _rewardAvailable - _amount;
-            HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount, _amount);
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
         }
+        rewardAvailable = rewardAvailable - _amount;
+        HAT.transfer(_to, _amount);
+        emit SendReward(_to, _pid, _amount, _amount);
     }
 }

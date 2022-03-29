@@ -15,6 +15,7 @@ var stakingToken;
 var REWARD_PER_BLOCK = "10";
 var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
+
 const setup = async function(
   accounts,
   reward_per_block = REWARD_PER_BLOCK,
@@ -24,7 +25,8 @@ const setup = async function(
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
-  weth = false
+  weth = false,
+  rewardInVaults = 2500000
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
@@ -56,8 +58,11 @@ const setup = async function(
     hatVaults.address,
     web3.utils.toWei("2500000")
   );
-  await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("2500000"));
+  await utils.setMinter(hatToken, accounts[0], web3.utils.toWei((2500000 + rewardInVaults).toString()));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
+  await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
+  await hatToken.approve(hatVaults.address, web3.utils.toWei(rewardInVaults.toString()));
+  await hatVaults.depositHATReward(web3.utils.toWei(rewardInVaults.toString()));
   await hatTimelockController.addPool(
     allocPoint,
     stakingToken.address,
