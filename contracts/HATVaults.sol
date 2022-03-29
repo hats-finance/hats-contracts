@@ -45,7 +45,8 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than 2%
-contract  HATVaults is HATMaster {
+// HVE37: Token approve reset failed
+contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
@@ -841,6 +842,7 @@ contract  HATVaults is HATMaster {
             amountOutMinimum: _amountOutMinimum
         }));
         require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
+        require(_token.approve(address(uniSwapRouter), 0), "HVE37");
     }
 
     /**

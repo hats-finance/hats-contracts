@@ -1952,12 +1952,21 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approveDisable(true);
     try {
       await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
-      assert(false, "approve disable");
+      assert(false, "approve disabled");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "HVE31");
     }
     await stakingToken.approveDisable(false);
+    await stakingToken.approveZeroDisable(true);
+    try {
+      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      assert(false, "approve to 0 disabled");
+    } catch (ex) {
+      assertVMException(ex, "HVE35");
+    }
+    await stakingToken.approveZeroDisable(false);
     var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+    assert.equal(await stakingToken.allowance(hatVaults.address, (await hatVaults.uniSwapRouter())), 0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN("250"))
