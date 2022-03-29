@@ -1962,7 +1962,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
       assert(false, "approve to 0 disabled");
     } catch (ex) {
-      assertVMException(ex, "HVE35");
+      assertVMException(ex, "HVE37");
     }
     await stakingToken.approveZeroDisable(false);
     var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
