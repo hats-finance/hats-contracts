@@ -44,6 +44,7 @@ import "./Governable.sol";
 // HVE32: Wrong amount received
 // HVE33: Reward level can not be more than 10000
 // HVE34: LP token is zero
+// HVE35: Token approve reset failed
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -821,6 +822,7 @@ contract  HATVaults is Governable, HATMaster {
             amountOutMinimum: _amountOutMinimum
         }));
         require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
+        require(_token.approve(address(uniSwapRouter), 0), "HVE35");
     }
 
     /**

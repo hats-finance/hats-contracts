@@ -10,6 +10,7 @@ contract ERC20Mock is ERC20 {
     mapping (address => address) public delegates;
 
     bool public approveDisableFlag;
+    bool public approveZeroDisableFlag;
 
     constructor(
         string memory _name,
@@ -18,10 +19,15 @@ contract ERC20Mock is ERC20 {
     // solhint-disable-next-line func-visibility
     ERC20(_name, _symbol) {
         approveDisableFlag = false;
+        approveZeroDisableFlag = false;
     }
 
     function approveDisable(bool _approveDisable) external {
         approveDisableFlag = _approveDisable;
+    }
+
+    function approveZeroDisable(bool _approveZeroDisable) external {
+        approveZeroDisableFlag = _approveZeroDisable;
     }
 
     function mint(address _to, uint256 _amount) public {
@@ -37,7 +43,9 @@ contract ERC20Mock is ERC20 {
     }
 
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        require(!approveDisableFlag, "approve fail");
+        if (approveDisableFlag || (approveZeroDisableFlag && amount == 0)) {
+            return false;
+        }
         _approve(msg.sender, spender, amount);
         return true;
     }
