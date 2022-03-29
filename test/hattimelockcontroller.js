@@ -132,6 +132,17 @@ contract("HatVaults", (accounts) => {
   }
 
   it("constructor and initialize", async () => {
+    try {
+      hatTimelockController = await HATTimelockController.new(
+        "0x0000000000000000000000000000000000000000",
+        hatGovernanceDelay,
+        [accounts[0]],
+        [accounts[0]]
+      );
+      assert(false, "hats vaults cannot be the 0 address");
+    } catch (ex) {
+      assertVMException(ex);
+    }
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaults.governance(), hatTimelockController.address);
