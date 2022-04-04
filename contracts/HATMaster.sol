@@ -323,7 +323,7 @@ contract HATMaster is ReentrancyGuard {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
+    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         if (_amount > rewardAvailable) { 
             _amount = rewardAvailable; 
