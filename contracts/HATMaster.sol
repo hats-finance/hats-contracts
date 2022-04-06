@@ -281,8 +281,12 @@ contract HATMaster is Governable, ReentrancyGuard {
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(governance(), fee);
+        }
         pool.balance = pool.balance.sub(factoredBalance);
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance);
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 

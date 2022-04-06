@@ -43,9 +43,9 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE32: Wrong amount received
 // HVE33: Reward level can not be more than 10000
 // HVE34: LP token is zero
-// HVE35: Token approve reset failed
-// HVE36: Only fee setter
-// HVE37: Fee must be less than or eqaul to 2%
+// HVE35: Only fee setter
+// HVE36: Fee must be less than or eqaul to 2%
+// HVE37: Token approve reset failed
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
