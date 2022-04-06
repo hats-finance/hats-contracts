@@ -1113,6 +1113,34 @@ contract("HatVaults", (accounts) => {
     assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString());
   });
 
+  it("Emergency withdraw fee", async () => {
+    await setup(accounts);
+
+    tx = await hatVaults.setPoolFee(0, 200);
+
+    assert.equal((await hatVaults.poolInfo(0)).fee, 200);
+    assert.equal(tx.logs[0].event, "SetPoolFee");
+    assert.equal(tx.logs[0].args._pid, 0);
+    assert.equal(tx.logs[0].args._newFee, 200);
+    
+    var staker = accounts[2];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+
+    let governanceBalance = await stakingToken.balanceOf(accounts[0]);
+
+    await safeEmergencyWithdraw(0, staker);
+
+    // Staker got back the reward minus the fee
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.98"));
+    // Governance received the fee
+    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString());
+  });
+
   it("stake", async () => {
     await setup(accounts);
     var staker = accounts[1];
