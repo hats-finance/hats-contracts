@@ -97,6 +97,8 @@ contract HATMaster is ReentrancyGuard {
     //pid -> PoolReward
     mapping (uint256=>PoolReward) internal poolsRewards;
 
+    uint256 public rewardAvailable;
+
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -116,6 +118,11 @@ contract HATMaster is ReentrancyGuard {
         MULTIPLIER_PERIOD = _multiplierPeriod;
     }
 
+    function depositHATReward(uint256 _amount) external {
+        rewardAvailable += _amount;
+        HAT.transferFrom(address(msg.sender), address(this), _amount);
+    }
+    
   /**
    * @dev massUpdatePools - Update reward variables for all pools
    * Be careful of gas spending!
@@ -149,11 +156,6 @@ contract HATMaster is ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        uint256 amountCanMint = HAT.minters(address(this));
-        reward = amountCanMint < reward ? amountCanMint : reward;
-        if (reward > 0) {
-            HAT.mint(address(this), reward);
-        }
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
@@ -321,15 +323,13 @@ contract HATMaster is ReentrancyGuard {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
+    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 hatBalance = HAT.balanceOf(address(this));
-        if (_amount > hatBalance) {
-            HAT.transfer(_to, hatBalance);
-            emit SendReward(_to, _pid, hatBalance, _amount);
-        } else {
-            HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount, _amount);
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
         }
+        rewardAvailable = rewardAvailable - _amount;
+        HAT.transfer(_to, _amount);
+        emit SendReward(_to, _pid, _amount, _amount);
     }
 }
