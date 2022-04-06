@@ -2899,7 +2899,7 @@ contract("HatVaults", (accounts) => {
     }
     await utils.mineBlock();
     var tx = await hatVaults.massUpdatePools(0, 18);
-    assert.equal(tx.receipt.gasUsed, 1445840);
+    assert.equal(tx.receipt.gasUsed, 1291036);
   }).timeout(40000);
 
   it("setPool x2", async () => {

@@ -842,7 +842,7 @@ contract  HATVaults is Governable, HATMaster {
             amountOutMinimum: _amountOutMinimum
         }));
         require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(uniSwapRouter), 0), "HVE35");
+        require(_token.approve(address(uniSwapRouter), 0), "HVE37");
     }
 
     /**
