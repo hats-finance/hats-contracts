@@ -46,7 +46,7 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than 2%
 // HVE37: Token approve reset failed
-contract  HATVaults is Governable, HATMaster {
+contract  HATVaults is HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
