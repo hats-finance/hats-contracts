@@ -13,7 +13,6 @@ import "./Governable.sol";
 // HVE01: Only committee
 // HVE02: Pending approval exist
 // HVE03: Safety period
-
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
 // HVE06: _severity is not in the range
