@@ -7,7 +7,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./HATMaster.sol";
 import "./tokenlock/ITokenLockFactory.sol";
-import "./Governable.sol";
 
 // Errors:
 // HVE01: Only committee
@@ -44,7 +43,9 @@ import "./Governable.sol";
 // HVE32: Wrong amount received
 // HVE33: Reward level can not be more than 10000
 // HVE34: LP token is zero
-// HVE35: Token approve reset failed
+// HVE35: Only fee setter
+// HVE36: Fee must be less than or eqaul to 2%
+// HVE37: Token approve reset failed
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -100,7 +101,8 @@ contract  HATVaults is Governable, HATMaster {
 
     GeneralParameters public generalParameters;
 
-    uint256 internal constant REWARDS_LEVEL_DENOMINATOR = 10000;
+    address public feeSetter;
+
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
@@ -124,6 +126,11 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+    modifier onlyFeeSetter() {
+        require(feeSetter == msg.sender || (governance() == msg.sender && feeSetter == address(0)), "HVE35");
+        _;
+    }
+
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
 
     event AddPool(uint256 indexed _pid,
@@ -140,6 +147,8 @@ contract  HATVaults is Governable, HATMaster {
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetRewardsSplit(uint256 indexed _pid, RewardsSplit _rewardsSplit);
     event SetRewardsLevels(uint256 indexed _pid, uint256[] _rewardsLevels);
+    event SetFeeSetter(address indexed _newFeeSetter);
+    event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
     event PendingRewardsLevelsLog(uint256 indexed _pid, uint256[] _rewardsLevels, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
@@ -581,6 +590,17 @@ contract  HATVaults is Governable, HATMaster {
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
+    function setFeeSetter(address _newFeeSetter) external onlyGovernance {
+        feeSetter = _newFeeSetter;
+        emit SetFeeSetter(_newFeeSetter);
+    }
+
+    function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
+        require(_newFee <= MAX_FEE, "HVE36");
+        poolInfo[_pid].fee = _newFee;
+        emit SetPoolFee(_pid, _newFee);
+    }
+
     /**
     * @dev swapBurnSend swap lptoken to HAT.
     * send to beneficiary and governance its hats rewards .
@@ -746,22 +766,22 @@ contract  HATVaults is Governable, HATMaster {
         totalSupply.mul(poolsRewards[_pid].rewardsLevels[_severity]);
         claimRewards.hackerVestedReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerVestedReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.hackerReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.committeeReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.committeeReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.swapAndBurn =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.swapAndBurn)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.governanceHatReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.governanceHatReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
         claimRewards.hackerHatReward =
         claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerHatReward)
-        .div(REWARDS_LEVEL_DENOMINATOR*REWARDS_LEVEL_DENOMINATOR);
+        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
     }
 
     function getDefaultRewardsSplit() public pure returns (RewardsSplit memory) {
@@ -781,7 +801,7 @@ contract  HATVaults is Governable, HATMaster {
             .add(_rewardsSplit.committeeReward)
             .add(_rewardsSplit.swapAndBurn)
             .add(_rewardsSplit.governanceHatReward)
-            .add(_rewardsSplit.hackerHatReward) == REWARDS_LEVEL_DENOMINATOR,
+            .add(_rewardsSplit.hackerHatReward) == HUNDRED_PERCENT,
         "HVE29");
     }
 
@@ -822,7 +842,7 @@ contract  HATVaults is Governable, HATMaster {
             amountOutMinimum: _amountOutMinimum
         }));
         require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(uniSwapRouter), 0), "HVE35");
+        require(_token.approve(address(uniSwapRouter), 0), "HVE37");
     }
 
     /**
@@ -847,7 +867,7 @@ contract  HATVaults is Governable, HATMaster {
             }
         } else {
             for (i; i < _rewardsLevels.length; i++) {
-                require(_rewardsLevels[i] < REWARDS_LEVEL_DENOMINATOR, "HVE33");
+                require(_rewardsLevels[i] < HUNDRED_PERCENT, "HVE33");
             }
             rewardsLevels = _rewardsLevels;
         }
