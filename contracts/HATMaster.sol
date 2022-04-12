@@ -9,6 +9,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
+import "./Governable.sol";
+
 
 // Errors:
 // HME01: Pool range is too big
@@ -16,7 +18,7 @@ import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 // HME03: Committee not checked in yet
 // HME04: Withdraw: not enough user balance
 // HME05: User amount must be greater than 0
-contract HATMaster is ReentrancyGuard {
+contract HATMaster is Governable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -66,6 +68,7 @@ contract HATMaster is ReentrancyGuard {
         uint256 lastProcessedTotalAllocPoint;
         // total amount of LP tokens in pool
         uint256 balance;
+        uint256 fee;
     }
 
     // Info of each pool.
@@ -83,6 +86,8 @@ contract HATMaster is ReentrancyGuard {
     uint256 public immutable START_BLOCK; 
     uint256 public immutable MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
+    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -98,6 +103,8 @@ contract HATMaster is ReentrancyGuard {
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> PoolReward
     mapping (uint256=>PoolReward) internal poolsRewards;
+
+    uint256 public rewardAvailable;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -118,6 +125,11 @@ contract HATMaster is ReentrancyGuard {
         MULTIPLIER_PERIOD = _multiplierPeriod;
     }
 
+    function depositHATReward(uint256 _amount) external {
+        rewardAvailable += _amount;
+        HAT.transferFrom(address(msg.sender), address(this), _amount);
+    }
+    
   /**
    * @dev massUpdatePools - Update reward variables for all pools
    * Be careful of gas spending!
@@ -151,11 +163,6 @@ contract HATMaster is ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        uint256 amountCanMint = HAT.minters(address(this));
-        reward = amountCanMint < reward ? amountCanMint : reward;
-        if (reward > 0) {
-            HAT.mint(address(this), reward);
-        }
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
@@ -258,8 +265,12 @@ contract HATMaster is ReentrancyGuard {
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalUsersAmount);
+            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
             pool.balance = pool.balance.sub(amountToWithdraw);
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw);
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(governance(), fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalUsersAmount = pool.totalUsersAmount.sub(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.rewardPerShare).div(1e12);
@@ -275,8 +286,12 @@ contract HATMaster is ReentrancyGuard {
         pool.totalUsersAmount = pool.totalUsersAmount.sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(governance(), fee);
+        }
         pool.balance = pool.balance.sub(factoredBalance);
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance);
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
@@ -304,7 +319,8 @@ contract HATMaster is ReentrancyGuard {
             rewardPerShare: 0,
             totalUsersAmount: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
-            balance: 0
+            balance: 0,
+            fee: 0
         }));
     }
 
@@ -326,15 +342,13 @@ contract HATMaster is ReentrancyGuard {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Safe HAT transfer function, just in case if rounding error causes pool to not have enough HATs.
+    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        uint256 hatBalance = HAT.balanceOf(address(this));
-        if (_amount > hatBalance) {
-            HAT.transfer(_to, hatBalance);
-            emit SendReward(_to, _pid, hatBalance, _amount);
-        } else {
-            HAT.transfer(_to, _amount);
-            emit SendReward(_to, _pid, _amount, _amount);
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
         }
+        rewardAvailable = rewardAvailable - _amount;
+        HAT.transfer(_to, _amount);
+        emit SendReward(_to, _pid, _amount, _amount);
     }
 }
