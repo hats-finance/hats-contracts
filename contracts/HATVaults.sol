@@ -667,8 +667,9 @@ contract  HATVaults is Governable, HATMaster {
 
     /**
     * @notice Submit a request to withdraw funds from pool # `_pid`. 
-    The request will only be approved if it has been `generalParameters.withdrawRequestPendingPeriod + generalParameters.withdrawRequestEnablePeriod`
-    since the last withdraw request, or if the last action was a deposit or withdrawal.
+    The request will only be approved if the last action was a deposit or withdrawal or in case the last action was a withdraw request,
+    that the pending period (of `generalParameters.withdrawRequestPendingPeriod`) had ended and the withdraw enable period (of `generalParameters.withdrawRequestEnablePeriod`)
+    had also ended.
     * @param _pid The pool ID
     **/
     function withdrawRequest(uint256 _pid) external {
