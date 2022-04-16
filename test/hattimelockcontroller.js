@@ -111,7 +111,7 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.poolInfo(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(0, staker)).amount;
+    let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
     let globalUpdatesLen = await hatVaults.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
       await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)

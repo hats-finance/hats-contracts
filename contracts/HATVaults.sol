@@ -222,14 +222,14 @@ contract  HATVaults is Governable, HATMaster {
     }
 
       /**
-     * @dev pendingApprovalClaim - called by a committee to set a pending approval claim.
-     * The pending approval need to be approved or dismissed  by the hats governance.
-     * This function should be called only on a safety period, where withdrawn is disable.
-     * Upon a call to this function by the committee the pool withdrawn will be disable
-     * till governance will approve or dismiss this pending approval.
-     * @param _pid pool id
-     * @param _beneficiary the approval claim beneficiary
-     * @param _severity approval claim severity
+     * @notice Called by a committee to submit a claim for a bounty.
+     * The submitted claim needs to be approved or dismissed by the Hats governance.
+     * This function should be called only on a safety period, where withdrawals are disabled.
+     * Upon a call to this function by the committee the pool withdrawals will be disabled
+     * untill the Hats governance will approve or dismiss this claim.
+     * @param _pid The pool id
+     * @param _beneficiary The submitted claim's beneficiary
+     * @param _severity The submitted claim's bug severity
    */
     function pendingApprovalClaim(uint256 _pid, address _beneficiary, uint256 _severity)
     external
@@ -267,8 +267,9 @@ contract  HATVaults is Governable, HATMaster {
     }
 
   /**
-   * @dev dismiss a pending claim - called either by hats govenrance, or by anyone if the claim is over 5 weeks old
-   * @param _pid pool id
+   * @notice Dismiss a claim for a bounty submitted by a committee.
+   Called either by Hats govenrance, or by anyone if the claim is over 5 weeks old.
+   * @param _pid The pool id
   */
     function dismissPendingApprovalClaim(uint256 _pid) external {
         // solhint-disable-next-line not-rely-on-time
@@ -340,7 +341,7 @@ contract  HATVaults is Governable, HATMaster {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalUsersAmount,
+        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalUsersShares,
         "HVE11");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
@@ -541,7 +542,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_rewardVestingParams[0] >= _rewardVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
-        add(_allocPoint, IERC20(_lpToken));
+        _addPool(_allocPoint, IERC20(_lpToken));
         uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
         uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
@@ -734,11 +735,11 @@ contract  HATVaults is Governable, HATMaster {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
-        if (block.number > pool.lastRewardBlock && pool.totalUsersAmount > 0) {
+        if (block.number > pool.lastRewardBlock && pool.totalUsersShares > 0) {
             uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersAmount));
+            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersShares));
         }
-        return user.amount.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
+        return user.shares.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {
@@ -747,7 +748,7 @@ contract  HATVaults is Governable, HATMaster {
 
     function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
-        return  user.amount;
+        return  user.shares;
     }
 
     function poolLength() external view returns (uint256) {
