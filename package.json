@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
+    "@kleros/erc-792": "^8.0.0",
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-etherscan": "^2.1.1",
     "@nomiclabs/hardhat-solhint": "2.0.0",

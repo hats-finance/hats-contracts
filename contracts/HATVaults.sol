@@ -46,6 +46,7 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or eqaul to 2%
 // HVE37: Token approve reset failed
+// HVE38: Only arbitrator
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -102,10 +103,13 @@ contract  HATVaults is Governable, HATMaster {
     GeneralParameters public generalParameters;
 
     address public feeSetter;
+    address public arbitrator;
 
     ITokenLockFactory public immutable tokenLockFactory;
     ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
+    // NOTE: the spec says it should be constant but it'd be more flexible to have it as a general parameter.
+    uint256 public constant CHALLENGE_PERIOD = 3 days;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
@@ -128,6 +132,11 @@ contract  HATVaults is Governable, HATMaster {
 
     modifier onlyFeeSetter() {
         require(feeSetter == msg.sender || (governance() == msg.sender && feeSetter == address(0)), "HVE35");
+        _;
+    }
+
+    modifier onlyArbitrator() {
+        require(arbitrator == msg.sender, "HVE38");
         _;
     }
 
@@ -252,6 +261,11 @@ contract  HATVaults is Governable, HATMaster {
         emit PendingApprovalLog(_pid, _beneficiary, _severity, msg.sender);
     }
 
+    function isChallenged(uint256 _pid) onlyArbitrator external {
+        // TODO: challenge logic in HATVaults.
+        require(pendingApprovals[_pid].beneficiary != address(0), "HVE10");
+    }
+
     /**
      * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
      * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
@@ -270,20 +284,24 @@ contract  HATVaults is Governable, HATMaster {
    * @dev dismiss a pending claim - called either by hats govenrance, or by anyone if the claim is over 5 weeks old
    * @param _pid pool id
   */
-    function dismissPendingApprovalClaim(uint256 _pid) external {
+    function dismissPendingApprovalClaim(uint256 _pid) external onlyArbitrator {
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == governance() || pendingApprovals[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
+        // NOTE: The timeout check is done on arbitrator's side.
+        //require(msg.sender == governance() || pendingApprovals[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
         delete pendingApprovals[_pid];
     }
 
     /**
    * @dev approveClaim - called by hats governance to approve a pending approval claim.
    * @param _pid pool id
- */
-    function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
+   * @param _severity Severity, approved by the arbitrator.
+ */     function approveClaim(uint256 _pid, uint256 _severity) external onlyArbitrator nonReentrant {
+        // NOTE: Should the right to approve the claim belong only to the connector?
+        // Also note that this function can be called by anyone from the arbitrator's side, if there is no challenge.
         require(pendingApprovals[_pid].beneficiary != address(0), "HVE10");
         PoolReward storage poolReward = poolsRewards[_pid];
         PendingApproval memory pendingApproval = pendingApprovals[_pid];
+        pendingApproval.severity = _severity;
         delete pendingApprovals[_pid];
 
         IERC20 lpToken = poolInfo[_pid].lpToken;
@@ -361,6 +379,14 @@ contract  HATVaults is Governable, HATMaster {
     */
     function setClaimFee(uint256 _fee) external onlyGovernance {
         generalParameters.claimFee = _fee;
+    }
+
+    /**
+     * @dev setArbitrator - called by hats governance to set arbitrator
+     * @param _arbitrator New arbitrator.
+    */
+    function setArbitrator(address _arbitrator) external onlyGovernance {
+        arbitrator = _arbitrator;
     }
 
     /**
@@ -708,6 +734,14 @@ contract  HATVaults is Governable, HATMaster {
 
     function getPoolRewards(uint256 _pid) external view returns(PoolReward memory) {
         return poolsRewards[_pid];
+    }
+
+    function getChallengePeriod() external view returns(uint256) {
+        return CHALLENGE_PERIOD;
+    }
+
+    function getMaxSeverity(uint256 _pid) external view returns (uint256) {
+        return poolsRewards[_pid].rewardsLevels.length;
     }
 
     // GET INFO for UI
