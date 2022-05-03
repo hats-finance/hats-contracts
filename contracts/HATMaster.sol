@@ -148,75 +148,78 @@ contract HATMaster is Governable, ReentrancyGuard {
         _deposit(_pid, 0);
     }
 
+    /**
+     * @dev Update the pool's rewardPerShare, not more then once per block
+     * @param _pid The pool id
+     */
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         uint256 lastRewardBlock = pool.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
             return;
         }
-    uint256 totalUsersAmount = pool.totalUsersShares;
-    uint256 lastPoolUpdate = globalPoolUpdates.length-1;
-    if (totalUsersAmount == 0) {
+        uint256 totalUsersShares = pool.totalUsersShares;
+        uint256 lastPoolUpdate = globalPoolUpdates.length-1;
+        if (totalUsersShares == 0) {
+            pool.lastRewardBlock = block.number;
+            pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+            return;
+         }
+        uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersShares));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
-        return;
-    }
-    uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-    pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersAmount));
-    pool.lastRewardBlock = block.number;
-    pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
     /**
      * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
-     * @param _from range's from block
-     * @param _to range's to block
-     * will revert if from < START_BLOCK or _to < _from
+     * @param _fromBlock range's from block
+     * @param _toBlock range's to block
+     * will revert if from < START_BLOCK or _toBlock < _fromBlock
      */
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 result) {
-        uint256 i = (_from - START_BLOCK) / MULTIPLIER_PERIOD + 1;
+    function getMultiplier(uint256 _fromBlock, uint256 _toBlock) public view returns (uint256 result) {
+        uint256 i = (_fromBlock - START_BLOCK) / MULTIPLIER_PERIOD + 1;
         for (; i <= MULTIPLIERS_LENGTH; i++) {
             uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
-            if (_to <= endBlock) {
+            if (_toBlock <= endBlock) {
                 break;
             }
-            result += (endBlock - _from) * rewardMultipliers[i-1];
-            _from = endBlock;
+            result += (endBlock - _fromBlock) * rewardMultipliers[i-1];
+            _fromBlock = endBlock;
         }
-        result += (_to - _from) * (i > MULTIPLIERS_LENGTH ? 0 : rewardMultipliers[i-1]);
+        result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardMultipliers[i-1]);
     }
 
-    function getRewardForBlocksRange(uint256 _from, uint256 _to, uint256 _allocPoint, uint256 _totalAllocPoint)
+    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
     public
     view
     returns (uint256 reward) {
         if (_totalAllocPoint > 0) {
-            reward = getMultiplier(_from, _to).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+            reward = getMultiplier(_fromBlock, _toBlock).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
         }
     }
 
     /**
-     * @dev calcPoolReward -
-     * calculate rewards for a pool by iterating over the history of totalAllocPoints updates.
-     * and sum up all rewards periods from pool.lastRewardBlock till current block number.
-     * @param _pid pool id
-     * @param _from block starting calculation
-     * @param _lastPoolUpdate lastPoolUpdate
+     * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
+     * and sum up all rewards periods from pool.lastRewardBlock untill current block number.
+     * @param _pid The pool id
+     * @param _fromBlock The block from which to start calculation
+     * @param _lastPoolUpdateIndex index of last PoolUpdate in globalPoolUpdates to calculate for
      * @return reward
      */
-    function calcPoolReward(uint256 _pid, uint256 _from, uint256 _lastPoolUpdate) public view returns(uint256 reward) {
+    function calcPoolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastPoolUpdateIndex) public view returns(uint256 reward) {
         uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
         uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
-        for (; i < _lastPoolUpdate; i++) {
+        for (; i < _lastPoolUpdateIndex; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
-            reward.add(getRewardForBlocksRange(_from,
+            reward.add(getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             poolAllocPoint,
                                             globalPoolUpdates[i].totalAllocPoint));
-            _from = nextUpdateBlock;
+            _fromBlock = nextUpdateBlock;
         }
-        return reward.add(getRewardForBlocksRange(_from,
+        return reward.add(getRewardForBlocksRange(_fromBlock,
                                                 block.number,
                                                 poolAllocPoint,
                                                 globalPoolUpdates[i].totalAllocPoint));

@@ -10,7 +10,7 @@ import "./tokenlock/ITokenLockFactory.sol";
 
 // Errors:
 // HVE01: Only committee
-// HVE02: Pending approval exist
+// HVE02: Claim submitted
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
@@ -18,7 +18,7 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
-// HVE10: No pending approval
+// HVE10: No claim submitted
 // HVE11: Amount to reward is too big
 // HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
@@ -50,7 +50,7 @@ contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
-    struct PendingApproval {
+    struct SubmittedClaim {
         address beneficiary;
         uint256 severity;
         address approver;
@@ -91,7 +91,7 @@ contract  HATVaults is Governable, HATMaster {
     //pid -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
     //pid -> PendingApproval
-    mapping(uint256 => PendingApproval) public pendingApprovals;
+    mapping(uint256 => SubmittedClaim) public submittedClaims;
     //poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
     //poolId -> PendingRewardsLevels
@@ -112,8 +112,8 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
-    modifier noPendingApproval(uint256 _pid) {
-        require(pendingApprovals[_pid].beneficiary == address(0), "HVE02");
+    modifier noSubmittedClaims(uint256 _pid) {
+        require(submittedClaims[_pid].beneficiary == address(0), "HVE02");
         _;
     }
 
@@ -168,7 +168,7 @@ contract  HATVaults is Governable, HATMaster {
                     address _tokenLock,
                     ClaimReward _claimReward);
 
-    event PendingApprovalLog(uint256 indexed _pid,
+    event ClaimSubmitted(uint256 indexed _pid,
                             address indexed _beneficiary,
                             uint256 indexed _severity,
                             address _approver);
@@ -189,9 +189,9 @@ contract  HATVaults is Governable, HATMaster {
    * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
    *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
-   *        Some of the contracts functions are limited only to governance :
-   *         addPool,setPool,dismissPendingApprovalClaim,approveClaim,
-   *         setHatVestingParams,setVestingParams,setRewardsSplit
+   *        Some of the contracts functions are limited only to governance:
+   *         addPool, setPool, dismissClaim, approveClaim,
+   *         setHatVestingParams, setVestingParams, setRewardsSplit
    * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
    * @param _tokenLockFactory address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
@@ -231,10 +231,10 @@ contract  HATVaults is Governable, HATMaster {
      * @param _beneficiary The submitted claim's beneficiary
      * @param _severity The submitted claim's bug severity
    */
-    function pendingApprovalClaim(uint256 _pid, address _beneficiary, uint256 _severity)
+    function submitClaim(uint256 _pid, address _beneficiary, uint256 _severity)
     external
     onlyCommittee(_pid)
-    noPendingApproval(_pid) {
+    noSubmittedClaims(_pid) {
         require(_beneficiary != address(0), "HVE04");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
@@ -242,14 +242,14 @@ contract  HATVaults is Governable, HATMaster {
         "HVE05");
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "HVE06");
 
-        pendingApprovals[_pid] = PendingApproval({
+        submittedClaims[_pid] = SubmittedClaim({
             beneficiary: _beneficiary,
             severity: _severity,
             approver: msg.sender,
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit PendingApprovalLog(_pid, _beneficiary, _severity, msg.sender);
+        emit ClaimSubmitted(_pid, _beneficiary, _severity, msg.sender);
     }
 
     /**
@@ -271,10 +271,10 @@ contract  HATVaults is Governable, HATMaster {
    Called either by Hats govenrance, or by anyone if the claim is over 5 weeks old.
    * @param _pid The pool id
   */
-    function dismissPendingApprovalClaim(uint256 _pid) external {
+    function dismissClaim(uint256 _pid) external {
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == governance() || pendingApprovals[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
-        delete pendingApprovals[_pid];
+        require(msg.sender == governance() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
+        delete submittedClaims[_pid];
     }
 
     /**
@@ -282,10 +282,10 @@ contract  HATVaults is Governable, HATMaster {
    * @param _pid pool id
  */
     function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
-        require(pendingApprovals[_pid].beneficiary != address(0), "HVE10");
+        require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
         PoolReward storage poolReward = poolsRewards[_pid];
-        PendingApproval memory pendingApproval = pendingApprovals[_pid];
-        delete pendingApprovals[_pid];
+        SubmittedClaim memory pendingApproval = submittedClaims[_pid];
+        delete submittedClaims[_pid];
 
         IERC20 lpToken = poolInfo[_pid].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_pid, pendingApproval.severity);
@@ -428,7 +428,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function setRewardsSplit(uint256 _pid, RewardsSplit memory _rewardsSplit)
     external
-    onlyGovernance noPendingApproval(_pid) noSafetyPeriod {
+    onlyGovernance noSubmittedClaims(_pid) noSafetyPeriod {
         validateSplit(_rewardsSplit);
         poolsRewards[_pid].rewardsSplit = _rewardsSplit;
         emit SetRewardsSplit(_pid, _rewardsSplit);
@@ -456,7 +456,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function setPendingRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
-    onlyCommittee(_pid) noPendingApproval(_pid) {
+    onlyCommittee(_pid) noSubmittedClaims(_pid) {
         pendingRewardsLevels[_pid].rewardsLevels = checkRewardsLevels(_rewardsLevels);
         // solhint-disable-next-line not-rely-on-time
         pendingRewardsLevels[_pid].timestamp = block.timestamp;
@@ -474,7 +474,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function setRewardsLevels(uint256 _pid)
     external
-    onlyCommittee(_pid) noPendingApproval(_pid) {
+    onlyCommittee(_pid) noSubmittedClaims(_pid) {
         require(pendingRewardsLevels[_pid].timestamp > 0, "HVE19");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - pendingRewardsLevels[_pid].timestamp > generalParameters.setRewardsLevelsDelay, "HVE20");
@@ -806,7 +806,7 @@ contract  HATVaults is Governable, HATMaster {
         "HVE29");
     }
 
-    function checkWithdrawRequest(uint256 _pid) internal noPendingApproval(_pid) noSafetyPeriod {
+    function checkWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
