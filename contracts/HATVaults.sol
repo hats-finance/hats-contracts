@@ -53,7 +53,7 @@ contract  HATVaults is Governable, HATMaster {
     struct SubmittedClaim {
         address beneficiary;
         uint256 severity;
-        address approver;
+        address committee;
         uint256 createdAt;
     }
 
@@ -161,7 +161,7 @@ contract  HATVaults is Governable, HATMaster {
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
-    event ClaimApprove(address indexed _approver,
+    event ClaimApproved(address indexed _committee,
                     uint256 indexed _pid,
                     address indexed _beneficiary,
                     uint256 _severity,
@@ -171,7 +171,7 @@ contract  HATVaults is Governable, HATMaster {
     event ClaimSubmitted(uint256 indexed _pid,
                             address indexed _beneficiary,
                             uint256 indexed _severity,
-                            address _approver);
+                            address _committee);
 
     event WithdrawRequest(uint256 indexed _pid,
                         address indexed _beneficiary,
@@ -245,7 +245,7 @@ contract  HATVaults is Governable, HATMaster {
         submittedClaims[_pid] = SubmittedClaim({
             beneficiary: _beneficiary,
             severity: _severity,
-            approver: msg.sender,
+            committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
@@ -268,7 +268,7 @@ contract  HATVaults is Governable, HATMaster {
 
   /**
    * @notice Dismiss a claim for a bounty submitted by a committee.
-   Called either by Hats govenrance, or by anyone if the claim is over 5 weeks old.
+   * Called either by Hats govenrance, or by anyone if the claim is over 5 weeks old.
    * @param _pid The pool id
   */
     function dismissClaim(uint256 _pid) external {
@@ -318,7 +318,7 @@ contract  HATVaults is Governable, HATMaster {
             lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
         }
         lpToken.safeTransfer(submittedClaim.beneficiary, claimRewards.hackerReward);
-        lpToken.safeTransfer(submittedClaim.approver, claimRewards.committeeReward);
+        lpToken.safeTransfer(submittedClaim.committee, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[_pid] = swapAndBurns[_pid].add(claimRewards.swapAndBurn);
         governanceHatRewards[_pid] =
@@ -326,7 +326,7 @@ contract  HATVaults is Governable, HATMaster {
         hackersHatRewards[submittedClaim.beneficiary][_pid] =
         hackersHatRewards[submittedClaim.beneficiary][_pid].add(claimRewards.hackerHatReward);
 
-        emit ClaimApprove(msg.sender,
+        emit ClaimApproved(msg.sender,
                         _pid,
                         submittedClaim.beneficiary,
                         submittedClaim.severity,
@@ -716,7 +716,7 @@ contract  HATVaults is Governable, HATMaster {
     * @param _shares amount of shares user wants to withdraw
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
-        checkWithdrawRequest(_pid);
+        checkWithdrawAndResetWithdrawRequest(_pid);
         _withdraw(_pid, _shares);
     }
 
@@ -726,7 +726,7 @@ contract  HATVaults is Governable, HATMaster {
     * @param _pid the pool id
     **/
     function emergencyWithdraw(uint256 _pid) external {
-        checkWithdrawRequest(_pid);
+        checkWithdrawAndResetWithdrawRequest(_pid);
         _emergencyWithdraw(_pid);
     }
 
@@ -833,7 +833,9 @@ contract  HATVaults is Governable, HATMaster {
         "HVE29");
     }
 
-    function checkWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
+    // Checks that the sender can perform a withdraw at this time
+    // and also sets the withdrawRequest to 0
+    function checkWithdrawAndResetWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
