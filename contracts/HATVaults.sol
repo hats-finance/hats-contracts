@@ -276,11 +276,12 @@ contract  HATVaults is Governable, HATMaster {
         require(msg.sender == governance() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
         delete submittedClaims[_pid];
     }
-
-    /**
-   * @dev approveClaim - called by hats governance to approve a pending approval claim.
-   * @param _pid pool id
- */
+    
+  /**
+   * @notice Approve a claim for a bounty submitted by a committee.
+   * Called only by hats governance.
+   * @param _pid The pool id
+   */
     function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
         require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
         PoolReward storage poolReward = poolsRewards[_pid];

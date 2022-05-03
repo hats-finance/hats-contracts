@@ -144,6 +144,10 @@ contract HATMaster is Governable, ReentrancyGuard {
         emit MassUpdatePools(_fromPid, _toPid);
     }
 
+    /**
+     * @notice Transfer the sender their pending share of HATs rewards.
+     * @param _pid The pool id
+     */
     function claimReward(uint256 _pid) external {
         _deposit(_pid, 0);
     }
