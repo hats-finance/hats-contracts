@@ -90,7 +90,7 @@ contract  HATVaults is Governable, HATMaster {
     mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
     //pid -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
-    //pid -> PendingApproval
+    //pid -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
     //poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
@@ -285,11 +285,11 @@ contract  HATVaults is Governable, HATMaster {
     function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
         require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
         PoolReward storage poolReward = poolsRewards[_pid];
-        SubmittedClaim memory pendingApproval = submittedClaims[_pid];
+        SubmittedClaim memory submittedClaim = submittedClaims[_pid];
         delete submittedClaims[_pid];
 
         IERC20 lpToken = poolInfo[_pid].lpToken;
-        ClaimReward memory claimRewards = calcClaimRewards(_pid, pendingApproval.severity);
+        ClaimReward memory claimRewards = calcClaimRewards(_pid, submittedClaim.severity);
         poolInfo[_pid].balance = poolInfo[_pid].balance.sub(
                             claimRewards.hackerReward
                             .add(claimRewards.hackerVestedReward)
@@ -303,7 +303,7 @@ contract  HATVaults is Governable, HATMaster {
             tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
             0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
-            pendingApproval.beneficiary,
+            submittedClaim.beneficiary,
             claimRewards.hackerVestedReward,
             // solhint-disable-next-line not-rely-on-time
             block.timestamp, //start
@@ -317,19 +317,19 @@ contract  HATVaults is Governable, HATMaster {
         );
             lpToken.safeTransfer(tokenLock, claimRewards.hackerVestedReward);
         }
-        lpToken.safeTransfer(pendingApproval.beneficiary, claimRewards.hackerReward);
-        lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
+        lpToken.safeTransfer(submittedClaim.beneficiary, claimRewards.hackerReward);
+        lpToken.safeTransfer(submittedClaim.approver, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[_pid] = swapAndBurns[_pid].add(claimRewards.swapAndBurn);
         governanceHatRewards[_pid] =
         governanceHatRewards[_pid].add(claimRewards.governanceHatReward);
-        hackersHatRewards[pendingApproval.beneficiary][_pid] =
-        hackersHatRewards[pendingApproval.beneficiary][_pid].add(claimRewards.hackerHatReward);
+        hackersHatRewards[submittedClaim.beneficiary][_pid] =
+        hackersHatRewards[submittedClaim.beneficiary][_pid].add(claimRewards.hackerHatReward);
 
         emit ClaimApprove(msg.sender,
                         _pid,
-                        pendingApproval.beneficiary,
-                        pendingApproval.severity,
+                        submittedClaim.beneficiary,
+                        submittedClaim.severity,
                         tokenLock,
                         claimRewards);
         assert(poolInfo[_pid].balance > 0);
