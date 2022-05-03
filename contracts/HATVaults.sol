@@ -342,7 +342,7 @@ contract  HATVaults is Governable, HATMaster {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalUsersShares,
+        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalShares,
         "HVE11");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
@@ -736,9 +736,9 @@ contract  HATVaults is Governable, HATMaster {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
-        if (block.number > pool.lastRewardBlock && pool.totalUsersShares > 0) {
+        if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
             uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalUsersShares));
+            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalShares));
         }
         return user.shares.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
     }

@@ -64,7 +64,7 @@ contract HATMaster is Governable, ReentrancyGuard {
         uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
-        uint256 totalUsersShares;
+        uint256 totalShares;
         //index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
         uint256 lastProcessedTotalAllocPoint;
         uint256 balance;
@@ -162,15 +162,15 @@ contract HATMaster is Governable, ReentrancyGuard {
         if (block.number <= lastRewardBlock) {
             return;
         }
-        uint256 totalUsersShares = pool.totalUsersShares;
+        uint256 totalShares = pool.totalShares;
         uint256 lastPoolUpdate = globalPoolUpdates.length-1;
-        if (totalUsersShares == 0) {
+        if (totalShares == 0) {
             pool.lastRewardBlock = block.number;
             pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
             return;
          }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalUsersShares));
+        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalShares));
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
@@ -245,11 +245,11 @@ contract HATMaster is Governable, ReentrancyGuard {
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             pool.balance = pool.balance.add(_amount);
             uint256 factoredAmount = _amount;
-            if (pool.totalUsersShares > 0) {
-                factoredAmount = pool.totalUsersShares.mul(_amount).div(lpSupply);
+            if (pool.totalShares > 0) {
+                factoredAmount = pool.totalShares.mul(_amount).div(lpSupply);
             }
             user.shares = user.shares.add(factoredAmount);
-            pool.totalUsersShares = pool.totalUsersShares.add(factoredAmount);
+            pool.totalShares = pool.totalShares.add(factoredAmount);
         }
         user.rewardDebt = user.shares.mul(pool.rewardPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
@@ -267,14 +267,14 @@ contract HATMaster is Governable, ReentrancyGuard {
         }
         if (_amount > 0) {
             user.shares = user.shares.sub(_amount);
-            uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalUsersShares);
+            uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalShares);
             uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
             pool.balance = pool.balance.sub(amountToWithdraw);
             if (fee > 0) {
                 pool.lpToken.safeTransfer(governance(), fee);
             }
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalUsersShares = pool.totalUsersShares.sub(_amount);
+            pool.totalShares = pool.totalShares.sub(_amount);
         }
         user.rewardDebt = user.shares.mul(pool.rewardPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);
@@ -285,8 +285,8 @@ contract HATMaster is Governable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares > 0, "HME05");
-        uint256 factoredBalance = user.shares.mul(pool.balance).div(pool.totalUsersShares);
-        pool.totalUsersShares = pool.totalUsersShares.sub(user.shares);
+        uint256 factoredBalance = user.shares.mul(pool.balance).div(pool.totalShares);
+        pool.totalShares = pool.totalShares.sub(user.shares);
         user.shares = 0;
         user.rewardDebt = 0;
         uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
@@ -320,7 +320,7 @@ contract HATMaster is Governable, ReentrancyGuard {
             allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
             rewardPerShare: 0,
-            totalUsersShares: 0,
+            totalShares: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
             balance: 0,
             fee: 0
