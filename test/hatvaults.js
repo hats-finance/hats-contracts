@@ -1726,7 +1726,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "ClaimSubmitted");
     tx = await hatVaults.approveClaim(0);
     assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
-    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].event, "ClaimApproved");
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
@@ -1786,7 +1786,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     var tx = await hatVaults.approveClaim(0);
-    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].event, "ClaimApproved");
     let stakerAmount = await hatVaults.getStakedAmount(0, staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     tx = await safeWithdraw(0, stakerAmount, staker);
@@ -1873,7 +1873,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     var tx = await hatVaults.approveClaim(0);
-    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].event, "ClaimApproved");
     tx = await safeEmergencyWithdraw(0, staker);
 
     assert.equal(tx.logs[0].args.amount.toString(), web3.utils.toWei("0.2"));
@@ -2646,7 +2646,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     var tx = await hatVaults.approveClaim(0);
-    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].event, "ClaimApproved");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
@@ -2748,7 +2748,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     var tx = await hatVaults.approveClaim(0);
-    assert.equal(tx.logs[0].event, "ClaimApprove");
+    assert.equal(tx.logs[0].event, "ClaimApproved");
     assert.equal(tx.logs[0].args._tokenLock, utils.NULL_ADDRESS);
     assert.equal(
       await stakingToken.balanceOf(hatVaults.address),
