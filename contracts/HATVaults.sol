@@ -132,6 +132,8 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    
+    event CommitteeCheckedIn(uint256 indexed _pid);
 
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
@@ -178,6 +180,10 @@ contract  HATVaults is Governable, HATMaster {
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+    
+    event SetRewardMultipliers(uint256[24] _rewardMultipliers);
+    
+    event SetClaimFee(uint256 _fee);
 
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
 
@@ -353,6 +359,7 @@ contract  HATVaults is Governable, HATMaster {
     */
     function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyGovernance {
         rewardMultipliers = _rewardMultipliers;
+        emit SetRewardMultipliers(_rewardMultipliers);
     }
 
     /**
@@ -361,6 +368,7 @@ contract  HATVaults is Governable, HATMaster {
     */
     function setClaimFee(uint256 _fee) external onlyGovernance {
         generalParameters.claimFee = _fee;
+        emit SetClaimFee(_fee);
     }
 
     /**
@@ -373,7 +381,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_safetyPeriod <= 6 hours, "HVE13");
         generalParameters.withdrawPeriod = _withdrawPeriod;
         generalParameters.safetyPeriod = _safetyPeriod;
-        emit SetWithdrawSafetyPeriod(generalParameters.withdrawPeriod, generalParameters.safetyPeriod);
+        emit SetWithdrawSafetyPeriod(_withdrawPeriod, _safetyPeriod);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -489,6 +497,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
         poolsRewards[_pid].committeeCheckIn = true;
+        emit CommitteeCheckedIn(_pid);
     }
 
 
