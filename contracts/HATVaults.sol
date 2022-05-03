@@ -226,7 +226,7 @@ contract  HATVaults is Governable, HATMaster {
      * The submitted claim needs to be approved or dismissed by the Hats governance.
      * This function should be called only on a safety period, where withdrawals are disabled.
      * Upon a call to this function by the committee the pool withdrawals will be disabled
-     * untill the Hats governance will approve or dismiss this claim.
+     * until the Hats governance will approve or dismiss this claim.
      * @param _pid The pool id
      * @param _beneficiary The submitted claim's beneficiary
      * @param _severity The submitted claim's bug severity
@@ -436,9 +436,9 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-   * @dev setRewardsLevelsDelay - set the timelock delay for setting rewars level
-   * @param _delay time delay
- */
+    * @dev Set the timelock delay for setting reward levels (the time between setPendingRewardsLevels and setRewardsLevels)
+    * @param _delay The delay time
+    */
     function setRewardsLevelsDelay(uint256 _delay)
     external
     onlyGovernance {
@@ -447,14 +447,14 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-   * @dev setPendingRewardsLevels - set pending request to set pool token rewards level.
-   * the reward level represent the percentage of the pool's token which will be split as a reward.
-   * the function can be called only by the pool committee.
-   * cannot be called if there already pending approval.
-   * each level should be less than 10000
-   * @param _pid pool id
-   * @param _rewardsLevels the reward levels array
- */
+    * @dev Set pending request to set pool reward levels.
+    * The reward level represents the percentage of the pool which will be given as a reward for a certain severity.
+    * The function can be called only by the pool committee.
+    * Cannot be called if there are claims that have been submitted.
+    * Each level should be less than 10000
+    * @param _pid The pool id
+    * @param _rewardsLevels The array of reward level per severity
+    */
     function setPendingRewardsLevels(uint256 _pid, uint256[] memory _rewardsLevels)
     external
     onlyCommittee(_pid) noSubmittedClaims(_pid) {
@@ -465,13 +465,14 @@ contract  HATVaults is Governable, HATMaster {
     }
 
   /**
-   * @dev setRewardsLevels - set the pool token rewards level of already pending set rewards level.
-   * see pendingRewardsLevels
-   * the reward level represent the percentage of the pool's token which will be split as a reward.
-   * the function can be called only by the pool committee.
-   * cannot be called if there already pending approval.
-   * each level should be less than 10000
-   * @param _pid pool id
+   * @dev Set the pool token reward levels to the already pending reward levels.
+   * The reward level represents the percentage of the pool which will be given as a reward for a certain severity.
+   * The function can be called only by the pool committee.
+   * Cannot be called if there are claims that have been submitted.
+   * Can only be called if there are reward levels pending approval, and the time delay since setting the pending reward 
+   * levels had passed.
+   * Each level should be less than 10000
+   * @param _pid The pool id
  */
     function setRewardsLevels(uint256 _pid)
     external
@@ -515,15 +516,16 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-   * @dev addPool - only Governance
-   * @param _allocPoint the pool allocation point
-   * @param _lpToken pool token
-   * @param _committee pool committee address
-   * @param _rewardsLevels pool reward levels(sevirities)
-     each level is a number between 0 and 10000.
-   * @param _rewardsSplit pool reward split.
-     each entry is a number between 0 and 10000.
-     total splits should be equal to 10000
+   * @dev Add a new pool. Can be called only by governance.
+   * @param _allocPoint The pool's allocation point
+   * @param _lpToken The pool's token
+   * @param _committee The pool's committee addres
+   * @param _rewardsLevels The pool's reward levels.
+     Each level is a number between 0 and 10000, which represents the percentage of the pool to be rewarded for each severity.
+   * @param _rewardsSplit The way to split the reward between the hacker, committee and governance.
+     Each entry is a number between 0 and 10000.
+     Total splits should be equal to 10000.
+     If no reward is specified for the hacker, the default reward split will be used.
    * @param _descriptionHash the hash of the pool description.
    * @param _rewardVestingParams vesting params
    *        _rewardVestingParams[0] - vesting duration
@@ -543,33 +545,57 @@ contract  HATVaults is Governable, HATMaster {
         require(_rewardVestingParams[0] >= _rewardVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
-        _addPool(_allocPoint, IERC20(_lpToken));
-        uint256 poolId = poolInfo.length-1;
-        committees[poolId] = _committee;
-        uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
+        
+        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
+        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
+        if (globalPoolUpdates.length > 0 &&
+            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+           //already update in this block
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalPoolUpdates.push(PoolUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+        poolInfo.push(PoolInfo({
+            lpToken: IERC20(_lpToken),
+            allocPoint: _allocPoint,
+            lastRewardBlock: lastRewardBlock,
+            rewardPerShare: 0,
+            totalShares: 0,
+            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
+            balance: 0,
+            fee: 0
+        }));
+   
+      uint256 poolId = poolInfo.length-1;
+      committees[poolId] = _committee;
+      uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
 
-        RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
-        getDefaultRewardsSplit() : _rewardsSplit;
+      RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
+      getDefaultRewardsSplit() : _rewardsSplit;
 
-        validateSplit(rewardsSplit);
-        poolsRewards[poolId] = PoolReward({
-            rewardsLevels: rewardsLevels,
-            rewardsSplit: rewardsSplit,
-            committeeCheckIn: false,
-            vestingDuration: _rewardVestingParams[0],
-            vestingPeriods: _rewardVestingParams[1]
-        });
+      validateSplit(rewardsSplit);
+      poolsRewards[poolId] = PoolReward({
+          rewardsLevels: rewardsLevels,
+          rewardsSplit: rewardsSplit,
+          committeeCheckIn: false,
+          vestingDuration: _rewardVestingParams[0],
+          vestingPeriods: _rewardVestingParams[1]
+      });
 
-        emit AddPool(poolId,
-                    _allocPoint,
-                    address(_lpToken),
-                    _committee,
-                    _descriptionHash,
-                    rewardsLevels,
-                    rewardsSplit,
-                    _rewardVestingParams[0],
-                    _rewardVestingParams[1]);
-    }
+      emit AddPool(poolId,
+                  _allocPoint,
+                  _lpToken,
+                  _committee,
+                  _descriptionHash,
+                  rewardsLevels,
+                  rewardsSplit,
+                  _rewardVestingParams[0],
+                  _rewardVestingParams[1]);
+    } 
 
     /**
    * @dev setPool

@@ -44,17 +44,17 @@ contract HATMaster is Governable, ReentrancyGuard {
     }
 
     struct RewardsSplit {
-        //the percentage of the total reward to reward the hacker via vesting contract(claim reported)
+        //the percentage of the total reward to reward the hacker via vesting contract
         uint256 hackerVestedReward;
-        //the percentage of the total reward to reward the hacker(claim reported)
+        //the percentage of the total reward to reward the hacker
         uint256 hackerReward;
         // the percentage of the total reward to be sent to the committee
         uint256 committeeReward;
-        // the percentage of the total reward to be swap to HAT and to be burned
+        // the percentage of the total reward to be swapped to HATs and then burned
         uint256 swapAndBurn;
-        // the percentage of the total reward to be swap to HAT and sent to governance
+        // the percentage of the total reward to be swapped to HATs and sent to governance
         uint256 governanceHatReward;
-        // the percentage of the total reward to be swap to HAT and sent to the hacker
+        // the percentage of the total reward to be swapped to HATs and sent to the hacker
         uint256 hackerHatReward;
     }
 
@@ -168,7 +168,7 @@ contract HATMaster is Governable, ReentrancyGuard {
             pool.lastRewardBlock = block.number;
             pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
             return;
-         }
+        }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
         pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalShares));
         pool.lastRewardBlock = block.number;
@@ -205,7 +205,7 @@ contract HATMaster is Governable, ReentrancyGuard {
 
     /**
      * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
-     * and sum up all rewards periods from pool.lastRewardBlock untill current block number.
+     * and sum up all rewards periods from pool.lastRewardBlock until current block number.
      * @param _pid The pool id
      * @param _fromBlock The block from which to start calculation
      * @param _lastPoolUpdateIndex index of last PoolUpdate in globalPoolUpdates to calculate for
@@ -296,35 +296,6 @@ contract HATMaster is Governable, ReentrancyGuard {
         pool.balance = pool.balance.sub(factoredBalance);
         pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
-    }
-
-    // -------- For manage pool ---------
-    function _addPool(uint256 _allocPoint, IERC20 _lpToken) internal {
-        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
-
-        if (globalPoolUpdates.length > 0 &&
-            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-           //already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-
-        poolInfo.push(PoolInfo({
-            lpToken: _lpToken,
-            allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
-            rewardPerShare: 0,
-            totalShares: 0,
-            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
-            balance: 0,
-            fee: 0
-        }));
     }
 
     function set(uint256 _pid, uint256 _allocPoint) internal {
