@@ -6,6 +6,8 @@ const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
+const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
+
 
 var hatVaults;
 var hatToken;
@@ -44,7 +46,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
-    router.address,
+    [router.address],
     tokenLockFactory.address
   );
   await utils.setMinter(hatToken, accounts[0], web3.utils.toWei((2500000 + rewardInVaults).toString()));
@@ -1993,8 +1995,14 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
+    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
       assertVMException(ex, "HVE24");
@@ -2006,7 +2014,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.approveClaim(0);
     await stakingToken.approveDisable(true);
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "approve disabled");
     } catch (ex) {
       assertVMException(ex, "HVE31");
@@ -2014,14 +2022,18 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approveDisable(false);
     await stakingToken.approveZeroDisable(true);
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "approve to 0 disabled");
     } catch (ex) {
       assertVMException(ex, "HVE37");
     }
     await stakingToken.approveZeroDisable(false);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
-    assert.equal(await stakingToken.allowance(hatVaults.address, (await hatVaults.uniSwapRouter())), 0);
+    amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
+    assert.equal(await stakingToken.allowance(hatVaults.address, (await router.address)), 0);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN("250"))
@@ -2060,7 +2072,7 @@ contract("HatVaults", (accounts) => {
       accounts[4]
     );
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "HVE24");
@@ -2096,7 +2108,12 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approveDisable(true);
 
     await stakingToken.approveDisable(false);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+    let path = ethers.utils.solidityPack(["address", "uint24", "address"], [stakingToken.address, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN("250"))
@@ -2146,8 +2163,13 @@ contract("HatVaults", (accounts) => {
     );
 
     await utils.increaseTime(7 * 24 * 3600);
+    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
       assertVMException(ex, "HVE24");
@@ -2158,7 +2180,11 @@ contract("HatVaults", (accounts) => {
     });
     await hatVaults.approveClaim(1);
     assert.equal(await hatToken.balanceOf(accounts[0]), 0);
-    var tx = await hatVaults.swapBurnSend(1, accounts[2], 0, [0, 0]);
+    amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    var tx = await hatVaults.swapBurnSend(1, accounts[2], 0, router.address, payload);
     //gov gets 10% out of 80% of the vault value
     assert.equal(
       (await hatToken.balanceOf(accounts[0])).toString(),
@@ -2187,7 +2213,7 @@ contract("HatVaults", (accounts) => {
       accounts[4]
     );
     try {
-      await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "HVE24");
@@ -2248,7 +2274,12 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     await hatVaults.approveClaim(0);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
+    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(
       tx.logs[0].args._amountSwaped.toString(),
@@ -2329,8 +2360,14 @@ contract("HatVaults", (accounts) => {
     });
     await hatVaults.approveClaim(0);
 
+    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    
     try {
-      await hatVaults.swapBurnSend(0, accounts[1], 0, [0, 0], {
+      await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -2338,7 +2375,50 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "only governance");
     }
 
-    var tx = await hatVaults.swapBurnSend(0, accounts[1], 0, [0, 0], {
+    try {
+      await hatVaults.swapBurnSend(0, accounts[1], 0, accounts[1], payload, {
+        from: accounts[0],
+      });
+      assert(false, "can only use whitelisted routers");
+    } catch (ex) {
+      assertVMException(ex, "HVE39");
+    }
+
+    try {
+      await hatVaults.setRouterWhitelistStatus(router.address, false, {
+        from: accounts[3],
+      });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "only governance");
+    }
+
+    let tx = await hatVaults.setRouterWhitelistStatus(router.address, false, {
+      from: accounts[0],
+    });
+
+    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
+    assert.equal(tx.logs[0].args._router, router.address);
+    assert.equal(tx.logs[0].args._status, false);
+
+    try {
+      await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
+        from: accounts[0],
+      });
+      assert(false, "can only use whitelisted routers");
+    } catch (ex) {
+      assertVMException(ex, "HVE39");
+    }
+
+    tx = await hatVaults.setRouterWhitelistStatus(router.address, true, {
+      from: accounts[0],
+    });
+
+    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
+    assert.equal(tx.logs[0].args._router, router.address);
+    assert.equal(tx.logs[0].args._status, true);
+
+    tx = await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
       from: accounts[0],
     });
     assert.equal(tx.logs[0].event, "SwapAndBurn");
@@ -2381,7 +2461,12 @@ contract("HatVaults", (accounts) => {
       "0x0000000000000000000000000000000000000000"
     );
 
-    tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0], {
+    amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
+    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+
+    tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload, {
       from: accounts[0],
     });
 
@@ -2407,7 +2492,7 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[1], 0, [0, 0], {
+      tx = await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
         from: accounts[0],
       });
       assert(false, "can claim only once, nothing to redeem or burn");
@@ -2416,7 +2501,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0], {
+      tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload, {
         from: accounts[0],
       });
       assert(false, "can claim only once, nothing to redeem or burn");
@@ -2467,7 +2552,12 @@ contract("HatVaults", (accounts) => {
     await hatVaults.approveClaim(1);
 
     for (i = 0; i < 2; i++) {
-      var tx = await hatVaults.swapBurnSend(i, accounts[1], 0, [0, 0], {
+      let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+      let amountToSwapAndBurn = await hatVaults.swapAndBurns(i);
+      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], i);
+      let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(i));
+      let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+      var tx = await hatVaults.swapBurnSend(i, accounts[1], 0, router.address, payload, {
         from: accounts[0],
       });
       assert.equal(tx.logs[0].event, "SwapAndBurn");
@@ -2516,7 +2606,12 @@ contract("HatVaults", (accounts) => {
     }
 
     for (i = 0; i < 2; i++) {
-      tx = await hatVaults.swapBurnSend(i, accounts[2], 0, [0, 0], {
+      let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+      let amountToSwapAndBurn = await hatVaults.swapAndBurns(i);
+      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], i);
+      let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(i));
+      let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+      tx = await hatVaults.swapBurnSend(i, accounts[2], 0, router.address, payload, {
         from: accounts[0],
       });
 
@@ -2574,18 +2669,69 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     await hatVaults.approveClaim(0);
-
+    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
     try {
       await hatVaults.swapBurnSend(
         0,
         accounts[1],
         web3.utils.toWei("1"),
-        [0, 0],
+        router.address,
+        payload,
         { from: accounts[0] }
       );
       assert(false, "router return less than minimum");
     } catch (ex) {
       assertVMException(ex, "HVE32");
+    }
+  });
+
+  it("swapBurnSend with bad call should revert", async () => {
+    await setup(
+      accounts,
+      REWARD_PER_BLOCK,
+      (await web3.eth.getBlock("latest")).number,
+      [3000, 5000, 7000, 9000],
+      [8000, 1000, 100, 100, 100, 700]
+    );
+
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToSaftyPeriod();
+    await hatVaults.pendingApprovalClaim(0, accounts[2], 3, {
+      from: accounts[1],
+    });
+    await hatVaults.approveClaim(0);
+    let payload = "0x00000000000000000000000000000000000001";
+    try {
+      await hatVaults.swapBurnSend(
+        0,
+        accounts[1],
+        web3.utils.toWei("1"),
+        router.address,
+        payload,
+        { from: accounts[0] }
+      );
+      assert(false, "swap should not be successful");
+    } catch (ex) {
+      assertVMException(ex, "HVE38");
     }
   });
 
@@ -3183,7 +3329,7 @@ contract("HatVaults", (accounts) => {
       1,
       10,
       poolManager.address,
-      router1.address,
+      [router1.address],
       tokenLockFactory1.address
     );
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");

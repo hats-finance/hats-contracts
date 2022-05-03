@@ -25,7 +25,7 @@ const setup = async function(
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
-  weth = false,
+  weth = true,
   rewardInVaults = 2500000
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
@@ -43,7 +43,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
-    router.address,
+    [router.address],
     tokenLockFactory.address
   );
   hatTimelockController = await HATTimelockController.new(
@@ -322,8 +322,15 @@ contract("HatVaults", (accounts) => {
 
     await hatTimelockController.approveClaim(0);
 
+    let path = ethers.utils.solidityPack(["address", "uint24", "address"], [stakingToken.address, 0, hatToken.address]);
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
+    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+
     try {
-      await hatTimelockController.swapBurnSend(0, accounts[1], 0, [0, 0], {
+      await hatTimelockController.swapBurnSend(0, accounts[1], 0, router.address, payload, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -332,7 +339,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaults.swapBurnSend(0, accounts[1], 0, [0, 0]);
+      await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
@@ -342,7 +349,8 @@ contract("HatVaults", (accounts) => {
       0,
       accounts[1],
       0,
-      [0, 0],
+      router.address,
+      payload,
       { from: accounts[0] }
     );
     let log = (
