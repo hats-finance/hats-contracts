@@ -337,7 +337,7 @@ contract  HATVaults is Governable, HATMaster {
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[_pid] += claimRewards.swapAndBurn;
         governanceHatRewards[_pid] += claimRewards.governanceHatReward;
-        hackersHatRewards[pendingApproval.beneficiary][_pid] += claimRewards.hackerHatReward;
+        hackersHatRewards[submittedClaim.beneficiary][_pid] += claimRewards.hackerHatReward;
 
         emit ClaimApproved(msg.sender,
                         _pid,
@@ -564,7 +564,7 @@ contract  HATVaults is Governable, HATMaster {
         
         uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint.add(_allocPoint);
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
         if (globalPoolUpdates.length > 0 &&
             globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
