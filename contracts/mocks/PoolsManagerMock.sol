@@ -3,7 +3,7 @@ pragma solidity 0.8.6;
 
 import "../HATVaults.sol";
 
-//this contract is used as an helper contract only for testing purpose
+//this contract is used as a helper contract only for testing purpose
 
 contract PoolsManagerMock {
 
@@ -12,7 +12,7 @@ contract PoolsManagerMock {
                     address[] memory _lpTokens,
                     address _committee,
                     uint256[] memory _rewardsLevels,
-                    HATMaster.RewardsSplit memory _rewardsSplit,
+                    HATVaults.RewardsSplit memory _rewardsSplit,
                     string memory _descriptionHash,
                     uint256[2] memory _rewardVestingParams) external {
 

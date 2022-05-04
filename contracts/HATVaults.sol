@@ -2,11 +2,17 @@
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
 pragma solidity 0.8.6;
-import "./interfaces/ISwapRouter.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
+
+
+import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "./HATMaster.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./Governable.sol";
+import "./HATToken.sol";
 import "./tokenlock/ITokenLockFactory.sol";
+import "./interfaces/ISwapRouter.sol";
+
 
 // Errors:
 // HVE01: Only committee
@@ -47,9 +53,74 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE36: Fee must be less than or eqaul to 2%
 // HVE37: Token approve reset failed
 
+// HME01: Pool range is too big
+// HME02: Invalid pool range
+// HME03: Committee not checked in yet
+// HME04: Withdraw: not enough user balance
+// HME05: User shares must be greater than 0
+
 /// @title Manage all Hats.finance vaults
-contract  HATVaults is Governable, HATMaster {
+contract  HATVaults is Governable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+        struct UserInfo {
+        uint256 shares;     // The user share of the pool based on the shares of lpToken the user has provided.
+        uint256 rewardDebt; // Reward debt. See explanation below.
+      //
+      // We do some fancy math here. Basically, any point in time, the amount of HATs
+      // entitled to a user but is pending to be distributed is:
+      //
+      //   pending reward = (user.shares * pool.rewardPerShare) - user.rewardDebt
+      //
+      // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+      //   1. The pool's `rewardPerShare` (and `lastRewardBlock`) gets updated.
+      //   2. User receives the pending reward sent to his/her address.
+      //   3. User's `shares` gets updated.
+      //   4. User's `rewardDebt` gets updated.
+    }
+
+    struct PoolUpdate {
+        uint256 blockNumber;// update blocknumber
+        uint256 totalAllocPoint; //totalAllocPoint
+    }
+
+    struct RewardsSplit {
+        //the percentage of the total reward to reward the hacker via vesting contract
+        uint256 hackerVestedReward;
+        //the percentage of the total reward to reward the hacker
+        uint256 hackerReward;
+        // the percentage of the total reward to be sent to the committee
+        uint256 committeeReward;
+        // the percentage of the total reward to be swapped to HATs and then burned
+        uint256 swapAndBurn;
+        // the percentage of the total reward to be swapped to HATs and sent to governance
+        uint256 governanceHatReward;
+        // the percentage of the total reward to be swapped to HATs and sent to the hacker
+        uint256 hackerHatReward;
+    }
+
+    // Info of each pool.
+    struct PoolInfo {
+        IERC20 lpToken;
+        uint256 allocPoint;
+        uint256 lastRewardBlock;
+        uint256 rewardPerShare;
+        uint256 totalShares;
+        //index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
+        uint256 lastProcessedTotalAllocPoint;
+        // total amount of LP tokens in pool
+        uint256 balance;
+        uint256 fee;
+    }
+
+    // Info of each pool.
+    struct PoolReward {
+        RewardsSplit rewardsSplit;
+        uint256[]  rewardsLevels;
+        bool committeeCheckIn;
+        uint256 vestingDuration;
+        uint256 vestingPeriods;
+    }
 
     struct SubmittedClaim {
         address beneficiary;
@@ -90,6 +161,32 @@ contract  HATVaults is Governable, HATMaster {
         uint256 withdrawRequestPendingPeriod;
         uint256 claimFee;  //claim fee in ETH
     }
+
+    HATToken public immutable HAT;
+    uint256 public immutable REWARD_PER_BLOCK;
+    // Block from which the HAT vault contract will start rewarding.
+    uint256 public immutable START_BLOCK; 
+    uint256 public immutable MULTIPLIER_PERIOD;
+    uint256 public constant MULTIPLIERS_LENGTH = 24;
+    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_FEE = 200; // Max fee is 2%
+
+    // Info of each pool.
+    PoolInfo[] public poolInfo;
+    PoolUpdate[] public globalPoolUpdates;
+
+    // Reward Multipliers
+    uint256[24] public rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
+                                            5353, 4724, 4169, 3679, 3247, 2865,
+                                            2528, 2231, 1969, 1738, 1534, 1353,
+                                            1194, 1054, 930, 821, 724, 639];
+
+    // Info of each user that stakes LP tokens. pid => user address => info
+    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+    //pid -> PoolReward
+    mapping (uint256=>PoolReward) internal poolsRewards;
+
+    uint256 public rewardAvailable;
 
     //pid -> committee address
     mapping(uint256=>address) public committees;
@@ -141,8 +238,14 @@ contract  HATVaults is Governable, HATMaster {
         _;
     }
 
+
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
+
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
-    
     event CommitteeCheckedIn(uint256 indexed _pid);
 
     event AddPool(uint256 indexed _pid,
@@ -197,7 +300,7 @@ contract  HATVaults is Governable, HATMaster {
 
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
 
-    /**
+   /**
    * @dev constructor -
    * @param _rewardsToken The reward token address (HAT)
    * @param _rewardPerBlock The reward amount per block that the contract will reward pools
@@ -211,7 +314,7 @@ contract  HATVaults is Governable, HATMaster {
    * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
    * @param _tokenLockFactory Address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
- */
+   */
     constructor(
         address _rewardsToken,
         uint256 _rewardPerBlock,
@@ -221,7 +324,11 @@ contract  HATVaults is Governable, HATMaster {
         ISwapRouter _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
-    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startRewardingBlock, _multiplierPeriod) {
+    ) {
+        HAT = HATToken(_rewardsToken);
+        REWARD_PER_BLOCK = _rewardPerBlock;
+        START_BLOCK = _startRewardingBlock;
+        MULTIPLIER_PERIOD = _multiplierPeriod;
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
@@ -237,6 +344,215 @@ contract  HATVaults is Governable, HATMaster {
         });
     }
 
+
+
+    function depositHATReward(uint256 _amount) external {
+        rewardAvailable += _amount;
+        HAT.transferFrom(address(msg.sender), address(this), _amount);
+    }
+    
+  /**
+   * @dev massUpdatePools - Update reward variables for all pools
+   * Be careful of gas spending!
+   * @param _fromPid update pools range from this pool id
+   * @param _toPid update pools range to this pool id
+   */
+    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
+        require(_toPid <= poolInfo.length, "HME01");
+        require(_fromPid <= _toPid, "HME02");
+        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
+            updatePool(pid);
+        }
+        emit MassUpdatePools(_fromPid, _toPid);
+    }
+
+    /**
+     * @notice Transfer the sender their pending share of HATs rewards.
+     * @param _pid The pool id
+     */
+    function claimReward(uint256 _pid) external {
+        _deposit(_pid, 0);
+    }
+
+    /**
+     * @dev Update the pool's rewardPerShare, not more then once per block
+     * @param _pid The pool id
+     */
+    function updatePool(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        uint256 lastRewardBlock = pool.lastRewardBlock;
+        if (block.number <= lastRewardBlock) {
+            return;
+        }
+        uint256 totalShares = pool.totalShares;
+        uint256 lastPoolUpdate = globalPoolUpdates.length-1;
+        if (totalShares == 0) {
+            pool.lastRewardBlock = block.number;
+            pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+            return;
+        }
+        uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
+        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
+        pool.lastRewardBlock = block.number;
+        pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+    }
+
+    /**
+     * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
+     * @param _fromBlock range's from block
+     * @param _toBlock range's to block
+     * will revert if from < START_BLOCK or _toBlock < _fromBlock
+     */
+    function getMultiplier(uint256 _fromBlock, uint256 _toBlock) public view returns (uint256 result) {
+        uint256 i = (_fromBlock - START_BLOCK) / MULTIPLIER_PERIOD + 1;
+        for (; i <= MULTIPLIERS_LENGTH; i++) {
+            uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
+            if (_toBlock <= endBlock) {
+                break;
+            }
+            result += (endBlock - _fromBlock) * rewardMultipliers[i-1];
+            _fromBlock = endBlock;
+        }
+        result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardMultipliers[i-1]);
+    }
+
+    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
+    public
+    view
+    returns (uint256 reward) {
+        if (_totalAllocPoint > 0) {
+            reward = getMultiplier(_fromBlock, _toBlock) * REWARD_PER_BLOCK * _allocPoint / _totalAllocPoint / 100;
+        }
+    }
+
+    /**
+     * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
+     * and sum up all rewards periods from pool.lastRewardBlock until current block number.
+     * @param _pid The pool id
+     * @param _fromBlock The block from which to start calculation
+     * @param _lastPoolUpdateIndex index of last PoolUpdate in globalPoolUpdates to calculate for
+     * @return reward
+     */
+    function calcPoolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastPoolUpdateIndex) public view returns(uint256 reward) {
+        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
+        for (; i < _lastPoolUpdateIndex; i++) {
+            uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
+            reward =
+            reward + getRewardForBlocksRange(_fromBlock,
+                                            nextUpdateBlock,
+                                            poolAllocPoint,
+                                            globalPoolUpdates[i].totalAllocPoint);
+            _fromBlock = nextUpdateBlock;
+        }
+        return reward + getRewardForBlocksRange(_fromBlock,
+                                                block.number,
+                                                poolAllocPoint,
+                                                globalPoolUpdates[i].totalAllocPoint);
+    }
+
+    function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
+        require(poolsRewards[_pid].committeeCheckIn, "HME03");
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+        // if the user already has funds in the pool, give the previous reward
+        if (user.shares > 0) {
+            uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+            if (pending > 0) {
+                safeTransferReward(msg.sender, pending, _pid);
+            }
+        }
+        if (_amount > 0) { // will only be 0 in case of claimReward
+            uint256 lpSupply = pool.balance;
+            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            pool.balance += _amount;
+            uint256 userShares = _amount;
+            // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
+            // out of the pool's total supply, relative to the previous total shares in the pool
+            if (pool.totalShares > 0) {
+                userShares = pool.totalShares * _amount / lpSupply;
+            }
+            user.shares += userShares;
+            pool.totalShares += userShares;
+        }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        emit Deposit(msg.sender, _pid, _amount);
+    }
+
+    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares >= _amount, "HME04");
+
+        updatePool(_pid);
+        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+        if (pending > 0) {
+            safeTransferReward(msg.sender, pending, _pid);
+        }
+        if (_amount > 0) {
+            user.shares -= _amount;
+            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
+            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
+            pool.balance -= amountToWithdraw;
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(governance(), fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
+            pool.totalShares -= _amount;
+        }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        emit Withdraw(msg.sender, _pid, _amount);
+    }
+
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    function _emergencyWithdraw(uint256 _pid) internal {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares > 0, "HME05");
+        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        pool.totalShares -= user.shares;
+        user.shares = 0;
+        user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(governance(), fee);
+        }
+        pool.balance -= factoredBalance;
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
+    }
+
+
+    function set(uint256 _pid, uint256 _allocPoint) internal {
+        updatePool(_pid);
+        uint256 totalAllocPoint =
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
+        - poolInfo[_pid].allocPoint + _allocPoint;
+
+        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+           //already update in this block
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalPoolUpdates.push(PoolUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+        poolInfo[_pid].allocPoint = _allocPoint;
+    }
+
+    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
+    function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
+        }
+        rewardAvailable = rewardAvailable - _amount;
+        HAT.transfer(_to, _amount);
+        emit SendReward(_to, _pid, _amount, _amount);
+    }
+
+    
     /**
     * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
