@@ -66,6 +66,7 @@ contract HATMaster is Governable, ReentrancyGuard {
         uint256 rewardPerShare;
         uint256 totalUsersAmount;
         uint256 lastProcessedTotalAllocPoint;
+        // total amount of LP tokens in pool
         uint256 balance;
         uint256 fee;
     }
@@ -81,7 +82,8 @@ contract HATMaster is Governable, ReentrancyGuard {
 
     HATToken public immutable HAT;
     uint256 public immutable REWARD_PER_BLOCK;
-    uint256 public immutable START_BLOCK;
+    // Block from which the HAT vault contract will start rewarding.
+    uint256 public immutable START_BLOCK; 
     uint256 public immutable MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;
@@ -226,17 +228,20 @@ contract HATMaster is Governable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
+        // if the user already has funds in the pool, give the previous reward
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
         }
-        if (_amount > 0) {
+        if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             pool.balance = pool.balance.add(_amount);
             uint256 factoredAmount = _amount;
+            // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
+            // out of the pool's total supply, relative to the previous total shares in the pool
             if (pool.totalUsersAmount > 0) {
                 factoredAmount = pool.totalUsersAmount.mul(_amount).div(lpSupply);
             }
