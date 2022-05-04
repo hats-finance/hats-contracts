@@ -2,10 +2,8 @@
 
 pragma solidity 0.8.6;
 
-import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import "./OwnableInitializable.sol";
 import "./MathUtils.sol";
 import "./ITokenLock.sol";
@@ -32,7 +30,6 @@ import "./ITokenLock.sol";
  */
 // solhint-disable-next-line indent
 abstract contract TokenLock is OwnableInitializable, ITokenLock {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 private constant MIN_PERIOD = 1;
@@ -196,7 +193,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of seconds from contract startTime to endTime
      */
     function duration() public override view returns (uint256) {
-        return endTime.sub(startTime);
+        return endTime - startTime;
     }
 
     /**
@@ -209,7 +206,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         if (current <= startTime) {
             return 0;
         }
-        return current.sub(startTime);
+        return current - startTime;
     }
 
     /**
@@ -217,7 +214,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of tokens available after each period
      */
     function amountPerPeriod() public override view returns (uint256) {
-        return managedAmount.div(periods);
+        return managedAmount / periods;
     }
 
     /**
@@ -225,7 +222,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Duration of each period in seconds
      */
     function periodDuration() public override view returns (uint256) {
-        return duration().div(periods);
+        return duration() / periods;
     }
 
     /**
@@ -233,7 +230,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return A number that represents the current period
      */
     function currentPeriod() public override view returns (uint256) {
-        return sinceStartTime().div(periodDuration()).add(MIN_PERIOD);
+        return sinceStartTime() / periodDuration() + MIN_PERIOD;
     }
 
     /**
@@ -241,7 +238,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return A number of periods that passed since the schedule started
      */
     function passedPeriods() public override view returns (uint256) {
-        return currentPeriod().sub(MIN_PERIOD);
+        return currentPeriod() - MIN_PERIOD;
     }
 
     // -- Locking & Release Schedule --
@@ -265,7 +262,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         }
 
         // Get available amount based on period
-        return passedPeriods().mul(amountPerPeriod());
+        return passedPeriods() * amountPerPeriod();
     }
 
     /**
@@ -307,7 +304,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         }
 
         // A beneficiary can never have more releasable tokens than the contract balance
-        uint256 releasable = availableAmount().sub(releasedAmount);
+        uint256 releasable = availableAmount() - releasedAmount;
         return MathUtils.min(currentBalance(), releasable);
     }
 
@@ -317,7 +314,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of outstanding tokens for the lifetime of the contract
      */
     function totalOutstandingAmount() public override view returns (uint256) {
-        return managedAmount.sub(releasedAmount);
+        return managedAmount - releasedAmount;
     }
 
     /**
@@ -329,7 +326,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         uint256 balance = currentBalance();
         uint256 outstandingAmount = totalOutstandingAmount();
         if (balance > outstandingAmount) {
-            return balance.sub(outstandingAmount);
+            return balance - outstandingAmount;
         }
         return 0;
     }
@@ -344,7 +341,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         uint256 amountToRelease = releasableAmount();
         require(amountToRelease > 0, "No available releasable amount");
 
-        releasedAmount = releasedAmount.add(amountToRelease);
+        releasedAmount += amountToRelease;
 
         token.safeTransfer(beneficiary, amountToRelease);
 
@@ -373,7 +370,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         require(revocable == Revocability.Enabled, "Contract is non-revocable");
         require(isRevoked == false, "Already revoked");
 
-        uint256 unvestedAmount = managedAmount.sub(vestedAmount());
+        uint256 unvestedAmount = managedAmount - vestedAmount();
         require(unvestedAmount > 0, "No available unvested amount");
 
         isRevoked = true;
