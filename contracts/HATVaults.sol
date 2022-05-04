@@ -317,7 +317,7 @@ contract  HATVaults is Governable, HATMaster {
         lpToken.safeTransfer(pendingApproval.approver, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
         swapAndBurns[_pid] += claimRewards.swapAndBurn;
-        governanceHatRewards[_pid] +=claimRewards.governanceHatReward;
+        governanceHatRewards[_pid] += claimRewards.governanceHatReward;
         hackersHatRewards[pendingApproval.beneficiary][_pid] += claimRewards.hackerHatReward;
 
         emit ClaimApprove(msg.sender,
