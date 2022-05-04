@@ -53,6 +53,8 @@ contract  HATVaults is Governable, HATMaster {
     struct SubmittedClaim {
         address beneficiary;
         uint256 severity;
+        // the address of the committee at the time of the submittal, so that this committee 
+        // will be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
     }
@@ -93,7 +95,7 @@ contract  HATVaults is Governable, HATMaster {
     //pid -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
     //poolId -> (address -> requestTime)
-    mapping(uint256 => mapping(address => uint256)) public withdrawRequests;
+    mapping(uint256 => mapping(address => uint256)) public WithdrawEnableStartTime;
     //poolId -> PendingRewardsLevels
     mapping(uint256 => PendingRewardsLevels) public pendingRewardsLevels;
 
@@ -185,7 +187,7 @@ contract  HATVaults is Governable, HATMaster {
    * @dev constructor -
    * @param _rewardsToken the reward token address (HAT)
    * @param _rewardPerBlock the reward amount per block the contract will reward pools
-   * @param _startBlock start block of of which the contract will start rewarding from.
+   * @param _startRewardingBlock start block of of which the contract will start rewarding from.
    * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
    *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
    * @param _hatGovernance the governance address.
@@ -199,13 +201,13 @@ contract  HATVaults is Governable, HATMaster {
     constructor(
         address _rewardsToken,
         uint256 _rewardPerBlock,
-        uint256 _startBlock,
+        uint256 _startRewardingBlock,
         uint256 _multiplierPeriod,
         address _hatGovernance,
         ISwapRouter _uniSwapRouter,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
-    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startBlock, _multiplierPeriod) {
+    ) HATMaster(HATToken(_rewardsToken), _rewardPerBlock, _startRewardingBlock, _multiplierPeriod) {
         Governable.initialize(_hatGovernance);
         uniSwapRouter = _uniSwapRouter;
         tokenLockFactory = _tokenLockFactory;
@@ -690,10 +692,10 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function withdrawRequest(uint256 _pid) external {
       // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp > withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod, "HVE25");
+        require(block.timestamp > WithdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod, "HVE25");
         // solhint-disable-next-line not-rely-on-time
-        withdrawRequests[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
-        emit WithdrawRequest(_pid, msg.sender, withdrawRequests[_pid][msg.sender]);
+        WithdrawEnableStartTime[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
+        emit WithdrawRequest(_pid, msg.sender, WithdrawEnableStartTime[_pid][msg.sender]);
     }
 
     /**
@@ -705,7 +707,7 @@ contract  HATVaults is Governable, HATMaster {
         require(!poolDepositPause[_pid], "HVE26");
         require(_amount >= MINIMUM_DEPOSIT, "HVE27");
         //clear withdraw request
-        withdrawRequests[_pid][msg.sender] = 0;
+        WithdrawEnableStartTime[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
     }
 
@@ -837,11 +839,11 @@ contract  HATVaults is Governable, HATMaster {
     // and also sets the withdrawRequest to 0
     function checkWithdrawAndResetWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
       // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp > withdrawRequests[_pid][msg.sender] &&
+        require(block.timestamp > WithdrawEnableStartTime[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
-                block.timestamp < withdrawRequests[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
+                block.timestamp < WithdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
                 "HVE30");
-        withdrawRequests[_pid][msg.sender] = 0;
+        WithdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 
     function swapTokenForHAT(uint256 _amount,

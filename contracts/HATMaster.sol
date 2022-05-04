@@ -244,12 +244,12 @@ contract HATMaster is Governable, ReentrancyGuard {
             uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             pool.balance = pool.balance.add(_amount);
-            uint256 factoredAmount = _amount;
+            uint256 userShares = _amount;
             if (pool.totalShares > 0) {
-                factoredAmount = pool.totalShares.mul(_amount).div(lpSupply);
+                userShares = pool.totalShares.mul(_amount).div(lpSupply);
             }
-            user.shares = user.shares.add(factoredAmount);
-            pool.totalShares = pool.totalShares.add(factoredAmount);
+            user.shares = user.shares.add(userShares);
+            pool.totalShares = pool.totalShares.add(userShares);
         }
         user.rewardDebt = user.shares.mul(pool.rewardPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
