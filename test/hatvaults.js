@@ -2723,7 +2723,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0, accounts[2], 3, {
+    await hatVaults.submitClaim(0, accounts[2], 3, {
       from: accounts[1],
     });
     await hatVaults.approveClaim(0);
