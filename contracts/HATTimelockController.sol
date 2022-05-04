@@ -4,7 +4,7 @@
 pragma solidity 0.8.6;
 
 
-import "openzeppelin-solidity/contracts/governance/TimelockController.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaults.sol";
 
 
