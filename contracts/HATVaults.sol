@@ -46,6 +46,8 @@ import "./tokenlock/ITokenLockFactory.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or eqaul to 2%
 // HVE37: Token approve reset failed
+
+/// @title Manage all Hats.finance vaults
 contract  HATVaults is Governable, HATMaster {
     using SafeMath  for uint256;
     using SafeERC20 for IERC20;
@@ -76,10 +78,16 @@ contract  HATVaults is Governable, HATMaster {
     struct GeneralParameters {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
+        //withdraw enable period. safetyPeriod starts when finished.
         uint256 withdrawPeriod;
-        uint256 safetyPeriod; //withdraw disable period in seconds
+        //withdraw disable period - time for the commitee to gather and decide on actions, withdrawals are not possible in this time
+        //withdrawPeriod starts when finished.
+        uint256 safetyPeriod;
         uint256 setRewardsLevelsDelay;
+        // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
+        // (after which withdrawal is not possible)
         uint256 withdrawRequestEnablePeriod;
+        // period of time that has to pass after withdraw request until withdraw is possible
         uint256 withdrawRequestPendingPeriod;
         uint256 claimFee;  //claim fee in ETH
     }
@@ -95,6 +103,7 @@ contract  HATVaults is Governable, HATMaster {
     //pid -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
     //poolId -> (address -> requestTime)
+    // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
     mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
     //poolId -> PendingRewardsLevels
     mapping(uint256 => PendingRewardsLevels) public pendingRewardsLevels;
@@ -120,7 +129,7 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     modifier noSafetyPeriod() {
-      //disable withdraw for safetyPeriod (e.g 1 hour) each withdrawPeriod(e.g 11 hours)
+      //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
       // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
         generalParameters.withdrawPeriod,
@@ -134,6 +143,8 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    
+    event CommitteeCheckedIn(uint256 indexed _pid);
 
     event AddPool(uint256 indexed _pid,
                 uint256 indexed _allocPoint,
@@ -180,22 +191,26 @@ contract  HATVaults is Governable, HATMaster {
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+    
+    event SetRewardMultipliers(uint256[24] _rewardMultipliers);
+    
+    event SetClaimFee(uint256 _fee);
 
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
 
     /**
    * @dev constructor -
-   * @param _rewardsToken the reward token address (HAT)
-   * @param _rewardPerBlock the reward amount per block the contract will reward pools
-   * @param _startRewardingBlock start block of of which the contract will start rewarding from.
-   * @param _multiplierPeriod a fix period value. each period will have its own multiplier value.
-   *        which set the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
-   * @param _hatGovernance the governance address.
+   * @param _rewardsToken The reward token address (HAT)
+   * @param _rewardPerBlock The reward amount per block that the contract will reward pools
+   * @param _startRewardingBlock Start block from which the contract will start rewarding
+   * @param _multiplierPeriod A fixed period value. Each period will have its own multiplier value,
+   *        which sets the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
+   * @param _hatGovernance The governance address.
    *        Some of the contracts functions are limited only to governance:
    *         addPool, setPool, dismissClaim, approveClaim,
    *         setHatVestingParams, setVestingParams, setRewardsSplit
    * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
-   * @param _tokenLockFactory address of the token lock factory to be used
+   * @param _tokenLockFactory Address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
  */
     constructor(
@@ -223,25 +238,25 @@ contract  HATVaults is Governable, HATMaster {
         });
     }
 
-      /**
-     * @notice Called by a committee to submit a claim for a bounty.
-     * The submitted claim needs to be approved or dismissed by the Hats governance.
-     * This function should be called only on a safety period, where withdrawals are disabled.
-     * Upon a call to this function by the committee the pool withdrawals will be disabled
-     * until the Hats governance will approve or dismiss this claim.
-     * @param _pid The pool id
-     * @param _beneficiary The submitted claim's beneficiary
-     * @param _severity The submitted claim's bug severity
-   */
+    /**
+    * @notice Called by a committee to submit a claim for a bounty.
+    * The submitted claim needs to be approved or dismissed by the Hats governance.
+    * This function should be called only on a safety period, where withdrawals are disabled.
+    * Upon a call to this function by the committee the pool withdrawals will be disabled
+    * until the Hats governance will approve or dismiss this claim.
+    * @param _pid The pool id
+    * @param _beneficiary The submitted claim's beneficiary
+    * @param _severity The submitted claim's bug severity
+    */
     function submitClaim(uint256 _pid, address _beneficiary, uint256 _severity)
     external
     onlyCommittee(_pid)
     noSubmittedClaims(_pid) {
         require(_beneficiary != address(0), "HVE04");
+        // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
-        generalParameters.withdrawPeriod,
-        "HVE05");
+        generalParameters.withdrawPeriod, "HVE05");
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "HVE06");
 
         submittedClaims[_pid] = SubmittedClaim({
@@ -357,6 +372,7 @@ contract  HATVaults is Governable, HATMaster {
     */
     function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyGovernance {
         rewardMultipliers = _rewardMultipliers;
+        emit SetRewardMultipliers(_rewardMultipliers);
     }
 
     /**
@@ -365,6 +381,7 @@ contract  HATVaults is Governable, HATMaster {
     */
     function setClaimFee(uint256 _fee) external onlyGovernance {
         generalParameters.claimFee = _fee;
+        emit SetClaimFee(_fee);
     }
 
     /**
@@ -377,7 +394,7 @@ contract  HATVaults is Governable, HATMaster {
         require(_safetyPeriod <= 6 hours, "HVE13");
         generalParameters.withdrawPeriod = _withdrawPeriod;
         generalParameters.safetyPeriod = _safetyPeriod;
-        emit SetWithdrawSafetyPeriod(generalParameters.withdrawPeriod, generalParameters.safetyPeriod);
+        emit SetWithdrawSafetyPeriod(_withdrawPeriod, _safetyPeriod);
     }
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
@@ -494,6 +511,7 @@ contract  HATVaults is Governable, HATMaster {
  */
     function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
         poolsRewards[_pid].committeeCheckIn = true;
+        emit CommitteeCheckedIn(_pid);
     }
 
 
@@ -687,21 +705,27 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * @dev withdrawRequest submit a withdraw request
-    * @param _pid the pool id
+    * @notice Submit a request to withdraw funds from pool # `_pid`. 
+    The request will only be approved if the last action was a deposit or withdrawal or in case the last action was a withdraw request,
+    that the pending period (of `generalParameters.withdrawRequestPendingPeriod`) had ended and the withdraw enable period (of `generalParameters.withdrawRequestEnablePeriod`)
+    had also ended.
+    * @param _pid The pool ID
     **/
     function withdrawRequest(uint256 _pid) external {
-      // solhint-disable-next-line not-rely-on-time
+        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawwithdrawRequest
+        // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod, "HVE25");
+        // set the withdrawRequests time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         withdrawEnableStartTime[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
         emit WithdrawRequest(_pid, msg.sender, withdrawEnableStartTime[_pid][msg.sender]);
     }
 
     /**
-    * @dev deposit deposit to pool
-    * @param _pid the pool id
-    * @param _amount amount of pool's token to deposit
+    * @notice Deposit tokens to pool
+    * @param _pid The pool id
+    * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
     **/
     function deposit(uint256 _pid, uint256 _amount) external {
         require(!poolDepositPause[_pid], "HVE26");
@@ -712,10 +736,13 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * @dev withdraw  - withdraw user's pool share.
-    * user need first to submit a withdraw request.
-    * @param _pid the pool id
-    * @param _shares amount of shares user wants to withdraw
+    * @notice Withdraw user's requested share from the pool.
+    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
+    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
+    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
+    * had finished.
+    * @param _pid The pool id
+    * @param _shares Amount of shares user wants to withdraw
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
         checkWithdrawAndResetWithdrawRequest(_pid);
@@ -723,9 +750,12 @@ contract  HATVaults is Governable, HATMaster {
     }
 
     /**
-    * @dev emergencyWithdraw withdraw all user's pool share without claim for reward.
-    * user need first to submit a withdraw request.
-    * @param _pid the pool id
+    * @notice Withdraw all user's pool share without claim for reward.
+    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
+    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
+    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
+    * had finished.   
+    * @param _pid The pool id
     **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawAndResetWithdrawRequest(_pid);
@@ -838,11 +868,16 @@ contract  HATVaults is Governable, HATMaster {
     // Checks that the sender can perform a withdraw at this time
     // and also sets the withdrawRequest to 0
     function checkWithdrawAndResetWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
-      // solhint-disable-next-line not-rely-on-time
+        // check that withdrawRequestPendingPeriod had passed
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawEnableStartTime[_pid][msg.sender] &&
-      // solhint-disable-next-line not-rely-on-time
+        // check that withdrawRequestEnablePeriod had not passed and that the last action was withdrawRequests
+        // (and not deposit or withdraw, which reset withdrawRequests[_pid][msg.sender] to 0)
+        // solhint-disable-next-line not-rely-on-time
                 block.timestamp < withdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
                 "HVE30");
+        // if all is ok and withdrawal can be made - reset withdrawRequests[_pid][msg.sender] so that another withdrawRequest
+        // will have to be made before next withdrawal 
         withdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 

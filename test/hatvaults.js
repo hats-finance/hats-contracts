@@ -294,7 +294,9 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE01");
     }
-    await hatVaults.committeeCheckIn(1, { from: accounts[1] });
+    let tx = await hatVaults.committeeCheckIn(1, { from: accounts[1] });
+    assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
+    assert.equal(tx.logs[0].args._pid, 1);
 
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
 
@@ -1470,7 +1472,13 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "only governance");
     }
 
-    await hatVaults.setRewardMultipliers(rewardMultipliers);
+    let tx = await hatVaults.setRewardMultipliers(rewardMultipliers);
+    assert.equal(tx.logs[0].event, "SetRewardMultipliers");
+    let eventRewardMultipliers = tx.logs[0].args._rewardMultipliers;
+    for (let i = 0; i < eventRewardMultipliers.length; i++) {
+      eventRewardMultipliers[i] = parseInt(eventRewardMultipliers[i].toString());
+      assert.equal(tx.logs[0].args._rewardMultipliers[i], rewardMultipliers[i]);
+    }
 
     assert.equal(
       (await hatVaults.getMultiplier(0, 10)).toNumber(),
@@ -2598,7 +2606,9 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
 
-    await hatVaults.setClaimFee(fee);
+    tx = await hatVaults.setClaimFee(fee);
+    assert.equal(tx.logs[0].event, "SetClaimFee");
+    assert.equal(tx.logs[0].args._fee, fee);
     var govBalanceBefore = new web3.utils.BN(
       await web3.eth.getBalance(accounts[0])
     );
