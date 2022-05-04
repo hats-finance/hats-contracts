@@ -170,7 +170,7 @@ contract HATMaster is Governable, ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalUsersAmount);
+        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
@@ -199,7 +199,7 @@ contract HATMaster is Governable, ReentrancyGuard {
     view
     returns (uint256 reward) {
         if (_totalAllocPoint > 0) {
-            reward = getMultiplier(_from, _to) * REWARD_PER_BLOCK * _allocPoint / _totalAllocPoint / 100;
+            reward = getMultiplier(_fromBlock, _toBlock) * REWARD_PER_BLOCK * _allocPoint / _totalAllocPoint / 100;
         }
     }
 
