@@ -238,7 +238,7 @@ contract HATMaster is Governable, ReentrancyGuard {
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (user.shares > 0) {
-            uint256 pending = user.amount.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.shares.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
