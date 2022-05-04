@@ -111,7 +111,7 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.poolInfo(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(0, staker)).amount;
+    let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
     let globalUpdatesLen = await hatVaults.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
       await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)
@@ -302,7 +302,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
-    await hatVaults.pendingApprovalClaim(0, accounts[2], 3, {
+    await hatVaults.submitClaim(0, accounts[2], 3, {
       from: accounts[1],
     });
 
