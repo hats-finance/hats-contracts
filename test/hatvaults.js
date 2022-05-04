@@ -357,7 +357,7 @@ contract("HatVaults", (accounts) => {
       [1500, 3000, 4500, 9000, 0],
       { from: accounts[1] }
     );
-    assert.equal(tx.logs[0].event, "PendingRewardsLevelsLog");
+    assert.equal(tx.logs[0].event, "SetPendingRewardsLevels");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._rewardsLevels[1], 3000);
 
@@ -528,7 +528,7 @@ contract("HatVaults", (accounts) => {
       [1500, 3000, 4500, 9000, 9999],
       { from: accounts[1] }
     );
-    assert.equal(tx.logs[0].event, "PendingRewardsLevelsLog");
+    assert.equal(tx.logs[0].event, "SetPendingRewardsLevels");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._rewardsLevels[1], 3000);
 
