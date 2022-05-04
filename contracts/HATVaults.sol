@@ -590,31 +590,31 @@ contract  HATVaults is Governable, HATMaster {
             fee: 0
         }));
    
-      uint256 poolId = poolInfo.length-1;
-      committees[poolId] = _committee;
-      uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
+        uint256 poolId = poolInfo.length-1;
+        committees[poolId] = _committee;
+        uint256[] memory rewardsLevels = checkRewardsLevels(_rewardsLevels);
+  
+        RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
+        getDefaultRewardsSplit() : _rewardsSplit;
+  
+        validateSplit(rewardsSplit);
+        poolsRewards[poolId] = PoolReward({
+            rewardsLevels: rewardsLevels,
+            rewardsSplit: rewardsSplit,
+            committeeCheckIn: false,
+            vestingDuration: _rewardVestingParams[0],
+            vestingPeriods: _rewardVestingParams[1]
+        });
 
-      RewardsSplit memory rewardsSplit = (_rewardsSplit.hackerVestedReward == 0 && _rewardsSplit.hackerReward == 0) ?
-      getDefaultRewardsSplit() : _rewardsSplit;
-
-      validateSplit(rewardsSplit);
-      poolsRewards[poolId] = PoolReward({
-          rewardsLevels: rewardsLevels,
-          rewardsSplit: rewardsSplit,
-          committeeCheckIn: false,
-          vestingDuration: _rewardVestingParams[0],
-          vestingPeriods: _rewardVestingParams[1]
-      });
-
-      emit AddPool(poolId,
-                  _allocPoint,
-                  _lpToken,
-                  _committee,
-                  _descriptionHash,
-                  rewardsLevels,
-                  rewardsSplit,
-                  _rewardVestingParams[0],
-                  _rewardVestingParams[1]);
+        emit AddPool(poolId,
+            _allocPoint,
+            _lpToken,
+            _committee,
+            _descriptionHash,
+            rewardsLevels,
+            rewardsSplit,
+            _rewardVestingParams[0],
+            _rewardVestingParams[1]);
     } 
 
     /**
