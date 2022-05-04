@@ -6,7 +6,6 @@ pragma solidity 0.8.6;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "./HATToken.sol";
 import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
 import "./Governable.sol";
@@ -19,7 +18,6 @@ import "./Governable.sol";
 // HME04: Withdraw: not enough user balance
 // HME05: User shares must be greater than 0
 contract HATMaster is Governable, ReentrancyGuard {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     struct UserInfo {
@@ -172,7 +170,7 @@ contract HATMaster is Governable, ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare = pool.rewardPerShare.add(reward.mul(1e12).div(totalShares));
+        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalUsersAmount);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
@@ -201,7 +199,7 @@ contract HATMaster is Governable, ReentrancyGuard {
     view
     returns (uint256 reward) {
         if (_totalAllocPoint > 0) {
-            reward = getMultiplier(_fromBlock, _toBlock).mul(REWARD_PER_BLOCK).mul(_allocPoint).div(_totalAllocPoint).div(100);
+            reward = getMultiplier(_from, _to) * REWARD_PER_BLOCK * _allocPoint / _totalAllocPoint / 100;
         }
     }
 
@@ -219,16 +217,16 @@ contract HATMaster is Governable, ReentrancyGuard {
         for (; i < _lastPoolUpdateIndex; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
-            reward.add(getRewardForBlocksRange(_fromBlock,
+            reward + getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             poolAllocPoint,
-                                            globalPoolUpdates[i].totalAllocPoint));
+                                            globalPoolUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
         }
-        return reward.add(getRewardForBlocksRange(_fromBlock,
+        return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,
                                                 poolAllocPoint,
-                                                globalPoolUpdates[i].totalAllocPoint));
+                                                globalPoolUpdates[i].totalAllocPoint);
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
@@ -238,7 +236,7 @@ contract HATMaster is Governable, ReentrancyGuard {
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (user.shares > 0) {
-            uint256 pending = user.shares.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
@@ -246,17 +244,17 @@ contract HATMaster is Governable, ReentrancyGuard {
         if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            pool.balance = pool.balance.add(_amount);
+            pool.balance += _amount;
             uint256 userShares = _amount;
             // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
             // out of the pool's total supply, relative to the previous total shares in the pool
             if (pool.totalShares > 0) {
-                userShares = pool.totalShares.mul(_amount).div(lpSupply);
+                userShares = pool.totalShares * _amount / lpSupply;
             }
-            user.shares = user.shares.add(userShares);
-            pool.totalShares = pool.totalShares.add(userShares);
+            user.shares += userShares;
+            pool.totalShares += userShares;
         }
-        user.rewardDebt = user.shares.mul(pool.rewardPerShare).div(1e12);
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -266,22 +264,22 @@ contract HATMaster is Governable, ReentrancyGuard {
         require(user.shares >= _amount, "HME04");
 
         updatePool(_pid);
-        uint256 pending = user.shares.mul(pool.rewardPerShare).div(1e12).sub(user.rewardDebt);
+        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
         if (pending > 0) {
             safeTransferReward(msg.sender, pending, _pid);
         }
         if (_amount > 0) {
-            user.shares = user.shares.sub(_amount);
-            uint256 amountToWithdraw = _amount.mul(pool.balance).div(pool.totalShares);
+            user.shares -= _amount;
+            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
-            pool.balance = pool.balance.sub(amountToWithdraw);
+            pool.balance -= amountToWithdraw;
             if (fee > 0) {
                 pool.lpToken.safeTransfer(governance(), fee);
             }
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalShares = pool.totalShares.sub(_amount);
+            pool.totalShares -= _amount;
         }
-        user.rewardDebt = user.shares.mul(pool.rewardPerShare).div(1e12);
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
@@ -290,24 +288,25 @@ contract HATMaster is Governable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares > 0, "HME05");
-        uint256 factoredBalance = user.shares.mul(pool.balance).div(pool.totalShares);
-        pool.totalShares = pool.totalShares.sub(user.shares);
+        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        pool.totalShares -= user.shares;
         user.shares = 0;
         user.rewardDebt = 0;
         uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
         if (fee > 0) {
             pool.lpToken.safeTransfer(governance(), fee);
         }
-        pool.balance = pool.balance.sub(factoredBalance);
+        pool.balance -= factoredBalance;
         pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
+
 
     function set(uint256 _pid, uint256 _allocPoint) internal {
         updatePool(_pid);
         uint256 totalAllocPoint =
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        .sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        - poolInfo[_pid].allocPoint + _allocPoint;
 
         if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block

@@ -2871,6 +2871,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+
   it("setPool x2", async () => {
     var poolManagerMock = await PoolsManagerMock.new();
     //  await setup(accounts, REAL_REWARD_PER_BLOCK, 0, [], [0,0, 0, 0,0, 0],10000);

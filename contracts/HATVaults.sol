@@ -49,7 +49,6 @@ import "./tokenlock/ITokenLockFactory.sol";
 
 /// @title Manage all Hats.finance vaults
 contract  HATVaults is Governable, HATMaster {
-    using SafeMath  for uint256;
     using SafeERC20 for IERC20;
 
     struct SubmittedClaim {
@@ -307,13 +306,12 @@ contract  HATVaults is Governable, HATMaster {
 
         IERC20 lpToken = poolInfo[_pid].lpToken;
         ClaimReward memory claimRewards = calcClaimRewards(_pid, submittedClaim.severity);
-        poolInfo[_pid].balance = poolInfo[_pid].balance.sub(
-                            claimRewards.hackerReward
-                            .add(claimRewards.hackerVestedReward)
-                            .add(claimRewards.committeeReward)
-                            .add(claimRewards.swapAndBurn)
-                            .add(claimRewards.hackerHatReward)
-                            .add(claimRewards.governanceHatReward));
+        poolInfo[_pid].balance -= claimRewards.hackerReward
+                            + claimRewards.hackerVestedReward
+                            + claimRewards.committeeReward
+                            + claimRewards.swapAndBurn
+                            + claimRewards.hackerHatReward
+                            + claimRewards.governanceHatReward;
         address tokenLock;
         if (claimRewards.hackerVestedReward > 0) {
         //hacker get its reward to a vesting contract
@@ -337,11 +335,9 @@ contract  HATVaults is Governable, HATMaster {
         lpToken.safeTransfer(submittedClaim.beneficiary, claimRewards.hackerReward);
         lpToken.safeTransfer(submittedClaim.committee, claimRewards.committeeReward);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
-        swapAndBurns[_pid] = swapAndBurns[_pid].add(claimRewards.swapAndBurn);
-        governanceHatRewards[_pid] =
-        governanceHatRewards[_pid].add(claimRewards.governanceHatReward);
-        hackersHatRewards[submittedClaim.beneficiary][_pid] =
-        hackersHatRewards[submittedClaim.beneficiary][_pid].add(claimRewards.hackerHatReward);
+        swapAndBurns[_pid] += claimRewards.swapAndBurn;
+        governanceHatRewards[_pid] += claimRewards.governanceHatReward;
+        hackersHatRewards[pendingApproval.beneficiary][_pid] += claimRewards.hackerHatReward;
 
         emit ClaimApproved(msg.sender,
                         _pid,
@@ -359,10 +355,10 @@ contract  HATVaults is Governable, HATMaster {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require(poolInfo[_pid].balance.add(_amount).div(MINIMUM_DEPOSIT) < poolInfo[_pid].totalShares,
+        require((poolInfo[_pid].balance + _amount) / MINIMUM_DEPOSIT < poolInfo[_pid].totalShares,
         "HVE11");
         poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        poolInfo[_pid].balance = poolInfo[_pid].balance.add(_amount);
+        poolInfo[_pid].balance += _amount;
         emit RewardDepositors(_pid, _amount);
     }
 
@@ -668,19 +664,19 @@ contract  HATVaults is Governable, HATMaster {
         IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
-        uint256 amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(governanceHatRewards[_pid]);
+        uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
         require(amount > 0, "HVE24");
         swapAndBurns[_pid] = 0;
         governanceHatRewards[_pid] = 0;
         hackersHatRewards[_beneficiary][_pid] = 0;
         uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
-        uint256 burntHats = hatsReceived.mul(amountToSwapAndBurn).div(amount);
+        uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
             HAT.burn(burntHats);
         }
         emit SwapAndBurn(_pid, amount, burntHats);
         address tokenLock;
-        uint256 hackerReward = hatsReceived.mul(amountForHackersHatRewards).div(amount);
+        uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
@@ -701,7 +697,7 @@ contract  HATVaults is Governable, HATMaster {
             HAT.transfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        HAT.transfer(governance(), hatsReceived.sub(hackerReward).sub(burntHats));
+        HAT.transfer(governance(), hatsReceived - hackerReward - burntHats);
     }
 
     /**
@@ -796,9 +792,9 @@ contract  HATVaults is Governable, HATMaster {
 
         if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
             uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
-            rewardPerShare = rewardPerShare.add(reward.mul(1e12).div(pool.totalShares));
+            rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
-        return user.shares.mul(rewardPerShare).div(1e12).sub(user.rewardDebt);
+        return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {
@@ -823,25 +819,25 @@ contract  HATVaults is Governable, HATMaster {
         require(_severity < poolsRewards[_pid].rewardsLevels.length, "HVE06");
         //hackingRewardAmount
         uint256 claimRewardAmount =
-        totalSupply.mul(poolsRewards[_pid].rewardsLevels[_severity]);
+        totalSupply * poolsRewards[_pid].rewardsLevels[_severity];
         claimRewards.hackerVestedReward =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerVestedReward)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.hackerVestedReward
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimRewards.hackerReward =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerReward)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.hackerReward
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimRewards.committeeReward =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.committeeReward)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.committeeReward
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimRewards.swapAndBurn =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.swapAndBurn)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.swapAndBurn
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimRewards.governanceHatReward =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.governanceHatReward)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.governanceHatReward
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimRewards.hackerHatReward =
-        claimRewardAmount.mul(poolsRewards[_pid].rewardsSplit.hackerHatReward)
-        .div(HUNDRED_PERCENT*HUNDRED_PERCENT);
+        claimRewardAmount * poolsRewards[_pid].rewardsSplit.hackerHatReward
+        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
     }
 
     function getDefaultRewardsSplit() public pure returns (RewardsSplit memory) {
@@ -857,11 +853,11 @@ contract  HATVaults is Governable, HATMaster {
 
     function validateSplit(RewardsSplit memory _rewardsSplit) internal pure {
         require(_rewardsSplit.hackerVestedReward
-            .add(_rewardsSplit.hackerReward)
-            .add(_rewardsSplit.committeeReward)
-            .add(_rewardsSplit.swapAndBurn)
-            .add(_rewardsSplit.governanceHatReward)
-            .add(_rewardsSplit.hackerHatReward) == HUNDRED_PERCENT,
+            + _rewardsSplit.hackerReward
+            + _rewardsSplit.committeeReward
+            + _rewardsSplit.swapAndBurn
+            + _rewardsSplit.governanceHatReward
+            + _rewardsSplit.hackerHatReward == HUNDRED_PERCENT,
         "HVE29");
     }
 
