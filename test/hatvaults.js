@@ -981,7 +981,7 @@ contract("HatVaults", (accounts) => {
     }
     await hatVaults.withdrawRequest(0, { from: staker });
     assert.equal(
-      await hatVaults.WithdrawEnableStartTime(0, staker),
+      await hatVaults.withdrawEnableStartTime(0, staker),
       (await web3.eth.getBlock("latest")).timestamp + 7 * 24 * 3600
     );
 
@@ -1007,7 +1007,7 @@ contract("HatVaults", (accounts) => {
     }
 
     await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
-    assert.equal(await hatVaults.WithdrawEnableStartTime(0, staker), 0);
+    assert.equal(await hatVaults.withdrawEnableStartTime(0, staker), 0);
     try {
       await hatVaults.emergencyWithdraw(0, { from: staker });
       assert(false, "no pending request");
@@ -1017,7 +1017,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.withdrawRequest(0, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await hatVaults.emergencyWithdraw(0, { from: staker });
-    assert.equal(await hatVaults.WithdrawEnableStartTime(0, staker), 0);
+    assert.equal(await hatVaults.withdrawEnableStartTime(0, staker), 0);
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await hatVaults.withdrawRequest(0, { from: staker });
     try {
@@ -3356,7 +3356,7 @@ contract("HatVaults", (accounts) => {
 
     await hatVaults.withdrawRequest(0, { from: staker });
     assert.equal(
-      await hatVaults.WithdrawEnableStartTime(0, staker),
+      await hatVaults.withdrawEnableStartTime(0, staker),
       (await web3.eth.getBlock("latest")).timestamp + 7 * 24 * 3600
     );
     await hatVaults.withdrawRequest(0, { from: staker2 });
@@ -3432,7 +3432,7 @@ contract("HatVaults", (accounts) => {
 
     await hatVaults.withdrawRequest(1, { from: staker });
     assert.equal(
-      await hatVaults.WithdrawEnableStartTime(1, staker),
+      await hatVaults.withdrawEnableStartTime(1, staker),
       (await web3.eth.getBlock("latest")).timestamp + 7 * 24 * 3600
     );
     await hatVaults.withdrawRequest(1, { from: staker2 });

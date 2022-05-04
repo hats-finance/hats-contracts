@@ -95,7 +95,7 @@ contract  HATVaults is Governable, HATMaster {
     //pid -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
     //poolId -> (address -> requestTime)
-    mapping(uint256 => mapping(address => uint256)) public WithdrawEnableStartTime;
+    mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
     //poolId -> PendingRewardsLevels
     mapping(uint256 => PendingRewardsLevels) public pendingRewardsLevels;
 
@@ -692,10 +692,10 @@ contract  HATVaults is Governable, HATMaster {
     **/
     function withdrawRequest(uint256 _pid) external {
       // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp > WithdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod, "HVE25");
+        require(block.timestamp > withdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod, "HVE25");
         // solhint-disable-next-line not-rely-on-time
-        WithdrawEnableStartTime[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
-        emit WithdrawRequest(_pid, msg.sender, WithdrawEnableStartTime[_pid][msg.sender]);
+        withdrawEnableStartTime[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
+        emit WithdrawRequest(_pid, msg.sender, withdrawEnableStartTime[_pid][msg.sender]);
     }
 
     /**
@@ -707,7 +707,7 @@ contract  HATVaults is Governable, HATMaster {
         require(!poolDepositPause[_pid], "HVE26");
         require(_amount >= MINIMUM_DEPOSIT, "HVE27");
         //clear withdraw request
-        WithdrawEnableStartTime[_pid][msg.sender] = 0;
+        withdrawEnableStartTime[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
     }
 
@@ -839,11 +839,11 @@ contract  HATVaults is Governable, HATMaster {
     // and also sets the withdrawRequest to 0
     function checkWithdrawAndResetWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
       // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp > WithdrawEnableStartTime[_pid][msg.sender] &&
+        require(block.timestamp > withdrawEnableStartTime[_pid][msg.sender] &&
       // solhint-disable-next-line not-rely-on-time
-                block.timestamp < WithdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
+                block.timestamp < withdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
                 "HVE30");
-        WithdrawEnableStartTime[_pid][msg.sender] = 0;
+        withdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 
     function swapTokenForHAT(uint256 _amount,
