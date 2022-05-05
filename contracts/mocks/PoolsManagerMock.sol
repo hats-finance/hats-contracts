@@ -12,7 +12,7 @@ contract PoolsManagerMock {
                     address[] memory _lpTokens,
                     address _committee,
                     uint256[] memory _rewardsLevels,
-                    HATMaster.RewardsSplit memory _rewardsSplit,
+                    HATVaults.RewardsSplit memory _rewardsSplit,
                     string memory _descriptionHash,
                     uint256[2] memory _rewardVestingParams) external {
 
