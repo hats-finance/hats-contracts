@@ -285,7 +285,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
       assert(false, "cannot deposit before committee check in");
     } catch (ex) {
-      assertVMException(ex, "HME03");
+      assertVMException(ex, "HVE40");
     }
 
     try {
@@ -1623,7 +1623,7 @@ contract("HatVaults", (accounts) => {
       await safeEmergencyWithdraw(0, staker);
       assert(false, "Can emergency withdraw only once");
     } catch (ex) {
-      assertVMException(ex, "HME05");
+      assertVMException(ex, "HVE43");
     }
     assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
 
@@ -1632,7 +1632,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdraw(0, 1, { from: staker });
       assert(false, "cannot withdraw after emergency withdraw");
     } catch (ex) {
-      assertVMException(ex, "HME04");
+      assertVMException(ex, "HVE42");
     }
   });
 
@@ -1971,7 +1971,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.massUpdatePools(0, 2);
       assert(false, "massUpdatePools not in range");
     } catch (ex) {
-      assertVMException(ex, "HME01");
+      assertVMException(ex, "HVE38");
     }
     await hatVaults.massUpdatePools(0, 1);
     await safeWithdraw(0, web3.utils.toWei("1"), staker);
@@ -2918,7 +2918,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.massUpdatePools(2, 1);
       assert(false, "invalid mass update pools range");
     } catch (ex) {
-      assertVMException(ex, "HME02");
+      assertVMException(ex, "HVE39");
     }
   });
 

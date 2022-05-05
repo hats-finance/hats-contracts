@@ -52,12 +52,12 @@ import "./interfaces/ISwapRouter.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or eqaul to 2%
 // HVE37: Token approve reset failed
-
-// HME01: Pool range is too big
-// HME02: Invalid pool range
-// HME03: Committee not checked in yet
-// HME04: Withdraw: not enough user balance
-// HME05: User shares must be greater than 0
+// HVE38: Pool range is too big
+// HVE39: Invalid pool range
+// HVE40: Committee not checked in yet
+// HVE41: Amount must be greater or equal to 0
+// HVE42: Not enough user balance
+// HVE43: User shares must be greater than 0
 
 /// @title Manage all Hats.finance vaults
 contract  HATVaults is Governable, ReentrancyGuard {
@@ -358,8 +358,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @param _toPid update pools range to this pool id
    */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfo.length, "HME01");
-        require(_fromPid <= _toPid, "HME02");
+        require(_toPid <= poolInfo.length, "HVE38");
+        require(_fromPid <= _toPid, "HVE39");
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }
@@ -452,7 +452,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
-        require(poolsRewards[_pid].committeeCheckIn, "HME03");
+        require(poolsRewards[_pid].committeeCheckIn, "HVE40");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -483,7 +483,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares >= _amount, "HME04");
+        require(_amount >= 0, "HVE41");
+        require(user.shares >= _amount, "HVE42");
 
         updatePool(_pid);
         uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
@@ -509,7 +510,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function _emergencyWithdraw(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares > 0, "HME05");
+        require(user.shares > 0, "HVE43");
         uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
         pool.totalShares -= user.shares;
         user.shares = 0;
@@ -552,7 +553,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         emit SendReward(_to, _pid, _amount, _amount);
     }
 
-    
+
     /**
     * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
@@ -1057,7 +1058,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _shares Amount of shares user wants to withdraw
     **/
     function withdraw(uint256 _pid, uint256 _shares) external {
-        checkWithdrawAndResetWithdrawRequest(_pid);
+        checkWithdrawAndResetwithdrawEnableStartTime(_pid);
         _withdraw(_pid, _shares);
     }
 
@@ -1070,7 +1071,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _pid The pool id
     **/
     function emergencyWithdraw(uint256 _pid) external {
-        checkWithdrawAndResetWithdrawRequest(_pid);
+        checkWithdrawAndResetwithdrawEnableStartTime(_pid);
         _emergencyWithdraw(_pid);
     }
 
@@ -1179,7 +1180,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     // Checks that the sender can perform a withdraw at this time
     // and also sets the withdrawRequest to 0
-    function checkWithdrawAndResetWithdrawRequest(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
+    function checkWithdrawAndResetwithdrawEnableStartTime(uint256 _pid) internal noSubmittedClaims(_pid) noSafetyPeriod {
         // check that withdrawRequestPendingPeriod had passed
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp > withdrawEnableStartTime[_pid][msg.sender] &&
