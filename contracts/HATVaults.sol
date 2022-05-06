@@ -43,11 +43,11 @@ import "./interfaces/ISwapRouter.sol";
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
 // HVE28: totalSupply is zero
-// HVE29: Total split % should be 10000
+// HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
 // HVE32: Wrong amount received
-// HVE33: Bounty level can not be more than 10000
+// HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or eqaul to 2%
@@ -758,7 +758,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     /**
    * @dev setBountySplit - set the pool token bounty split upon an approval
    * the function can be called only by governance.
-   * the sum of the parts of the bounty split should be less than 10000 (less than 100%)
+   * the sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
    * @param _pid The pool id
    * @param _bountySplit The bounty split
    * and sent to the hacker(claim reported)
@@ -787,7 +787,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.
     * The function can be called only by the pool committee.
     * Cannot be called if there are claims that have been submitted.
-    * Each level should be less than 10000
+    * Each level should be less than `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountyLevels The array of bounty level per severity
     */
@@ -807,7 +807,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * Cannot be called if there are claims that have been submitted.
    * Can only be called if there are bounty levels pending approval, and the time delay since setting the pending bounty 
    * levels had passed.
-   * Each level should be less than 10000
+   * Each level should be less than `HUNDRED_PERCENT`
    * @param _pid The pool id
  */
     function setBountyLevels(uint256 _pid)
@@ -858,10 +858,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @param _lpToken The pool's token
    * @param _committee The pool's committee addres
    * @param _bountyLevels The pool's bounty levels.
-     Each level is a number between 0 and 10000, which represents the percentage of the pool to be rewarded for each severity.
+     Each level is a number between 0 and `HUNDRED_PERCENT`, which represents the percentage of the pool to be rewarded for each severity.
    * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
-     Each entry is a number between 0 and 10000.
-     Total splits should be equal to 10000.
+     Each entry is a number between 0 and `HUNDRED_PERCENT`.
+     Total splits should be equal to `HUNDRED_PERCENT`.
      If no bounty is specified for the hacker (direct or vested in pool's token), the default bounty split will be used.
    * @param _descriptionHash the hash of the pool description.
    * @param _bountyVestingParams vesting params for the bounty
