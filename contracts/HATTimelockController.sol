@@ -32,20 +32,20 @@ contract HATTimelockController is TimelockController {
     function addPool(uint256 _allocPoint,
                     address _lpToken,
                     address _committee,
-                    uint256[] memory _rewardsLevels,
-                    HATVaults.RewardsSplit memory _rewardsSplit,
+                    uint256[] memory _bountyLevels,
+                    HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _rewardVestingParams)
+                    uint256[2] memory _bountyVestingParams)
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
             _allocPoint,
             _lpToken,
             _committee,
-            _rewardsLevels,
-            _rewardsSplit,
+            _bountyLevels,
+            _bountySplit,
             _descriptionHash,
-            _rewardVestingParams
+            _bountyVestingParams
         );
     }
 

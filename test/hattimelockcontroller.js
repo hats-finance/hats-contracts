@@ -20,8 +20,8 @@ const setup = async function(
   accounts,
   reward_per_block = REWARD_PER_BLOCK,
   startBlock = 0,
-  rewardsLevels = [],
-  rewardsSplit = [0, 0, 0, 0, 0, 0],
+  bountyLevels = [],
+  bountySplit = [0, 0, 0, 0, 0, 0],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -67,8 +67,8 @@ const setup = async function(
     allocPoint,
     stakingToken.address,
     accounts[1],
-    rewardsLevels,
-    rewardsSplit,
+    bountyLevels,
+    bountySplit,
     "_descriptionHash",
     [86400, 10]
   );
@@ -357,12 +357,12 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn
+            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
           ).add(
             new web3.utils.BN(
               (
-                await hatVaults.getPoolRewards(0)
-              ).rewardsSplit.governanceHatReward
+                await hatVaults.getBountyInfo(0)
+              ).bountySplit.governanceHat
             )
           )
         )
@@ -374,7 +374,7 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("1"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn
+            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
           )
         )
         .div(new web3.utils.BN("10000"))
