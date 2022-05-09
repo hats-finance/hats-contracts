@@ -1006,7 +1006,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         swapAndBurns[_pid] = 0;
         governanceHatRewards[_pid] = 0;
         hackersHatRewards[_beneficiary][_pid] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, poolInfo[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
+        uint256 hatsReceived = swapTokenForHAT(amount, poolInfos[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
             HAT.burn(burntHats);
