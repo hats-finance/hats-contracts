@@ -118,7 +118,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     // Info of each pool's bounty policy.
     struct BountyInfo {
         BountySplit bountySplit;
-        uint256[]  bountyLevels;
+        uint256[] bountyLevels;
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
@@ -244,7 +244,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
@@ -297,12 +297,12 @@ contract  HATVaults is Governable, ReentrancyGuard {
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
-    
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
-    
     event SetClaimFee(uint256 _fee);
-
-    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+    event RewardDepositors(address indexed user, uint256 indexed pid, uint256 indexed amount);
+    event DepositHATReward(address indexed user, uint256 indexed amount);
+    event ClaimReward(address indexed user, uint256 indexed pid);
+    event UpdatePool(uint256 indexed pid, uint256 indexed blockNumber, uint256 indexed rewardPerShare);
 
    /**
    * @dev constructor -
@@ -354,6 +354,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function depositHATReward(uint256 _amount) external {
         hatRewardAvailable += _amount;
         HAT.transferFrom(address(msg.sender), address(this), _amount);
+        emit DepositHATReward(msg.sender, _amount);
+
     }
     
   /**
@@ -377,6 +379,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
      */
     function claimReward(uint256 _pid) external {
         _deposit(_pid, 0);
+        emit ClaimReward(msg.sender, _pid);
     }
 
     /**
@@ -400,6 +403,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+        emit UpdatePool(_pid, block.number, pool.rewardPerShare);
     }
 
     /**
@@ -482,70 +486,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
             pool.totalShares += userShares;
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Deposit(msg.sender, _pid, _amount);
-    }
+    }        
 
-    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
-        PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares >= _amount, "HVE41");
-
-        updatePool(_pid);
-        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-        if (pending > 0) {
-            safeTransferReward(msg.sender, pending, _pid);
-        }
-        if (_amount > 0) {
-            user.shares -= _amount;
-            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
-            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
-            pool.balance -= amountToWithdraw;
-            if (fee > 0) {
-                pool.lpToken.safeTransfer(governance(), fee);
-            }
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalShares -= _amount;
-        }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Withdraw(msg.sender, _pid, _amount);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function _emergencyWithdraw(uint256 _pid) internal {
-        PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares > 0, "HVE42");
-        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
-        pool.totalShares -= user.shares;
-        user.shares = 0;
-        user.rewardDebt = 0;
-        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
-        if (fee > 0) {
-            pool.lpToken.safeTransfer(governance(), fee);
-        }
-        pool.balance -= factoredBalance;
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
-        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
-    }
-
-
-    function set(uint256 _pid, uint256 _allocPoint) internal {
-        updatePool(_pid);
-        uint256 totalAllocPoint =
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        - poolInfos[_pid].allocPoint + _allocPoint;
-
-        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-           //already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-        poolInfos[_pid].allocPoint = _allocPoint;
-    }
 
     // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
@@ -680,7 +622,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         "HVE11");
         poolInfos[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         poolInfos[_pid].balance += _amount;
-        emit RewardDepositors(_pid, _amount);
+        emit RewardDepositors(msg.sender, _pid, _amount);
     }
 
     /**
@@ -756,12 +698,11 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     /**
-   * @dev setBountySplit - set the pool token bounty split upon an approval
-   * the function can be called only by governance.
-   * the sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
+   * @dev Set the pool token bounty split upon an approval
+   * The function can be called only by governance.
+   * The sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
    * @param _pid The pool id
    * @param _bountySplit The bounty split
-   * and sent to the hacker(claim reported)
  */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
@@ -950,7 +891,21 @@ contract  HATVaults is Governable, ReentrancyGuard {
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfos.length > _pid, "HVE23");
-        set(_pid, _allocPoint);
+        updatePool(_pid);
+        uint256 totalAllocPoint =
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
+        - poolInfos[_pid].allocPoint + _allocPoint;
+
+        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+           //already updated in this block
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalPoolUpdates.push(PoolUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+        poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
@@ -1050,6 +1005,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
+        emit Deposit(msg.sender, _pid, _amount);
     }
 
     /**
@@ -1061,9 +1017,30 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _pid The pool id
     * @param _shares Amount of shares user wants to withdraw
     **/
-    function withdraw(uint256 _pid, uint256 _shares) external {
+    function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _withdraw(_pid, _shares);
+        PoolInfo storage pool = poolInfos[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares >= _shares, "HVE41");
+
+        updatePool(_pid);
+        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+        if (pending > 0) {
+            safeTransferReward(msg.sender, pending, _pid);
+        }
+        if (_shares > 0) {
+            user.shares -= _shares;
+            uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
+            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
+            pool.balance -= amountToWithdraw;
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(governance(), fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
+            pool.totalShares -= _shares;
+        }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        emit Withdraw(msg.sender, _pid, _shares);
     }
 
     /**
@@ -1076,7 +1053,20 @@ contract  HATVaults is Governable, ReentrancyGuard {
     **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _emergencyWithdraw(_pid);
+        PoolInfo storage pool = poolInfos[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares > 0, "HVE42");
+        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        pool.totalShares -= user.shares;
+        user.shares = 0;
+        user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(governance(), fee);
+        }
+        pool.balance -= factoredBalance;
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
     function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {
@@ -1138,26 +1128,13 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256 totalSupply = poolInfos[_pid].balance;
         require(totalSupply > 0, "HVE28");
         require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
-        uint256 totalBountyAmount =
-        totalSupply * bountyInfos[_pid].bountyLevels[_severity];
-        claimBounty.hackerVested =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.hacker =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hacker
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.committee =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.committee
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.swapAndBurn =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.swapAndBurn
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.governanceHat =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.governanceHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.hackerHat =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        uint256 totalBountyAmount = totalSupply * bountyInfos[_pid].bountyLevels[_severity] / HUNDRED_PERCENT;
+        claimBounty.hackerVested = totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested / HUNDRED_PERCENT;
+        claimBounty.hacker = totalBountyAmount * bountyInfos[_pid].bountySplit.hacker / HUNDRED_PERCENT;
+        claimBounty.committee = totalBountyAmount * bountyInfos[_pid].bountySplit.committee / HUNDRED_PERCENT;
+        claimBounty.swapAndBurn = totalBountyAmount * bountyInfos[_pid].bountySplit.swapAndBurn / HUNDRED_PERCENT;
+        claimBounty.governanceHat = totalBountyAmount * bountyInfos[_pid].bountySplit.governanceHat / HUNDRED_PERCENT;
+        claimBounty.hackerHat = totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHat / HUNDRED_PERCENT;
     }
 
     function getDefaultBountySplit() public pure returns (BountySplit memory) {
