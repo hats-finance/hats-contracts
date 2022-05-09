@@ -3,6 +3,7 @@
     "rules": {
       "indent": ["error", 4],
       "compiler-fixed": "off",
+      "max-states-count": ["warn",25],
       "no-simple-event-func-name": "off",
       "two-lines-top-level-separator": "off",
       "mark-callable-contracts": "off",

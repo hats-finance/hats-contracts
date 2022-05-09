@@ -20,8 +20,8 @@ const setup = async function(
   accounts,
   reward_per_block = REWARD_PER_BLOCK,
   startBlock = 0,
-  rewardsLevels = [],
-  rewardsSplit = [0, 0, 0, 0, 0, 0],
+  bountyLevels = [],
+  bountySplit = [0, 0, 0, 0, 0, 0],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -67,8 +67,8 @@ const setup = async function(
     allocPoint,
     stakingToken.address,
     accounts[1],
-    rewardsLevels,
-    rewardsSplit,
+    bountyLevels,
+    bountySplit,
     "_descriptionHash",
     [86400, 10]
   );
@@ -105,10 +105,10 @@ contract("HatVaults", (accounts) => {
 
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
-    let allocPoint = (await hatVaults.poolInfo(0)).allocPoint;
+    let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
+    let allocPoint = (await hatVaults.poolInfos(0)).allocPoint;
     let rewardPerShare = new web3.utils.BN(
-      (await hatVaults.poolInfo(0)).rewardPerShare
+      (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
     let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
@@ -365,12 +365,12 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn
+            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
           ).add(
             new web3.utils.BN(
               (
-                await hatVaults.getPoolRewards(0)
-              ).rewardsSplit.governanceHatReward
+                await hatVaults.getBountyInfo(0)
+              ).bountySplit.governanceHat
             )
           )
         )
@@ -382,7 +382,7 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("1"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getPoolRewards(0)).rewardsSplit.swapAndBurn
+            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
           )
         )
         .div(new web3.utils.BN("10000"))
