@@ -2389,7 +2389,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "can only use whitelisted routers");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "HVE44");
     }
 
     try {
@@ -2415,7 +2415,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "can only use whitelisted routers");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "HVE44");
     }
 
     tx = await hatVaults.setRouterWhitelistStatus(router.address, true, {
@@ -2739,7 +2739,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "swap should not be successful");
     } catch (ex) {
-      assertVMException(ex, "HVE38");
+      assertVMException(ex, "HVE43");
     }
   });
 
