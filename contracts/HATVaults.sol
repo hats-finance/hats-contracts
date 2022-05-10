@@ -176,7 +176,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     // Info of each pool.
-    PoolInfo[] public poolInfos;
+    PoolInfo[] public poolInfo;
     PoolUpdate[] public globalPoolUpdates;
 
     // Reward Multipliers
@@ -370,7 +370,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
      * @param _pid The pool id
      */
     function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         uint256 lastRewardBlock = pool.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
             return;
@@ -425,8 +425,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
      * @return reward
      */
     function calcPoolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastPoolUpdateIndex) public view returns(uint256 reward) {
-        uint256 poolAllocPoint = poolInfos[_pid].allocPoint;
-        uint256 i = poolInfos[_pid].lastProcessedTotalAllocPoint;
+        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
         for (; i < _lastPoolUpdateIndex; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
@@ -444,7 +444,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
         require(bountyInfos[_pid].committeeCheckIn, "HVE40");
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
@@ -472,7 +472,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares >= _amount, "HVE41");
 
@@ -498,7 +498,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function _emergencyWithdraw(uint256 _pid) internal {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares > 0, "HVE42");
         uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
@@ -519,7 +519,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         updatePool(_pid);
         uint256 totalAllocPoint =
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        - poolInfos[_pid].allocPoint + _allocPoint;
+        - poolInfo[_pid].allocPoint + _allocPoint;
 
         if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
            //already update in this block
@@ -530,7 +530,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                 totalAllocPoint: totalAllocPoint
             }));
         }
-        poolInfos[_pid].allocPoint = _allocPoint;
+        poolInfo[_pid].allocPoint = _allocPoint;
     }
 
     // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
@@ -611,9 +611,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
         SubmittedClaim memory submittedClaim = submittedClaims[_pid];
         delete submittedClaims[_pid];
 
-        IERC20 lpToken = poolInfos[_pid].lpToken;
+        IERC20 lpToken = poolInfo[_pid].lpToken;
         ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.severity);
-        poolInfos[_pid].balance -= claimBounty.hacker
+        poolInfo[_pid].balance -= claimBounty.hacker
                             + claimBounty.hackerVested
                             + claimBounty.committee
                             + claimBounty.swapAndBurn
@@ -652,7 +652,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                         submittedClaim.severity,
                         tokenLock,
                         claimBounty);
-        assert(poolInfos[_pid].balance > 0);
+        assert(poolInfo[_pid].balance > 0);
     }
 
     /**
@@ -662,10 +662,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
      * @param _amount amount to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        require((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT < poolInfos[_pid].totalShares,
+        require((poolInfo[_pid].balance + _amount) / MINIMUM_DEPOSIT < poolInfo[_pid].totalShares,
         "HVE11");
-        poolInfos[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        poolInfos[_pid].balance += _amount;
+        poolInfo[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
+        poolInfo[_pid].balance += _amount;
         emit RewardDepositors(_pid, _amount);
     }
 
@@ -883,7 +883,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                 totalAllocPoint: totalAllocPoint
             }));
         }
-        poolInfos.push(PoolInfo({
+        poolInfo.push(PoolInfo({
             lpToken: IERC20(_lpToken),
             allocPoint: _allocPoint,
             lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
@@ -894,7 +894,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             fee: 0
         }));
    
-        uint256 poolId = poolInfos.length-1;
+        uint256 poolId = poolInfo.length-1;
         committees[poolId] = _committee;
         uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
@@ -939,14 +939,14 @@ contract  HATVaults is Governable, ReentrancyGuard {
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyGovernance {
-        require(poolInfos.length > _pid, "HVE23");
+        require(poolInfo.length > _pid, "HVE23");
         set(_pid, _allocPoint);
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyGovernance {
-        require(poolInfos.length > _pid, "HVE23");
+        require(poolInfo.length > _pid, "HVE23");
        poolInitialized[_pid] = true;
     } 
 
@@ -959,10 +959,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256[] memory _rewardDebts)
     external onlyGovernance {
         require(!poolInitialized[_pid], "HVE38");
-        require(poolInfos.length > _pid, "HVE23");
+        require(poolInfo.length > _pid, "HVE23");
         require(_accounts.length == _shares.length, "HVE39");
         require(_accounts.length == _rewardDebts.length, "HVE39");
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         pool.rewardPerShare = _rewardPerShare;
         pool.balance = _balance;
         for (uint256 i = 0; i < _accounts.length; i++) {
@@ -980,7 +980,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
         require(_newFee <= MAX_FEE, "HVE36");
-        poolInfos[_pid].fee = _newFee;
+        poolInfo[_pid].fee = _newFee;
         emit SetPoolFee(_pid, _newFee);
     }
 
@@ -1000,7 +1000,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                         uint24[2] memory _fees)
     external
     onlyGovernance {
-        IERC20 token = poolInfos[_pid].lpToken;
+        IERC20 token = poolInfo[_pid].lpToken;
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
@@ -1104,7 +1104,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
@@ -1120,14 +1120,14 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     function poolLength() external view returns (uint256) {
-        return poolInfos.length;
+        return poolInfo.length;
     }
 
     function calcClaimBounty(uint256 _pid, uint256 _severity)
     public
     view
     returns(ClaimBounty memory claimBounty) {
-        uint256 totalSupply = poolInfos[_pid].balance;
+        uint256 totalSupply = poolInfo[_pid].balance;
         require(totalSupply > 0, "HVE28");
         require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
         uint256 totalBountyAmount =

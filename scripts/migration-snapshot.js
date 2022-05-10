@@ -1,7 +1,12 @@
 const { network } = require("hardhat");
-const CONFIG = require("./addresses.js");
-const HATVaults = artifacts.require("./HATVaults.sol");
 const fs = require("fs");
+const CONFIG = require("./addresses.js");
+const HATVaults = JSON.parse(
+    fs.readFileSync(__dirname + "/hatvaultsv1.json", {
+        encoding: "utf8",
+        flag: "r",
+    })
+);
 
 async function main(config) {
     // This is just a convenience check
@@ -9,7 +14,7 @@ async function main(config) {
         config = CONFIG[network.name];
     }
 
-    const hatVaults = await HATVaults.at(config.hatVaultsAddress);
+    const hatVaults = await new ethers.Contract(config.hatVaultsAddress, HATVaults, ethers.provider);//HATVaults.at(config.hatVaultsAddress);
     let poolsCount = parseInt((await hatVaults.poolLength()).toString());
 
     let snapshot = {};
@@ -38,11 +43,12 @@ async function main(config) {
     console.log(snapshot);
 
     for (let i = 0; i < poolsCount; i++) {
+        let rewardPerShare = (await hatVaults.poolInfo(i)).rewardPerShare.toString();
         console.log(`
 setShares(
 ${i},
-balance,
-rewardsPerShare,
+BALANCE,
+${rewardPerShare},
 [${Object.keys(snapshot[i])}],
 [${Object.keys(snapshot[i]).map(key => snapshot[i][key].shares)}],
 [${Object.keys(snapshot[i]).map(key => snapshot[i][key].rewardDebt)}]

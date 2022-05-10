@@ -71,7 +71,8 @@ const setup = async function(
     bountySplit,
     "_descriptionHash",
     [86400, 10],
-    false
+    false,
+    true
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
@@ -106,10 +107,10 @@ contract("HatVaults", (accounts) => {
 
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
-    let allocPoint = (await hatVaults.poolInfos(0)).allocPoint;
+    let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
+    let allocPoint = (await hatVaults.poolInfo(0)).allocPoint;
     let rewardPerShare = new web3.utils.BN(
-      (await hatVaults.poolInfos(0)).rewardPerShare
+      (await hatVaults.poolInfo(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
     let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
@@ -175,7 +176,8 @@ contract("HatVaults", (accounts) => {
         [0, 0, 0, 0, 0, 0],
         "_descriptionHash",
         [86400, 10],
-        false
+        false,
+        true
       );
       assert(false, "only governance");
     } catch (ex) {
@@ -192,6 +194,7 @@ contract("HatVaults", (accounts) => {
         "_descriptionHash",
         [86400, 10],
         false,
+        true,
         { from: accounts[1] }
       );
       assert(false, "only governance");
@@ -206,7 +209,8 @@ contract("HatVaults", (accounts) => {
       [0, 0, 0, 0, 0, 0],
       "_descriptionHash",
       [86400, 10],
-      false
+      false,
+      true
     );
   });
 
