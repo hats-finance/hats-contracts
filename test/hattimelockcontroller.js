@@ -381,12 +381,12 @@ contract("HatVaults", (accounts) => {
         .toString()
     );
     log = (
-      await hatVaults.getPastEvents("SwapAndSend", {
+      await hatVaults.getPastEvents("SwapBurnSend", {
         fromBlock: tx.blockNumber,
         toBlock: "latest",
       })
     )[0];
-    assert.equal(log.event, "SwapAndSend");
+    assert.equal(log.event, "SwapBurnSend");
     assert.equal(log.args._amountReceived.toString(), "0");
   });
 });
