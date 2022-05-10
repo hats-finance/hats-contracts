@@ -383,7 +383,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
+        pool.rewardPerShare += (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }

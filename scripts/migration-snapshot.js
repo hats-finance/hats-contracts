@@ -36,7 +36,20 @@ async function main(config) {
     });
 
     console.log(snapshot);
-    fs.writeFileSync(__dirname + '/../snapshot.json', JSON.stringify(snapshot));
+
+    for (let i = 0; i < poolsCount; i++) {
+        console.log(`
+setShares(
+${i},
+balance,
+rewardsPerShare,
+[${Object.keys(snapshot[i])}],
+[${Object.keys(snapshot[i]).map(key => snapshot[i][key].shares)}],
+[${Object.keys(snapshot[i]).map(key => snapshot[i][key].rewardDebt)}]
+)
+        `);
+    }
+    fs.writeFileSync(__dirname + "/../snapshot.json", JSON.stringify(snapshot));
     return snapshot;
 }
 
