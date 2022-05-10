@@ -14,7 +14,7 @@ cache/
 yarn*
 frontend/
 .env
-
+snapshot.json
 node_modules
 
 #Hardhat files

@@ -52,8 +52,8 @@ import "./interfaces/ISwapRouter.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or eqaul to 2%
 // HVE37: Token approve reset failed
-// HVE38: Pool range is too big
-// HVE39: Invalid pool range
+// HVE38: Pool must not be initialized
+// HVE39: Set shares arrays must have same length
 // HVE40: Committee not checked in yet
 // HVE41: Not enough user balance
 // HVE42: User shares must be greater than 0
@@ -118,7 +118,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     // Info of each pool's bounty policy.
     struct BountyInfo {
         BountySplit bountySplit;
-        uint256[]  bountyLevels;
+        uint256[] bountyLevels;
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
@@ -188,7 +188,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> BountyInfo
-    mapping (uint256=>BountyInfo) internal bountyInfos;
+    mapping (uint256 => BountyInfo) public bountyInfos;
 
     uint256 public hatRewardAvailable;
 
@@ -209,6 +209,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
     mapping(uint256 => PendingBountyLevels) public pendingBountyLevels;
 
     mapping(uint256 => bool) public poolDepositPause;
+    
+    mapping(uint256 => bool) public poolInitialized;   
 
     GeneralParameters public generalParameters;
 
@@ -247,7 +249,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
-    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
     event CommitteeCheckedIn(uint256 indexed _pid);
@@ -339,7 +340,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
-            hatVestingPeriods:90,
+            hatVestingPeriods: 90,
             withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
             setBountyLevelsDelay: 2 days,
@@ -354,21 +355,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function depositHATReward(uint256 _amount) external {
         hatRewardAvailable += _amount;
         HAT.transferFrom(address(msg.sender), address(this), _amount);
-    }
-    
-  /**
-   * @dev massUpdatePools - Update reward variables for all pools
-   * Be careful of gas spending!
-   * @param _fromPid update pools range from this pool id
-   * @param _toPid update pools range to this pool id
-   */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfos.length, "HVE38");
-        require(_fromPid <= _toPid, "HVE39");
-        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
-            updatePool(pid);
-        }
-        emit MassUpdatePools(_fromPid, _toPid);
     }
 
     /**
@@ -874,7 +860,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
                     uint256[] memory _bountyLevels,
                     BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams)
+                    uint256[2] memory _bountyVestingParams,
+                    bool _isPaused,
+                    bool _isInitialized)
     external
     onlyGovernance {
         require(_bountyVestingParams[0] < 120 days, "HVE15");
@@ -883,7 +871,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
         
-        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
         if (globalPoolUpdates.length > 0 &&
@@ -899,7 +886,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         poolInfos.push(PoolInfo({
             lpToken: IERC20(_lpToken),
             allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
+            lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
             rewardPerShare: 0,
             totalShares: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
@@ -922,6 +909,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
             vestingDuration: _bountyVestingParams[0],
             vestingPeriods: _bountyVestingParams[1]
         });
+
+        poolDepositPause[poolId] = _isPaused;
+        poolInitialized[poolId] = _isInitialized;
 
         emit AddPool(poolId,
             _allocPoint,
@@ -953,6 +943,34 @@ contract  HATVaults is Governable, ReentrancyGuard {
         set(_pid, _allocPoint);
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
+    }
+
+    function setPoolInitialized(uint256 _pid) external onlyGovernance {
+        require(poolInfos.length > _pid, "HVE23");
+       poolInitialized[_pid] = true;
+    } 
+
+    function setShares(
+        uint256 _pid,
+        uint256 _rewardPerShare,
+        uint256 _balance,
+        address[] memory _accounts,
+        uint256[] memory _shares,
+        uint256[] memory _rewardDebts)
+    external onlyGovernance {
+        require(!poolInitialized[_pid], "HVE38");
+        require(poolInfos.length > _pid, "HVE23");
+        require(_accounts.length == _shares.length, "HVE39");
+        require(_accounts.length == _rewardDebts.length, "HVE39");
+        PoolInfo storage pool = poolInfos[_pid];
+        pool.rewardPerShare = _rewardPerShare;
+        pool.balance = _balance;
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            userInfo[_pid][_accounts[i]] = UserInfo({
+                shares: _shares[i],
+                rewardDebt: _rewardDebts[i]
+            });
+        }
     }
 
     function setFeeSetter(address _newFeeSetter) external onlyGovernance {
@@ -1079,31 +1097,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
         _emergencyWithdraw(_pid);
     }
 
+    // GET INFO for UI
+
     function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {
         return bountyInfos[_pid].bountyLevels;
-    }
-
-    function getBountyInfo(uint256 _pid) external view returns(BountyInfo memory) {
-        return bountyInfos[_pid];
-    }
-
-    // GET INFO for UI
-    /**
-    * @dev Return the current pool reward per block
-    * @param _pid The pool id.
-    *        if _pid = 0 , it returns the current block reward for all the pools.
-    *        otherwise it returns the current block reward for _pid-1.
-    * @return rewardPerBlock
-    **/
-    function getRewardPerBlock(uint256 _pid) external view returns (uint256) {
-        if (_pid == 0) {
-            return getRewardForBlocksRange(block.number-1, block.number, 1, 1);
-        } else {
-            return getRewardForBlocksRange(block.number-1,
-                                        block.number,
-                                        poolInfos[_pid - 1].allocPoint,
-                                        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint);
-        }
     }
 
     function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
@@ -1120,11 +1117,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {
         return globalPoolUpdates.length;
-    }
-
-    function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
-        UserInfo storage user = userInfo[_pid][_user];
-        return  user.shares;
     }
 
     function poolLength() external view returns (uint256) {

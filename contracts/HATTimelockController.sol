@@ -35,7 +35,9 @@ contract HATTimelockController is TimelockController {
                     uint256[] memory _bountyLevels,
                     HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams)
+                    uint256[2] memory _bountyVestingParams,
+                    bool _isPaused,
+                    bool _isInitialized)
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
@@ -45,7 +47,9 @@ contract HATTimelockController is TimelockController {
             _bountyLevels,
             _bountySplit,
             _descriptionHash,
-            _bountyVestingParams
+            _bountyVestingParams,
+            _isPaused,
+            _isInitialized
         );
     }
 
