@@ -132,9 +132,6 @@ async function main(
     silent: silent
   });
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatDiamond, "HATDiamond");
-
   if (!silent) {
     console.log("hatDiamond address:", hatDiamond.address);
     
