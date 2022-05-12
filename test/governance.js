@@ -24,7 +24,7 @@ const setup = async function (
                                   startBlock,
                                   10,
                                   accounts[0],
-                                  accounts[1], //as uniSwapRouter
+                                  [accounts[1]], //as uniSwapRouter
                                   tokenLockFactory.address);
 };
 

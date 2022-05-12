@@ -40,7 +40,7 @@ async function main() {
     startBlock,
     multiplierPeriod,
     governance,
-    uniSwapRouter,
+    [uniSwapRouter],
     tokenLockFactory
   );
   await hatVaults.deployed();
@@ -67,9 +67,6 @@ async function main() {
     '"',
     '"',
     governance,
-    '"',
-    '"',
-    uniSwapRouter,
     '"',
     '"',
     tokenLockFactory,
