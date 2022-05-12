@@ -5,14 +5,14 @@ pragma solidity 0.8.6;
 
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
-import "./HATVaults.sol";
+import "./interfaces/IHATDiamond.sol";
 
 
 contract HATTimelockController is TimelockController {
-    HATVaults public hatVaults;
+    IHATDiamond public hatVaults;
 
     constructor(
-        HATVaults _hatVaults,
+        IHATDiamond _hatVaults,
         uint256 _minDelay,
         address[] memory _proposers,
         address[] memory _executors
@@ -33,7 +33,7 @@ contract HATTimelockController is TimelockController {
                     address _lpToken,
                     address _committee,
                     uint256[] memory _bountyLevels,
-                    HATVaults.BountySplit memory _bountySplit,
+                    BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams)
     external

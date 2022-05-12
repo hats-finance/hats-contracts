@@ -1,10 +1,11 @@
-const HATVaults = artifacts.require("./HATVaults.sol");
+const IHATDiamond = artifacts.require("./IHATDiamond.sol");
 const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
+const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const utils = require("./utils.js");
 
 var hatVaults;
@@ -13,7 +14,6 @@ var hatToken;
 var router;
 var stakingToken;
 var REWARD_PER_BLOCK = "10";
-var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
 
 const setup = async function(
@@ -37,22 +37,24 @@ const setup = async function(
   router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-  hatVaults = await HATVaults.new(
+  
+  hatVaults = await IHATDiamond.at((await deployHatVaults(
+    accounts[0],
     hatToken.address,
     web3.utils.toWei(reward_per_block),
     startBlock,
     halvingAfterBlock,
-    accounts[0],
     router.address,
-    tokenLockFactory.address
-  );
+    tokenLockFactory.address,
+    true
+  )).address);
   hatTimelockController = await HATTimelockController.new(
     hatVaults.address,
     hatGovernanceDelay,
     [accounts[0]],
     [accounts[0]]
   );
-  tx = await hatVaults.transferGovernance(hatTimelockController.address);
+  tx = await hatVaults.transferOwnership(hatTimelockController.address);
   await utils.setMinter(
     hatToken,
     hatVaults.address,
@@ -88,13 +90,12 @@ function assertVMException(error) {
 contract("HatVaults", (accounts) => {
   async function advanceToSaftyPeriod() {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-
-    let withdrawPeriod = (
+    let withdrawPeriod = parseInt((
       await hatVaults.generalParameters()
-    ).withdrawPeriod.toNumber();
-    let safetyPeriod = (
+    ).withdrawPeriod);
+    let safetyPeriod = parseInt((
       await hatVaults.generalParameters()
-    ).safetyPeriod.toNumber();
+    ).safetyPeriod);
 
     if (currentTimeStamp % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
       await utils.increaseTime(
@@ -111,7 +112,7 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
+    let stakerAmount =  new web3.utils.BN((await hatVaults.userInfo(0, staker)).shares);
     let globalUpdatesLen = await hatVaults.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
       await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)
@@ -124,7 +125,7 @@ contract("HatVaults", (accounts) => {
     );
     let lpSupply = await stakingToken.balanceOf(hatVaults.address);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
-    let rewardDebt = (await hatVaults.userInfo(0, staker)).rewardDebt;
+    let rewardDebt = new web3.utils.BN((await hatVaults.userInfo(0, staker)).rewardDebt);
     return stakerAmount
       .mul(rewardPerShare)
       .div(onee12)
@@ -145,7 +146,7 @@ contract("HatVaults", (accounts) => {
     }
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
-    assert.equal(await hatVaults.governance(), hatTimelockController.address);
+    assert.equal(await hatVaults.owner(), hatTimelockController.address);
     assert.equal(await hatTimelockController.hatVaults(), hatVaults.address);
     assert.equal(
       await hatTimelockController.hasRole(

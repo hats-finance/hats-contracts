@@ -1,5 +1,5 @@
 const HatTimelockController = artifacts.require("./HATTimelockController.sol");
-const HATVaults = artifacts.require("./HATVaults.sol");
+const IHATDiamond = artifacts.require("./IHATDiamond.sol");
 const ADDRESSES = require("../addresses.js");
 async function main() {
   console.log(`Do sanity check of deployed HatTimelockController contract`);
@@ -15,7 +15,7 @@ async function main() {
     hatTimelockControllerAddress
   );
 
-  const hatVaults = await HATVaults.at(addresses.hatVaultsAddress);
+  const hatVaults = await IHATDiamond.at(addresses.hatVaultsAddress);
 
   const EXECUTOR_ROLE = await hatTimelockController.EXECUTOR_ROLE();
   const PROPOSER_ROLE = await hatTimelockController.PROPOSER_ROLE();
@@ -66,7 +66,7 @@ async function main() {
   );
 
   await checkResult(`Timelock is HATVaults governance`, async () => {
-    const currentGov = await hatVaults.governance();
+    const currentGov = await hatVaults.owner();
     if (currentGov === hatTimelockControllerAddress) {
       return true;
     } else {
