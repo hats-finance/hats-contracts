@@ -882,7 +882,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @dev setPool
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
-   * @param _visible is this pool visable in the UI
+   * @param _visible is this pool visible in the UI
    * @param _depositPause pause pool deposit (default false).
    * This parameter can be used by the UI to include or exclude the pool
    * @param _descriptionHash the hash of the pool description.
