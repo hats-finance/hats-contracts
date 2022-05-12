@@ -1052,7 +1052,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaults.setPoolWithdrawFee(0, 100, {
+      await hatVaults.setPoolWithdrawalFee(0, 100, {
         from: accounts[1],
       });
       assert(false, "only governance when fee setter is 0");
@@ -1060,9 +1060,9 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE35");
     }
 
-    var tx = await hatVaults.setPoolWithdrawFee(0, 100);
-    assert.equal((await hatVaults.poolInfos(0)).withdrawFee, 100);
-    assert.equal(tx.logs[0].event, "SetPoolWithdrawFee");
+    var tx = await hatVaults.setPoolWithdrawalFee(0, 100);
+    assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 100);
+    assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 100);
 
@@ -1073,14 +1073,14 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
     
     try {
-      await hatVaults.setPoolWithdrawFee(0, 100);
+      await hatVaults.setPoolWithdrawalFee(0, 100);
       assert(false, "only fee setter");
     } catch (ex) {
       assertVMException(ex, "HVE35");
     }
 
     try {
-      await hatVaults.setPoolWithdrawFee(0, 201, {
+      await hatVaults.setPoolWithdrawalFee(0, 201, {
         from: accounts[1],
       });
       assert(false, "fee must be lower than or equal to 2%");
@@ -1088,12 +1088,12 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE36");
     }
 
-    tx = await hatVaults.setPoolWithdrawFee(0, 200, {
+    tx = await hatVaults.setPoolWithdrawalFee(0, 200, {
       from: accounts[1],
     });
 
-    assert.equal((await hatVaults.poolInfos(0)).withdrawFee, 200);
-    assert.equal(tx.logs[0].event, "SetPoolWithdrawFee");
+    assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 200);
+    assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 200);
     
@@ -1118,10 +1118,10 @@ contract("HatVaults", (accounts) => {
   it("Emergency withdraw fee", async () => {
     await setup(accounts);
 
-    tx = await hatVaults.setPoolWithdrawFee(0, 200);
+    tx = await hatVaults.setPoolWithdrawalFee(0, 200);
 
-    assert.equal((await hatVaults.poolInfos(0)).withdrawFee, 200);
-    assert.equal(tx.logs[0].event, "SetPoolWithdrawFee");
+    assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 200);
+    assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 200);
     
@@ -2053,7 +2053,7 @@ contract("HatVaults", (accounts) => {
       tx.logs[0].args._amountBurned.toString(),
       expectedHatBurned.toString()
     );
-    assert.equal(tx.logs[1].event, "SwapBurnSend");
+    assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       await vestingTokenLock.owner(),
@@ -2128,7 +2128,7 @@ contract("HatVaults", (accounts) => {
       tx.logs[0].args._amountBurned.toString(),
       expectedHatBurned.toString()
     );
-    assert.equal(tx.logs[1].event, "SwapBurnSend");
+    assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
@@ -2190,7 +2190,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = 0; //default hat burned is 0
     assert.equal(tx.logs[0].args._amountBurned.toString(), expectedHatBurned);
-    assert.equal(tx.logs[1].event, "SwapBurnSend");
+    assert.equal(tx.logs[1].event, "SwapAndSend");
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
@@ -2274,7 +2274,7 @@ contract("HatVaults", (accounts) => {
     var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, [0, 0]);
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(
-      tx.logs[0].args._amountSwaped.toString(),
+      tx.logs[0].args._amountSwapped.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
@@ -2366,7 +2366,7 @@ contract("HatVaults", (accounts) => {
     });
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(
-      tx.logs[0].args._amountSwaped.toString(),
+      tx.logs[0].args._amountSwapped.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
@@ -2393,7 +2393,7 @@ contract("HatVaults", (accounts) => {
         .div(new web3.utils.BN("10000"))
         .toString()
     );
-    assert.equal(tx.logs[1].event, "SwapBurnSend");
+    assert.equal(tx.logs[1].event, "SwapAndSend");
     assert.equal(tx.logs[1].args._amountReceived.toString(), "0");
     // Not real beneficiary should not get tokens
     let afterBountyBalance = (
@@ -2495,7 +2495,7 @@ contract("HatVaults", (accounts) => {
       });
       assert.equal(tx.logs[0].event, "SwapAndBurn");
       assert.equal(
-        tx.logs[0].args._amountSwaped.toString(),
+        tx.logs[0].args._amountSwapped.toString(),
         new web3.utils.BN(web3.utils.toWei("0.8"))
           .mul(
             new web3.utils.BN(
@@ -2522,7 +2522,7 @@ contract("HatVaults", (accounts) => {
           .div(new web3.utils.BN("10000"))
           .toString()
       );
-      assert.equal(tx.logs[1].event, "SwapBurnSend");
+      assert.equal(tx.logs[1].event, "SwapAndSend");
       assert.equal(tx.logs[1].args._amountReceived.toString(), "0");
       // Not real beneficiary should not get tokens
       let afterBountyBalance = (
