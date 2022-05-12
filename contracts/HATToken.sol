@@ -245,7 +245,7 @@ contract HATToken is IERC20 {
         bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "HAT::permit: invalid signature");
+        assert(signatory != address(0));
         require(signatory == owner, "HAT::permit: unauthorized");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "HAT::permit: signature expired");
@@ -322,7 +322,7 @@ contract HATToken is IERC20 {
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "HAT::delegateBySig: invalid signature");
+        assert(signatory != address(0));
         require(nonce == nonces[signatory]++, "HAT::delegateBySig: invalid nonce");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= expiry, "HAT::delegateBySig: signature expired");
@@ -485,7 +485,7 @@ contract HATToken is IERC20 {
 
     function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
         uint96 c = a + b;
-        require(c >= a, errorMessage);
+        assert(c >= a);
         return c;
     }
 
