@@ -529,10 +529,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
         user.shares = 0;
         user.rewardDebt = 0;
         uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
+        pool.balance -= factoredBalance;
         if (fee > 0) {
             pool.lpToken.safeTransfer(governance(), fee);
         }
-        pool.balance -= factoredBalance;
         pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
