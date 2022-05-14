@@ -1128,7 +1128,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     public
     view
     returns(ClaimBounty memory claimBounty) {
-              uint256 totalSupply = poolInfos[_pid].balance;
+        uint256 totalSupply = poolInfos[_pid].balance;
         require(totalSupply > 0, "HVE28");
         require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
         uint256 totalBountyAmount =
