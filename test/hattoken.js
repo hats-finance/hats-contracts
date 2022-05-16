@@ -282,13 +282,13 @@ contract('HATToken', accounts => {
         let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
         let firstBlockNumber = currentBlockNumber;
         //increment block number
-        utils.increaseTime(40);
+        await utils.increaseTime(40);
         currentVote = await token.getPriorVotes(accounts[1],currentBlockNumber);
         assert.equal(currentVote , 100);
         await token.burn(50,{ from: accounts[1]});
         currentBlockNumber = (await web3.eth.getBlock("latest")).number;
         //increment block number
-        utils.increaseTime(40);
+        await utils.increaseTime(40);
         currentVote = await token.getPriorVotes(accounts[1],currentBlockNumber);
         assert.equal(currentVote , 50);
 

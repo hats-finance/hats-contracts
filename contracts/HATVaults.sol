@@ -303,7 +303,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
     event DepositHATReward(uint256 indexed _amount);
     event ClaimReward(uint256 indexed _pid);
-    event UpdatePool(uint256 indexed _pid, uint256 indexed _rewardPerShare);
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
     event SetBountyLevelsDelay(uint256 indexed _delay);
@@ -407,7 +406,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
         pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
-        emit UpdatePool(_pid, pool.rewardPerShare);
     }
 
     /**
