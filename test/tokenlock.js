@@ -15,7 +15,8 @@ const setup = async function (
                               startsIn = 0,
                               endTime = 1000,
                               periods = 5,
-                              vestingCliffTime = 0
+                              vestingCliffTime = 0,
+                              releaseStartTime = 0
                             ) {
   stakingToken = await ERC20Mock.new("Staking","STK");
 
@@ -30,7 +31,7 @@ const setup = async function (
                                          currentBlockTimestamp+startsIn,
                                          currentBlockTimestamp+startsIn+ endTime,
                                          periods,
-                                         0,
+                                         releaseStartTime,
                                          vestingCliffTime,
                                          revocable,
                                          delegate
@@ -51,6 +52,203 @@ function assertVMException(error) {
 }
 
 contract('TokenLock',  accounts =>  {
+
+    it("initialize values", async () => {
+        await setup(accounts);
+        let newTokenLock = await HATTokenLock.new();
+        try {
+            await newTokenLock.initialize("0x0000000000000000000000000000000000000000",
+                                      await tokenLock.beneficiary(),
+                                      await tokenLock.token(),
+                                      10,
+                                      await tokenLock.startTime(),
+                                      await tokenLock.endTime(),
+                                      await tokenLock.periods(),
+                                      await tokenLock.releaseStartTime(),
+                                      await tokenLock.vestingCliffTime(),
+                                      await tokenLock.revocable(),
+                                      await tokenLock.canDelegate()
+                                      );
+            assert(false, 'cannot initialize with 0 owner');
+        } catch (ex) {
+          assertVMException(ex);
+        }
+
+        try {
+          await newTokenLock.initialize(await tokenLock.owner(),
+                                    "0x0000000000000000000000000000000000000000",
+                                    await tokenLock.token(),
+                                    10,
+                                    await tokenLock.startTime(),
+                                    await tokenLock.endTime(),
+                                    await tokenLock.periods(),
+                                    await tokenLock.releaseStartTime(),
+                                    await tokenLock.vestingCliffTime(),
+                                    await tokenLock.revocable(),
+                                    await tokenLock.canDelegate()
+                                    );
+          assert(false, 'cannot initialize with 0 beneficiary');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  "0x0000000000000000000000000000000000000000",
+                                  10,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with 0 token');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  0,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with 0 managed amount');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  0,
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with 0 start time');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  await tokenLock.endTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with end time < start time');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  0,
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with less than minimum periods');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  0,
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with revocability not set');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.vestingCliffTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with release start time > end time');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+        await newTokenLock.initialize(await tokenLock.owner(),
+                                  await tokenLock.token(),
+                                  await tokenLock.token(),
+                                  10,
+                                  await tokenLock.startTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.periods(),
+                                  await tokenLock.releaseStartTime(),
+                                  await tokenLock.endTime(),
+                                  await tokenLock.revocable(),
+                                  await tokenLock.canDelegate()
+                                  );
+        assert(false, 'cannot initialize with vesting cliff time > end time');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await newTokenLock.initialize(await tokenLock.owner(),
+                                    await tokenLock.beneficiary(),
+                                    await tokenLock.token(),
+                                    10,
+                                    await tokenLock.startTime(),
+                                    await tokenLock.endTime(),
+                                    await tokenLock.periods(),
+                                    await tokenLock.releaseStartTime(),
+                                    await tokenLock.vestingCliffTime(),
+                                    await tokenLock.revocable(),
+                                    await tokenLock.canDelegate()
+                                    );
+    });
 
     it("cannot initialize twice", async () => {
         await setup(accounts);
@@ -87,6 +285,17 @@ contract('TokenLock',  accounts =>  {
         assert.equal(tx.logs[0].args.amount.toString(),web3.utils.toWei("1"));
     });
 
+    it("cannot revoke after full amount is redeemable", async () => {
+      await setup(accounts);
+      await utils.increaseTime(1000);
+      try {
+          await tokenLock.revoke();
+          assert(false, 'cannot revoke after full amount is redeemable');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+  });
+
     it("sinceStartTime", async () => {
         await setup(accounts,1,false,100);
         assert.equal(await tokenLock.sinceStartTime(),0);
@@ -106,6 +315,17 @@ contract('TokenLock',  accounts =>  {
         } catch (ex) {
           assertVMException(ex);
         }
+    });
+
+    it("owner cannot be 0", async () => {
+      await setup(accounts);
+      try {
+        await tokenLock.transferOwnership("0x0000000000000000000000000000000000000000");
+        assert(false, 'owner cannot be 0');
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await tokenLock.transferOwnership(accounts[2]);
     });
 
     it("cannot revoke after renaunceOwnership revoke", async () => {
@@ -240,8 +460,17 @@ contract('TokenLock',  accounts =>  {
         await tokenLockFactory.setMasterCopy(accounts[1]);
     });
 
-    it("test single period for 1000 seconds", async () => {
+    it("test before release start time", async () => {
+      let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+      await setup(accounts,1,false,0,1000,1,0,currentTimeStamp + 999);
+      assert.equal(await tokenLock.releasableAmount(),0);
+      await setup(accounts,1,false,0,1000,1,currentTimeStamp + 999,0);
+      assert.equal(await tokenLock.releasableAmount(),0);
+      await utils.increaseTime(1000);
+      assert.equal(await tokenLock.releasableAmount(),web3.utils.toWei("1"));
+    });
 
+    it("test single period for 1000 seconds", async () => {
         await setup(accounts,1,false,0,1000,1);
         assert.equal(await tokenLock.releasableAmount(),0);
         await utils.increaseTime(900);
@@ -252,6 +481,34 @@ contract('TokenLock',  accounts =>  {
         await tokenLock.release({from:accounts[1]});
         assert.equal(await stakingToken.balanceOf(accounts[1]),web3.utils.toWei("1"));
     });
+
+    it("withdraw surplus", async () => {
+      await setup(accounts);
+      await stakingToken.mint(tokenLock.address,web3.utils.toWei("100"));
+      try {
+        await tokenLock.withdrawSurplus(1);
+        assert(false, "only beneficiary");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      try {
+        await tokenLock.withdrawSurplus(0, {from:accounts[1]});
+        assert(false, "amount must be greater than 0");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      try {
+        await tokenLock.withdrawSurplus(web3.utils.toWei("101"), {from:accounts[1]});
+        assert(false, "amount must be lower than or equal to available surplus");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      assert.equal(await stakingToken.balanceOf(accounts[1]),0);
+      await tokenLock.withdrawSurplus(web3.utils.toWei("100"), {from:accounts[1]});
+      assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("100"));
+
+    });
+
 
     it("sweep tokens", async () => {
       await setup(accounts);
