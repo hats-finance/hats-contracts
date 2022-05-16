@@ -294,8 +294,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
                             uint256 indexed _severity);
 
     event WithdrawRequest(uint256 indexed _pid,
-        address indexed _beneficiary,
-        uint256 indexed _withdrawEnableTime);
+                        address indexed _beneficiary,
+                        uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
