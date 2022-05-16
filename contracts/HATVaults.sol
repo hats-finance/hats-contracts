@@ -300,13 +300,13 @@ contract  HATVaults is Governable, ReentrancyGuard {
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
-    event RewardDepositors(uint256 indexed pid, uint256 indexed amount);
-    event DepositHATReward(uint256 indexed amount);
-    event ClaimReward(uint256 indexed pid);
-    event UpdatePool(uint256 indexed pid, uint256 indexed rewardPerShare);
-    event SetWithdrawRequestParams(uint256 indexed withdrawRequestPendingPeriod, uint256 indexed withdrawRequestEnablePeriod);
-    event DismissClaim(uint256 indexed pid);
-    event SetBountyLevelsDelay(uint256 indexed delay);
+    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+    event DepositHATReward(uint256 indexed _amount);
+    event ClaimReward(uint256 indexed _pid);
+    event UpdatePool(uint256 indexed _pid, uint256 indexed _rewardPerShare);
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+    event DismissClaim(uint256 indexed _pid);
+    event SetBountyLevelsDelay(uint256 indexed _delay);
 
    /**
    * @dev constructor -
