@@ -1268,7 +1268,7 @@ contract("HatVaults", (accounts) => {
       from: staker,
     });
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     assert.equal(tx.logs[1].args.amount.toString(), expectedReward.toString());
     assert.equal(tx.logs[1].args.user, staker);
@@ -1357,7 +1357,7 @@ contract("HatVaults", (accounts) => {
       from: staker,
     });
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     assert.equal(tx.logs[1].args.amount.toString(), expectedReward.toString());
     assert.equal(tx.logs[1].args.user, staker);
@@ -1750,7 +1750,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     let totalReward = tx.logs[1].args.amount;
 
@@ -1761,7 +1761,7 @@ contract("HatVaults", (accounts) => {
     stakerAmount = await hatVaults.getStakedAmount(0, staker2);
     tx = await safeWithdraw(0, stakerAmount, staker2);
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     totalReward = totalReward.add(tx.logs[1].args.amount);
     assert.equal(
@@ -1806,7 +1806,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     tx = await safeWithdraw(0, stakerAmount, staker);
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
@@ -1852,11 +1852,11 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     var tx = await safeWithdraw(0, web3.utils.toWei("1"), staker2);
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     assert.isFalse(tx.logs[1].args.amount.eq(0));
   }).timeout(40000);
@@ -1907,7 +1907,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
     assert.equal(tx.logs[0].event, "UpdatePool");
-    assert.equal(tx.logs[0].args.pid, 0);
+    assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[1].event, "SafeTransferReward");
     assert.isFalse(tx.logs[1].args.amount.eq(0));
     assert.equal(
@@ -3402,8 +3402,8 @@ contract("HatVaults", (accounts) => {
       from: rewarder,
     });
     assert.equal(tx.logs[0].event, "RewardDepositors");
-    assert.equal(tx.logs[0].args.pid, 0);
-    assert.equal(tx.logs[0].args.amount, web3.utils.toWei("3"));
+    assert.equal(tx.logs[0].args._pid, 0);
+    assert.equal(tx.logs[0].args._amount, web3.utils.toWei("3"));
     assert.equal((await hatVaults.poolInfos(0)).balance, web3.utils.toWei("6"));
     await stakingToken.mint(hatVaults.address, web3.utils.toWei("100"));
     assert.equal((await stakingToken.balanceOf(staker)).toString(), 0);
