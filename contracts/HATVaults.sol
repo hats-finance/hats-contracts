@@ -282,17 +282,20 @@ contract  HATVaults is Governable, ReentrancyGuard {
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
     event ApproveClaim(uint256 indexed _pid,
+                    address indexed _committee,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
                     ClaimBounty _claimBounty);
 
     event SubmitClaim(uint256 indexed _pid,
+                            address _committee,
                             address indexed _beneficiary,
                             uint256 indexed _severity);
 
     event WithdrawRequest(uint256 indexed _pid,
-                        uint256 indexed _withdrawEnableTime);
+        address indexed _beneficiary,
+        uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
@@ -529,7 +532,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit SubmitClaim(_pid, _beneficiary, _severity);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity);
     }
 
     /**
@@ -606,6 +609,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHat;
 
         emit ApproveClaim(_pid,
+                        msg.sender,
                         submittedClaim.beneficiary,
                         submittedClaim.severity,
                         tokenLock,
@@ -994,7 +998,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         // set the withdrawRequests time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         withdrawEnableStartTime[_pid][msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
-        emit WithdrawRequest(_pid, withdrawEnableStartTime[_pid][msg.sender]);
+        emit WithdrawRequest(_pid, msg.sender, withdrawEnableStartTime[_pid][msg.sender]);
     }
 
     /**
