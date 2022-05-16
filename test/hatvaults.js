@@ -904,7 +904,7 @@ contract("HatVaults", (accounts) => {
       7 * 24 * 3600
     );
     try {
-      var tx = await hatVaults.setWithdrawRequestParams(
+      await hatVaults.setWithdrawRequestParams(
         90 * 24 * 3600 + 1,
         7 * 24 * 3600
       );
@@ -3307,7 +3307,7 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.poolInfos(0)).lastRewardBlock,
       tx.receipt.blockNumber
     );
-    var tx = await hatVaults.claimReward(0, { from: staker });
+    await hatVaults.claimReward(0, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       await web3.utils.toWei("992.925").toString()
