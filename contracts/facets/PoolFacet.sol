@@ -2,7 +2,6 @@
 pragma solidity 0.8.6;
 
 import "../libraries/LibAppStorage.sol";
-import "../libraries/LibDiamond.sol";
 import "../libraries/LibVaults.sol";
 
 contract PoolFacet is Modifiers {

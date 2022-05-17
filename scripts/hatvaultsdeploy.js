@@ -19,7 +19,6 @@ async function main(
   }
 
   const diamond = require("./diamond-util.js");
-  let totalGasUsed = ethers.BigNumber.from("0");
 
   // ethers is avaialble in the global scope
   const [deployer] = await ethers.getSigners();
@@ -70,7 +69,6 @@ async function main(
       if (!silent) {
         console.log(`${facet} deploy gas used:` + strDisplay(receipt.gasUsed));
       }
-      totalGasUsed = totalGasUsed.add(receipt.gasUsed);
       instances.push(facetInstance);
     }
     return instances;
