@@ -13,6 +13,7 @@ contract ParamsFacet is Modifiers {
     event SetClaimFee(uint256 _fee);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
@@ -128,7 +129,7 @@ contract ParamsFacet is Modifiers {
     }
 
     function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
-        whitelistedRouters[_router] = _isWhitelisted;
+        s.whitelistedRouters[_router] = _isWhitelisted;
         emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 }

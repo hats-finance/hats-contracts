@@ -108,6 +108,12 @@ interface IHATDiamond {
     function committees(uint256 _pid) external view returns(address _committee);
 
     function withdrawEnableStartTime(uint256 _pid, address _user) external view returns(uint256 _requestTime);
+
+    function swapAndBurns(uint256 _pid) external view returns(uint256 _amount);
+    
+    function hackersHatRewards(address _hackerAddress, uint256 _pid) external view returns(uint256 _amount);
+
+    function governanceHatRewards(uint256 _pid) external view returns(uint256 _amount);
     
     function feeSetter() external view returns(address _feeSetter);
     

@@ -22,7 +22,8 @@ contract SwapFacet is Modifiers {
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _amountOutMinimum minimum output of HATs at swap
-    * @param _fees the fees for the multi path swap
+    * @param _routingContract routing contract to call for the swap
+    * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,

@@ -21,7 +21,7 @@ contract HATDiamond {
         uint256 _rewardPerBlock;
         uint256 _startRewardingBlock;
         uint256 _multiplierPeriod;
-        address[] _whitelistedRouters,
+        address[] _whitelistedRouters;
         ITokenLockFactory _tokenLockFactory;
     }
 
@@ -45,8 +45,8 @@ contract HATDiamond {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
-            whitelistedRouters[_whitelistedRouters[i]] = true;
+        for (uint256 i = 0; i < _args._whitelistedRouters.length; i++) {
+            s.whitelistedRouters[_args._whitelistedRouters[i]] = true;
         }
         s.rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
                                 5353, 4724, 4169, 3679, 3247, 2865,

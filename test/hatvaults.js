@@ -2400,7 +2400,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "only governance");
+      assertVMException(ex, "LibDiamond: Must be contract owner");
     }
 
     let tx = await hatVaults.setRouterWhitelistStatus(router.address, false, {

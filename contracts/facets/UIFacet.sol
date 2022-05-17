@@ -34,6 +34,18 @@ contract UIFacet {
         return s.withdrawEnableStartTime[_pid][_user];
     }
 
+    function swapAndBurns(uint256 _pid) external view returns(uint256 _amount) {
+        return s.swapAndBurns[_pid];
+    }
+
+    function hackersHatRewards(address _hackerAddress, uint256 _pid) external view returns(uint256 _amount) {
+        return s.hackersHatRewards[_hackerAddress][_pid];
+    }
+
+    function governanceHatRewards(uint256 _pid) external view returns(uint256 _amount) {
+        return s.governanceHatRewards[_pid];
+    }
+
     function feeSetter() external view returns(address _feeSetter) {
         return s.feeSetter;
     }

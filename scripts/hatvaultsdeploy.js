@@ -5,7 +5,7 @@ async function main(
     rewardPerBlock = "16185644800000000",
     startBlock = null,
     multiplierPeriod = "195200",
-    uniSwapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    whitelistedRouters = ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
     tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3",
     silent = false
   ) {
@@ -121,7 +121,7 @@ async function main(
       rewardPerBlock,
       startBlock,
       multiplierPeriod,
-      [uniSwapRouter],
+      whitelistedRouters,
       tokenLockFactory
     ],
     silent: silent
