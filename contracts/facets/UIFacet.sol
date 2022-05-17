@@ -38,8 +38,8 @@ contract UIFacet {
         return s.feeSetter;
     }
 
-    function uniSwapRouter() external view returns(ISwapRouter _uniSwapRouter) {
-        return s.uniSwapRouter;
+    function whitelistedRouters(address _router) external view returns(bool _isWhitelisted) {
+        return s.whitelistedRouters[_router];
     }
 
     function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {

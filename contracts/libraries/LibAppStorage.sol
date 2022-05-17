@@ -4,7 +4,6 @@ pragma solidity 0.8.6;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
-import "../interfaces/ISwapRouter.sol";
 import "../libraries/LibDiamond.sol";
 
 uint256 constant MULTIPLIERS_LENGTH = 24;
@@ -141,6 +140,8 @@ struct AppStorage {
 
     uint256 hatRewardAvailable;
 
+    mapping(address=>bool) whitelistedRouters;
+
     // pid -> committee address
     mapping(uint256=>address) committees;
     // pid -> amount
@@ -164,7 +165,6 @@ struct AppStorage {
     address feeSetter;
 
     ITokenLockFactory tokenLockFactory;
-    ISwapRouter uniSwapRouter;
 }
 
 library LibAppStorage {

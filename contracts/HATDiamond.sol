@@ -21,7 +21,7 @@ contract HATDiamond {
         uint256 _rewardPerBlock;
         uint256 _startRewardingBlock;
         uint256 _multiplierPeriod;
-        ISwapRouter _uniSwapRouter;
+        address[] _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory;
     }
 
@@ -34,7 +34,6 @@ contract HATDiamond {
         s.START_BLOCK = _args._startRewardingBlock;
         s.MULTIPLIER_PERIOD = _args._multiplierPeriod;
 
-        s.uniSwapRouter = _args._uniSwapRouter;
         s.tokenLockFactory = _args._tokenLockFactory;
         s.generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -46,6 +45,9 @@ contract HATDiamond {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
+        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
+            whitelistedRouters[_whitelistedRouters[i]] = true;
+        }
         s.rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
                                 5353, 4724, 4169, 3679, 3247, 2865,
                                 2528, 2231, 1969, 1738, 1534, 1353,

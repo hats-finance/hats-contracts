@@ -110,8 +110,8 @@ interface IHATDiamond {
     function withdrawEnableStartTime(uint256 _pid, address _user) external view returns(uint256 _requestTime);
     
     function feeSetter() external view returns(address _feeSetter);
-
-    function uniSwapRouter() external view returns(ISwapRouter _uniSwapRouter);
+    
+    function whitelistedRouters(address _router) external view returns(bool _isWhitelisted);
 
     function transferOwnership(address _newOwner) external;
 
@@ -147,6 +147,8 @@ interface IHATDiamond {
     function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external;
 
     function setClaimFee(uint256 _fee) external;
+
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external;
 
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external;
 
@@ -191,7 +193,8 @@ interface IHATDiamond {
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external;
 
     function withdrawRequest(uint256 _pid) external;

@@ -126,4 +126,9 @@ contract ParamsFacet is Modifiers {
         s.poolInfos[_pid].fee = _newFee;
         emit SetPoolFee(_pid, _newFee);
     }
+
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
+        whitelistedRouters[_router] = _isWhitelisted;
+        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
+    }
 }

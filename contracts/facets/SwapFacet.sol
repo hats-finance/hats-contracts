@@ -27,10 +27,11 @@ contract SwapFacet is Modifiers {
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external
     onlyOwner {
-        IERC20 token = s.poolInfos[_pid].lpToken;
+        require(s.whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = s.swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = s.hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + s.governanceHatRewards[_pid];
@@ -38,7 +39,7 @@ contract SwapFacet is Modifiers {
         s.swapAndBurns[_pid] = 0;
         s.governanceHatRewards[_pid] = 0;
         s.hackersHatRewards[_beneficiary][_pid] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
+        uint256 hatsReceived = swapTokenForHAT(amount, s.poolInfos[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
             s.HAT.burn(burntHats);
@@ -71,32 +72,22 @@ contract SwapFacet is Modifiers {
 
     function swapTokenForHAT(uint256 _amount,
                             IERC20 _token,
-                            uint24[2] memory _fees,
-                            uint256 _amountOutMinimum)
+                            uint256 _amountOutMinimum,
+                            address _routingContract,
+                            bytes calldata _routingPayload)
     internal
     returns (uint256 hatsReceived)
     {
         if (address(_token) == address(s.HAT)) {
             return _amount;
         }
-        require(_token.approve(address(s.uniSwapRouter), _amount), "HVE31");
+
+        require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 hatBalanceBefore = s.HAT.balanceOf(address(this));
-        address weth = s.uniSwapRouter.WETH9();
-        bytes memory path;
-        if (address(_token) == weth) {
-            path = abi.encodePacked(address(_token), _fees[0], address(s.HAT));
-        } else {
-            path = abi.encodePacked(address(_token), _fees[0], weth, _fees[1], address(s.HAT));
-        }
-        hatsReceived = s.uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
-            path: path,
-            recipient: address(this),
-            // solhint-disable-next-line not-rely-on-time
-            deadline: block.timestamp,
-            amountIn: _amount,
-            amountOutMinimum: _amountOutMinimum
-        }));
-        require(s.HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(s.uniSwapRouter), 0), "HVE37");
+        (bool success,) = _routingContract.call(_routingPayload);
+        require(success, "HVE43");
+        hatsReceived = s.HAT.balanceOf(address(this)) - hatBalanceBefore;
+        require(hatsReceived >= _amountOutMinimum, "HVE32");
+        require(_token.approve(address(_routingContract), 0), "HVE37");
     }
 }
