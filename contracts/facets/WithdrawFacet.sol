@@ -27,26 +27,26 @@ contract WithdrawFacet is Modifiers {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
         PoolInfo storage pool = s.poolInfos[_pid];
         UserInfo storage user = s.userInfo[_pid][msg.sender];
-        require(user.shares >= _amount, "HVE41");
+        require(user.shares >= _shares, "HVE41");
 
         LibVaults.updatePool(_pid);
         uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
         if (pending > 0) {
             LibVaults.safeTransferReward(msg.sender, pending, _pid);
         }
-        if (_amount > 0) {
-            user.shares -= _amount;
-            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
+        if (_shares > 0) {
+            user.shares -= _shares;
+            uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
             pool.balance -= amountToWithdraw;
             if (fee > 0) {
                 pool.lpToken.safeTransfer(LibDiamond.contractOwner(), fee);
             }
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalShares -= _amount;
+            pool.totalShares -= _shares;
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Withdraw(msg.sender, _pid, _amount);
+        emit Withdraw(msg.sender, _pid, _shares);
     }
 
     /**

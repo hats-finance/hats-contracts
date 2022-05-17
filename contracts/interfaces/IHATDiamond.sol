@@ -43,8 +43,8 @@ interface IHATDiamond {
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
-    event ClaimApproved(address indexed _committee,
-                    uint256 indexed _pid,
+    event ApproveClaim(uint256 indexed _pid,
+                    address indexed _committee,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
