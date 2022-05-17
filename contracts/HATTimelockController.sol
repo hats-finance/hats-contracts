@@ -67,14 +67,16 @@ contract HATTimelockController is TimelockController {
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.swapBurnSend(
             _pid,
             _beneficiary,
             _amountOutMinimum,
-            _fees
+            _routingContract,
+            _routingPayload
         );
     }
 }
