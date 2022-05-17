@@ -82,7 +82,6 @@ async function main(
     ownershipFacet,
     paramsFacet,
     poolFacet,
-    rewardFacet,
     swapFacet,
     uiFacet,
     withdrawFacet
@@ -95,7 +94,6 @@ async function main(
     "OwnershipFacet",
     "ParamsFacet",
     "PoolFacet",
-    "RewardFacet",
     "SwapFacet",
     "UIFacet",
     "WithdrawFacet"
@@ -113,7 +111,6 @@ async function main(
       ["OwnershipFacet", ownershipFacet],
       ["ParamsFacet", paramsFacet],
       ["PoolFacet", poolFacet],
-      ["RewardFacet", rewardFacet],
       ["SwapFacet", swapFacet],
       ["UIFacet", uiFacet],
       ["WithdrawFacet", withdrawFacet]
