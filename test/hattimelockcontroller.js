@@ -107,10 +107,10 @@ contract("HatVaults", (accounts) => {
 
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    let lastRewardBlock = (await hatVaults.poolInfo(0)).lastRewardBlock;
-    let allocPoint = (await hatVaults.poolInfo(0)).allocPoint;
+    let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
+    let allocPoint = (await hatVaults.poolInfos(0)).allocPoint;
     let rewardPerShare = new web3.utils.BN(
-      (await hatVaults.poolInfo(0)).rewardPerShare
+      (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
     let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;

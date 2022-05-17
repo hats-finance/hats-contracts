@@ -2,7 +2,7 @@ const { network } = require("hardhat");
 const fs = require("fs");
 const CONFIG = require("./addresses.js");
 const HATVaults = JSON.parse(
-    fs.readFileSync(__dirname + "/hatvaultsv1.json", {
+    fs.readFileSync(__dirname + "/hatvaultsv1ABI.json", {
         encoding: "utf8",
         flag: "r",
     })
@@ -43,7 +43,7 @@ async function main(config) {
     console.log(snapshot);
 
     for (let i = 0; i < poolsCount; i++) {
-        let rewardPerShare = (await hatVaults.poolInfo(i)).rewardPerShare.toString();
+        let rewardPerShare = (await hatVaults.poolInfos(i)).rewardPerShare.toString();
         console.log(`
 setShares(
 ${i},
