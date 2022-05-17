@@ -298,7 +298,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args.newOwner,accounts[1]);
 
     assert.equal(await hatVaults.owner(), accounts[1]);
-})
+  });
 
   it("setCommitte", async () => {
     await setup(accounts);
