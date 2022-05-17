@@ -5,7 +5,7 @@ module.exports = {
    invert: true,               // Run the grep's inverse set.
    timeout: 100000,
  },
-  skipFiles: ['test/', 'mocks/'],
+  skipFiles: ['test/', 'mocks/', 'facets/DiamondCutFacet.sol', 'facets/DiamondLoupeFacet.sol', 'libraries/LibDiamond.sol'],
   providerOptions: {
     accounts: [
        {

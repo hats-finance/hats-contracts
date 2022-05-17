@@ -5,7 +5,9 @@ const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
+const ReentrancyCheckMock = artifacts.require("./ReentrancyCheckMock.sol");
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { deployHatDiamondMock } = require("../scripts/hatdiamondmockdeploy.js");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
@@ -237,7 +239,64 @@ contract("HatVaults", (accounts) => {
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaults.owner(), accounts[0]);
+    assert.equal(await hatVaults.HAT(), hatToken.address);
   });
+
+  it("Non reentrant check", async () => {
+    await setup(accounts);
+    let hatVaultsMock = await ReentrancyCheckMock.at((await deployHatDiamondMock(
+      accounts[0],
+      hatToken.address,
+      web3.utils.toWei(REWARD_PER_BLOCK),
+      0,
+      10,
+      [router.address],
+      tokenLockFactory.address,
+      true
+    )).address);
+
+    try {
+      await hatVaultsMock.noReentrancy();
+      assert(false, 'call to non existing function should revert');
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+  });
+
+  it("Diamond can't call non existing function", async () => {
+    await setup(accounts);
+    try {
+      await (await HATTokenMock.at(hatVaults.address)).governance();
+      assert(false, 'call to non existing function should revert');
+    } catch (ex) {
+      assertVMException(ex, "Diamond: Function does not exist");
+    }
+  });
+
+  it("ownership", async () => {
+    await setup(accounts);
+    assert.equal(await hatVaults.owner(), accounts[0]);
+
+    try {
+      await hatVaults.transferOwnership(accounts[1],{from: accounts[1]});
+      assert(false, 'only gov can transfer gov');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    try {
+      await hatVaults.transferOwnership(utils.NULL_ADDRESS,{from: accounts[0]});
+      assert(false, 'gov cannot be zero');
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    tx = await hatVaults.transferOwnership(accounts[1], {from: accounts[0]});
+    assert.equal(tx.logs[0].event,"OwnershipTransferred");
+    assert.equal(tx.logs[0].args.previousOwner,accounts[0]);
+    assert.equal(tx.logs[0].args.newOwner,accounts[1]);
+
+    assert.equal(await hatVaults.owner(), accounts[1]);
+})
 
   it("setCommitte", async () => {
     await setup(accounts);
@@ -2410,6 +2469,8 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
     assert.equal(tx.logs[0].args._router, router.address);
     assert.equal(tx.logs[0].args._status, false);
+    
+    assert.equal(await hatVaults.whitelistedRouters(router.address), false);
 
     try {
       await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
@@ -2427,6 +2488,8 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
     assert.equal(tx.logs[0].args._router, router.address);
     assert.equal(tx.logs[0].args._status, true);
+
+    assert.equal(await hatVaults.whitelistedRouters(router.address), true);
 
     tx = await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
       from: accounts[0],

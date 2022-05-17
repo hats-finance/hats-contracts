@@ -195,7 +195,7 @@ contract HATToken is IERC20 {
         require(spender != address(0), "HAT: increaseAllowance to the zero address");
         uint96 valueToAdd = safe96(addedValue, "HAT::increaseAllowance: addedValue exceeds 96 bits");
         allowances[msg.sender][spender] =
-        add96(allowances[msg.sender][spender], valueToAdd, "HAT::increaseAllowance: overflows");
+        add96(allowances[msg.sender][spender], valueToAdd);
         emit Approval(msg.sender, spender, allowances[msg.sender][spender]);
         return true;
     }
@@ -394,7 +394,7 @@ contract HATToken is IERC20 {
         totalSupply = safe96(SafeMath.add(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
 
         // transfer the amount to the recipient
-        balances[dst] = add96(balances[dst], amount, "HAT::mint: transfer amount overflows");
+        balances[dst] = add96(balances[dst], amount);
         emit Transfer(address(0), dst, amount);
 
         // move delegates
@@ -436,7 +436,7 @@ contract HATToken is IERC20 {
         require(dst != address(0), "HAT::_transferTokens: cannot transfer to the zero address");
 
         balances[src] = sub96(balances[src], amount, "HAT::_transferTokens: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "HAT::_transferTokens: transfer amount overflows");
+        balances[dst] = add96(balances[dst], amount);
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
@@ -454,7 +454,7 @@ contract HATToken is IERC20 {
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, "HAT::_moveVotes: vote amount overflows");
+                uint96 dstRepNew = add96(dstRepOld, amount);
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -483,7 +483,7 @@ contract HATToken is IERC20 {
         return uint96(n);
     }
 
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function add96(uint96 a, uint96 b) internal pure returns (uint96) {
         uint96 c = a + b;
         assert(c >= a);
         return c;

@@ -87,7 +87,7 @@ function assertVMException(error) {
   );
 }
 
-contract("HatVaults", (accounts) => {
+contract("HATTimelockController", (accounts) => {
   async function advanceToSaftyPeriod() {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
     let withdrawPeriod = parseInt((
