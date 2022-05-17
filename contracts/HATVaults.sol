@@ -57,6 +57,9 @@ import "./interfaces/ISwapRouter.sol";
 // HVE40: Committee not checked in yet
 // HVE41: Not enough user balance
 // HVE42: User shares must be greater than 0
+// HVE43: Swap was not successful
+// HVE44: Routing contract must be whitelisted
+
 
 /// @title Manage all Hats.finance vaults
 contract  HATVaults is Governable, ReentrancyGuard {
@@ -108,11 +111,12 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
         uint256 totalShares;
-        //index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
+        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
         uint256 lastProcessedTotalAllocPoint;
         // total amount of LP tokens in pool
         uint256 balance;
-        uint256 fee;
+        // fee to take from withdrawals to governance
+        uint256 withdrawalFee;
     }
 
     // Info of each pool's bounty policy.
@@ -212,12 +216,13 @@ contract  HATVaults is Governable, ReentrancyGuard {
     
     mapping(uint256 => bool) public poolInitialized;   
 
+    mapping(address=>bool) public whitelistedRouters;
+
     GeneralParameters public generalParameters;
 
     address public feeSetter;
 
     ITokenLockFactory public immutable tokenLockFactory;
-    ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
@@ -246,9 +251,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
     event CommitteeCheckedIn(uint256 indexed _pid);
@@ -263,47 +268,51 @@ contract  HATVaults is Governable, ReentrancyGuard {
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
 
-    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
+    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
     event SetBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels);
     event SetFeeSetter(address indexed _newFeeSetter);
-    event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
+    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
     event SetPendingBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
-                    uint256 indexed _amountSwaped,
+                    uint256 indexed _amountSwapped,
                     uint256 _amountReceived,
                     address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwapped, uint256 indexed _amountBurned);
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
-    event ClaimApproved(address indexed _committee,
-                    uint256 indexed _pid,
+    event ApproveClaim(uint256 indexed _pid,
+                    address indexed _committee,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
                     ClaimBounty _claimBounty);
 
-    event ClaimSubmitted(uint256 indexed _pid,
+    event SubmitClaim(uint256 indexed _pid,
+                            address _committee,
                             address indexed _beneficiary,
-                            uint256 indexed _severity,
-                            address _committee);
+                            uint256 indexed _severity);
 
     event WithdrawRequest(uint256 indexed _pid,
                         address indexed _beneficiary,
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
-    
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
-    
     event SetClaimFee(uint256 _fee);
-
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+    event DepositHATReward(uint256 indexed _amount);
+    event ClaimReward(uint256 indexed _pid);
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+    event DismissClaim(uint256 indexed _pid);
+    event SetBountyLevelsDelay(uint256 indexed _delay);
+
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
    /**
    * @dev constructor -
@@ -315,8 +324,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @param _hatGovernance The governance address.
    *        Some of the contracts functions are limited only to governance:
    *         addPool, setPool, dismissClaim, approveClaim,
-   *         setHatVestingParams, setVestingParams, setBountySplit
-   * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
+   *         setHatVestingParams, setVestingParams, setRewardsSplit
+   * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
+
    * @param _tokenLockFactory Address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
    */
@@ -326,7 +336,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256 _startRewardingBlock,
         uint256 _multiplierPeriod,
         address _hatGovernance,
-        ISwapRouter _uniSwapRouter,
+        address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) {
@@ -336,7 +346,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
         MULTIPLIER_PERIOD = _multiplierPeriod;
 
         Governable.initialize(_hatGovernance);
-        uniSwapRouter = _uniSwapRouter;
+        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
+            whitelistedRouters[_whitelistedRouters[i]] = true;
+        }
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -355,6 +367,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function depositHATReward(uint256 _amount) external {
         hatRewardAvailable += _amount;
         HAT.transferFrom(address(msg.sender), address(this), _amount);
+        emit DepositHATReward(_amount);
+
     }
 
     /**
@@ -363,6 +377,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
      */
     function claimReward(uint256 _pid) external {
         _deposit(_pid, 0);
+        emit ClaimReward(_pid);
     }
 
     /**
@@ -468,79 +483,18 @@ contract  HATVaults is Governable, ReentrancyGuard {
             pool.totalShares += userShares;
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Deposit(msg.sender, _pid, _amount);
-    }
-
-    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
-        PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares >= _amount, "HVE41");
-
-        updatePool(_pid);
-        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-        if (pending > 0) {
-            safeTransferReward(msg.sender, pending, _pid);
-        }
-        if (_amount > 0) {
-            user.shares -= _amount;
-            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
-            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
-            pool.balance -= amountToWithdraw;
-            if (fee > 0) {
-                pool.lpToken.safeTransfer(governance(), fee);
-            }
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalShares -= _amount;
-        }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Withdraw(msg.sender, _pid, _amount);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function _emergencyWithdraw(uint256 _pid) internal {
-        PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.shares > 0, "HVE42");
-        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
-        pool.totalShares -= user.shares;
-        user.shares = 0;
-        user.rewardDebt = 0;
-        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
-        if (fee > 0) {
-            pool.lpToken.safeTransfer(governance(), fee);
-        }
-        pool.balance -= factoredBalance;
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
-        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
-    }
+    }        
 
 
-    function set(uint256 _pid, uint256 _allocPoint) internal {
-        updatePool(_pid);
-        uint256 totalAllocPoint =
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        - poolInfos[_pid].allocPoint + _allocPoint;
 
-        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-           //already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-        poolInfos[_pid].allocPoint = _allocPoint;
-    }
-
-    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
+    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         if (_amount > hatRewardAvailable) { 
             _amount = hatRewardAvailable; 
         }
         hatRewardAvailable = hatRewardAvailable - _amount;
         HAT.transfer(_to, _amount);
-        emit SendReward(_to, _pid, _amount, _amount);
+        emit SafeTransferReward(_to, _pid, _amount, _amount);
     }
 
 
@@ -572,7 +526,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit ClaimSubmitted(_pid, _beneficiary, _severity, msg.sender);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity);
     }
 
     /**
@@ -587,6 +541,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         require(6 hours <= _withdrawRequestEnablePeriod, "HVE08");
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
+        emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
     }
 
   /**
@@ -598,6 +553,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         // solhint-disable-next-line not-rely-on-time
         require(msg.sender == governance() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
         delete submittedClaims[_pid];
+        emit DismissClaim(_pid);
     }
     
   /**
@@ -646,8 +602,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
         governanceHatRewards[_pid] += claimBounty.governanceHat;
         hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHat;
 
-        emit ClaimApproved(msg.sender,
-                        _pid,
+        emit ApproveClaim(_pid,
+                        msg.sender,
                         submittedClaim.beneficiary,
                         submittedClaim.severity,
                         tokenLock,
@@ -679,7 +635,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     /**
-     * @dev setClaimFee - called by hats governance to set claim fee
+     * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
     function setClaimFee(uint256 _fee) external onlyGovernance {
@@ -742,12 +698,11 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     /**
-   * @dev setBountySplit - set the pool token bounty split upon an approval
-   * the function can be called only by governance.
-   * the sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
+   * @dev Set the pool token bounty split upon an approval
+   * The function can be called only by governance.
+   * The sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
    * @param _pid The pool id
    * @param _bountySplit The bounty split
-   * and sent to the hacker(claim reported)
  */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
@@ -766,6 +721,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     onlyGovernance {
         require(_delay >= 2 days, "HVE18");
         generalParameters.setBountyLevelsDelay = _delay;
+        emit SetBountyLevelsDelay(_delay);
     }
 
     /**
@@ -891,7 +847,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             totalShares: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
             balance: 0,
-            fee: 0
+            withdrawalFee: 0
         }));
    
         uint256 poolId = poolInfos.length-1;
@@ -928,21 +884,35 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @dev setPool
    * @param _pid the pool id
    * @param _allocPoint the pool allocation point
-   * @param _registered does this pool is registered (default true).
+   * @param _visible is this pool visible in the UI
    * @param _depositPause pause pool deposit (default false).
    * This parameter can be used by the UI to include or exclude the pool
    * @param _descriptionHash the hash of the pool description.
  */
     function setPool(uint256 _pid,
                     uint256 _allocPoint,
-                    bool _registered,
+                    bool _visible,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyGovernance {
         require(poolInfos.length > _pid, "HVE23");
-        set(_pid, _allocPoint);
+        updatePool(_pid);
+        uint256 totalAllocPoint =
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
+        - poolInfos[_pid].allocPoint + _allocPoint;
+
+        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+           //already updated in this block
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalPoolUpdates.push(PoolUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+        poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
-        emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
+        emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyGovernance {
@@ -979,10 +949,15 @@ contract  HATVaults is Governable, ReentrancyGuard {
         emit SetFeeSetter(_newFeeSetter);
     }
 
-    function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
+    function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
         require(_newFee <= MAX_FEE, "HVE36");
-        poolInfos[_pid].fee = _newFee;
-        emit SetPoolFee(_pid, _newFee);
+        poolInfos[_pid].withdrawalFee = _newFee;
+        emit SetPoolWithdrawalFee(_pid, _newFee);
+    }
+
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyGovernance {
+        whitelistedRouters[_router] = _isWhitelisted;
+        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 
     /**
@@ -993,15 +968,17 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _amountOutMinimum minimum output of HATs at swap
-    * @param _fees the fees for the multi path swap
+    * @param _routingContract routing contract to call for the swap
+    * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external
     onlyGovernance {
-        IERC20 token = poolInfos[_pid].lpToken;
+        require(whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
@@ -1009,7 +986,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         swapAndBurns[_pid] = 0;
         governanceHatRewards[_pid] = 0;
         hackersHatRewards[_beneficiary][_pid] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
+        uint256 hatsReceived = swapTokenForHAT(amount, poolInfos[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -1069,6 +1046,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
+        emit Deposit(msg.sender, _pid, _amount);
     }
 
     /**
@@ -1080,9 +1058,30 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _pid The pool id
     * @param _shares Amount of shares user wants to withdraw
     **/
-    function withdraw(uint256 _pid, uint256 _shares) external {
+    function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _withdraw(_pid, _shares);
+        PoolInfo storage pool = poolInfos[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares >= _shares, "HVE41");
+
+        updatePool(_pid);
+        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+        if (pending > 0) {
+            safeTransferReward(msg.sender, pending, _pid);
+        }
+        if (_shares > 0) {
+            user.shares -= _shares;
+            uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
+            uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
+            pool.balance -= amountToWithdraw;
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(governance(), fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
+            pool.totalShares -= _shares;
+        }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        emit Withdraw(msg.sender, _pid, _shares);
     }
 
     /**
@@ -1095,7 +1094,20 @@ contract  HATVaults is Governable, ReentrancyGuard {
     **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _emergencyWithdraw(_pid);
+        PoolInfo storage pool = poolInfos[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.shares > 0, "HVE42");
+        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        pool.totalShares -= user.shares;
+        user.shares = 0;
+        user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.withdrawalFee / HUNDRED_PERCENT;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(governance(), fee);
+        }
+        pool.balance -= factoredBalance;
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
     // GET INFO for UI
@@ -1120,7 +1132,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         return globalPoolUpdates.length;
     }
 
-    function poolLength() external view returns (uint256) {
+    function getNumberOfPools() external view returns (uint256) {
         return poolInfos.length;
     }
 
@@ -1192,33 +1204,23 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function swapTokenForHAT(uint256 _amount,
                             IERC20 _token,
-                            uint24[2] memory _fees,
-                            uint256 _amountOutMinimum)
+                            uint256 _amountOutMinimum,
+                            address _routingContract,
+                            bytes calldata _routingPayload)
     internal
     returns (uint256 hatsReceived)
     {
         if (address(_token) == address(HAT)) {
             return _amount;
         }
-        require(_token.approve(address(uniSwapRouter), _amount), "HVE31");
+
+        require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        address weth = uniSwapRouter.WETH9();
-        bytes memory path;
-        if (address(_token) == weth) {
-            path = abi.encodePacked(address(_token), _fees[0], address(HAT));
-        } else {
-            path = abi.encodePacked(address(_token), _fees[0], weth, _fees[1], address(HAT));
-        }
-        hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
-            path: path,
-            recipient: address(this),
-            // solhint-disable-next-line not-rely-on-time
-            deadline: block.timestamp,
-            amountIn: _amount,
-            amountOutMinimum: _amountOutMinimum
-        }));
-        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(uniSwapRouter), 0), "HVE37");
+        (bool success,) = _routingContract.call(_routingPayload);
+        require(success, "HVE43");
+        hatsReceived = HAT.balanceOf(address(this)) - hatBalanceBefore;
+        require(hatsReceived >= _amountOutMinimum, "HVE32");
+        require(_token.approve(address(_routingContract), 0), "HVE37");
     }
 
     /**
