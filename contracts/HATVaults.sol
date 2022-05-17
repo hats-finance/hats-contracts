@@ -57,6 +57,9 @@ import "./interfaces/ISwapRouter.sol";
 // HVE40: Committee not checked in yet
 // HVE41: Not enough user balance
 // HVE42: User shares must be greater than 0
+// HVE43: Swap was not successful
+// HVE44: Routing contract must be whitelisted
+
 
 /// @title Manage all Hats.finance vaults
 contract  HATVaults is Governable, ReentrancyGuard {
@@ -211,12 +214,13 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     mapping(uint256 => bool) public poolDepositPause;
 
+    mapping(address=>bool) public whitelistedRouters;
+
     GeneralParameters public generalParameters;
 
     address public feeSetter;
 
     ITokenLockFactory public immutable tokenLockFactory;
-    ISwapRouter public immutable uniSwapRouter;
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
@@ -307,6 +311,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
     event DismissClaim(uint256 indexed _pid);
     event SetBountyLevelsDelay(uint256 indexed _delay);
 
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+
    /**
    * @dev constructor -
    * @param _rewardsToken The reward token address (HAT)
@@ -317,8 +323,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @param _hatGovernance The governance address.
    *        Some of the contracts functions are limited only to governance:
    *         addPool, setPool, dismissClaim, approveClaim,
-   *         setHatVestingParams, setVestingParams, setBountySplit
-   * @param _uniSwapRouter uni swap v3 router to be used to swap tokens for HAT token.
+   *         setHatVestingParams, setVestingParams, setRewardsSplit
+   * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
+
    * @param _tokenLockFactory Address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
    */
@@ -328,7 +335,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256 _startRewardingBlock,
         uint256 _multiplierPeriod,
         address _hatGovernance,
-        ISwapRouter _uniSwapRouter,
+        address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) {
@@ -338,7 +345,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
         MULTIPLIER_PERIOD = _multiplierPeriod;
 
         Governable.initialize(_hatGovernance);
-        uniSwapRouter = _uniSwapRouter;
+        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
+            whitelistedRouters[_whitelistedRouters[i]] = true;
+        }
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -489,6 +498,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
     }        
+
 
 
     // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
@@ -926,6 +936,11 @@ contract  HATVaults is Governable, ReentrancyGuard {
         emit SetPoolWithdrawalFee(_pid, _newFee);
     }
 
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyGovernance {
+        whitelistedRouters[_router] = _isWhitelisted;
+        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
+    }
+
     /**
     * @dev Swap pool's token to HAT.
     * Send to beneficiary and governance their HATs rewards.
@@ -934,15 +949,17 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _amountOutMinimum minimum output of HATs at swap
-    * @param _fees the fees for the multi path swap
+    * @param _routingContract routing contract to call for the swap
+    * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external
     onlyGovernance {
-        IERC20 token = poolInfos[_pid].lpToken;
+        require(whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
@@ -950,7 +967,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         swapAndBurns[_pid] = 0;
         governanceHatRewards[_pid] = 0;
         hackersHatRewards[_beneficiary][_pid] = 0;
-        uint256 hatsReceived = swapTokenForHAT(amount, token, _fees, _amountOutMinimum);
+        uint256 hatsReceived = swapTokenForHAT(amount, poolInfos[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
             HAT.burn(burntHats);
@@ -1194,33 +1211,23 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function swapTokenForHAT(uint256 _amount,
                             IERC20 _token,
-                            uint24[2] memory _fees,
-                            uint256 _amountOutMinimum)
+                            uint256 _amountOutMinimum,
+                            address _routingContract,
+                            bytes calldata _routingPayload)
     internal
     returns (uint256 hatsReceived)
     {
         if (address(_token) == address(HAT)) {
             return _amount;
         }
-        require(_token.approve(address(uniSwapRouter), _amount), "HVE31");
+
+        require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
-        address weth = uniSwapRouter.WETH9();
-        bytes memory path;
-        if (address(_token) == weth) {
-            path = abi.encodePacked(address(_token), _fees[0], address(HAT));
-        } else {
-            path = abi.encodePacked(address(_token), _fees[0], weth, _fees[1], address(HAT));
-        }
-        hatsReceived = uniSwapRouter.exactInput(ISwapRouter.ExactInputParams({
-            path: path,
-            recipient: address(this),
-            // solhint-disable-next-line not-rely-on-time
-            deadline: block.timestamp,
-            amountIn: _amount,
-            amountOutMinimum: _amountOutMinimum
-        }));
-        require(HAT.balanceOf(address(this)) - hatBalanceBefore >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(uniSwapRouter), 0), "HVE37");
+        (bool success,) = _routingContract.call(_routingPayload);
+        require(success, "HVE43");
+        hatsReceived = HAT.balanceOf(address(this)) - hatBalanceBefore;
+        require(hatsReceived >= _amountOutMinimum, "HVE32");
+        require(_token.approve(address(_routingContract), 0), "HVE37");
     }
 
     /**
