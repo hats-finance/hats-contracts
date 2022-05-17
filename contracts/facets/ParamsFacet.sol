@@ -12,8 +12,10 @@ contract ParamsFacet is Modifiers {
     event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
     event SetClaimFee(uint256 _fee);
     event SetFeeSetter(address indexed _newFeeSetter);
-    event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
+    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+    event SetBountyLevelsDelay(uint256 indexed _delay);
 
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
@@ -27,6 +29,7 @@ contract ParamsFacet is Modifiers {
         require(6 hours <= _withdrawRequestEnablePeriod, "HVE08");
         s.generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         s.generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
+        emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
     }
 
     /**
@@ -39,7 +42,7 @@ contract ParamsFacet is Modifiers {
     }
 
     /**
-     * @dev setClaimFee - called by hats governance to set claim fee
+     * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
     function setClaimFee(uint256 _fee) external onlyOwner {
@@ -91,12 +94,11 @@ contract ParamsFacet is Modifiers {
     }
 
     /**
-    * @dev setBountySplit - set the pool token bounty split upon an approval
-    * the function can be called only by governance.
-    * the sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
+    * @dev Set the pool token bounty split upon an approval
+    * The function can be called only by governance.
+    * The sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountySplit The bounty split
-    * and sent to the hacker(claim reported)
     */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
@@ -115,6 +117,7 @@ contract ParamsFacet is Modifiers {
     onlyOwner {
         require(_delay >= 2 days, "HVE18");
         s.generalParameters.setBountyLevelsDelay = _delay;
+        emit SetBountyLevelsDelay(_delay);
     }
 
     function setFeeSetter(address _newFeeSetter) external onlyOwner {
@@ -122,10 +125,10 @@ contract ParamsFacet is Modifiers {
         emit SetFeeSetter(_newFeeSetter);
     }
 
-    function setPoolFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
+    function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
         require(_newFee <= MAX_FEE, "HVE36");
-        s.poolInfos[_pid].fee = _newFee;
-        emit SetPoolFee(_pid, _newFee);
+        s.poolInfos[_pid].withdrawalFee = _newFee;
+        emit SetPoolWithdrawalFee(_pid, _newFee);
     }
 
     function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {

@@ -29,9 +29,9 @@ library LibVaults {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
 
-    // Safe HAT transfer function,  transfer HATs from the contract only if they are earmarked for rewards
+    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         if (_amount > s.hatRewardAvailable) { 
@@ -40,7 +40,7 @@ library LibVaults {
         s.hatRewardAvailable -= _amount;
         s.HAT.transfer(_to, _amount);
         // TODO: fix return of the requested amount
-        emit SendReward(_to, _pid, _amount, _amount);
+        emit SafeTransferReward(_to, _pid, _amount, _amount);
     }
 
     /**

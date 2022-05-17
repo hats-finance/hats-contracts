@@ -7,9 +7,9 @@ import "../interfaces/IDiamondLoupe.sol";
 
 interface IHATDiamond {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SendReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
@@ -25,21 +25,21 @@ interface IHATDiamond {
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
 
-    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
+    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
     event SetBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels);
     event SetFeeSetter(address indexed _newFeeSetter);
-    event SetPoolFee(uint256 indexed _pid, uint256 _newFee);
+    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
     event SetPendingBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
-                    uint256 indexed _amountSwaped,
+                    uint256 indexed _amountSwapped,
                     uint256 _amountReceived,
                     address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwapped, uint256 indexed _amountBurned);
     event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
     event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
 
@@ -50,10 +50,10 @@ interface IHATDiamond {
                     address _tokenLock,
                     ClaimBounty _claimBounty);
 
-    event ClaimSubmitted(uint256 indexed _pid,
+    event SubmitClaim(uint256 indexed _pid,
+                            address _committee,
                             address indexed _beneficiary,
-                            uint256 indexed _severity,
-                            address _committee);
+                            uint256 indexed _severity);
 
     event WithdrawRequest(uint256 indexed _pid,
                         address indexed _beneficiary,
@@ -68,6 +68,16 @@ interface IHATDiamond {
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+
+    event DepositHATReward(uint256 indexed _amount);
+
+    event ClaimReward(uint256 indexed _pid);
+
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+
+    event DismissClaim(uint256 indexed _pid);
+
+    event SetBountyLevelsDelay(uint256 indexed _delay);
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -196,7 +206,7 @@ interface IHATDiamond {
 
     function setFeeSetter(address _newFeeSetter) external;
 
-    function setPoolFee(uint256 _pid, uint256 _newFee) external;
+    function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external;
 
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
@@ -225,7 +235,7 @@ interface IHATDiamond {
 
     function getStakedAmount(uint _pid, address _user) external view returns (uint256);
 
-    function poolLength() external view returns (uint256);
+    function getNumberOfPools() external view returns (uint256);
 
     function calcClaimBounty(uint256 _pid, uint256 _severity)
     external

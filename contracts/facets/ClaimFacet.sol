@@ -9,17 +9,19 @@ contract ClaimFacet is Modifiers {
 
     event Claim(address indexed _claimer, string _descriptionHash);
 
-    event ClaimApproved(address indexed _committee,
-                    uint256 indexed _pid,
+    event ApproveClaim(uint256 indexed _pid,
+                    address indexed _committee,
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
                     ClaimBounty _claimBounty);
 
-    event ClaimSubmitted(uint256 indexed _pid,
+    event SubmitClaim(uint256 indexed _pid,
+                            address _committee,
                             address indexed _beneficiary,
-                            uint256 indexed _severity,
-                            address _committee);
+                            uint256 indexed _severity);
+
+    event DismissClaim(uint256 indexed _pid);
 
     /**
     * @notice Called by a committee to submit a claim for a bounty.
@@ -49,7 +51,7 @@ contract ClaimFacet is Modifiers {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit ClaimSubmitted(_pid, _beneficiary, _severity, msg.sender);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity);
     }
 
     /**
@@ -61,6 +63,7 @@ contract ClaimFacet is Modifiers {
         // solhint-disable-next-line not-rely-on-time
         require(msg.sender == LibDiamond.contractOwner() || s.submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
         delete s.submittedClaims[_pid];
+        emit DismissClaim(_pid);
     }
     
     /**
@@ -109,8 +112,8 @@ contract ClaimFacet is Modifiers {
         s.governanceHatRewards[_pid] += claimBounty.governanceHat;
         s.hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHat;
 
-        emit ClaimApproved(msg.sender,
-                        _pid,
+        emit ApproveClaim(_pid,
+                        msg.sender,
                         submittedClaim.beneficiary,
                         submittedClaim.severity,
                         tokenLock,

@@ -14,7 +14,7 @@ contract PoolFacet is Modifiers {
                 BountySplit _bountySplit,
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
-    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, string _descriptionHash);
+    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     /**
@@ -88,7 +88,7 @@ contract PoolFacet is Modifiers {
             totalShares: 0,
             lastProcessedTotalAllocPoint: s.globalPoolUpdates.length-1,
             balance: 0,
-            fee: 0
+            withdrawalFee: 0
         }));
    
         uint256 poolId = s.poolInfos.length-1;
@@ -122,24 +122,18 @@ contract PoolFacet is Modifiers {
     * @dev setPool
     * @param _pid the pool id
     * @param _allocPoint the pool allocation point
-    * @param _registered does this pool is registered (default true).
+    * @param _visible is this pool visible in the UI
     * @param _depositPause pause pool deposit (default false).
     * This parameter can be used by the UI to include or exclude the pool
     * @param _descriptionHash the hash of the pool description.
     */
     function setPool(uint256 _pid,
                     uint256 _allocPoint,
-                    bool _registered,
+                    bool _visible,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyOwner {
         require(s.poolInfos.length > _pid, "HVE23");
-        set(_pid, _allocPoint);
-        s.poolDepositPause[_pid] = _depositPause;
-        emit SetPool(_pid, _allocPoint, _registered, _descriptionHash);
-    }
-
-    function set(uint256 _pid, uint256 _allocPoint) internal {
         LibVaults.updatePool(_pid);
         uint256 totalAllocPoint =
         s.globalPoolUpdates[s.globalPoolUpdates.length-1].totalAllocPoint
@@ -155,5 +149,7 @@ contract PoolFacet is Modifiers {
             }));
         }
         s.poolInfos[_pid].allocPoint = _allocPoint;
+        s.poolDepositPause[_pid] = _depositPause;
+        emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
     }
 }

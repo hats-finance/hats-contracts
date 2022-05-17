@@ -8,11 +8,11 @@ import "../libraries/LibVaults.sol";
 contract SwapFacet is Modifiers {
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
-                    uint256 indexed _amountSwaped,
+                    uint256 indexed _amountSwapped,
                     uint256 _amountReceived,
                     address _tokenLock);
 
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwaped, uint256 indexed _amountBurned);
+    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwapped, uint256 indexed _amountBurned);
 
     /**
     * @dev Swap pool's token to HAT.

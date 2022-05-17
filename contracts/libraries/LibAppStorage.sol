@@ -60,17 +60,17 @@ struct PoolInfo {
     uint256 lastRewardBlock;
     uint256 rewardPerShare;
     uint256 totalShares;
-    //index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
+    // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
     uint256 lastProcessedTotalAllocPoint;
     // total amount of LP tokens in pool
     uint256 balance;
-    uint256 fee;
+    uint256 withdrawalFee;
 }
 
 // Info of each pool's bounty policy.
 struct BountyInfo {
     BountySplit bountySplit;
-    uint256[]  bountyLevels;
+    uint256[] bountyLevels;
     bool committeeCheckIn;
     uint256 vestingDuration;
     uint256 vestingPeriods;

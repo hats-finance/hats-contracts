@@ -11,8 +11,43 @@ contract WithdrawFacet is Modifiers {
     event WithdrawRequest(uint256 indexed _pid,
                         address indexed _beneficiary,
                         uint256 indexed _withdrawEnableTime);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    
+    /**
+    * @notice Withdraw user's requested share from the pool.
+    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
+    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
+    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
+    * had finished.
+    * @param _pid The pool id
+    * @param _shares Amount of shares user wants to withdraw
+    **/
+    function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
+        checkWithdrawAndResetWithdrawEnableStartTime(_pid);
+        PoolInfo storage pool = s.poolInfos[_pid];
+        UserInfo storage user = s.userInfo[_pid][msg.sender];
+        require(user.shares >= _amount, "HVE41");
+
+        LibVaults.updatePool(_pid);
+        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+        if (pending > 0) {
+            LibVaults.safeTransferReward(msg.sender, pending, _pid);
+        }
+        if (_amount > 0) {
+            user.shares -= _amount;
+            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
+            uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
+            pool.balance -= amountToWithdraw;
+            if (fee > 0) {
+                pool.lpToken.safeTransfer(LibDiamond.contractOwner(), fee);
+            }
+            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
+            pool.totalShares -= _amount;
+        }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        emit Withdraw(msg.sender, _pid, _amount);
+    }
 
     /**
     * @notice Withdraw all user's pool share without claim for reward.
@@ -24,21 +59,20 @@ contract WithdrawFacet is Modifiers {
     **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _emergencyWithdraw(_pid);
-    }
-    
-    /**
-    * @notice Withdraw user's requested share from the pool.
-    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
-    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
-    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
-    * had finished.
-    * @param _pid The pool id
-    * @param _shares Amount of shares user wants to withdraw
-    **/
-    function withdraw(uint256 _pid, uint256 _shares) external {
-        checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        _withdraw(_pid, _shares);
+        PoolInfo storage pool = s.poolInfos[_pid];
+        UserInfo storage user = s.userInfo[_pid][msg.sender];
+        require(user.shares > 0, "HVE42");
+        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        pool.totalShares -= user.shares;
+        user.shares = 0;
+        user.rewardDebt = 0;
+        uint256 fee = factoredBalance * pool.withdrawalFee / HUNDRED_PERCENT;
+        pool.balance -= factoredBalance;
+        if (fee > 0) {
+            pool.lpToken.safeTransfer(LibDiamond.contractOwner(), fee);
+        }
+        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
     
     /**
@@ -57,49 +91,6 @@ contract WithdrawFacet is Modifiers {
         // solhint-disable-next-line not-rely-on-time
         s.withdrawEnableStartTime[_pid][msg.sender] = block.timestamp + s.generalParameters.withdrawRequestPendingPeriod;
         emit WithdrawRequest(_pid, msg.sender, s.withdrawEnableStartTime[_pid][msg.sender]);
-    }
-
-    function _withdraw(uint256 _pid, uint256 _amount) internal nonReentrant {
-        PoolInfo storage pool = s.poolInfos[_pid];
-        UserInfo storage user = s.userInfo[_pid][msg.sender];
-        require(user.shares >= _amount, "HVE41");
-
-        LibVaults.updatePool(_pid);
-        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-        if (pending > 0) {
-            LibVaults.safeTransferReward(msg.sender, pending, _pid);
-        }
-        if (_amount > 0) {
-            user.shares -= _amount;
-            uint256 amountToWithdraw = _amount * pool.balance / pool.totalShares;
-            uint256 fee = amountToWithdraw * pool.fee / HUNDRED_PERCENT;
-            pool.balance -= amountToWithdraw;
-            if (fee > 0) {
-                pool.lpToken.safeTransfer(LibDiamond.contractOwner(), fee);
-            }
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
-            pool.totalShares -= _amount;
-        }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Withdraw(msg.sender, _pid, _amount);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function _emergencyWithdraw(uint256 _pid) internal {
-        PoolInfo storage pool = s.poolInfos[_pid];
-        UserInfo storage user = s.userInfo[_pid][msg.sender];
-        require(user.shares > 0, "HVE42");
-        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
-        pool.totalShares -= user.shares;
-        user.shares = 0;
-        user.rewardDebt = 0;
-        uint256 fee = factoredBalance * pool.fee / HUNDRED_PERCENT;
-        pool.balance -= factoredBalance;
-        if (fee > 0) {
-            pool.lpToken.safeTransfer(LibDiamond.contractOwner(), fee);
-        }
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
-        emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
     // Checks that the sender can perform a withdraw at this time

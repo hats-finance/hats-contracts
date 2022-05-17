@@ -110,7 +110,7 @@ contract UIFacet {
         return  user.shares;
     }
 
-    function poolLength() external view returns (uint256) {
+    function getNumberOfPools() external view returns (uint256) {
         return s.poolInfos.length;
     }
 }

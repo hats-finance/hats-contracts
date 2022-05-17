@@ -9,10 +9,13 @@ contract DepositFacet is Modifiers {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
+    event DepositHATReward(uint256 indexed _amount);
+    event ClaimReward(uint256 indexed _pid);
 
     function depositHATReward(uint256 _amount) external {
         s.hatRewardAvailable += _amount;
         s.HAT.transferFrom(address(msg.sender), address(this), _amount);
+        emit DepositHATReward(_amount);
     }
 
     /**
@@ -35,6 +38,7 @@ contract DepositFacet is Modifiers {
      */
     function claimReward(uint256 _pid) external {
         _deposit(_pid, 0);
+        emit ClaimReward(_pid);
     }
 
     /**
@@ -48,6 +52,7 @@ contract DepositFacet is Modifiers {
         //clear withdraw request
         s.withdrawEnableStartTime[_pid][msg.sender] = 0;
         _deposit(_pid, _amount);
+        emit Deposit(msg.sender, _pid, _amount);
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
@@ -76,6 +81,5 @@ contract DepositFacet is Modifiers {
             pool.totalShares += userShares;
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-        emit Deposit(msg.sender, _pid, _amount);
     }
 }
