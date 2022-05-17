@@ -361,7 +361,7 @@ contract("HatVaults", (accounts) => {
     )[0];
     assert.equal(log.event, "SwapAndBurn");
     assert.equal(
-      log.args._amountSwaped.toString(),
+      log.args._amountSwapped.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
