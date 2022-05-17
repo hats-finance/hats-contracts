@@ -158,35 +158,6 @@ async function main(
   return hatDiamond;
 }
 
-function saveFrontendFiles(contract, name) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir, { recursive: true });
-  }
-
-  var data = JSON.parse(
-    fs.readFileSync(contractsDir + "/contract-address.json", {
-      encoding: "utf8",
-      flag: "r",
-    })
-  );
-  data[name] = contract.address;
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify(data, undefined, 2)
-  );
-
-  const HATDiamondArtifact = artifacts.readArtifactSync("HATDiamond");
-
-  fs.writeFileSync(
-    contractsDir + "/HATDiamond.json",
-    JSON.stringify(HATDiamondArtifact, null, 2)
-  );
-}
-
 function addCommas (nStr) {
   nStr += '';
   const x = nStr.split('.');
