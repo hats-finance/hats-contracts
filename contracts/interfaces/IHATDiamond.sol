@@ -65,6 +65,8 @@ interface IHATDiamond {
     
     event SetClaimFee(uint256 _fee);
 
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
