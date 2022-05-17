@@ -26,7 +26,7 @@ const setup = async function (
     web3.utils.toWei(reward_per_block),
     startBlock,
     10,
-    accounts[1], //as uniSwapRouter
+    [accounts[1]], //as uniSwapRouter
     tokenLockFactory.address,
     true
   )).address);

@@ -121,7 +121,7 @@ async function main(
       rewardPerBlock,
       startBlock,
       multiplierPeriod,
-      uniSwapRouter,
+      [uniSwapRouter],
       tokenLockFactory
     ],
     silent: silent
@@ -148,9 +148,6 @@ async function main(
       '"',
       '"',
       multiplierPeriod,
-      '"',
-      '"',
-      uniSwapRouter,
       '"',
       '"',
       tokenLockFactory,
