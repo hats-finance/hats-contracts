@@ -857,7 +857,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
 
-    var tx = await hatVaults.dismissClaim(0);
+    tx = await hatVaults.dismissClaim(0);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -1371,7 +1371,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
-    var tx = await hatVaults.deposit(0, web3.utils.toWei("1"), {
+    tx = await hatVaults.deposit(0, web3.utils.toWei("1"), {
       from: staker,
     });
     assert.equal(tx.logs[0].event, "SafeTransferReward");
@@ -1390,7 +1390,7 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    var tx = await hatVaults.depositHATReward(expectedReward);
+    tx = await hatVaults.depositHATReward(expectedReward);
     assert.equal(tx.logs[0].event, "DepositHATReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
@@ -1410,7 +1410,7 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    var tx = await hatVaults.depositHATReward(expectedReward);
+    tx = await hatVaults.depositHATReward(expectedReward);
     assert.equal(tx.logs[0].event, "DepositHATReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
@@ -1437,7 +1437,7 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward.div(new web3.utils.BN("2")));
     await hatToken.mint(accounts[0], expectedReward.div(new web3.utils.BN("2")));
     await hatToken.approve(hatVaults.address, expectedReward.div(new web3.utils.BN("2")));
-    var tx = await hatVaults.depositHATReward(expectedReward.div(new web3.utils.BN("2")));
+    tx = await hatVaults.depositHATReward(expectedReward.div(new web3.utils.BN("2")));
     assert.equal(tx.logs[0].event, "DepositHATReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.div(new web3.utils.BN("2")).toString());
     hatVaultsExpectedHatsBalance = expectedReward.div(new web3.utils.BN("2"));
@@ -1747,7 +1747,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE10");
     }
 
-    var tx = await hatVaults.submitClaim(0, accounts[2], 3, {
+    tx = await hatVaults.submitClaim(0, accounts[2], 3, {
       from: accounts[1],
     });
 
