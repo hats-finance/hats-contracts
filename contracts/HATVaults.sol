@@ -478,7 +478,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (user.shares > 0) {
-                uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
+                uint256 amountNotRewarded = safeTransferReward(_pid, msg.sender);
                 user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         }
         if (_amount > 0) { // will only be 0 in case of claimReward
@@ -1055,7 +1055,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares >= _shares, "HVE41");
         updatePool(_pid);
-        uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
+        uint256 amountNotRewarded = safeTransferReward(_pid, msg.sender);
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         if (_shares > 0) {
             user.shares -= _shares;
