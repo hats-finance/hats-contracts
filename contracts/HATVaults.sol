@@ -1054,11 +1054,10 @@ contract  HATVaults is Governable, ReentrancyGuard {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares >= _shares, "HVE41");
-
         updatePool(_pid);
+        uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         if (_shares > 0) {
-            uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
-            user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
             user.shares -= _shares;
             uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
