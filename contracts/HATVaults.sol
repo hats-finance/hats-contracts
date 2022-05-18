@@ -499,7 +499,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
 
     // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
-    function safeTransferReward(uint256 _pid, address _user) internal returns (uint256 amountNotRewarded){
+    function safeTransferReward(uint256 _pid, address _user) internal returns (uint256 amountNotRewarded) {
         uint256 pendingReward_ = pendingReward(_pid, _user);
         uint256 amountTotransfer;
         if (pendingReward_ > 0) {
@@ -509,9 +509,11 @@ contract  HATVaults is Governable, ReentrancyGuard {
             else {
                 amountTotransfer = pendingReward_;
             }
-            hatRewardAvailable = hatRewardAvailable - amountTotransfer;
-            HAT.transfer(_user, amountTotransfer);
-            emit SafeTransferReward(_user, _pid, amountTotransfer, pendingReward_);
+            if (amountTotransfer > 0) {
+                hatRewardAvailable = hatRewardAvailable - amountTotransfer;
+                HAT.transfer(_user, amountTotransfer);
+                emit SafeTransferReward(_user, _pid, amountTotransfer, pendingReward_);
+            }
         }
         amountNotRewarded = pendingReward_ - amountTotransfer;
     }
