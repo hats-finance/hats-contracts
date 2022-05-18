@@ -1056,12 +1056,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
         require(user.shares >= _shares, "HVE41");
 
         updatePool(_pid);
-        uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-        if (pending > 0) {
+        if (_shares > 0) {
             uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
             user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
-        }
-        if (_shares > 0) {
             user.shares -= _shares;
             uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
@@ -1072,7 +1069,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalShares -= _shares;
         }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Withdraw(msg.sender, _pid, _shares);
     }
 
