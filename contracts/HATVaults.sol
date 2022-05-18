@@ -505,8 +505,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         if (pendingReward_ > 0) {
             if (pendingReward_ > hatRewardAvailable) { 
                 amountTotransfer = hatRewardAvailable; 
-            }
-            else {
+            } else {
                 amountTotransfer = pendingReward_;
             }
             if (amountTotransfer > 0) {
