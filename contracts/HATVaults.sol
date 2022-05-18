@@ -59,6 +59,7 @@ import "./interfaces/ISwapRouter.sol";
 // HVE42: User shares must be greater than 0
 // HVE43: Swap was not successful
 // HVE44: Routing contract must be whitelisted
+// HVE45: Balance transferred did not match amount
 
 
 /// @title Manage all Hats.finance vaults
@@ -485,7 +486,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
         }
         if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
+            uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            require(pool.lpToken.balanceOf(address(this)) - balanceBefore == _amount, "HVE45");
             pool.balance += _amount;
             uint256 userShares = _amount;
             // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
@@ -1055,11 +1058,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
             uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
             pool.balance -= amountToWithdraw;
-            if (fee > 0) {
-                pool.lpToken.safeTransfer(governance(), fee);
-            }
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalShares -= _shares;
+            safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Withdraw(msg.sender, _pid, _shares);
@@ -1083,12 +1083,18 @@ contract  HATVaults is Governable, ReentrancyGuard {
         user.shares = 0;
         user.rewardDebt = 0;
         uint256 fee = factoredBalance * pool.withdrawalFee / HUNDRED_PERCENT;
-        if (fee > 0) {
-            pool.lpToken.safeTransfer(governance(), fee);
-        }
         pool.balance -= factoredBalance;
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        safeWithdrawPoolToken(pool.lpToken, factoredBalance, fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
+    }
+
+    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee) internal {
+        uint256 balanceBefore = _lpToken.balanceOf(address(this));
+        if (_fee > 0) {
+            _lpToken.safeTransfer(governance(), _fee);
+        }
+        _lpToken.safeTransfer(msg.sender, _totalAmount - _fee);
+        require(balanceBefore - _lpToken.balanceOf(address(this)) == _totalAmount, "HVE45");
     }
 
     function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {

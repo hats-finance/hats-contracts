@@ -302,6 +302,15 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
     assert.equal(tx.logs[0].args._pid, 1);
 
+    await stakingToken2.setBadTransferFlag(true);
+    try {
+      await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
+      assert(false, "deposit bad token should revert");
+    } catch (ex) {
+      assertVMException(ex, "HVE45");
+    }
+    await stakingToken2.setBadTransferFlag(false);
+
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
 
     try {
@@ -1024,6 +1033,15 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE25");
     }
+
+    await stakingToken.setBadTransferFlag(true);
+    try {
+      await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
+      assert(false, "withdraw bad token should revert");
+    } catch (ex) {
+      assertVMException(ex, "HVE45");
+    }
+    await stakingToken.setBadTransferFlag(false);
 
     await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
     assert.equal(await hatVaults.withdrawEnableStartTime(0, staker), 0);
