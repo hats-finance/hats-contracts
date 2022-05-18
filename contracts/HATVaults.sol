@@ -478,8 +478,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (user.shares > 0) {
-                uint256 amountNotrewarded = safeTransferReward(_pid,msg.sender);
-                user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotrewarded;
+                uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
+                user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         }
         if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
@@ -511,9 +511,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
             }
             hatRewardAvailable = hatRewardAvailable - amountTotransfer;
             HAT.transfer(_user, amountTotransfer);
+            emit SafeTransferReward(_user, _pid, amountTotransfer, pendingReward_);
         }
         amountNotRewarded = pendingReward_ - amountTotransfer;
-        emit SafeTransferReward(_user, _pid, amountTotransfer, pendingReward_);
     }
 
 
@@ -1053,8 +1053,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
         updatePool(_pid);
         uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
         if (pending > 0) {
-            uint256 amountNotrewarded = safeTransferReward(_pid,msg.sender);
-            user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotrewarded;
+            uint256 amountNotRewarded = safeTransferReward(_pid,msg.sender);
+            user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         }
         if (_shares > 0) {
             user.shares -= _shares;
