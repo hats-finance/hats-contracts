@@ -497,8 +497,12 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }        
 
 
-
-    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
+    /**
+    * @dev Transfer the the pending HAT reward to the user, as much as is available in the contract
+    * @param _pid The pool id
+    * @param _user The address of the user
+    * @return amountNotRewarded - amount of HAT reward left to reward user (0 if all pending reward was transferred)
+    */
     function safeTransferReward(uint256 _pid, address _user) internal returns (uint256 amountNotRewarded) {
         uint256 pendingReward_ = pendingReward(_pid, _user);
         uint256 amountTotransfer;
