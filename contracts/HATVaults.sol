@@ -503,7 +503,9 @@ contract  HATVaults is Governable, ReentrancyGuard {
     * @return amountNotRewarded - amount of HAT reward left to reward user (0 if all pending reward was transferred)
     */
     function safeTransferReward(uint256 _pid, address _user) internal returns (uint256 amountNotRewarded) {
-        uint256 pendingReward_ = pendingReward(_pid, _user);
+        PoolInfo storage pool = poolInfos[_pid];
+        UserInfo storage user = userInfo[_pid][_user];
+        uint256 pendingReward_ = uint256(int256(user.shares * pool.rewardPerShare / 1e12) - user.rewardDebt);
         uint256 amountToTransfer;
         if (pendingReward_ > 0) {
             if (pendingReward_ > hatRewardAvailable) { 
@@ -1123,7 +1125,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         }
     }
 
-    function pendingReward(uint256 _pid, address _user) public view returns (uint256) {
+    function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
@@ -1141,7 +1143,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function getStakedAmount(uint _pid, address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_pid][_user];
-        return  user.shares;
+        return user.shares;
     }
 
     function getNumberOfPools() external view returns (uint256) {
