@@ -471,6 +471,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                                                 globalPoolUpdates[i].totalAllocPoint);
     }
 
+
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
         require(bountyInfos[_pid].committeeCheckIn, "HVE40");
         PoolInfo storage pool = poolInfos[_pid];
