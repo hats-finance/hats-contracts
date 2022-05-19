@@ -476,11 +476,8 @@ contract  HATVaults is Governable, ReentrancyGuard {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
-        // if the user already has funds in the pool, give the previous reward
-        if (user.shares > 0) {
-                uint256 amountNotRewarded = safeTransferReward(_pid, msg.sender);
-                user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 + amountNotRewarded;
-        }
+        // if the user already has rewards pending, give the previous reward
+        uint256 amountNotRewarded = safeTransferReward(_pid, msg.sender);
         if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
@@ -494,6 +491,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             user.shares += userShares;
             pool.totalShares += userShares;
         }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
     }        
 
 
@@ -1056,7 +1054,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
         require(user.shares >= _shares, "HVE41");
         updatePool(_pid);
         uint256 amountNotRewarded = safeTransferReward(_pid, msg.sender);
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 + amountNotRewarded;
         if (_shares > 0) {
             user.shares -= _shares;
             uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
@@ -1068,6 +1065,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalShares -= _shares;
         }
+        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
         emit Withdraw(msg.sender, _pid, _shares);
     }
 
