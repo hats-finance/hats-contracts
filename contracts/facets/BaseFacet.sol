@@ -12,54 +12,6 @@ import "../Governable.sol";
 import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
-// Errors:
-// HVE01: Only committee
-// HVE02: Claim submitted
-// HVE03: Safety period
-// HVE04: Beneficiary is zero
-// HVE05: Not safety period
-// HVE06: _severity is not in the range
-// HVE07: Withdraw request pending period must be <= 3 months
-// HVE08: Withdraw request enabled period must be >= 6 hour
-// HVE09: Only callable by governance or after 5 weeks
-// HVE10: No claim submitted
-// HVE11: Amount to reward is too big
-// HVE12: Withdraw period must be >= 1 hour
-// HVE13: Safety period must be <= 6 hours
-// HVE14: Not enough fee paid
-// HVE15: Vesting duration is too long
-// HVE16: Vesting periods cannot be zero
-// HVE17: Vesting duration smaller than periods
-// HVE18: Delay is too short
-// HVE19: No pending set bounty levels
-// HVE20: Delay period for setting bounty levels had not passed
-// HVE21: Committee is zero
-// HVE22: Committee already checked in
-// HVE23: Pool does not exist
-// HVE24: Amount is zero
-// HVE25: Pending withdraw request exist
-// HVE26: Deposit paused
-// HVE27: Amount less than 1e6
-// HVE28: totalSupply is zero
-// HVE29: Total split % should be `HUNDRED_PERCENT`
-// HVE30: Withdraw request is invalid
-// HVE31: Token approve failed
-// HVE32: Wrong amount received
-// HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
-// HVE34: LP token is zero
-// HVE35: Only fee setter
-// HVE36: Fee must be less than or eqaul to 2%
-// HVE37: Token approve reset failed
-// HVE38: Pool range is too big
-// HVE39: Invalid pool range
-// HVE40: Committee not checked in yet
-// HVE41: Not enough user balance
-// HVE42: User shares must be greater than 0
-// HVE43: Swap was not successful
-// HVE44: Routing contract must be whitelisted
-
-
-/// @title Manage all Hats.finance vaults
 contract  BaseFacet is Governable, ReentrancyGuard {
 
     //Parameters that apply to all the vaults
