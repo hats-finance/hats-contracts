@@ -85,7 +85,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     struct UserInfo {
         uint256 shares;     // The user share of the pool based on the shares of lpToken the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
+        int256 rewardDebt; // Reward debt. See explanation below.
         //
         // We do some fancy math here. Basically, any point in time, the amount of HATs
         // entitled to a user but is pending to be distributed is:
@@ -491,7 +491,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             user.shares += userShares;
             pool.totalShares += userShares;
         }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
+        user.rewardDebt = int256(user.shares * pool.rewardPerShare / 1e12) - int256(amountNotRewarded);
     }        
 
 
@@ -1065,7 +1065,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalShares -= _shares;
         }
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12 - amountNotRewarded;
+        user.rewardDebt = int256(user.shares * pool.rewardPerShare / 1e12) - int256(amountNotRewarded);
         emit Withdraw(msg.sender, _pid, _shares);
     }
 
@@ -1131,7 +1131,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
             rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
-        return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
+        return uint256(int256(user.shares * rewardPerShare / 1e12) - user.rewardDebt);
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {
