@@ -12,7 +12,7 @@ import "./Governable.sol";
 import "./HATToken.sol";
 import "./tokenlock/ITokenLockFactory.sol";
 import "./interfaces/ISwapRouter.sol";
-
+import {HATVaultsLib} from "./HATVaultsLib.sol";
 
 // Errors:
 // HVE01: Only committee
@@ -65,24 +65,6 @@ import "./interfaces/ISwapRouter.sol";
 contract  HATVaults is Governable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    //Parameters that apply to all the vaults
-    struct GeneralParameters {
-        uint256 hatVestingDuration;
-        uint256 hatVestingPeriods;
-        //withdraw enable period. safetyPeriod starts when finished.
-        uint256 withdrawPeriod;
-        //withdraw disable period - time for the commitee to gather and decide on actions, withdrawals are not possible in this time
-        //withdrawPeriod starts when finished.
-        uint256 safetyPeriod;
-        uint256 setBountyLevelsDelay;
-        // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
-        // (after which withdrawal is not possible)
-        uint256 withdrawRequestEnablePeriod;
-        // period of time that has to pass after withdraw request until withdraw is possible
-        uint256 withdrawRequestPendingPeriod;
-        uint256 claimFee;  //claim fee in ETH
-    }
-
     struct UserInfo {
         uint256 shares;     // The user share of the pool based on the shares of lpToken the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
@@ -104,56 +86,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         uint256 totalAllocPoint; //totalAllocPoint
     }
 
-    // Info of each pool.
-    struct PoolInfo {
-        IERC20 lpToken;
-        uint256 allocPoint;
-        uint256 lastRewardBlock;
-        uint256 rewardPerShare;
-        uint256 totalShares;
-        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
-        uint256 lastProcessedTotalAllocPoint;
-        // total amount of LP tokens in pool
-        uint256 balance;
-        // fee to take from withdrawals to governance
-        uint256 withdrawalFee;
-    }
 
-    // Info of each pool's bounty policy.
-    struct BountyInfo {
-        BountySplit bountySplit;
-        uint256[] bountyLevels;
-        bool committeeCheckIn;
-        uint256 vestingDuration;
-        uint256 vestingPeriods;
-    }
-    
-    // How to devide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
-    struct BountySplit {
-        //the percentage of the total bounty to reward the hacker via vesting contract
-        uint256 hackerVested;
-        //the percentage of the total bounty to reward the hacker
-        uint256 hacker;
-        // the percentage of the total bounty to be sent to the committee
-        uint256 committee;
-        // the percentage of the total bounty to be swapped to HATs and then burned
-        uint256 swapAndBurn;
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker
-        uint256 hackerHat;
-    }
-
-    // How to devide a bounty for a claim that has been approved, in amounts of pool's tokens
-    struct ClaimBounty {
-        uint256 hackerVested;
-        uint256 hacker;
-        uint256 committee;
-        uint256 swapAndBurn;
-        uint256 governanceHat;
-        uint256 hackerHat;
-    }
-    
     // Info of a claim that has been submitted by a committe 
     struct SubmittedClaim {
         address beneficiary;
@@ -180,7 +113,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     // Info of each pool.
-    PoolInfo[] public poolInfos;
+    HATVaultsLib.PoolInfo[] public poolInfos;
     PoolUpdate[] public globalPoolUpdates;
 
     // Reward Multipliers
@@ -192,7 +125,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> BountyInfo
-    mapping (uint256=>BountyInfo) internal bountyInfos;
+    mapping (uint256=>HATVaultsLib.BountyInfo) internal bountyInfos;
 
     uint256 public hatRewardAvailable;
 
@@ -216,7 +149,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     mapping(address=>bool) public whitelistedRouters;
 
-    GeneralParameters public generalParameters;
+    HATVaultsLib.GeneralParameters public generalParameters;
 
     address public feeSetter;
 
@@ -263,13 +196,13 @@ contract  HATVaults is Governable, ReentrancyGuard {
                 address _committee,
                 string _descriptionHash,
                 uint256[] _bountyLevels,
-                BountySplit _bountySplit,
+                HATVaultsLib.BountySplit _bountySplit,
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
 
     event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
-    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
+    event SetBountySplit(uint256 indexed _pid, HATVaultsLib.BountySplit _bountySplit);
     event SetBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
@@ -290,7 +223,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                     address indexed _beneficiary,
                     uint256 _severity,
                     address _tokenLock,
-                    ClaimBounty _claimBounty);
+                    HATVaultsLib.ClaimBounty _claimBounty);
 
     event SubmitClaim(uint256 indexed _pid,
                             address _committee,
@@ -349,7 +282,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
             whitelistedRouters[_whitelistedRouters[i]] = true;
         }
         tokenLockFactory = _tokenLockFactory;
-        generalParameters = GeneralParameters({
+        generalParameters = HATVaultsLib.GeneralParameters({
             hatVestingDuration: 90 days,
             hatVestingPeriods:90,
             withdrawPeriod: 11 hours,
@@ -399,7 +332,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
      * @param _pid The pool id
      */
     function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfos[_pid];
+        HATVaultsLib.PoolInfo storage pool = poolInfos[_pid];
         uint256 lastRewardBlock = pool.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
             return;
@@ -473,7 +406,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant {
         require(bountyInfos[_pid].committeeCheckIn, "HVE40");
-        PoolInfo storage pool = poolInfos[_pid];
+        HATVaultsLib.PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
@@ -577,12 +510,12 @@ contract  HATVaults is Governable, ReentrancyGuard {
    */
     function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
         require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
-        BountyInfo storage bountyInfo = bountyInfos[_pid];
+        HATVaultsLib.BountyInfo storage bountyInfo = bountyInfos[_pid];
         SubmittedClaim memory submittedClaim = submittedClaims[_pid];
         delete submittedClaims[_pid];
 
         IERC20 lpToken = poolInfos[_pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.severity);
+        HATVaultsLib.ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.severity);
         poolInfos[_pid].balance -= claimBounty.hacker
                             + claimBounty.hackerVested
                             + claimBounty.committee
@@ -718,7 +651,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
    * @param _pid The pool id
    * @param _bountySplit The bounty split
  */
-    function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
+    function setBountySplit(uint256 _pid, HATVaultsLib.BountySplit memory _bountySplit)
     external
     onlyGovernance noSubmittedClaims(_pid) noSafetyPeriod {
         validateSplit(_bountySplit);
@@ -828,7 +761,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                     address _lpToken,
                     address _committee,
                     uint256[] memory _bountyLevels,
-                    BountySplit memory _bountySplit,
+                    HATVaultsLib.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams)
     external
@@ -852,7 +785,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
                 totalAllocPoint: totalAllocPoint
             }));
         }
-        poolInfos.push(PoolInfo({
+        poolInfos.push(HATVaultsLib.PoolInfo({
             lpToken: IERC20(_lpToken),
             allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
@@ -867,11 +800,11 @@ contract  HATVaults is Governable, ReentrancyGuard {
         committees[poolId] = _committee;
         uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
-        BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
+        HATVaultsLib.BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
         getDefaultBountySplit() : _bountySplit;
   
         validateSplit(bountySplit);
-        bountyInfos[poolId] = BountyInfo({
+        bountyInfos[poolId] = HATVaultsLib.BountyInfo({
             bountyLevels: bountyLevels,
             bountySplit: bountySplit,
             committeeCheckIn: false,
@@ -1041,7 +974,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     **/
     function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        PoolInfo storage pool = poolInfos[_pid];
+        HATVaultsLib.PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares >= _shares, "HVE41");
 
@@ -1075,7 +1008,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     **/
     function emergencyWithdraw(uint256 _pid) external {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
-        PoolInfo storage pool = poolInfos[_pid];
+        HATVaultsLib.PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.shares > 0, "HVE42");
         uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
@@ -1095,7 +1028,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
         return bountyInfos[_pid].bountyLevels;
     }
 
-    function getBountyInfo(uint256 _pid) external view returns(BountyInfo memory) {
+    function getBountyInfo(uint256 _pid) external view returns(HATVaultsLib.BountyInfo memory) {
         return bountyInfos[_pid];
     }
 
@@ -1119,7 +1052,7 @@ contract  HATVaults is Governable, ReentrancyGuard {
     }
 
     function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo storage pool = poolInfos[_pid];
+        HATVaultsLib.PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
@@ -1146,44 +1079,15 @@ contract  HATVaults is Governable, ReentrancyGuard {
     function calcClaimBounty(uint256 _pid, uint256 _severity)
     public
     view
-    returns(ClaimBounty memory claimBounty) {
-        uint256 totalSupply = poolInfos[_pid].balance;
-        require(totalSupply > 0, "HVE28");
-        require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
-        uint256 totalBountyAmount =
-        totalSupply * bountyInfos[_pid].bountyLevels[_severity];
-        claimBounty.hackerVested =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.hacker =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hacker
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.committee =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.committee
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.swapAndBurn =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.swapAndBurn
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.governanceHat =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.governanceHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.hackerHat =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+    returns(HATVaultsLib.ClaimBounty memory claimBounty) {
+      return HATVaultsLib.calcClaimBounty(_pid, _severity, poolInfos, bountyInfos[_pid]);
     }
 
-    function getDefaultBountySplit() public pure returns (BountySplit memory) {
-        return BountySplit({
-            hackerVested: 6000,
-            hacker: 2000,
-            committee: 500,
-            swapAndBurn: 0,
-            governanceHat: 1000,
-            hackerHat: 500
-        });
+    function getDefaultBountySplit() public pure returns (HATVaultsLib.BountySplit memory) {
+        return HATVaultsLib.getDefaultBountySplit();
     }
 
-    function validateSplit(BountySplit memory _bountySplit) internal pure {
+    function validateSplit(HATVaultsLib.BountySplit memory _bountySplit) internal pure {
         require(_bountySplit.hackerVested
             + _bountySplit.hacker
             + _bountySplit.committee
@@ -1242,18 +1146,6 @@ contract  HATVaults is Governable, ReentrancyGuard {
     pure
     returns (uint256[] memory bountyLevels) {
 
-        uint256 i;
-        if (_bountyLevels.length == 0) {
-            bountyLevels = new uint256[](4);
-            for (i; i < 4; i++) {
-              //defaultRewardLevels = [2000, 4000, 6000, 8000];
-                bountyLevels[i] = 2000*(i+1);
-            }
-        } else {
-            for (i; i < _bountyLevels.length; i++) {
-                require(_bountyLevels[i] < HUNDRED_PERCENT, "HVE33");
-            }
-            bountyLevels = _bountyLevels;
-        }
+       return HATVaultsLib.checkBountyLevels(_bountyLevels); 
     }
 }

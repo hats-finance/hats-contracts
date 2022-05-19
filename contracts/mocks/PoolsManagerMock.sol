@@ -2,6 +2,7 @@
 pragma solidity 0.8.6;
 
 import "../HATVaults.sol";
+import "../HATVaultsLib.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
@@ -12,7 +13,7 @@ contract PoolsManagerMock {
                     address[] memory _lpTokens,
                     address _committee,
                     uint256[] memory _bountyLevels,
-                    HATVaults.BountySplit memory _bountySplit,
+                    HATVaultsLib.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams) external {
 
