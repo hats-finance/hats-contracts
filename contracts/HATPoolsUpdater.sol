@@ -25,7 +25,7 @@ contract HATPoolsUpdater {
     * @param _toPid update pools range to this pool id
     */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= hatVaults.poolLength(), "HPUE01");
+        require(_toPid <= hatVaults.getNumberOfPools(), "HPUE01");
         require(_fromPid <= _toPid, "HPUE02");
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             hatVaults.updatePool(pid);
