@@ -43,3 +43,5 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Solidity contract sizes
+        run: npx hardhat size-contracts
