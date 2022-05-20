@@ -1030,15 +1030,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE25");
     }
 
-    await stakingToken.setBadTransferFlag(true);
-    try {
-      await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
-      assert(false, "withdraw bad token should revert");
-    } catch (ex) {
-      assertVMException(ex, "HVE45");
-    }
-    await stakingToken.setBadTransferFlag(false);
-
     await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
     assert.equal(await hatVaults.withdrawEnableStartTime(0, staker), 0);
     try {

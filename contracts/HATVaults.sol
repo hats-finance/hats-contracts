@@ -58,7 +58,6 @@ import "./vaults/Withdraw.sol";
 // HVE42: User shares must be greater than 0
 // HVE43: Swap was not successful
 // HVE44: Routing contract must be whitelisted
-// HVE45: Balance transferred did not match amount
 
 
 /// @title Manage all Hats.finance vaults

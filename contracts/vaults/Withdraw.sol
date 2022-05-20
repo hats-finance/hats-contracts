@@ -67,7 +67,6 @@ contract Withdraw is Swap {
             _lpToken.safeTransfer(governance(), _fee);
         }
         _lpToken.safeTransfer(msg.sender, _totalAmount - _fee);
-        require(balanceBefore - _lpToken.balanceOf(address(this)) == _totalAmount, "HVE45");
     }
     
     /**
