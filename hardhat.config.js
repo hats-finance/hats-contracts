@@ -171,9 +171,17 @@ module.exports = {
     disambiguatePaths: true,
   },
   watcher: {
+    compile: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+    },
     test: {
       tasks: ["test"],
       files: ["./test", "./contracts", "./scripts"],
+    },
+    "size-contracts": {
+      tasks: ["size-contracts"],
+      files: ["./contracts"],
     },
     check: {
       tasks: [
