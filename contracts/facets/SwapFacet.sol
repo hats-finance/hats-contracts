@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./PoolFacet.sol";
+import "./BaseFacet.sol";
 
-contract SwapFacet is PoolFacet {
+contract SwapFacet is BaseFacet {
     /**
     * @dev Swap pool's token to HAT.
     * Send to beneficiary and governance their HATs rewards.

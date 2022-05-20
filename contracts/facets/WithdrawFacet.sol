@@ -2,8 +2,9 @@
 pragma solidity 0.8.6;
 
 import "./UIFacet.sol";
+import "./SwapFacet.sol";
 
-contract WithdrawFacet is UIFacet {
+contract WithdrawFacet is SwapFacet {
     using SafeERC20 for IERC20;
 
     /**

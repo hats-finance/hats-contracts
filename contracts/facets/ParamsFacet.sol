@@ -2,8 +2,9 @@
 pragma solidity 0.8.6;
 
 import "./DepositFacet.sol";
+import "./BaseFacet.sol";
 
-contract ParamsFacet is DepositFacet {
+contract ParamsFacet is BaseFacet {
 
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params

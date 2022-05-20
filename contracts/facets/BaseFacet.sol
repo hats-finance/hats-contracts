@@ -102,12 +102,12 @@ contract  BaseFacet is Governable, ReentrancyGuard {
         uint256 governanceHat;
         uint256 hackerHat;
     }
-    
-    // Info of a claim that has been submitted by a committe 
+
+    // Info of a claim that has been submitted by a committee
     struct SubmittedClaim {
         address beneficiary;
         uint256 severity;
-        // the address of the committee at the time of the submittal, so that this committee 
+        // the address of the committee at the time of the submittal, so that this committee
         // will be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
@@ -122,7 +122,7 @@ contract  BaseFacet is Governable, ReentrancyGuard {
     HATToken public HAT;
     uint256 public REWARD_PER_BLOCK;
     // Block from which the HAT vault contract will start rewarding.
-    uint256 public START_BLOCK; 
+    uint256 public START_BLOCK;
     uint256 public MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;

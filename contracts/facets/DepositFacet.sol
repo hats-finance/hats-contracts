@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./CommitteeFacet.sol";
+import "./BaseFacet.sol";
 
-contract DepositFacet is CommitteeFacet {
+contract DepositFacet is BaseFacet {
     using SafeERC20 for IERC20;
 
     function depositHATReward(uint256 _amount) external {
