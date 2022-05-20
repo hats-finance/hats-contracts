@@ -4,14 +4,14 @@
 pragma solidity 0.8.6;
 
 
-import "./facets/ClaimFacet.sol";
-import "./facets/CommitteeFacet.sol";
-import "./facets/DepositFacet.sol";
-import "./facets/ParamsFacet.sol";
-import "./facets/PoolFacet.sol";
-import "./facets/SwapFacet.sol";
-import "./facets/UIFacet.sol";
-import "./facets/WithdrawFacet.sol";
+import "./vaults/Claim.sol";
+import "./vaults/Committee.sol";
+import "./vaults/Deposit.sol";
+import "./vaults/Params.sol";
+import "./vaults/Pool.sol";
+import "./vaults/Swap.sol";
+import "./vaults/Getters.sol";
+import "./vaults/Withdraw.sol";
 
 
 // Errors:
@@ -62,7 +62,7 @@ import "./facets/WithdrawFacet.sol";
 
 
 /// @title Manage all Hats.finance vaults
-contract  HATVaults is CommitteeFacet, DepositFacet, ParamsFacet, PoolFacet, SwapFacet, UIFacet, WithdrawFacet {
+contract  HATVaults is Committee, Deposit, Params, Pool, Swap, Getters, Withdraw {
    /**
    * @dev constructor -
    * @param _rewardsToken The reward token address (HAT)

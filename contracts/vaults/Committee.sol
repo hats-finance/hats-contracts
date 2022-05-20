@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./ClaimFacet.sol";
+import "./Claim.sol";
 
-contract CommitteeFacet is ClaimFacet {
+contract Committee is Claim {
     /**
     * @dev Set pending request to set pool bounty levels.
     * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.

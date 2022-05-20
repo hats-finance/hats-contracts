@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./DepositFacet.sol";
-import "./BaseFacet.sol";
+import "./Base.sol";
 
-contract ParamsFacet is BaseFacet {
+contract Params is Base {
 
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params

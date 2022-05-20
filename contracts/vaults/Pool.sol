@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./BaseFacet.sol";
+import "./Base.sol";
 
-contract PoolFacet is BaseFacet {
+contract Pool is Base {
     /**
     * @dev massUpdatePools - Update reward variables for all pools
     * Be careful of gas spending!
