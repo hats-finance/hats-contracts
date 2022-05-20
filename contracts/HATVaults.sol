@@ -4,14 +4,13 @@
 pragma solidity 0.8.6;
 
 
-import "./facets/ClaimFacet.sol";
-import "./facets/CommitteeFacet.sol";
-import "./facets/DepositFacet.sol";
-import "./facets/ParamsFacet.sol";
-import "./facets/PoolFacet.sol";
-import "./facets/SwapFacet.sol";
-import "./facets/UIFacet.sol";
-import "./facets/WithdrawFacet.sol";
+import "./vaults/Claim.sol";
+import "./vaults/Deposit.sol";
+import "./vaults/Params.sol";
+import "./vaults/Pool.sol";
+import "./vaults/Swap.sol";
+import "./vaults/Getters.sol";
+import "./vaults/Withdraw.sol";
 
 
 // Errors:
@@ -50,7 +49,7 @@ import "./facets/WithdrawFacet.sol";
 // HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
-// HVE36: Fee must be less than or eqaul to 2%
+// HVE36: Fee must be less than or equal to 2%
 // HVE37: Token approve reset failed
 // HVE38: Pool must not be initialized
 // HVE39: Set shares arrays must have same length
@@ -62,7 +61,7 @@ import "./facets/WithdrawFacet.sol";
 
 
 /// @title Manage all Hats.finance vaults
-contract  HATVaults is CommitteeFacet, ClaimFacet, DepositFacet, ParamsFacet, PoolFacet, SwapFacet, UIFacet, WithdrawFacet {
+contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
    /**
    * @dev constructor -
    * @param _rewardsToken The reward token address (HAT)

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./BaseFacet.sol";
+import "./Base.sol";
 
-contract ClaimFacet is BaseFacet {
+contract Claim is Base {
     using SafeERC20 for IERC20;
 
     /**

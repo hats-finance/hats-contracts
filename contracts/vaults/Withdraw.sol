@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./UIFacet.sol";
-import "./SwapFacet.sol";
+import "./Swap.sol";
 
-contract WithdrawFacet is BaseFacet {
+contract Withdraw is Swap {
     using SafeERC20 for IERC20;
 
     /**
     * @notice Withdraw user's requested share from the pool.
     * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
-    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
+    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
     * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
     * had finished.
     * @param _pid The pool id
@@ -45,9 +44,9 @@ contract WithdrawFacet is BaseFacet {
     /**
     * @notice Withdraw all user's pool share without claim for reward.
     * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
-    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where 
+    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
     * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
-    * had finished.   
+    * had finished.
     * @param _pid The pool id
     **/
     function emergencyWithdraw(uint256 _pid) external {
@@ -69,7 +68,7 @@ contract WithdrawFacet is BaseFacet {
     }
     
     /**
-    * @notice Submit a request to withdraw funds from pool # `_pid`. 
+    * @notice Submit a request to withdraw funds from pool # `_pid`.
     The request will only be approved if the last action was a deposit or withdrawal or in case the last action was a withdraw request,
     that the pending period (of `generalParameters.withdrawRequestPendingPeriod`) had ended and the withdraw enable period (of `generalParameters.withdrawRequestEnablePeriod`)
     had also ended.
@@ -98,7 +97,7 @@ contract WithdrawFacet is BaseFacet {
                 block.timestamp < withdrawEnableStartTime[_pid][msg.sender] + generalParameters.withdrawRequestEnablePeriod,
                 "HVE30");
         // if all is ok and withdrawal can be made - reset withdrawRequests[_pid][msg.sender] so that another withdrawRequest
-        // will have to be made before next withdrawal 
+        // will have to be made before next withdrawal
         withdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 }
