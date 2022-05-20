@@ -10,7 +10,6 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 
 var hatVaults;
-var hatVaults;
 var hatToken;
 var router;
 var stakingToken;
