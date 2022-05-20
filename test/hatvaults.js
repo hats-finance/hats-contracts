@@ -1594,7 +1594,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     assert.equal(
-      (await hatVaults.pendingReward(0, staker)).toString(),
+      (await hatVaults.getPendingReward(0, staker)).toString(),
       (await hatVaults.getRewardPerBlock(1)).toString()
     );
     var currentBlockNumber = (await web3.eth.getBlock("latest")).number;
