@@ -1580,13 +1580,13 @@ contract("HatVaults", (accounts) => {
       multiplier
     );
     var staker = accounts[1];
-    assert.equal((await hatVaults.pendingReward(0, staker)).toNumber(), 0);
+    assert.equal((await hatVaults.getPendingReward(0, staker)).toNumber(), 0);
   });
 
   it("pendingReward + getRewardPerBlock", async () => {
     await setup(accounts);
     var staker = accounts[1];
-    assert.equal((await hatVaults.pendingReward(0, staker)).toNumber(), 0);
+    assert.equal((await hatVaults.getPendingReward(0, staker)).toNumber(), 0);
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("4"), {
       from: staker,
     });
