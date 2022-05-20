@@ -2,7 +2,6 @@
 pragma solidity 0.8.6;
 
 import "../HATVaults.sol";
-import "../HATPoolsUpdater.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
@@ -46,7 +45,7 @@ contract PoolsManagerMock {
         }
     }
 
-    function updatePoolsTwice(HATPoolsUpdater target, uint256 _fromPid, uint256 _toPid) external {
+    function updatePoolsTwice(HATVaults target, uint256 _fromPid, uint256 _toPid) external {
         target.massUpdatePools(_fromPid, _toPid);
         target.massUpdatePools(_fromPid, _toPid);
     }

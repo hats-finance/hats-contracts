@@ -41,7 +41,9 @@ contract PoolFacet is BaseFacet {
                     uint256[] memory _bountyLevels,
                     BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams)
+                    uint256[2] memory _bountyVestingParams,
+                    bool _isPaused,
+                    bool _isInitialized)
     external
     onlyGovernance {
         require(_bountyVestingParams[0] < 120 days, "HVE15");
@@ -49,8 +51,7 @@ contract PoolFacet is BaseFacet {
         require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
-        
-        uint256 lastRewardBlock = block.number > START_BLOCK ? block.number : START_BLOCK;
+
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
         if (globalPoolUpdates.length > 0 &&
@@ -66,7 +67,7 @@ contract PoolFacet is BaseFacet {
         poolInfos.push(PoolInfo({
             lpToken: IERC20(_lpToken),
             allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
+            lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
             rewardPerShare: 0,
             totalShares: 0,
             lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
@@ -89,6 +90,9 @@ contract PoolFacet is BaseFacet {
             vestingDuration: _bountyVestingParams[0],
             vestingPeriods: _bountyVestingParams[1]
         });
+
+        poolDepositPause[poolId] = _isPaused;
+        poolInitialized[poolId] = _isInitialized;
 
         emit AddPool(poolId,
             _allocPoint,
@@ -134,5 +138,34 @@ contract PoolFacet is BaseFacet {
         poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
+    }
+
+    function setPoolInitialized(uint256 _pid) external onlyGovernance {
+        require(poolInfos.length > _pid, "HVE23");
+        poolInitialized[_pid] = true;
+    }
+
+    function setShares(
+        uint256 _pid,
+        uint256 _rewardPerShare,
+        uint256 _balance,
+        address[] memory _accounts,
+        uint256[] memory _shares,
+        uint256[] memory _rewardDebts)
+    external onlyGovernance {
+        require(!poolInitialized[_pid], "HVE38");
+        require(poolInfos.length > _pid, "HVE23");
+        require(_accounts.length == _shares.length, "HVE39");
+        require(_accounts.length == _rewardDebts.length, "HVE39");
+        PoolInfo storage pool = poolInfos[_pid];
+        pool.rewardPerShare = _rewardPerShare;
+        pool.balance = _balance;
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            userInfo[_pid][_accounts[i]] = UserInfo({
+                shares: _shares[i],
+                rewardDebt: _rewardDebts[i]
+            });
+            pool.totalShares += _shares[i];
+        }
     }
 }

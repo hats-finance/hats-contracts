@@ -3,7 +3,7 @@ pragma solidity 0.8.6;
 
 import "./ClaimFacet.sol";
 
-contract CommitteeFacet is ClaimFacet {
+contract CommitteeFacet is BaseFacet {
     /**
     * @dev Set pending request to set pool bounty levels.
     * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.

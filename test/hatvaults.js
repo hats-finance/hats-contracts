@@ -1,5 +1,4 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
-const HATPoolsUpdater = artifacts.require("./HATPoolsUpdater.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
@@ -11,7 +10,7 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 
 var hatVaults;
-var hatPoolsUpdater;
+var hatVaults;
 var hatToken;
 var router;
 var stakingToken;
@@ -51,7 +50,6 @@ const setup = async function(
     [router.address],
     tokenLockFactory.address
   );
-  hatPoolsUpdater = await HATPoolsUpdater.new(hatVaults.address);
   await utils.setMinter(hatToken, accounts[0], web3.utils.toWei((2500000 + rewardInVaults).toString()));
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
@@ -2014,12 +2012,12 @@ contract("HatVaults", (accounts) => {
       await utils.increaseTime(1);
     }
     try {
-      await hatPoolsUpdater.massUpdatePools(0, 2);
+      await hatVaults.massUpdatePools(0, 2);
       assert(false, "massUpdatePools not in range");
     } catch (ex) {
-      assertVMException(ex, "HPUE01");
+      assertVMException(ex, "HVE38");
     }
-    await hatPoolsUpdater.massUpdatePools(0, 1);
+    await hatVaults.massUpdatePools(0, 1);
     await safeWithdraw(0, web3.utils.toWei("1"), staker);
 
     //staker  get stake back
@@ -3190,9 +3188,9 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
     await hatVaults.setPool(0, 200, true, false, "123");
     // Update twice in one block should be same as once
-    await poolManagerMock.updatePoolsTwice(hatPoolsUpdater.address, 0, 1);
+    await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1, 200, true, false, "123");
-    await hatPoolsUpdater.massUpdatePools(0, 2);
+    await hatVaults.massUpdatePools(0, 2);
     assert.equal(
       Math.round(
         web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))
@@ -3200,10 +3198,10 @@ contract("HatVaults", (accounts) => {
       hatVaultsExpectedHatsBalance
     );
     try {
-      await hatPoolsUpdater.massUpdatePools(2, 1);
+      await hatVaults.massUpdatePools(2, 1);
       assert(false, "invalid mass update pools range");
     } catch (ex) {
-      assertVMException(ex, "HPUE02");
+      assertVMException(ex, "HVE39");
     }
   });
 
@@ -3372,7 +3370,7 @@ contract("HatVaults", (accounts) => {
 
     await hatVaults.setPool(0, 200, true, false, "123");
 
-    await hatPoolsUpdater.massUpdatePools(0, 2);
+    await hatVaults.massUpdatePools(0, 2);
     assert.equal(
       Math.round(
         web3.utils.fromWei(await hatToken.balanceOf(hatVaults.address))
@@ -3393,7 +3391,7 @@ contract("HatVaults", (accounts) => {
   //     await hatVaults.committeeCheckIn(1,{from:accounts[0]});
   //     await hatVaults.deposit(1,web3.utils.toWei("1"),{from:staker});
   //     await hatVaults.setPool(0,200,true,false,"123");
-  //     var tx = await hatPoolsUpdater.massUpdatePools(0,2);
+  //     var tx = await hatVaults.massUpdatePools(0,2);
   //         await hatToken.getPastEvents('Transfer', {
   //               fromBlock: tx.blockNumber,
   //               toBlock: 'latest'
@@ -3512,7 +3510,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.mineBlock(1);
-    await hatPoolsUpdater.massUpdatePools(0, 1);
+    await hatVaults.massUpdatePools(0, 1);
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       web3.utils.toWei("0").toString()
