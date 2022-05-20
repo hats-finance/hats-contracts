@@ -12,7 +12,7 @@ import "../Governable.sol";
 import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
-contract  BaseFacet is Governable, ReentrancyGuard {
+contract  Base is Governable, ReentrancyGuard {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {

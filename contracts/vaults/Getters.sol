@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./SwapFacet.sol";
+import "./Swap.sol";
 
-contract UIFacet is SwapFacet {
+contract Getters is Swap {
     // GET INFO for UI
 
     function getBountyInfo(uint256 _pid) external view returns(BountyInfo memory) {
