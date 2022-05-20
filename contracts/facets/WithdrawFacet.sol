@@ -32,11 +32,8 @@ contract WithdrawFacet is SwapFacet {
             uint256 amountToWithdraw = _shares * pool.balance / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
             pool.balance -= amountToWithdraw;
-            if (fee > 0) {
-                pool.lpToken.safeTransfer(governance(), fee);
-            }
-            pool.lpToken.safeTransfer(msg.sender, amountToWithdraw - fee);
             pool.totalShares -= _shares;
+            safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Withdraw(msg.sender, _pid, _shares);
@@ -61,11 +58,17 @@ contract WithdrawFacet is SwapFacet {
         user.rewardDebt = 0;
         uint256 fee = factoredBalance * pool.withdrawalFee / HUNDRED_PERCENT;
         pool.balance -= factoredBalance;
-        if (fee > 0) {
-            pool.lpToken.safeTransfer(governance(), fee);
-        }
-        pool.lpToken.safeTransfer(msg.sender, factoredBalance - fee);
+        safeWithdrawPoolToken(pool.lpToken, factoredBalance, fee);
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
+    }
+
+    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee) internal {
+        uint256 balanceBefore = _lpToken.balanceOf(address(this));
+        if (_fee > 0) {
+            _lpToken.safeTransfer(governance(), _fee);
+        }
+        _lpToken.safeTransfer(msg.sender, _totalAmount - _fee);
+        require(balanceBefore - _lpToken.balanceOf(address(this)) == _totalAmount, "HVE45");
     }
     
     /**

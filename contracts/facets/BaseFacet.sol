@@ -197,7 +197,7 @@ contract  BaseFacet is Governable, ReentrancyGuard {
     }
 
 
-    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount, uint256 transferredAmount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
