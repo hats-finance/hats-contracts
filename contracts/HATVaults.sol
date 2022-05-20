@@ -5,7 +5,6 @@ pragma solidity 0.8.6;
 
 
 import "./vaults/Claim.sol";
-import "./vaults/Committee.sol";
 import "./vaults/Deposit.sol";
 import "./vaults/Params.sol";
 import "./vaults/Pool.sol";
@@ -50,7 +49,7 @@ import "./vaults/Withdraw.sol";
 // HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
-// HVE36: Fee must be less than or eqaul to 2%
+// HVE36: Fee must be less than or equal to 2%
 // HVE37: Token approve reset failed
 // HVE38: Pool range is too big
 // HVE39: Invalid pool range
@@ -62,7 +61,7 @@ import "./vaults/Withdraw.sol";
 
 
 /// @title Manage all Hats.finance vaults
-contract  HATVaults is Committee, Deposit, Params, Pool, Swap, Getters, Withdraw {
+contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
    /**
    * @dev constructor -
    * @param _rewardsToken The reward token address (HAT)
