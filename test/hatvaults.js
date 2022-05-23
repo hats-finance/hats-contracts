@@ -306,7 +306,12 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
     assert.equal(tx.logs[0].args._pid, 1);
 
-    await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
+    await stakingToken2.setBadTransferFlag(true);
+    tx = await hatVaults.deposit(1, web3.utils.toWei("2"), { from: staker });
+    await stakingToken2.setBadTransferFlag(false);
+    assert.equal(tx.logs[0].event, "Deposit");
+    assert.equal(tx.logs[0].args.amount, web3.utils.toWei("2"));
+    assert.equal(tx.logs[0].args.transferredAmount, web3.utils.toWei("1"));
 
     try {
       await hatVaults.setCommittee(1, accounts[2]);
