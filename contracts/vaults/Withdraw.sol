@@ -62,7 +62,6 @@ contract Withdraw is Swap {
     }
 
     function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee) internal {
-        uint256 balanceBefore = _lpToken.balanceOf(address(this));
         if (_fee > 0) {
             _lpToken.safeTransfer(governance(), _fee);
         }
