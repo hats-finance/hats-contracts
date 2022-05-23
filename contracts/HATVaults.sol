@@ -51,8 +51,8 @@ import "./vaults/Withdraw.sol";
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or equal to 2%
 // HVE37: Token approve reset failed
-// HVE38: Pool range is too big
-// HVE39: Invalid pool range
+// HVE38: Pool must not be initialized
+// HVE39: Set shares arrays must have same length
 // HVE40: Committee not checked in yet
 // HVE41: Not enough user balance
 // HVE42: User shares must be greater than 0
@@ -100,7 +100,7 @@ contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
-            hatVestingPeriods:90,
+            hatVestingPeriods: 90,
             withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
             setBountyLevelsDelay: 2 days,

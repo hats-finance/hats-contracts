@@ -70,7 +70,9 @@ const setup = async function(
     bountyLevels,
     bountySplit,
     "_descriptionHash",
-    [86400, 10]
+    [86400, 10],
+    false,
+    true
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
@@ -173,7 +175,9 @@ contract("HatVaults", (accounts) => {
         [],
         [0, 0, 0, 0, 0, 0],
         "_descriptionHash",
-        [86400, 10]
+        [86400, 10],
+        false,
+        true
       );
       assert(false, "only governance");
     } catch (ex) {
@@ -189,6 +193,8 @@ contract("HatVaults", (accounts) => {
         [0, 0, 0, 0, 0, 0],
         "_descriptionHash",
         [86400, 10],
+        false,
+        true,
         { from: accounts[1] }
       );
       assert(false, "only governance");
@@ -202,7 +208,9 @@ contract("HatVaults", (accounts) => {
       [],
       [0, 0, 0, 0, 0, 0],
       "_descriptionHash",
-      [86400, 10]
+      [86400, 10],
+      false,
+      true
     );
   });
 
@@ -365,11 +373,11 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
+            (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           ).add(
             new web3.utils.BN(
               (
-                await hatVaults.getBountyInfo(0)
+                await hatVaults.bountyInfos(0)
               ).bountySplit.governanceHat
             )
           )
@@ -382,7 +390,7 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("1"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.getBountyInfo(0)).bountySplit.swapAndBurn
+            (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           )
         )
         .div(new web3.utils.BN("10000"))

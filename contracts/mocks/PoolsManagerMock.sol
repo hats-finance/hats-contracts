@@ -23,7 +23,9 @@ contract PoolsManagerMock {
                                 _bountyLevels,
                                 _bountySplit,
                                 _descriptionHash,
-                                _bountyVestingParams);
+                                _bountyVestingParams,
+                                false,
+                                true);
         }
     }
 

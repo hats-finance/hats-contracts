@@ -141,7 +141,7 @@ contract  Base is Governable, ReentrancyGuard {
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> BountyInfo
-    mapping (uint256=>BountyInfo) internal bountyInfos;
+    mapping (uint256=>BountyInfo) public bountyInfos;
 
     uint256 public hatRewardAvailable;
 
@@ -162,6 +162,8 @@ contract  Base is Governable, ReentrancyGuard {
     mapping(uint256 => PendingBountyLevels) public pendingBountyLevels;
 
     mapping(uint256 => bool) public poolDepositPause;
+
+    mapping(uint256 => bool) public poolInitialized;
 
     mapping(address=>bool) public whitelistedRouters;
 
@@ -280,7 +282,7 @@ contract  Base is Governable, ReentrancyGuard {
             return;
         }
         uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare = pool.rewardPerShare + (reward * 1e12 / totalShares);
+        pool.rewardPerShare += (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
