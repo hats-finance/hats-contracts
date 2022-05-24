@@ -119,9 +119,12 @@ contract  Base is Governable, ReentrancyGuard {
     }
 
 
-    ERC20Burnable public HAT;
+    // the ERC20 contract in which rewards are distributed
+    IERC20 public rewardToken;
+    // the token into which a part of the the bounty will be swapped-into-and-burnt
+    ERC20Burnable public swapToken;
     uint256 public REWARD_PER_BLOCK;
-    // Block from which the HAT vault contract will start rewarding.
+    // Block from which the vaults contract will start rewarding.
     uint256 public START_BLOCK;
     uint256 public MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
@@ -143,7 +146,7 @@ contract  Base is Governable, ReentrancyGuard {
     //pid -> BountyInfo
     mapping (uint256=>BountyInfo) public bountyInfos;
 
-    uint256 public hatRewardAvailable;
+    uint256 public rewardAvailable;
 
     //pid -> committee address
     mapping(uint256=>address) public committees;
@@ -287,13 +290,13 @@ contract  Base is Governable, ReentrancyGuard {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
+    // Safe rewardToken transfer function, transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (_amount > hatRewardAvailable) { 
-            _amount = hatRewardAvailable; 
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
         }
-        hatRewardAvailable -= _amount;
-        HAT.transfer(_to, _amount);
+        rewardAvailable -= _amount;
+        rewardToken.transfer(_to, _amount);
         // TODO: fix return of the requested amount
         emit SafeTransferReward(_to, _pid, _amount, _amount);
     }

@@ -65,7 +65,7 @@ import "./vaults/Withdraw.sol";
 contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
    /**
    * @dev constructor -
-   * @param _rewardsToken The reward token address 
+   * @param _rewardToken The reward token address 
    * @param _rewardPerBlock The reward amount per block that the contract will reward pools
    * @param _startRewardingBlock Start block from which the contract will start rewarding
    * @param _multiplierPeriod A fixed period value. Each period will have its own multiplier value,
@@ -74,22 +74,25 @@ contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
    *        Some of the contracts functions are limited only to governance:
    *         addPool, setPool, dismissClaim, approveClaim,
    *         setHatVestingParams, setVestingParams, setRewardsSplit
-   * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
+   * @param  _swapToken the token that part of a payout will be swapped for and burned
+   * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap vault tokens for swapToken.
 
    * @param _tokenLockFactory Address of the token lock factory to be used
    *        to create a vesting contract for the approved claim reporter.
    */
     constructor(
-        address _rewardsToken,
+        address _rewardToken,
         uint256 _rewardPerBlock,
         uint256 _startRewardingBlock,
         uint256 _multiplierPeriod,
         address _hatGovernance,
+        address _swapToken,
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
     // solhint-disable-next-line func-visibility
     ) {
-        HAT = ERC20Burnable(_rewardsToken);
+        rewardToken = IERC20(_rewardToken);
+        swapToken = ERC20Burnable(_swapToken);
         REWARD_PER_BLOCK = _rewardPerBlock;
         START_BLOCK = _startRewardingBlock;
         MULTIPLIER_PERIOD = _multiplierPeriod;

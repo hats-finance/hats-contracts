@@ -45,6 +45,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
+    hatToken.address,
     [router.address],
     tokenLockFactory.address
   );
@@ -3716,6 +3717,7 @@ contract("HatVaults", (accounts) => {
       1,
       10,
       poolManager.address,
+      hatToken1.address,
       [router1.address],
       tokenLockFactory1.address
     );
