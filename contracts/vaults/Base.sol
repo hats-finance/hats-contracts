@@ -354,7 +354,7 @@ contract  Base is Governable, ReentrancyGuard {
 
     /**
     * @dev Check bounty levels.
-    * Each level should be less than `HUNDRED_PERCENT`
+    * Each level should be less than or equal to `HUNDRED_PERCENT`
     * If _bountyLevels length is 0, default bounty levels will be returned ([2000, 4000, 6000, 8000]).
     * @param _bountyLevels The bounty levels array
     * @return bountyLevels
@@ -372,7 +372,7 @@ contract  Base is Governable, ReentrancyGuard {
             }
         } else {
             for (i; i < _bountyLevels.length; i++) {
-                require(_bountyLevels[i] <= HUNDRED_PERCENT, "HVE33");
+                require(_bountyLevels[i] < HUNDRED_PERCENT, "HVE33");
             }
             bountyLevels = _bountyLevels;
         }
