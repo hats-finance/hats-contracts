@@ -8,7 +8,6 @@ const PoolsManagerMock = artifacts.require("./PoolsManagerMock.sol");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
-
 var hatVaults;
 var hatToken;
 var router;
@@ -49,13 +48,25 @@ const setup = async function(
     [router.address],
     tokenLockFactory.address
   );
-  await utils.setMinter(hatToken, accounts[0], web3.utils.toWei((2500000 + rewardInVaults).toString()));
+  await utils.setMinter(
+    hatToken,
+    accounts[0],
+    web3.utils.toWei((2500000 + rewardInVaults).toString())
+  );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await hatToken.approve(hatVaults.address, web3.utils.toWei(rewardInVaults.toString()));
-  var tx = await hatVaults.depositHATReward(web3.utils.toWei(rewardInVaults.toString()));
-  assert.equal(tx.logs[0].event, "DepositHATReward");
-  assert.equal(tx.logs[0].args._amount, web3.utils.toWei(rewardInVaults.toString()));
+  await hatToken.approve(
+    hatVaults.address,
+    web3.utils.toWei(rewardInVaults.toString())
+  );
+  var tx = await hatVaults.depositReward(
+    web3.utils.toWei(rewardInVaults.toString())
+  );
+  assert.equal(tx.logs[0].event, "DepositReward");
+  assert.equal(
+    tx.logs[0].args._amount,
+    web3.utils.toWei(rewardInVaults.toString())
+  );
   hatVaultsExpectedHatsBalance = rewardInVaults;
   await hatVaults.addPool(
     allocPoint,
@@ -71,7 +82,7 @@ const setup = async function(
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
 
-function assertVMException(error, expectedError="") {
+function assertVMException(error, expectedError = "") {
   let condition =
     error.message.search("VM Exception") > -1 ||
     error.message.search("Transaction reverted") > -1;
@@ -81,8 +92,14 @@ function assertVMException(error, expectedError="") {
   );
   if (expectedError) {
     assert(
-      error.message === "VM Exception while processing transaction: reverted with reason string '" + expectedError + "'",
-      "Expected error to be: " + expectedError + ", got this instead:" + error.message
+      error.message ===
+        "VM Exception while processing transaction: reverted with reason string '" +
+          expectedError +
+          "'",
+      "Expected error to be: " +
+        expectedError +
+        ", got this instead:" +
+        error.message
     );
   }
 }
@@ -456,37 +473,21 @@ contract("HatVaults", (accounts) => {
       [8000, 1000, 100, 100, 100, 700]
     );
     assert.equal((await hatVaults.getBountyLevels(0)).length, 4);
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[0].toString(),
-      "3000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[1].toString(),
-      "5000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[2].toString(),
-      "7000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[3].toString(),
-      "9000"
-    );
+    assert.equal((await hatVaults.getBountyLevels(0))[0].toString(), "3000");
+    assert.equal((await hatVaults.getBountyLevels(0))[1].toString(), "5000");
+    assert.equal((await hatVaults.getBountyLevels(0))[2].toString(), "7000");
+    assert.equal((await hatVaults.getBountyLevels(0))[3].toString(), "9000");
     assert.equal(
       (await hatVaults.bountyInfos(0)).bountySplit.hacker.toString(),
       "1000"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerVested.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerVested.toString(),
       "8000"
     );
 
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.committee.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.committee.toString(),
       "100"
     );
     assert.equal(
@@ -494,15 +495,11 @@ contract("HatVaults", (accounts) => {
       "100"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.governanceHat.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.governanceHat.toString(),
       "100"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHat.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerHat.toString(),
       "700"
     );
 
@@ -580,41 +577,22 @@ contract("HatVaults", (accounts) => {
     }
     await hatVaults.setBountySplit(0, [6000, 0, 1000, 2200, 0, 800]);
     assert.equal((await hatVaults.getBountyLevels(0)).length, 5);
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[0].toString(),
-      "1500"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[1].toString(),
-      "3000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[2].toString(),
-      "4500"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[3].toString(),
-      "9000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[4].toString(),
-      "9999"
-    );
+    assert.equal((await hatVaults.getBountyLevels(0))[0].toString(), "1500");
+    assert.equal((await hatVaults.getBountyLevels(0))[1].toString(), "3000");
+    assert.equal((await hatVaults.getBountyLevels(0))[2].toString(), "4500");
+    assert.equal((await hatVaults.getBountyLevels(0))[3].toString(), "9000");
+    assert.equal((await hatVaults.getBountyLevels(0))[4].toString(), "9999");
     assert.equal(
       (await hatVaults.bountyInfos(0)).bountySplit.hacker.toString(),
       "0"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerVested.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerVested.toString(),
       "6000"
     );
 
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.committee.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.committee.toString(),
       "1000"
     );
     assert.equal(
@@ -622,9 +600,7 @@ contract("HatVaults", (accounts) => {
       "2200"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHat.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerHat.toString(),
       "800"
     );
     await advanceToSaftyPeriod();
@@ -661,22 +637,10 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(24 * 3600 * 2);
     await hatVaults.setBountyLevels(0, { from: accounts[1] });
     assert.equal((await hatVaults.getBountyLevels(0)).length, 4);
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[0].toString(),
-      "2000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[1].toString(),
-      "4000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[2].toString(),
-      "6000"
-    );
-    assert.equal(
-      (await hatVaults.getBountyLevels(0))[3].toString(),
-      "8000"
-    );
+    assert.equal((await hatVaults.getBountyLevels(0))[0].toString(), "2000");
+    assert.equal((await hatVaults.getBountyLevels(0))[1].toString(), "4000");
+    assert.equal((await hatVaults.getBountyLevels(0))[2].toString(), "6000");
+    assert.equal((await hatVaults.getBountyLevels(0))[3].toString(), "8000");
   });
 
   it("zero totalAllocPoints", async () => {
@@ -699,7 +663,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await hatVaults.updatePool(0);
@@ -715,7 +682,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     try {
       await hatVaults.deposit(0, "999999", { from: staker });
@@ -737,7 +707,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.setPool(0, 100, true, true, "_descriptionHash");
     try {
       await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
@@ -843,7 +816,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
 
@@ -965,7 +941,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNoneSaftyPeriod();
@@ -990,7 +969,10 @@ contract("HatVaults", (accounts) => {
 
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNoneSaftyPeriod();
@@ -1094,10 +1076,10 @@ contract("HatVaults", (accounts) => {
 
     tx = await hatVaults.setFeeSetter(accounts[1]);
 
-    assert.equal((await hatVaults.feeSetter()), accounts[1]);
+    assert.equal(await hatVaults.feeSetter(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetFeeSetter");
     assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
-    
+
     try {
       await hatVaults.setPoolWithdrawalFee(0, 100);
       assert(false, "only fee setter");
@@ -1122,7 +1104,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 200);
-    
+
     var staker = accounts[2];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -1136,9 +1118,17 @@ contract("HatVaults", (accounts) => {
     await safeWithdraw(0, web3.utils.toWei("1"), staker);
 
     // Staker got back the reward minus the fee
-    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.98"));
+    assert.equal(
+      await stakingToken.balanceOf(staker),
+      web3.utils.toWei("0.98")
+    );
     // Governance received the fee
-    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString());
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[0])).toString(),
+      governanceBalance
+        .add(new web3.utils.BN(web3.utils.toWei("0.02")))
+        .toString()
+    );
   });
 
   it("Emergency withdraw fee", async () => {
@@ -1150,7 +1140,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 200);
-    
+
     var staker = accounts[2];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -1164,9 +1154,17 @@ contract("HatVaults", (accounts) => {
     await safeEmergencyWithdraw(0, staker);
 
     // Staker got back the reward minus the fee
-    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.98"));
+    assert.equal(
+      await stakingToken.balanceOf(staker),
+      web3.utils.toWei("0.98")
+    );
     // Governance received the fee
-    assert.equal((await stakingToken.balanceOf(accounts[0])).toString(), governanceBalance.add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString());
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[0])).toString(),
+      governanceBalance
+        .add(new web3.utils.BN(web3.utils.toWei("0.02")))
+        .toString()
+    );
   });
 
   it("stake", async () => {
@@ -1189,9 +1187,15 @@ contract("HatVaults", (accounts) => {
     }
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await utils.increaseTime(7 * 24 * 3600);
     assert.equal(await stakingToken.balanceOf(staker), 0);
     assert.equal(
@@ -1243,12 +1247,18 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     assert.equal(await hatToken.balanceOf(staker), 0);
 
     let expectedReward = await calculateExpectedReward(staker);
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     try {
       await hatVaults.calcClaimBounty(0, 10);
@@ -1260,7 +1270,10 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "ClaimReward");
     assert.equal(tx.logs[0].args._pid, 0);
 
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
@@ -1377,8 +1390,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    var tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    var tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1401,8 +1414,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1421,8 +1434,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1445,12 +1458,27 @@ contract("HatVaults", (accounts) => {
       staker,
       safeWithdrawBlocksIncrement
     );
-    await utils.setMinter(hatToken, accounts[0], expectedReward.div(new web3.utils.BN("2")));
-    await hatToken.mint(accounts[0], expectedReward.div(new web3.utils.BN("2")));
-    await hatToken.approve(hatVaults.address, expectedReward.div(new web3.utils.BN("2")));
-    tx = await hatVaults.depositHATReward(expectedReward.div(new web3.utils.BN("2")));
-    assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.div(new web3.utils.BN("2")).toString());
+    await utils.setMinter(
+      hatToken,
+      accounts[0],
+      expectedReward.div(new web3.utils.BN("2"))
+    );
+    await hatToken.mint(
+      accounts[0],
+      expectedReward.div(new web3.utils.BN("2"))
+    );
+    await hatToken.approve(
+      hatVaults.address,
+      expectedReward.div(new web3.utils.BN("2"))
+    );
+    tx = await hatVaults.depositReward(
+      expectedReward.div(new web3.utils.BN("2"))
+    );
+    assert.equal(tx.logs[0].event, "DepositReward");
+    assert.equal(
+      tx.logs[0].args._amount.toString(),
+      expectedReward.div(new web3.utils.BN("2")).toString()
+    );
     hatVaultsExpectedHatsBalance = expectedReward.div(new web3.utils.BN("2"));
     // try {
     //       await safeWithdraw(0,web3.utils.toWei("4"),staker);
@@ -1466,7 +1494,10 @@ contract("HatVaults", (accounts) => {
     );
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      expectedReward.div(new web3.utils.BN("2")).add(balanceOfStakerBefore).toString()
+      expectedReward
+        .div(new web3.utils.BN("2"))
+        .add(balanceOfStakerBefore)
+        .toString()
     );
     assert.equal((await hatToken.balanceOf(hatVaults.address)).toString(), "0");
   });
@@ -1513,7 +1544,9 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetRewardMultipliers");
     let eventRewardMultipliers = tx.logs[0].args._rewardMultipliers;
     for (let i = 0; i < eventRewardMultipliers.length; i++) {
-      eventRewardMultipliers[i] = parseInt(eventRewardMultipliers[i].toString());
+      eventRewardMultipliers[i] = parseInt(
+        eventRewardMultipliers[i].toString()
+      );
       assert.equal(tx.logs[0].args._rewardMultipliers[i], rewardMultipliers[i]);
     }
 
@@ -1610,19 +1643,28 @@ contract("HatVaults", (accounts) => {
     ).totalAllocPoint;
     assert.equal(
       (await hatVaults.pendingReward(0, staker)).toString(),
-      (await hatVaults.getRewardForBlocksRange(
-        currentBlockNumber - 1,
-        currentBlockNumber,
-        allocPoint,
-        totalAllocPoint
-      )).toString()
+      (
+        await hatVaults.getRewardForBlocksRange(
+          currentBlockNumber - 1,
+          currentBlockNumber,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString()
     );
     var multiplier = await hatVaults.getMultiplier(
       currentBlockNumber,
       currentBlockNumber + 1
     );
     assert.equal(
-      (await hatVaults.getRewardForBlocksRange(currentBlockNumber - 1, currentBlockNumber, 1, 1)).toString(),
+      (
+        await hatVaults.getRewardForBlocksRange(
+          currentBlockNumber - 1,
+          currentBlockNumber,
+          1,
+          1
+        )
+      ).toString(),
       multiplier * REWARD_PER_BLOCK
     );
   });
@@ -1642,7 +1684,10 @@ contract("HatVaults", (accounts) => {
 
     //stake
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
@@ -1661,7 +1706,10 @@ contract("HatVaults", (accounts) => {
     }
 
     await safeEmergencyWithdraw(0, staker);
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)), 1);
 
@@ -1672,7 +1720,10 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE42");
     }
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     assert.equal(web3.utils.fromWei(await stakingToken.balanceOf(staker)), 1);
     try {
@@ -1719,7 +1770,10 @@ contract("HatVaults", (accounts) => {
 
     //stake
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
@@ -1782,7 +1836,10 @@ contract("HatVaults", (accounts) => {
     }
     assert.equal(tx.logs[0].event, "SubmitClaim");
     tx = await hatVaults.approveClaim(0);
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     assert.equal(tx.logs[0].event, "ApproveClaim");
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -1807,9 +1864,11 @@ contract("HatVaults", (accounts) => {
     totalReward = totalReward.add(tx.logs[0].args.amount);
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
-      new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()))
-      .sub(totalReward)
-      .toString()
+      new web3.utils.BN(
+        web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+      )
+        .sub(totalReward)
+        .toString()
     );
     assert.equal(
       web3.utils.fromWei(await stakingToken.balanceOf(staker2)),
@@ -1849,7 +1908,11 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SafeTransferReward");
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
-      new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(tx.logs[0].args.amount).toString()
+      new web3.utils.BN(
+        web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+      )
+        .sub(tx.logs[0].args.amount)
+        .toString()
     );
     assert.equal(
       web3.utils.fromWei(await stakingToken.balanceOf(staker)),
@@ -1921,7 +1984,10 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
 
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
@@ -1945,7 +2011,11 @@ contract("HatVaults", (accounts) => {
     assert.isFalse(tx.logs[0].args.amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
-      new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(tx.logs[0].args.amount).toString()
+      new web3.utils.BN(
+        web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+      )
+        .sub(tx.logs[0].args.amount)
+        .toString()
     );
   });
 
@@ -2049,11 +2119,21 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
 
     try {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
@@ -2083,11 +2163,27 @@ contract("HatVaults", (accounts) => {
     }
     await stakingToken.approveZeroDisable(false);
     amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
-    assert.equal(await stakingToken.allowance(hatVaults.address, (await router.address)), 0);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+    var tx = await hatVaults.swapBurnSend(
+      0,
+      accounts[2],
+      0,
+      router.address,
+      payload
+    );
+    assert.equal(
+      await stakingToken.allowance(hatVaults.address, await router.address),
+      0
+    );
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN("250"))
@@ -2162,12 +2258,28 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approveDisable(true);
 
     await stakingToken.approveDisable(false);
-    let path = ethers.utils.solidityPack(["address", "uint24", "address"], [stakingToken.address, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address"],
+      [stakingToken.address, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+    var tx = await hatVaults.swapBurnSend(
+      0,
+      accounts[2],
+      0,
+      router.address,
+      payload
+    );
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     var expectedHatBurned = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN("250"))
@@ -2219,11 +2331,21 @@ contract("HatVaults", (accounts) => {
     );
 
     await utils.increaseTime(7 * 24 * 3600);
-    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
     try {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
@@ -2237,10 +2359,23 @@ contract("HatVaults", (accounts) => {
     await hatVaults.approveClaim(1);
     assert.equal(await hatToken.balanceOf(accounts[0]), 0);
     amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-    var tx = await hatVaults.swapBurnSend(1, accounts[2], 0, router.address, payload);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+    var tx = await hatVaults.swapBurnSend(
+      1,
+      accounts[2],
+      0,
+      router.address,
+      payload
+    );
     //gov gets 10% out of 80% of the vault value
     assert.equal(
       (await hatToken.balanceOf(accounts[0])).toString(),
@@ -2328,20 +2463,49 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaults.setShares(1, 100, 100, [accounts[0], accounts[1]], [1], [1]);
+      await hatVaults.setShares(
+        1,
+        100,
+        100,
+        [accounts[0], accounts[1]],
+        [1],
+        [1]
+      );
       assert(false, "arrays lengths must match");
     } catch (ex) {
       assertVMException(ex, "HVE39");
     }
 
-    await hatVaults.setShares(1, 10, 100, [accounts[0], accounts[1]], [1, 2], [1, 2]);
-    assert.equal((await hatVaults.poolInfos(1)).rewardPerShare.toString(), "10");
+    await hatVaults.setShares(
+      1,
+      10,
+      100,
+      [accounts[0], accounts[1]],
+      [1, 2],
+      [1, 2]
+    );
+    assert.equal(
+      (await hatVaults.poolInfos(1)).rewardPerShare.toString(),
+      "10"
+    );
     assert.equal((await hatVaults.poolInfos(1)).balance.toString(), "100");
     assert.equal((await hatVaults.poolInfos(1)).totalShares.toString(), "3");
-    assert.equal((await hatVaults.userInfo(1, accounts[0])).shares.toString(), "1");
-    assert.equal((await hatVaults.userInfo(1, accounts[0])).rewardDebt.toString(), "1");
-    assert.equal((await hatVaults.userInfo(1, accounts[1])).shares.toString(), "2");
-    assert.equal((await hatVaults.userInfo(1, accounts[1])).rewardDebt.toString(), "2");
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[0])).shares.toString(),
+      "1"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[0])).rewardDebt.toString(),
+      "1"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[1])).shares.toString(),
+      "2"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[1])).rewardDebt.toString(),
+      "2"
+    );
 
     await hatVaults.addPool(
       100,
@@ -2354,7 +2518,7 @@ contract("HatVaults", (accounts) => {
       false,
       true
     );
-    
+
     try {
       await hatVaults.setShares(2, 0, 0, [], [], []);
       assert(false, "pool already initialized");
@@ -2419,12 +2583,28 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     await hatVaults.approveClaim(0);
-    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-    var tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+    var tx = await hatVaults.swapBurnSend(
+      0,
+      accounts[2],
+      0,
+      router.address,
+      payload
+    );
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(
       tx.logs[0].args._amountSwapped.toString(),
@@ -2440,9 +2620,7 @@ contract("HatVaults", (accounts) => {
             )
             .add(
               new web3.utils.BN(
-                (
-                  await hatVaults.bountyInfos(0)
-                ).bountySplit.governanceHat
+                (await hatVaults.bountyInfos(0)).bountySplit.governanceHat
               )
             )
         )
@@ -2505,12 +2683,22 @@ contract("HatVaults", (accounts) => {
     });
     await hatVaults.approveClaim(0);
 
-    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-    
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[1],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+
     try {
       await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
         from: accounts[3],
@@ -2563,9 +2751,16 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._router, router.address);
     assert.equal(tx.logs[0].args._status, true);
 
-    tx = await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
-      from: accounts[0],
-    });
+    tx = await hatVaults.swapBurnSend(
+      0,
+      accounts[1],
+      0,
+      router.address,
+      payload,
+      {
+        from: accounts[0],
+      }
+    );
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(
       tx.logs[0].args._amountSwapped.toString(),
@@ -2575,9 +2770,7 @@ contract("HatVaults", (accounts) => {
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           ).add(
             new web3.utils.BN(
-              (
-                await hatVaults.bountyInfos(0)
-              ).bountySplit.governanceHat
+              (await hatVaults.bountyInfos(0)).bountySplit.governanceHat
             )
           )
         )
@@ -2607,13 +2800,27 @@ contract("HatVaults", (accounts) => {
     );
 
     amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], 0);
-    amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[2],
+      0
+    );
+    amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
 
-    tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload, {
-      from: accounts[0],
-    });
+    tx = await hatVaults.swapBurnSend(
+      0,
+      accounts[2],
+      0,
+      router.address,
+      payload,
+      {
+        from: accounts[0],
+      }
+    );
 
     assert.equal(tx.logs[0].event, "SwapAndBurn");
     assert.equal(tx.logs[0].args._amountBurned.toString(), "0");
@@ -2637,18 +2844,32 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[1], 0, router.address, payload, {
-        from: accounts[0],
-      });
+      tx = await hatVaults.swapBurnSend(
+        0,
+        accounts[1],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[0],
+        }
+      );
       assert(false, "can claim only once, nothing to redeem or burn");
     } catch (ex) {
       assertVMException(ex, "HVE24");
     }
 
     try {
-      tx = await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload, {
-        from: accounts[0],
-      });
+      tx = await hatVaults.swapBurnSend(
+        0,
+        accounts[2],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[0],
+        }
+      );
       assert(false, "can claim only once, nothing to redeem or burn");
     } catch (ex) {
       assertVMException(ex, "HVE24");
@@ -2699,14 +2920,31 @@ contract("HatVaults", (accounts) => {
     await hatVaults.approveClaim(1);
 
     for (i = 0; i < 2; i++) {
-      let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+      let path = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+      );
       let amountToSwapAndBurn = await hatVaults.swapAndBurns(i);
-      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], i);
-      let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(i));
-      let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-      var tx = await hatVaults.swapBurnSend(i, accounts[1], 0, router.address, payload, {
-        from: accounts[0],
-      });
+      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+        accounts[1],
+        i
+      );
+      let amount = amountToSwapAndBurn
+        .add(amountForHackersHatRewards)
+        .add(await hatVaults.governanceHatRewards(i));
+      let payload = ISwapRouter.encodeFunctionData("exactInput", [
+        [path, hatVaults.address, 0, amount.toString(), 0],
+      ]);
+      var tx = await hatVaults.swapBurnSend(
+        i,
+        accounts[1],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[0],
+        }
+      );
       assert.equal(tx.logs[0].event, "SwapAndBurn");
       assert.equal(
         tx.logs[0].args._amountSwapped.toString(),
@@ -2716,9 +2954,7 @@ contract("HatVaults", (accounts) => {
               (await hatVaults.bountyInfos(i)).bountySplit.swapAndBurn
             ).add(
               new web3.utils.BN(
-                (
-                  await hatVaults.bountyInfos(i)
-                ).bountySplit.governanceHat
+                (await hatVaults.bountyInfos(i)).bountySplit.governanceHat
               )
             )
           )
@@ -2753,14 +2989,31 @@ contract("HatVaults", (accounts) => {
     }
 
     for (i = 0; i < 2; i++) {
-      let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+      let path = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+      );
       let amountToSwapAndBurn = await hatVaults.swapAndBurns(i);
-      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[2], i);
-      let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(i));
-      let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
-      tx = await hatVaults.swapBurnSend(i, accounts[2], 0, router.address, payload, {
-        from: accounts[0],
-      });
+      let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+        accounts[2],
+        i
+      );
+      let amount = amountToSwapAndBurn
+        .add(amountForHackersHatRewards)
+        .add(await hatVaults.governanceHatRewards(i));
+      let payload = ISwapRouter.encodeFunctionData("exactInput", [
+        [path, hatVaults.address, 0, amount.toString(), 0],
+      ]);
+      tx = await hatVaults.swapBurnSend(
+        i,
+        accounts[2],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[0],
+        }
+      );
 
       assert.equal(tx.logs[0].event, "SwapAndBurn");
       assert.equal(tx.logs[0].args._amountBurned.toString(), "0");
@@ -2816,11 +3069,21 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     await hatVaults.approveClaim(0);
-    let path = ethers.utils.solidityPack(["address", "uint24", "address", "uint24", "address"], [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[1],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
     try {
       await hatVaults.swapBurnSend(
         0,
@@ -3156,7 +3419,6 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-
   it("setPool x2", async () => {
     var poolManagerMock = await PoolsManagerMock.new();
     //  await setup(accounts, REAL_REWARD_PER_BLOCK, 0, [], [0,0, 0, 0,0, 0],10000);
@@ -3300,7 +3562,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE34");
     }
-    
+
     try {
       await hatVaults.addPool(
         100,
@@ -3576,7 +3838,10 @@ contract("HatVaults", (accounts) => {
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     assert.equal(await hatVaults.getGlobalPoolUpdatesLength(), 3);
-    assert.equal((await hatVaults.poolInfos(0)).lastProcessedTotalAllocPoint, 0);
+    assert.equal(
+      (await hatVaults.poolInfos(0)).lastProcessedTotalAllocPoint,
+      0
+    );
     assert.equal(
       (await hatVaults.poolInfos(0)).lastRewardBlock,
       tx.receipt.blockNumber
@@ -3656,7 +3921,10 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker2, web3.utils.toWei("2"));
 
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     try {
       await hatVaults.rewardDepositors(0, web3.utils.toWei("3"), {
         from: rewarder,
@@ -3742,7 +4010,10 @@ contract("HatVaults", (accounts) => {
     await hatToken.mint(staker2, web3.utils.toWei("2"));
 
     assert.equal(await hatToken.balanceOf(staker), web3.utils.toWei("4"));
-    assert.equal(await hatToken.balanceOf(hatVaults.address), web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()));
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
     await hatVaults.deposit(1, web3.utils.toWei("2"), { from: staker2 });
     await utils.increaseTime(7 * 24 * 3600);

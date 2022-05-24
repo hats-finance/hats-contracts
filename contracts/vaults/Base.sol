@@ -256,7 +256,7 @@ contract  Base is Governable, ReentrancyGuard {
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositHATReward(uint256 indexed _amount);
+    event DepositReward(uint256 indexed _amount);
     event ClaimReward(uint256 indexed _pid);
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
