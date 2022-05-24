@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../Governable.sol";
-import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
 contract  Base is Governable, ReentrancyGuard {
@@ -119,7 +119,7 @@ contract  Base is Governable, ReentrancyGuard {
     }
 
 
-    HATToken public HAT;
+    ERC20Burnable public HAT;
     uint256 public REWARD_PER_BLOCK;
     // Block from which the HAT vault contract will start rewarding.
     uint256 public START_BLOCK;
@@ -256,7 +256,7 @@ contract  Base is Governable, ReentrancyGuard {
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositReward(uint256 indexed _amount);
+    event DepositReward(uint256 indexed _amount, address _rewardToken);
     event ClaimReward(uint256 indexed _pid);
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);

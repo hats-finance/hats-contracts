@@ -9,7 +9,7 @@ contract Deposit is Base {
     function depositReward(uint256 _amount) external {
         hatRewardAvailable += _amount;
         HAT.transferFrom(address(msg.sender), address(this), _amount);
-        emit DepositReward(_amount);
+        emit DepositReward(_amount, address(HAT));
     }
 
     /**
