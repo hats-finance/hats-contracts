@@ -372,7 +372,7 @@ contract  Base is Governable, ReentrancyGuard {
             }
         } else {
             for (i; i < _bountyLevels.length; i++) {
-                require(_bountyLevels[i] < HUNDRED_PERCENT, "HVE33");
+                require(_bountyLevels[i] <= HUNDRED_PERCENT, "HVE33");
             }
             bountyLevels = _bountyLevels;
         }
