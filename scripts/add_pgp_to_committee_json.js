@@ -1,19 +1,18 @@
-
 async function main() {
   const fs = require("fs");
   const fileName = "./committee-example.json";
 
-  var data = JSON.parse(fs.readFileSync(fileName,
-                             {encoding:'utf8', flag:'r'}));
+  var data = JSON.parse(
+    fs.readFileSync(fileName, { encoding: "utf8", flag: "r" })
+  );
 
-  var pgp = fs.readFileSync("./scripts/test_key.pgp",
-                            {encoding:'utf8', flag:'r'});
+  var pgp = fs.readFileSync("./scripts/test_key.pgp", {
+    encoding: "utf8",
+    flag: "r",
+  });
   data["communication-channel"]["pgp-pk"] = pgp;
 
-  fs.writeFileSync(
-    fileName,
-    JSON.stringify(data, undefined, 2)
-  );
+  fs.writeFileSync(fileName, JSON.stringify(data, undefined, 2));
 }
 
 main()
