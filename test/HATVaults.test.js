@@ -18,7 +18,6 @@ const utils = require("./utils.js");
 //const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 
-
 let hatVaults;
 let hatVaultsFromCommittee;
 let hatVaultsFromUser1;
@@ -30,7 +29,7 @@ const REAL_REWARD_PER_BLOCK = "0.0161856448";
 let tokenLockFactory;
 const safeWithdrawBlocksIncrement = 3;
 let hatVaultsExpectedHatsBalance;
-let accounts;
+let signers;
 let governance;
 let committee;
 let user1;
@@ -47,7 +46,6 @@ async function deployContract(contractName, args = []) {
 }
 
 const setup = async function (
-    accounts,
     reward_per_block = REWARD_PER_BLOCK,
     startBlock = 0,
     bountyLevels = [],
@@ -58,8 +56,14 @@ const setup = async function (
     bountyVestingParams = [86400, 10],
     weth = false,
 ) {
-    hatToken = await deployContract("HATTokenMock", [governance, utils.TIME_LOCK_DELAY]);
+    signers = await ethers.getSigners();
+    governance = signers[0];
+    committee = signers[1];
+    user1 = signers[2];
+
+    hatToken = await deployContract("HATTokenMock", [governance.address, utils.TIME_LOCK_DELAY]);
     lpToken = await deployContract("ERC20Mock", ["Staking", "STK"]);
+
     let wethAddress = utils.NULL_ADDRESS;
     if (weth) {
         wethAddress = lpToken.address;
@@ -70,20 +74,21 @@ const setup = async function (
 
     hatVaults = await deployContract("HATVaults",
         [hatToken.address,
-            web3.utils.toWei(reward_per_block),
+            ethers.utils.parseEther(reward_per_block),
             startBlock,
             halvingAfterBlock,
-            governance,
+            governance.address,
             [router.address],
             tokenLockFactory.address]
     );
+
     hatVaultsFromUser1 = hatVaults.connect(user1);
     hatVaultsFromCommittee = hatVaults.connect(committee);
 
     await hatVaults.addPool(
         allocPoint,
         lpToken.address,
-        committee,
+        committee.address,
         bountyLevels,
         bountySplit,
         "testing pool",
@@ -94,8 +99,8 @@ const setup = async function (
 
 async function depositHATRewards(rewardInVaults) {
     let rewardInWei = web3.utils.toWei(rewardInVaults.toString());
-    await utils.setMinter(hatToken, governance, rewardInWei);
-    await hatToken.mint(governance, rewardInWei);
+    await utils.setMinter(hatToken, governance.address, rewardInWei);
+    await hatToken.mint(governance.address, rewardInWei);
     await hatToken.approve(hatVaults.address, rewardInWei);
     let tx = await hatVaults.depositHATReward(rewardInWei);
     assert.equal(tx.logs[0].event, "DepositHATReward");
@@ -103,19 +108,15 @@ async function depositHATRewards(rewardInVaults) {
     hatVaultsExpectedHatsBalance = rewardInVaults;
 }
 
-async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
+async function calculateExpectedReward(userAddress, operationBlocksIncrement = 0) {//todo remove web3
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfos(pid)).lastRewardBlock;
     let allocPoint = (await hatVaults.poolInfos(pid)).allocPoint;
-    let rewardPerShare = new web3.utils.BN(
-        (await hatVaults.poolInfos(pid)).rewardPerShare
-    );
-    let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(pid, staker)).shares;
+    let rewardPerShare = (await hatVaults.poolInfos(pid)).rewardPerShare;
+    let onee12 = ethers.utils.parseEther("0.000001");
+    let expectedReward = (await hatVaults.userInfo(pid, userAddress)).shares;
     let globalUpdatesLen = await hatVaults.getGlobalPoolUpdatesLength();
-    let totalAllocPoint = (
-        await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)
-    ).totalAllocPoint;
+    let totalAllocPoint = (await hatVaults.globalPoolUpdates(globalUpdatesLen - 1)).totalAllocPoint;
     let poolReward = await hatVaults.getRewardForBlocksRange(
         lastRewardBlock,
         currentBlockNumber + 1 + operationBlocksIncrement,
@@ -124,11 +125,11 @@ async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     );
     let lpSupply = await lpToken.balanceOf(hatVaults.address);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
-    let rewardDebt = (await hatVaults.userInfo(pid, staker)).rewardDebt;
-    return stakerAmount
-        .mul(rewardPerShare)
-        .div(onee12)
-        .sub(rewardDebt);
+    let rewardDebt = (await hatVaults.userInfo(pid, userAddress)).rewardDebt;
+    console.log(rewardPerShare);
+    console.log(expectedReward.mul(rewardPerShare).div(onee12).sub(rewardDebt));
+    console.log(ethers.utils.formatEther(expectedReward.mul(rewardPerShare).div(onee12).sub(rewardDebt)));
+    return expectedReward.mul(rewardPerShare).div(onee12).sub(rewardDebt);
 }
 
 async function safeWithdraw(pid, user, amount) {
@@ -152,26 +153,14 @@ async function safeWithdraw(pid, user, amount) {
 }
 
 contract('Testing rewards logic',
-    function (accounts) {
+    function () {
         let expectedRewardAfter1EthDeposit;
 
         beforeEach(async function () {//TODO before?
-            governance = accounts[0];
-            committee = accounts[1];
-            user1 = accounts[2];
-            await setup(accounts);
-
+            await setup();
             await lpToken.connect(user1).approve(hatVaults.address, oneEth);
-            await lpToken.mint(user1, oneEth);
-            //   let userBalance = await lpToken.balanceOf(user1);
-
-            //  expect(userBalance.eq(oneEth)).to.be.true();
-            expect((await lpToken.balanceOf(user1)).to.equal(oneEth));
-            console.log(userBalance);
-            console.log(oneEth);
-
-            expect(await lpToken.balanceOf(user1)).to.equal(oneEth);
-
+            await lpToken.mint(user1.address, oneEth);
+            expect(await lpToken.balanceOf(user1.address)).to.equal(oneEth);
         });
 
         describe("after first deposit", function () {
@@ -181,23 +170,25 @@ contract('Testing rewards logic',
                     .withArgs(user1, pid, oneEth);
             });
 
-            describe("when there's enough HAT rewards", function () {
-                this.beforeEach(async function () {
-                    expectedRewardAfter1EthDeposit = calculateExpectedReward(user1);
+            describe.only("when there's enough rewards", function () {
+                this.beforeEach("deposit rewards", async function () {
+                    expectedRewardAfter1EthDeposit = await calculateExpectedReward(user1.address);
+                    console.log(ethers.utils.formatEther(expectedRewardAfter1EthDeposit));
+
                     await depositHATRewards(expectedRewardAfter1EthDeposit);
                 });
                 it("doesn't reward user", async function () {
-                    expect(await hatToken.balanceOf(user1)).to.equal(0);
+                    expect(await hatToken.balanceOf(user1.address)).to.equal(0);
                 });
                 it("keeps pending rewards for user", async function () {
                     let pendingReward = await hatVaults.getPendingReward(pid, user1);
                     console.log(pendingReward);
-                    expect(await hatVaults.getPendingReward(pid, user1)).to.equal(expectedRewardAfter1EthDeposit);
+                    expect(await hatVaults.getPendingReward(pid, user1.address)).to.equal(expectedRewardAfter1EthDeposit);
                 });
 
                 describe("after withdraw", function () {
                     this.beforeEach(async function () {
-                        await expect(safeWithdraw(pid, user, oneEth))
+                        await expect(safeWithdraw(pid, user1, oneEth))
                             .to.emit(hatVaults, "Withdraw")
                             .withArgs(user1.address, pid, oneEth);
                     });
@@ -227,27 +218,27 @@ contract('Testing rewards logic',
 
             describe("when there's no HAT rewards", function () {
                 it("doesn't reward user", async function () {
-                    expect(await hatToken.balanceOf(user1)).to.equal(0);
+                    expect(await hatToken.balanceOf(user1.address)).to.equal(0);
                 });
                 it("keeps pending rewards for user", async function () {
                     //     let pendingReward = await hatVaults.getPendingReward(pid, user1);
                     //    console.log(pendingReward);
-                    expect(await hatVaults.getPendingReward(pid, user1)).to.equal(expectedRewardAfter1EthDeposit);
+                    expect(await hatVaults.getPendingReward(pid, user1.address)).to.equal(expectedRewardAfter1EthDeposit);
                 });
 
                 describe("after withdraw", function () {
                     this.beforeEach(async function () {
-                        await expect(safeWithdraw(pid, user, oneEth))
+                        await expect(safeWithdraw(pid, user1.address, oneEth))
                             .to.emit(hatVaults, "Withdraw")
                             .withArgs(user1.address, pid, oneEth);
                     });
                     it("doesn't reward user", async function () {
-                        expect(await hatToken.balanceOf(user1)).to.equal(0);
+                        expect(await hatToken.balanceOf(user1.address)).to.equal(0);
                     });
                     it("keeps pending rewards for user", async function () {
                         //  let pendingReward = await hatVaults.getPendingReward(pid, user1);
                         // console.log(pendingReward);
-                        expect(await hatVaults.getPendingReward(pid, user1)).to.equal(expectedRewardAfter1EthDeposit);
+                        expect(await hatVaults.getPendingReward(pid, user1.address)).to.equal(expectedRewardAfter1EthDeposit);
                     });
                 });
 
@@ -258,12 +249,12 @@ contract('Testing rewards logic',
                             .withArgs(pid);
                     });
                     it("doesn't reward user", async function () {
-                        expect(await hatToken.balanceOf(user1)).to.equal(0);
+                        expect(await hatToken.balanceOf(user1.address)).to.equal(0);
                     });
                     it("keeps pending rewards for user", async function () {
                         //       let pendingReward = await hatVaults.getPendingReward(pid, user1);
                         //      console.log(pendingReward);
-                        expect(await hatVaults.getPendingReward(pid, user1)).to.equal(expectedRewardAfter1EthDeposit);
+                        expect(await hatVaults.getPendingReward(pid, user1.address)).to.equal(expectedRewardAfter1EthDeposit);
                     });
                 });
 
