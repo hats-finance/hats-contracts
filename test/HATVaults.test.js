@@ -174,7 +174,7 @@ contract('Testing rewards logic',
 
         });
 
-        describe.only("after first deposit", function () {
+        describe("after first deposit", function () {
             this.beforeEach(async function () {
                 expect(await hatVaultsFromUser1.deposit(pid, oneEth))
                     .to.emit(hatVaults, "Deposit")
