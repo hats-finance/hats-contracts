@@ -39,7 +39,7 @@ contract Swap is Base {
         address tokenLock;
         uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
-            //hacker get its reward via vesting contract
+            //hacker gets hers reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(HAT),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
