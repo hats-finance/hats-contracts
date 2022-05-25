@@ -12,7 +12,7 @@ import "../Governable.sol";
 import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
-contract  Base is Governable, ReentrancyGuard {
+contract Base is Governable, ReentrancyGuard {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {
@@ -76,7 +76,7 @@ contract  Base is Governable, ReentrancyGuard {
         uint256 vestingDuration;
         uint256 vestingPeriods;
     }
-    
+
     // How to devide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
@@ -89,8 +89,8 @@ contract  Base is Governable, ReentrancyGuard {
         uint256 swapAndBurn;
         // the percentage of the total bounty to be swapped to HATs and sent to governance
         uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker
-        uint256 hackerHat;
+        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+        uint256 hackerHatVested;
     }
 
     // How to devide a bounty for a claim that has been approved, in amounts of pool's tokens
@@ -143,7 +143,6 @@ contract  Base is Governable, ReentrancyGuard {
     //pid -> BountyInfo
     mapping (uint256=>BountyInfo) public bountyInfos;
 
-    uint256 public hatRewardAvailable;
 
     //pid -> committee address
     mapping(uint256=>address) public committees;
@@ -287,15 +286,17 @@ contract  Base is Governable, ReentrancyGuard {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
+    /**
+    * @dev Safe HAT transfer function, transfer rewards from the contract only if there are enough
+    * rewards available.
+    * @param _to The address to transfer the reward to
+    * @param _amount The amount of rewards to transfer
+    * @param _pid The pool id
+   */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (_amount > hatRewardAvailable) { 
-            _amount = hatRewardAvailable; 
-        }
-        hatRewardAvailable -= _amount;
+        require(HAT.balanceOf(address(this)) >= _amount, "HVE46");
         HAT.transfer(_to, _amount);
-        // TODO: fix return of the requested amount
-        emit SafeTransferReward(_to, _pid, _amount, _amount);
+        emit SafeTransferReward(_to, _pid, _amount);
     }
 
     /**
@@ -380,22 +381,22 @@ contract  Base is Governable, ReentrancyGuard {
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         require(_bountySplit.hackerVested
-            + _bountySplit.hacker
-            + _bountySplit.committee
-            + _bountySplit.swapAndBurn
-            + _bountySplit.governanceHat
-            + _bountySplit.hackerHat == HUNDRED_PERCENT,
-        "HVE29");
+        + _bountySplit.hacker
+        + _bountySplit.committee
+        + _bountySplit.swapAndBurn
+        + _bountySplit.governanceHat
+        + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
+            "HVE29");
     }
 
     function getDefaultBountySplit() public pure returns (BountySplit memory) {
         return BountySplit({
-            hackerVested: 6000,
-            hacker: 2000,
-            committee: 500,
-            swapAndBurn: 0,
-            governanceHat: 1000,
-            hackerHat: 500
+        hackerVested : 6000,
+        hacker : 2000,
+        committee : 500,
+        swapAndBurn : 0,
+        governanceHat : 1000,
+        hackerHatVested : 500
         });
     }
 }

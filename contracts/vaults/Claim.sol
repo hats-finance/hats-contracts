@@ -39,7 +39,7 @@ contract Claim is Base {
 
     /**
     * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by Hats govenrance, or by anyone if the claim is over 5 weeks old.
+    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
     * @param _pid The pool id
     */
     function dismissClaim(uint256 _pid) external {
@@ -50,7 +50,7 @@ contract Claim is Base {
     }
     
     /**
-    * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committe.
+    * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
     * Called only by hats governance.
     * @param _pid The pool id
     */
@@ -90,7 +90,7 @@ contract Claim is Base {
         }
         lpToken.safeTransfer(submittedClaim.beneficiary, claimBounty.hacker);
         lpToken.safeTransfer(submittedClaim.committee, claimBounty.committee);
-        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a seperate tx.
+        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
         swapAndBurns[_pid] += claimBounty.swapAndBurn;
         governanceHatRewards[_pid] += claimBounty.governanceHat;
         hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHat;
@@ -140,7 +140,7 @@ contract Claim is Base {
         totalBountyAmount * bountyInfos[_pid].bountySplit.governanceHat
         / (HUNDRED_PERCENT * HUNDRED_PERCENT);
         claimBounty.hackerHat =
-        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHat
+        totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHatVested
         / (HUNDRED_PERCENT * HUNDRED_PERCENT);
     }
 }

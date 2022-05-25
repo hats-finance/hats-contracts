@@ -8,7 +8,7 @@ contract Swap is Base {
     * @dev Swap pool's token to HAT.
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of HAT.
-    * Only governance are authorized to call this function.
+    * Only governance is authorized to call this function.
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _amountOutMinimum minimum output of HATs at swap
@@ -16,13 +16,12 @@ contract Swap is Base {
     * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(uint256 _pid,
-                        address _beneficiary,
-                        uint256 _amountOutMinimum,
-                        address _routingContract,
-                        bytes calldata _routingPayload)
+        address _beneficiary,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload)
     external
     onlyGovernance {
-        require(whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
@@ -36,10 +35,11 @@ contract Swap is Base {
             HAT.burn(burntHats);
         }
         emit SwapAndBurn(_pid, amount, burntHats);
+
         address tokenLock;
         uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
-           //hacker get its reward via vesting contract
+            //hacker get its reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(HAT),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
@@ -62,19 +62,20 @@ contract Swap is Base {
     }
 
     function swapTokenForHAT(uint256 _amount,
-                            IERC20 _token,
-                            uint256 _amountOutMinimum,
-                            address _routingContract,
-                            bytes calldata _routingPayload)
+        IERC20 _token,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload)
     internal
     returns (uint256 hatsReceived)
     {
         if (address(_token) == address(HAT)) {
             return _amount;
         }
-
+        require(whitelistedRouters[_routingContract], "HVE44");
         require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        require(hatBalanceBefore >= _amountOutMinimum, "HVE45");
         (bool success,) = _routingContract.call(_routingPayload);
         require(success, "HVE43");
         hatsReceived = HAT.balanceOf(address(this)) - hatBalanceBefore;
