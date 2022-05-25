@@ -502,7 +502,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(
       (
         await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHat.toString(),
+      ).bountySplit.hackerHatVested.toString(),
       "700"
     );
 
@@ -624,7 +624,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(
       (
         await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHat.toString(),
+      ).bountySplit.hackerHatVested.toString(),
       "800"
     );
     await advanceToSaftyPeriod();
@@ -1373,7 +1373,7 @@ contract("HatVaults", (accounts) => {
 
     // Deposit redeemed existing reward
     await stakingToken.mint(staker, web3.utils.toWei("1"));
-    let expectedReward = await calculateExpectedReward(staker);
+    let expectedReward = await hatVaults.pendingReward(0,staker);
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
@@ -1381,7 +1381,6 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "DepositHATReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
-
     tx = await hatVaults.deposit(0, web3.utils.toWei("1"), {
       from: staker,
     });
@@ -2435,7 +2434,7 @@ contract("HatVaults", (accounts) => {
           )
             .add(
               new web3.utils.BN(
-                (await hatVaults.bountyInfos(0)).bountySplit.hackerHat
+                (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested
               )
             )
             .add(
@@ -2466,7 +2465,7 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.bountyInfos(0)).bountySplit.hackerHat
+            (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -2622,7 +2621,7 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await hatVaults.bountyInfos(0)).bountySplit.hackerHat
+            (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -2769,7 +2768,7 @@ contract("HatVaults", (accounts) => {
         new web3.utils.BN(web3.utils.toWei("0.8"))
           .mul(
             new web3.utils.BN(
-              (await hatVaults.bountyInfos(i)).bountySplit.hackerHat
+              (await hatVaults.bountyInfos(i)).bountySplit.hackerHatVested
             )
           )
           .div(new web3.utils.BN("10000"))
