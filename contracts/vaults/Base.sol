@@ -247,9 +247,10 @@ contract  Base is Governable, ReentrancyGuard {
                     ClaimBounty _claimBounty);
 
     event SubmitClaim(uint256 indexed _pid,
-                            address _committee,
-                            address indexed _beneficiary,
-                            uint256 indexed _severity);
+        address _committee,
+        address indexed _beneficiary,
+        uint256 indexed _severity,
+        string _descriptionHash);
 
     event WithdrawRequest(uint256 indexed _pid,
                         address indexed _beneficiary,
