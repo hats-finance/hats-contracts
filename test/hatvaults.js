@@ -529,19 +529,25 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE19");
     }
+
+    // bountylevel can be 10000 without throwing an error
+    await hatVaults.setPendingBountyLevels(0, [10000], {
+      from: accounts[1],
+    });
+
     try {
       await hatVaults.setPendingBountyLevels(
         0,
-        [1500, 3000, 4500, 9000, 10000],
+        [1500, 3000, 4500, 9000, 10001],
         { from: accounts[1] }
       );
-      assert(false, "bounty level should be less than 10000");
+      assert(false, "bounty level should be less than or equal to 10000");
     } catch (ex) {
       assertVMException(ex, "HVE33");
     }
     tx = await hatVaults.setPendingBountyLevels(
       0,
-      [1500, 3000, 4500, 9000, 9999],
+      [1500, 3000, 4500, 9000, 10000],
       { from: accounts[1] }
     );
     assert.equal(tx.logs[0].event, "SetPendingBountyLevels");
@@ -581,7 +587,7 @@ contract("HatVaults", (accounts) => {
     assert.equal((await hatVaults.getBountyLevels(0))[1].toString(), "3000");
     assert.equal((await hatVaults.getBountyLevels(0))[2].toString(), "4500");
     assert.equal((await hatVaults.getBountyLevels(0))[3].toString(), "9000");
-    assert.equal((await hatVaults.getBountyLevels(0))[4].toString(), "9999");
+    assert.equal((await hatVaults.getBountyLevels(0))[4].toString(), "10000");
     assert.equal(
       (await hatVaults.bountyInfos(0)).bountySplit.hacker.toString(),
       "0"

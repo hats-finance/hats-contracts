@@ -10,7 +10,7 @@ contract Params is Claim {
     * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.
     * The function can be called only by the pool committee.
     * Cannot be called if there are claims that have been submitted.
-    * Each level should be less than `HUNDRED_PERCENT`
+    * Each level should be less than or equal to `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountyLevels The array of bounty level per severity
     */
@@ -153,7 +153,6 @@ contract Params is Claim {
     /**
     * @dev Set the pool token bounty split upon an approval
     * The function can be called only by governance.
-    * The sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountySplit The bounty split
     */
