@@ -2016,12 +2016,15 @@ contract("HatVaults", (accounts) => {
     }
     await hatVaults.massUpdatePools(0, 1);
 
-    await utils.setMinter(hatToken, accounts[0], enoughHatsToMint);
-    await hatToken.mint(accounts[0], enoughHatsToMint);
-    await hatToken.approve(hatVaults.address, enoughHatsToMint);
-    tx = await hatVaults.depositHATReward(enoughHatsToMint);
+    let hatTotalSuppl = await hatToken.totalSupply();
+    let hatTokenCap = await hatToken.CAP();
+    let amountToMint = hatTokenCap.sub(hatTotalSuppl);
+    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.mint(accounts[0], amountToMint);
+    await hatToken.approve(hatVaults.address, amountToMint);
+    tx = await hatVaults.depositHATReward(amountToMint);
     assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), enoughHatsToMint.toString());
+    assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
 
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
 
@@ -3520,20 +3523,30 @@ contract("HatVaults", (accounts) => {
       (await hatToken.balanceOf(staker)).toString(),
       web3.utils.toWei("0").toString()
     );
-    await safeWithdraw(0, web3.utils.toWei("1"), staker);
+    let hatTotalSuppl = await hatToken.totalSupply();
+    let hatTokenCap = await hatToken.CAP();
+    let amountToMint = hatTokenCap.sub(hatTotalSuppl);
+    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.mint(accounts[0], amountToMint);
+    await hatToken.approve(hatVaults.address, amountToMint);
+    tx = await hatVaults.depositHATReward(amountToMint);
+    assert.equal(tx.logs[0].event, "DepositHATReward");
+    assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
+
+    tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-    assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
-      web3.utils.toWei("88260").toString()
-    );
-    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    let userHatRewards = tx.logs[0].args.amount;
+
+    assert.equal(userHatRewards.toString(), (await hatToken.balanceOf(staker)).toString());
+
+    tx = await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+
     await utils.mineBlock(1);
-    await safeWithdraw(0, web3.utils.toWei("1"), staker);
-    assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
-      web3.utils.toWei("88260").toString()
-    );
+    tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
+    userHatRewards = userHatRewards.add(tx.logs[0].args.amount);
+    assert.equal(userHatRewards.toString(), (await hatToken.balanceOf(staker)).toString());
   });
+
   it("check deep alloc history", async () => {
     //await setup(accounts);
     await setup(
