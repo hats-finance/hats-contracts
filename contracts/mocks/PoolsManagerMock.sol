@@ -46,8 +46,8 @@ contract PoolsManagerMock {
     }
 
     function updatePoolsTwice(HATVaults target, uint256 _fromPid, uint256 _toPid) external {
-        // target.massUpdatePools(_fromPid, _toPid);
-        // target.massUpdatePools(_fromPid, _toPid);
+        target.massUpdatePools(_fromPid, _toPid);
+        target.massUpdatePools(_fromPid, _toPid);
     }
 
     function depositTwice(HATVaults _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
