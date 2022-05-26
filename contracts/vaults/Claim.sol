@@ -37,7 +37,7 @@ contract Claim is Base {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-    emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity, _descriptionHash);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity, _descriptionHash);
     }
 
     /**
