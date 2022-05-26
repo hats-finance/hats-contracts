@@ -18,7 +18,6 @@ var REAL_REWARD_PER_BLOCK = "0.0161856448";
 var tokenLockFactory;
 let safeWithdrawBlocksIncrement = 3;
 let hatVaultsExpectedHatsBalance;
-const enoughHatsToMint = web3.utils.toWei("1000000");
 
 const setup = async function(
   accounts,
@@ -1352,7 +1351,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("hat reward withdraw all balance if reward larger than balance", async () => {
+  it.only("hat reward withdraw all balance if reward larger than balance", async () => {
     await setup(
       accounts,
       REAL_REWARD_PER_BLOCK,
@@ -1377,13 +1376,17 @@ contract("HatVaults", (accounts) => {
     // Deposit redeemed existing reward
     await stakingToken.mint(staker, web3.utils.toWei("1"));//web3.utils.fromWei(expectedReward)
     let expectedReward = await hatVaults.getPendingReward(0, staker);
-    await utils.setMinter(hatToken, accounts[0], enoughHatsToMint);
-    await hatToken.mint(accounts[0], enoughHatsToMint);
-    await hatToken.approve(hatVaults.address, enoughHatsToMint);
-    var tx = await hatVaults.depositHATReward(enoughHatsToMint);
+
+    let hatTotalSuppl = await hatToken.totalSupply();
+    let hatTokenCap = await hatToken.CAP();
+    let amountToMint = hatTokenCap.sub(hatTotalSuppl);
+    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.mint(accounts[0], amountToMint);
+    await hatToken.approve(hatVaults.address, amountToMint);
+    tx = await hatVaults.depositHATReward(amountToMint);
     assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), enoughHatsToMint.toString());
-    hatVaultsExpectedHatsBalance = enoughHatsToMint;
+    assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
+
     tx = await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(tx.logs[0].event, "SafeTransferReward");
     assert.isTrue(parseInt(tx.logs[0].args.amount.toString())>=parseInt(expectedReward.toString()));
@@ -1396,15 +1399,6 @@ contract("HatVaults", (accounts) => {
     );
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
-
-    await utils.setMinter(hatToken, accounts[0], enoughHatsToMint);
-    await hatToken.mint(accounts[0], enoughHatsToMint);
-    await hatToken.approve(hatVaults.address, enoughHatsToMint);
-    tx = await hatVaults.depositHATReward(enoughHatsToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), enoughHatsToMint.toString());
-    hatVaultsExpectedHatsBalance = enoughHatsToMint;
-
     var balanceOfStakerBefore = await hatToken.balanceOf(staker);
     tx = await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(
@@ -1415,14 +1409,6 @@ contract("HatVaults", (accounts) => {
     // Deposit redeemed existing reward
     await utils.increaseTime(7 * 24 * 3600);
     await stakingToken.mint(staker, web3.utils.toWei("1"));
-
-    await utils.setMinter(hatToken, accounts[0], enoughHatsToMint);
-    await hatToken.mint(accounts[0], enoughHatsToMint);
-    await hatToken.approve(hatVaults.address, enoughHatsToMint);
-    tx = await hatVaults.depositHATReward(enoughHatsToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), enoughHatsToMint.toString());
-    hatVaultsExpectedHatsBalance = enoughHatsToMint;
 
     balanceOfStakerBefore = await hatToken.balanceOf(staker);
     tx = await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
@@ -1439,19 +1425,6 @@ contract("HatVaults", (accounts) => {
     //withdraw
     await hatVaults.updatePool(0);
     balanceOfStakerBefore = await hatToken.balanceOf(staker);
-
-    await utils.setMinter(hatToken, accounts[0], enoughHatsToMint);
-    await hatToken.mint(accounts[0], enoughHatsToMint);
-    await hatToken.approve(hatVaults.address, enoughHatsToMint);
-    tx = await hatVaults.depositHATReward(enoughHatsToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), enoughHatsToMint.toString());
-    // try {
-    //       await safeWithdraw(0,web3.utils.toWei("4"),staker);
-    //       assert(false, 'not enough hat tokens to pay');
-    //     } catch (ex) {
-    //       assertVMException(ex);
-    //   }
     tx = await safeWithdraw(0, web3.utils.toWei("4"), staker);
     //staker get stake back
     assert.equal(
@@ -1993,7 +1966,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(balanceOfStakerHats.toString(), expectedReward);
   });
 
-  it.only("deposit + withdraw after time end (bdp bug)", async () => {
+  it("deposit + withdraw after time end (bdp bug)", async () => {
     await setup(accounts, "100000", (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
 
