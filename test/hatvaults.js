@@ -45,6 +45,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
+    hatToken.address,
     [router.address],
     tokenLockFactory.address
   );
@@ -59,10 +60,10 @@ const setup = async function(
     hatVaults.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  var tx = await hatVaults.depositHATReward(
+  var tx = await hatVaults.depositReward(
     web3.utils.toWei(rewardInVaults.toString())
   );
-  assert.equal(tx.logs[0].event, "DepositHATReward");
+  assert.equal(tx.logs[0].event, "DepositReward");
   assert.equal(
     tx.logs[0].args._amount,
     web3.utils.toWei(rewardInVaults.toString())
@@ -1396,8 +1397,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    var tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    var tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1420,8 +1421,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1440,8 +1441,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1477,10 +1478,10 @@ contract("HatVaults", (accounts) => {
       hatVaults.address,
       expectedReward.div(new web3.utils.BN("2"))
     );
-    tx = await hatVaults.depositHATReward(
+    tx = await hatVaults.depositReward(
       expectedReward.div(new web3.utils.BN("2"))
     );
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(
       tx.logs[0].args._amount.toString(),
       expectedReward.div(new web3.utils.BN("2")).toString()
@@ -3722,6 +3723,7 @@ contract("HatVaults", (accounts) => {
       1,
       10,
       poolManager.address,
+      hatToken1.address,
       [router1.address],
       tokenLockFactory1.address
     );

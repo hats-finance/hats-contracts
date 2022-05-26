@@ -43,6 +43,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
+    hatToken.address,
     [router.address],
     tokenLockFactory.address
   );
@@ -69,7 +70,7 @@ const setup = async function(
     hatVaults.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  await hatVaults.depositHATReward(web3.utils.toWei(rewardInVaults.toString()));
+  await hatVaults.depositReward(web3.utils.toWei(rewardInVaults.toString()));
   await hatTimelockController.addPool(
     allocPoint,
     stakingToken.address,

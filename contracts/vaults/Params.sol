@@ -136,7 +136,7 @@ contract Params is Claim {
     }
 
     /**
-    * @dev setHatVestingParams - set HAT vesting params for rewarding claim reporters with HAT token, for all pools
+    * @dev setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all pools
     * the function can be called only by governance.
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods

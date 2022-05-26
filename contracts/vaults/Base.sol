@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../Governable.sol";
-import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
 contract  Base is Governable, ReentrancyGuard {
@@ -119,9 +119,12 @@ contract  Base is Governable, ReentrancyGuard {
     }
 
 
-    HATToken public HAT;
+    // the ERC20 contract in which rewards are distributed
+    IERC20 public rewardToken;
+    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
+    ERC20Burnable public swapToken;
     uint256 public REWARD_PER_BLOCK;
-    // Block from which the HAT vault contract will start rewarding.
+    // Block from which the vaults contract will start rewarding.
     uint256 public START_BLOCK;
     uint256 public MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
@@ -143,7 +146,7 @@ contract  Base is Governable, ReentrancyGuard {
     //pid -> BountyInfo
     mapping (uint256=>BountyInfo) public bountyInfos;
 
-    uint256 public hatRewardAvailable;
+    uint256 public rewardAvailable;
 
     //pid -> committee address
     mapping(uint256=>address) public committees;
@@ -256,7 +259,7 @@ contract  Base is Governable, ReentrancyGuard {
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositHATReward(uint256 indexed _amount);
+    event DepositReward(uint256 indexed _amount, address _rewardToken);
     event ClaimReward(uint256 indexed _pid);
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
@@ -287,13 +290,13 @@ contract  Base is Governable, ReentrancyGuard {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // Safe HAT transfer function, transfer HATs from the contract only if they are earmarked for rewards
+    // Safe rewardToken transfer function, transfer HATs from the contract only if they are earmarked for rewards
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (_amount > hatRewardAvailable) { 
-            _amount = hatRewardAvailable; 
+        if (_amount > rewardAvailable) { 
+            _amount = rewardAvailable; 
         }
-        hatRewardAvailable -= _amount;
-        HAT.transfer(_to, _amount);
+        rewardAvailable -= _amount;
+        rewardToken.transfer(_to, _amount);
         // TODO: fix return of the requested amount
         emit SafeTransferReward(_to, _pid, _amount, _amount);
     }
