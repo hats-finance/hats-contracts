@@ -121,7 +121,7 @@ contract  Base is Governable, ReentrancyGuard {
 
     // the ERC20 contract in which rewards are distributed
     IERC20 public rewardToken;
-    // the token into which a part of the the bounty will be swapped-into-and-burnt
+    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
     ERC20Burnable public swapToken;
     uint256 public REWARD_PER_BLOCK;
     // Block from which the vaults contract will start rewarding.

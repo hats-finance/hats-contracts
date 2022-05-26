@@ -74,7 +74,7 @@ contract  HATVaults is Deposit, Params, Pool, Swap, Getters, Withdraw {
    *        Some of the contracts functions are limited only to governance:
    *         addPool, setPool, dismissClaim, approveClaim,
    *         setHatVestingParams, setVestingParams, setRewardsSplit
-   * @param  _swapToken the token that part of a payout will be swapped for and burned
+   * @param  _swapToken the token that part of a payout will be swapped for and burned - this would typically be HATs
    * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap vault tokens for swapToken.
 
    * @param _tokenLockFactory Address of the token lock factory to be used
