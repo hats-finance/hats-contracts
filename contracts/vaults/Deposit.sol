@@ -6,10 +6,10 @@ import "./Base.sol";
 contract Deposit is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    function depositHATReward(uint256 _amount) external {
-        hatRewardAvailable += _amount;
-        HAT.transferFrom(address(msg.sender), address(this), _amount);
-        emit DepositHATReward(_amount);
+    function depositReward(uint256 _amount) external {
+        rewardAvailable += _amount;
+        rewardToken.transferFrom(address(msg.sender), address(this), _amount);
+        emit DepositReward(_amount, address(rewardToken));
     }
 
     /**
@@ -27,7 +27,7 @@ contract Deposit is Base {
     }
 
     /**
-     * @notice Transfer the sender their pending share of HATs rewards.
+     * @notice Transfer the sender their pending share of rewards.
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {

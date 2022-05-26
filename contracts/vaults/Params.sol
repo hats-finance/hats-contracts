@@ -10,7 +10,7 @@ contract Params is Base {
     * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.
     * The function can be called only by the pool committee.
     * Cannot be called if there are claims that have been submitted.
-    * Each level should be less than `HUNDRED_PERCENT`
+    * Each level should be less than or equal to `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountyLevels The array of bounty level per severity
     */
@@ -136,7 +136,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev setHatVestingParams - set HAT vesting params for rewarding claim reporters with HAT token, for all pools
+    * @dev setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all pools
     * the function can be called only by governance.
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
@@ -153,7 +153,6 @@ contract Params is Base {
     /**
     * @dev Set the pool token bounty split upon an approval
     * The function can be called only by governance.
-    * The sum of the parts of the bounty split should be less than `HUNDRED_PERCENT`
     * @param _pid The pool id
     * @param _bountySplit The bounty split
     */

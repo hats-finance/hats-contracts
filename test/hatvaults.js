@@ -10,7 +10,6 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 
-
 var hatVaults;
 var hatToken;
 var router;
@@ -42,16 +41,21 @@ const setup = async function(
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
-  hatVaults = await HATVaults.at((await deployHatVaults(
-      hatToken.address,
-      web3.utils.toWei(reward_per_block),
-      startBlock,
-      halvingAfterBlock,
-      accounts[0],
-      [router.address],
-      tokenLockFactory.address,
-      true
-  )).address);
+  hatVaults = await HATVaults.at(
+    (
+      await deployHatVaults(
+        hatToken.address,
+        web3.utils.toWei(reward_per_block),
+        startBlock,
+        halvingAfterBlock,
+        accounts[0],
+        hatToken.address,
+        [router.address],
+        tokenLockFactory.address,
+        true
+      )
+    ).address
+  );
 
   await utils.setMinter(
     hatToken,
@@ -64,10 +68,10 @@ const setup = async function(
     hatVaults.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  var tx = await hatVaults.depositHATReward(
+  var tx = await hatVaults.depositReward(
     web3.utils.toWei(rewardInVaults.toString())
   );
-  assert.equal(tx.logs[0].event, "DepositHATReward");
+  assert.equal(tx.logs[0].event, "DepositReward");
   assert.equal(
     tx.logs[0].args._amount,
     web3.utils.toWei(rewardInVaults.toString())
@@ -534,19 +538,25 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE19");
     }
+
+    // bountylevel can be 10000 without throwing an error
+    await hatVaults.setPendingBountyLevels(0, [10000], {
+      from: accounts[1],
+    });
+
     try {
       await hatVaults.setPendingBountyLevels(
         0,
-        [1500, 3000, 4500, 9000, 10000],
+        [1500, 3000, 4500, 9000, 10001],
         { from: accounts[1] }
       );
-      assert(false, "bounty level should be less than 10000");
+      assert(false, "bounty level should be less than or equal to 10000");
     } catch (ex) {
       assertVMException(ex, "HVE33");
     }
     tx = await hatVaults.setPendingBountyLevels(
       0,
-      [1500, 3000, 4500, 9000, 9999],
+      [1500, 3000, 4500, 9000, 10000],
       { from: accounts[1] }
     );
     assert.equal(tx.logs[0].event, "SetPendingBountyLevels");
@@ -586,7 +596,7 @@ contract("HatVaults", (accounts) => {
     assert.equal((await hatVaults.getBountyLevels(0))[1].toString(), "3000");
     assert.equal((await hatVaults.getBountyLevels(0))[2].toString(), "4500");
     assert.equal((await hatVaults.getBountyLevels(0))[3].toString(), "9000");
-    assert.equal((await hatVaults.getBountyLevels(0))[4].toString(), "9999");
+    assert.equal((await hatVaults.getBountyLevels(0))[4].toString(), "10000");
     assert.equal(
       (await hatVaults.bountyInfos(0)).bountySplit.hacker.toString(),
       "0"
@@ -1395,8 +1405,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    var tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    var tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1419,8 +1429,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1439,8 +1449,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], expectedReward);
     await hatToken.mint(accounts[0], expectedReward);
     await hatToken.approve(hatVaults.address, expectedReward);
-    tx = await hatVaults.depositHATReward(expectedReward);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(expectedReward);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
     hatVaultsExpectedHatsBalance = expectedReward;
 
@@ -1476,10 +1486,10 @@ contract("HatVaults", (accounts) => {
       hatVaults.address,
       expectedReward.div(new web3.utils.BN("2"))
     );
-    tx = await hatVaults.depositHATReward(
+    tx = await hatVaults.depositReward(
       expectedReward.div(new web3.utils.BN("2"))
     );
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(
       tx.logs[0].args._amount.toString(),
       expectedReward.div(new web3.utils.BN("2")).toString()
@@ -3715,16 +3725,21 @@ contract("HatVaults", (accounts) => {
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var poolManager = await PoolsManagerMock.new();
-    let hatVaults1 = await HATVaults.at((await deployHatVaults(
-      hatToken1.address,
-      web3.utils.toWei("100"),
-      1,
-      10,
-      poolManager.address,
-      [router1.address],
-      tokenLockFactory1.address,
-      true
-    )).address);
+    let hatVaults1 = await HATVaults.at(
+      (
+        await deployHatVaults(
+          hatToken1.address,
+          web3.utils.toWei("100"),
+          1,
+          10,
+          poolManager.address,
+          hatToken1.address,
+          [router1.address],
+          tokenLockFactory1.address,
+          true
+        )
+      ).address
+    );
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let stakingToken3 = await ERC20Mock.new("Staking", "STK");
     var globalPoolUpdatesLength = await hatVaults1.getGlobalPoolUpdatesLength();
