@@ -8,7 +8,7 @@ The governance account will be passed on initialization of the contract. This
 can later be changed with {setPendingGovernance and then transferGovernorship  after 2 days}.
 
 This module is used through inheritance. It will make available the modifier
-`onlyGovernance`, which can be applied to your functions to restrict their use to
+`onlyOwner`, which can be applied to your functions to restrict their use to
 the governance.
 
 ## Functions

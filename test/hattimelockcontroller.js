@@ -7,6 +7,8 @@ const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const utils = require("./utils.js");
 
+const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+
 var hatVaults;
 var hatTimelockController;
 var hatToken;
@@ -37,22 +39,23 @@ const setup = async function(
   router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-  hatVaults = await HATVaults.new(
+  hatVaults = await HATVaults.at((await deployHatVaults(
     hatToken.address,
     web3.utils.toWei(reward_per_block),
     startBlock,
     halvingAfterBlock,
     accounts[0],
     [router.address],
-    tokenLockFactory.address
-  );
+    tokenLockFactory.address,
+    true
+  )).address);
   hatTimelockController = await HATTimelockController.new(
     hatVaults.address,
     hatGovernanceDelay,
     [accounts[0]],
     [accounts[0]]
   );
-  tx = await hatVaults.transferGovernance(hatTimelockController.address);
+  tx = await hatVaults.transferOwnership(hatTimelockController.address);
   await utils.setMinter(
     hatToken,
     hatVaults.address,
@@ -147,7 +150,7 @@ contract("HatVaults", (accounts) => {
     }
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
-    assert.equal(await hatVaults.governance(), hatTimelockController.address);
+    assert.equal(await hatVaults.owner(), hatTimelockController.address);
     assert.equal(await hatTimelockController.hatVaults(), hatVaults.address);
     assert.equal(
       await hatTimelockController.hasRole(
