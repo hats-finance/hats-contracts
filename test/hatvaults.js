@@ -1968,21 +1968,19 @@ contract("HatVaults", (accounts) => {
     assert.equal(balanceOfStakerHats.toString(), expectedReward);
   });
 
-  it.only("deposit + withdraw after time end (bdp bug)", async () => {
+  it("deposit + withdraw after time end (bdp bug)", async () => {
     await setup(accounts, "1000", (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
-
+    let hatsAvailable= await hatToken.balanceOf(hatVaults.address);
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    //withdraw
-    //increase blocks and mine all blocks
-    var allBlocksOfFarm = 2500000 / 1000; // rewardsAllocatedToFarm/rewardPerBlock
-    for (var i = 0; i < allBlocksOfFarm; i++) {
-      await utils.increaseTime(1);
-    }
+    var timeToFinishRewardPlan = await hatVaults.MULTIPLIER_PERIOD() *
+        await hatVaults.MULTIPLIERS_LENGTH();
+    await utils.increaseTime(timeToFinishRewardPlan);
+
     try {
       await hatVaults.massUpdatePools(0, 2);
       assert(false, "massUpdatePools not in range");
@@ -1991,25 +1989,18 @@ contract("HatVaults", (accounts) => {
     }
     await hatVaults.massUpdatePools(0, 1);
 
-    let hatTotalSupply = await hatToken.totalSupply();
-    let hatTokenCap = await hatToken.CAP();
-    let amountToMint = hatTokenCap.sub(hatTotalSupply);
-    await utils.setMinter(hatToken, accounts[0], amountToMint);
-    await hatToken.mint(accounts[0], amountToMint);
-    await hatToken.approve(hatVaults.address, amountToMint);
-    tx = await hatVaults.depositHATReward(amountToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
-    assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
-
+    let expectedReward = await hatVaults.getPendingReward(0, staker);
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
-
-    //staker  get stake back
+    //staker gets stake back
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
-    //and get all rewards
+    //and gets all rewards
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      web3.utils.toWei("2500000").toString()
-    );
+        tx.logs[0].args.amount.toString());
+    assert.isTrue(parseInt(tx.logs[0].args.amount.toString()) >=
+        parseInt(expectedReward.toString()));
+    assert.equal(hatsAvailable.toString(),
+        ((await hatToken.balanceOf(hatVaults.address)).add(tx.logs[0].args.amount)).toString());
   });
 
   it("approve + swapBurnSend", async () => {
