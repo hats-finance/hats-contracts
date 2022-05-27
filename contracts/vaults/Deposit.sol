@@ -8,7 +8,7 @@ contract Deposit is Base {
 
     function depositHATReward(uint256 _amount) external {
         HAT.transferFrom(address(msg.sender), address(this), _amount);
-        emit DepositHATReward(_amount);
+        emit DepositReward(_amount, address(rewardToken));
     }
 
     /**
@@ -26,7 +26,7 @@ contract Deposit is Base {
     }
 
     /**
-     * @notice Transfer the sender their pending share of HATs rewards.
+     * @notice Transfer the sender their pending share of rewards.
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {

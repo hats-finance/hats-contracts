@@ -5,13 +5,13 @@ import "./Base.sol";
 
 contract Swap is Base {
     /**
-    * @dev Swap pool's token to HAT.
+    * @dev Swap pool's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
-    * Burn the rest of HAT.
+    * Burn the rest of swapToken.
     * Only governance is authorized to call this function.
     * @param _pid the pool id
     * @param _beneficiary beneficiary
-    * @param _amountOutMinimum minimum output of HATs at swap
+    * @param _amountOutMinimum minimum output of swapToken at swap
     * @param _routingContract routing contract to call for the swap
     * @param _routingPayload payload to send to the _routingContract for the swap
     **/
@@ -32,7 +32,7 @@ contract Swap is Base {
         uint256 hatsReceived = swapTokenForHAT(amount, poolInfos[_pid].lpToken, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * amountToSwapAndBurn / amount;
         if (burntHats > 0) {
-            HAT.burn(burntHats);
+            swapToken.burn(burntHats);
         }
         emit SwapAndBurn(_pid, amount, burntHats);
 
@@ -41,7 +41,7 @@ contract Swap is Base {
         if (hackerReward > 0) {
             //hacker gets her reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
-                address(HAT),
+                address(swapToken),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
                 _beneficiary,
                 hackerReward,
@@ -55,10 +55,10 @@ contract Swap is Base {
                 ITokenLock.Revocability.Disabled,
                 true
             );
-            HAT.transfer(tokenLock, hackerReward);
+            swapToken.transfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        HAT.transfer(governance(), hatsReceived - hackerReward - burntHats);
+        swapToken.transfer(governance(), hatsReceived - hackerReward - burntHats);
     }
 
     function swapTokenForHAT(uint256 _amount,
@@ -67,19 +67,19 @@ contract Swap is Base {
         address _routingContract,
         bytes calldata _routingPayload)
     internal
-    returns (uint256 hatsReceived)
+    returns (uint256 swapTokenReceived)
     {
-        if (address(_token) == address(HAT)) {
+        if (address(_token) == address(swapToken)) {
             return _amount;
         }
         require(whitelistedRouters[_routingContract], "HVE44");
         require(_token.approve(_routingContract, _amount), "HVE31");
-        uint256 hatBalanceBefore = HAT.balanceOf(address(this));
+        uint256 hatBalanceBefore = swapToken.balanceOf(address(this));
         require(hatBalanceBefore >= _amountOutMinimum, "HVE45");
         (bool success,) = _routingContract.call(_routingPayload);
         require(success, "HVE43");
-        hatsReceived = HAT.balanceOf(address(this)) - hatBalanceBefore;
-        require(hatsReceived >= _amountOutMinimum, "HVE32");
+        swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
+        require(swapTokenReceived >= _amountOutMinimum, "HVE32");
         require(_token.approve(address(_routingContract), 0), "HVE37");
     }
 }

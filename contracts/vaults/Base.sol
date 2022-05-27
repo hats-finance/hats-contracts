@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../Governable.sol";
-import "../HATToken.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
 contract Base is Governable, ReentrancyGuard {
@@ -119,9 +119,12 @@ contract Base is Governable, ReentrancyGuard {
     }
 
 
-    HATToken public HAT;
+    // the ERC20 contract in which rewards are distributed
+    IERC20 public rewardToken;
+    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
+    ERC20Burnable public swapToken;
     uint256 public REWARD_PER_BLOCK;
-    // Block from which the HAT vault contract will start rewarding.
+    // Block from which the vaults contract will start rewarding.
     uint256 public START_BLOCK;
     uint256 public MULTIPLIER_PERIOD;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
@@ -142,8 +145,6 @@ contract Base is Governable, ReentrancyGuard {
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> BountyInfo
     mapping (uint256=>BountyInfo) public bountyInfos;
-
-
     //pid -> committee address
     mapping(uint256=>address) public committees;
     //pid -> amount
@@ -255,7 +256,7 @@ contract Base is Governable, ReentrancyGuard {
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
     event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositHATReward(uint256 indexed _amount);
+    event DepositReward(uint256 indexed _amount, address _rewardToken);
     event ClaimReward(uint256 indexed _pid);
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
@@ -355,7 +356,7 @@ contract Base is Governable, ReentrancyGuard {
 
     /**
     * @dev Check bounty levels.
-    * Each level should be less than `HUNDRED_PERCENT`
+    * Each level should be less than or equal to `HUNDRED_PERCENT`
     * If _bountyLevels length is 0, default bounty levels will be returned ([2000, 4000, 6000, 8000]).
     * @param _bountyLevels The bounty levels array
     * @return bountyLevels
@@ -373,7 +374,7 @@ contract Base is Governable, ReentrancyGuard {
             }
         } else {
             for (i; i < _bountyLevels.length; i++) {
-                require(_bountyLevels[i] < HUNDRED_PERCENT, "HVE33");
+                require(_bountyLevels[i] <= HUNDRED_PERCENT, "HVE33");
             }
             bountyLevels = _bountyLevels;
         }

@@ -43,6 +43,7 @@ const setup = async function(
     startBlock,
     halvingAfterBlock,
     accounts[0],
+    hatToken.address,
     [router.address],
     tokenLockFactory.address
   );
@@ -58,11 +59,18 @@ const setup = async function(
     hatVaults.address,
     web3.utils.toWei("2500000")
   );
-  await utils.setMinter(hatToken, accounts[0], web3.utils.toWei((2500000 + rewardInVaults).toString()));
+  await utils.setMinter(
+    hatToken,
+    accounts[0],
+    web3.utils.toWei((2500000 + rewardInVaults).toString())
+  );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await hatToken.approve(hatVaults.address, web3.utils.toWei(rewardInVaults.toString()));
-  await hatVaults.depositHATReward(web3.utils.toWei(rewardInVaults.toString()));
+  await hatToken.approve(
+    hatVaults.address,
+    web3.utils.toWei(rewardInVaults.toString())
+  );
+  await hatVaults.depositReward(web3.utils.toWei(rewardInVaults.toString()));
   await hatTimelockController.addPool(
     allocPoint,
     stakingToken.address,
@@ -330,17 +338,34 @@ contract("HatVaults", (accounts) => {
 
     await hatTimelockController.approveClaim(0);
 
-    let path = ethers.utils.solidityPack(["address", "uint24", "address"], [stakingToken.address, 0, hatToken.address]);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address"],
+      [stakingToken.address, 0, hatToken.address]
+    );
     let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(accounts[1], 0);
-    let amount = amountToSwapAndBurn.add(amountForHackersHatRewards).add(await hatVaults.governanceHatRewards(0));
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+      accounts[1],
+      0
+    );
+    let amount = amountToSwapAndBurn
+      .add(amountForHackersHatRewards)
+      .add(await hatVaults.governanceHatRewards(0));
     let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [[path, hatVaults.address, 0, amount.toString(), 0]]);
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
 
     try {
-      await hatTimelockController.swapBurnSend(0, accounts[1], 0, router.address, payload, {
-        from: accounts[3],
-      });
+      await hatTimelockController.swapBurnSend(
+        0,
+        accounts[1],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[3],
+        }
+      );
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
@@ -376,9 +401,7 @@ contract("HatVaults", (accounts) => {
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           ).add(
             new web3.utils.BN(
-              (
-                await hatVaults.bountyInfos(0)
-              ).bountySplit.governanceHat
+              (await hatVaults.bountyInfos(0)).bountySplit.governanceHat
             )
           )
         )
