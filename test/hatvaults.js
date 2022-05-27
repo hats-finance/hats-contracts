@@ -1968,8 +1968,8 @@ contract("HatVaults", (accounts) => {
     assert.equal(balanceOfStakerHats.toString(), expectedReward);
   });
 
-  it("deposit + withdraw after time end (bdp bug)", async () => {
-    await setup(accounts, "100000", (await web3.eth.getBlock("latest")).number);
+  it.only("deposit + withdraw after time end (bdp bug)", async () => {
+    await setup(accounts, "1000", (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
 
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -1979,7 +1979,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     //withdraw
     //increase blocks and mine all blocks
-    var allBlocksOfFarm = 2500000 / 100000; // rewardsAllocatedToFarm/rewardPerBlock
+    var allBlocksOfFarm = 2500000 / 1000; // rewardsAllocatedToFarm/rewardPerBlock
     for (var i = 0; i < allBlocksOfFarm; i++) {
       await utils.increaseTime(1);
     }
