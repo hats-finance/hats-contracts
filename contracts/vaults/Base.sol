@@ -295,8 +295,8 @@ contract Base is Governable, ReentrancyGuard {
     * @param _pid The pool id
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        require(HAT.balanceOf(address(this)) >= _amount, "HVE46");
-        HAT.transfer(_to, _amount);
+        require(rewardToken.balanceOf(address(this)) >= _amount, "HVE46");
+        rewardToken.transfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount);
     }
 
