@@ -7,7 +7,7 @@ contract Deposit is Base {
     using SafeERC20 for IERC20;
 
     function depositHATReward(uint256 _amount) external {
-        HAT.transferFrom(address(msg.sender), address(this), _amount);
+        rewardToken.transferFrom(address(msg.sender), address(this), _amount);
         emit DepositReward(_amount, address(rewardToken));
     }
 
