@@ -1430,13 +1430,13 @@ contract("HatVaults", (accounts) => {
       (await stakingToken.balanceOf(staker)).toString(),
       web3.utils.toWei("4").toString()
     );
-    let userBalance = await hatToken.balanceOf(staker);
+    let userHatBalance = await hatToken.balanceOf(staker);
     assert.equal(
-        userBalance.toString(),
+        userHatBalance.toString(),
         tx.logs[0].args.amount.add(balanceOfStakerBefore).toString()
     );
     assert.equal((await hatToken.balanceOf(hatVaults.address)).toString(),
-        amountToMint - userBalance);
+        amountToMint - userHatBalance);
   });
 
   it("getMultiplier - from below startblock will revert ", async () => {
@@ -1971,7 +1971,7 @@ contract("HatVaults", (accounts) => {
   it("deposit + withdraw after time end (bdp bug)", async () => {
     await setup(accounts, "1000", (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
-    let hatsAvailable= await hatToken.balanceOf(hatVaults.address);
+    let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
     });
@@ -3502,11 +3502,9 @@ contract("HatVaults", (accounts) => {
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
     let userHatRewards = tx.logs[0].args.amount;
-
     assert.equal(userHatRewards.toString(), (await hatToken.balanceOf(staker)).toString());
 
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-
     await utils.mineBlock(1);
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
     userHatRewards = userHatRewards.add(tx.logs[0].args.amount);
