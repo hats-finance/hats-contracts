@@ -1402,8 +1402,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.approve(hatVaults.address, amountToMint);
-    tx = await hatVaults.depositHATReward(amountToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(amountToMint);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
 
     // Deposit redeemed existing reward
@@ -3749,8 +3749,8 @@ contract("HatVaults", (accounts) => {
     await utils.setMinter(hatToken, accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.approve(hatVaults.address, amountToMint);
-    tx = await hatVaults.depositHATReward(amountToMint);
-    assert.equal(tx.logs[0].event, "DepositHATReward");
+    tx = await hatVaults.depositReward(amountToMint);
+    assert.equal(tx.logs[0].event, "DepositReward");
     assert.equal(tx.logs[0].args._amount.toString(), amountToMint.toString());
 
     tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);

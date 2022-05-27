@@ -202,7 +202,10 @@ contract Base is Governable, ReentrancyGuard {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount, uint256 transferredAmount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount);
+    event SafeTransferReward(address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address rewardToken);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
@@ -297,7 +300,7 @@ contract Base is Governable, ReentrancyGuard {
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         require(rewardToken.balanceOf(address(this)) >= _amount, "HVE46");
         rewardToken.transfer(_to, _amount);
-        emit SafeTransferReward(_to, _pid, _amount);
+        emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
     /**
