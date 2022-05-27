@@ -1,4 +1,5 @@
 const HATVaults = artifacts.require("./HATVaults.sol");
+const HATVaultsV2Mock = artifacts.require("./HATVaultsV2Mock.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
@@ -9,6 +10,7 @@ const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { upgradeHatVaults } = require("../scripts/hatvaultsupgrade.js");
 
 var hatVaults;
 var hatToken;
@@ -265,6 +267,13 @@ contract("HatVaults", (accounts) => {
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaults.owner(), accounts[0]);
+  });
+
+  it("upgrade contract", async () => {
+    await setup(accounts);
+    await upgradeHatVaults(hatVaults.address);
+    hatVaults = await HATVaultsV2Mock.at(hatVaults.address);
+    assert.equal((await hatVaults.getHatsVersion()).toString(), "2");
   });
 
   it("setCommitte", async () => {
