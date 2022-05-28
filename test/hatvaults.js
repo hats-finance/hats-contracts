@@ -4031,11 +4031,10 @@ contract("HatVaults", (accounts) => {
     await hatVaults.massUpdatePools(0, 1);
     let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
     let expectedReward = await hatVaults.getPendingReward(0, staker);
-    let pool = await hatVaults.poolInfos(0);
     assert.isTrue(parseInt(hatsAvailable.toString()) <
         parseInt(expectedReward.toString()));
     try {
-      tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
+      await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "can't withdraw when there are not enough rewards");
     } catch (ex) {
       assertVMException(ex, "HVE46");
@@ -4076,7 +4075,7 @@ contract("HatVaults", (accounts) => {
     assert.isTrue(parseInt(hatsAvailable.toString()) <
         parseInt(amount.toString()));
     try {
-      var tx = await hatVaults.swapBurnSend(
+      await hatVaults.swapBurnSend(
           0,
           accounts[2],
           amountOutMinimum,
