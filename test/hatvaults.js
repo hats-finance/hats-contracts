@@ -4018,4 +4018,76 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei("4")
     );
   });
+
+  it("transferReward to fail if not enough reward tokens", async () => {
+    await setup(accounts, "100000", (await web3.eth.getBlock("latest")).number,
+        undefined, undefined, undefined, undefined, undefined, undefined, 1);
+    var staker = accounts[4];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await hatVaults.massUpdatePools(0, 1);
+    let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
+    let expectedReward = await hatVaults.getPendingReward(0, staker);
+    let pool = await hatVaults.poolInfos(0);
+    assert.isTrue(parseInt(hatsAvailable.toString()) <
+        parseInt(expectedReward.toString()));
+    try {
+      tx = await safeWithdraw(0, web3.utils.toWei("1"), staker);
+      assert(false, "can't withdraw when there are not enough rewards");
+    } catch (ex) {
+      assertVMException(ex, "HVE46");
+    }
+  });
+
+  it("swapBurnSend to fail if not enough reward tokens", async () => {
+    await setup(accounts, "100000", (await web3.eth.getBlock("latest")).number,
+        undefined, [8000, 900, 100, 250, 350, 400],
+        undefined, undefined, undefined, undefined, 0.001);
+
+    var staker = accounts[4];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await advanceToSaftyPeriod();
+    await hatVaults.submitClaim(0, accounts[2], 0, { from: accounts[1] });
+    await hatVaults.approveClaim(0);
+
+    let path = ethers.utils.solidityPack(
+        ["address", "uint24", "address", "uint24", "address"],
+        [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
+    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
+        accounts[2], 0);
+    let amount = amountToSwapAndBurn
+        .add(amountForHackersHatRewards)
+        .add(await hatVaults.governanceHatRewards(0));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaults.address, 0, amount.toString(), 0],
+    ]);
+
+    let amountOutMinimum = amount; //exchange rate 1:1 for testing perposes
+    let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
+    assert.isTrue(parseInt(hatsAvailable.toString()) <
+        parseInt(amount.toString()));
+    try {
+      var tx = await hatVaults.swapBurnSend(
+          0,
+          accounts[2],
+          amountOutMinimum,
+          router.address,
+          payload
+      );
+      assert(false, "can't swapBurnSend when there are not enough rewards");
+    } catch (ex) {
+      assertVMException(ex, "HVE45");
+    }
+
+  });
+
 });
