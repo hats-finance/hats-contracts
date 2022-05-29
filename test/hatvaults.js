@@ -501,9 +501,7 @@ contract("HatVaults", (accounts) => {
       "100"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHatVested.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested.toString(),
       "700"
     );
 
@@ -610,9 +608,7 @@ contract("HatVaults", (accounts) => {
       "2200"
     );
     assert.equal(
-      (
-        await hatVaults.bountyInfos(0)
-      ).bountySplit.hackerHatVested.toString(),
+      (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested.toString(),
       "800"
     );
     await advanceToSaftyPeriod();
