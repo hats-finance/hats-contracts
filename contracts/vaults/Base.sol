@@ -130,6 +130,7 @@ contract Base is Governable, ReentrancyGuard {
     uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
+    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // Info of each pool.
     PoolInfo[] public poolInfos;
@@ -140,6 +141,8 @@ contract Base is Governable, ReentrancyGuard {
                                             5353, 4724, 4169, 3679, 3247, 2865,
                                             2528, 2231, 1969, 1738, 1534, 1353,
                                             1194, 1054, 930, 821, 724, 639];
+
+    uint256 public rewardAvailable;
 
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
@@ -172,7 +175,6 @@ contract Base is Governable, ReentrancyGuard {
     address public feeSetter;
 
     ITokenLockFactory public tokenLockFactory;
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
@@ -258,10 +260,15 @@ contract Base is Governable, ReentrancyGuard {
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
-    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositReward(uint256 indexed _amount, address _rewardToken);
+    event RewardDepositors(uint256 indexed _pid,
+        uint256 indexed _amount,
+        uint256 indexed _transferredAmount);
+    event DepositReward(uint256 indexed _amount,
+        uint256 indexed _transferredAmount,
+        address indexed _rewardToken);
     event ClaimReward(uint256 indexed _pid);
-    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod,
+        uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
     event SetBountyLevelsDelay(uint256 indexed _delay);
 
@@ -298,8 +305,9 @@ contract Base is Governable, ReentrancyGuard {
     * @param _pid The pool id
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        require(rewardToken.balanceOf(address(this)) >= _amount, "HVE46");
+        require(rewardAvailable >= _amount, "HVE46");
         rewardToken.transfer(_to, _amount);
+        rewardAvailable -= _amount;
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
