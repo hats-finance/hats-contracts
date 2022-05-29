@@ -7,9 +7,9 @@ contract Deposit is Base {
     using SafeERC20 for IERC20;
 
     function depositReward(uint256 _amount) external {
-        uint256 balanceBefore = swapToken.balanceOf(address(this));
+        uint256 balanceBefore = rewardToken.balanceOf(address(this));
         rewardToken.transferFrom(address(msg.sender), address(this), _amount);
-        uint256 rewardTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
+        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
         rewardAvailable += rewardTokenReceived;
     emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
