@@ -45,7 +45,7 @@ contract Pool is Base {
                     bool _isPaused,
                     bool _isInitialized)
     external
-    onlyGovernance {
+    onlyOwner {
         require(_bountyVestingParams[0] < 120 days, "HVE15");
         require(_bountyVestingParams[1] > 0, "HVE16");
         require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
@@ -65,7 +65,7 @@ contract Pool is Base {
             }));
         }
         poolInfos.push(PoolInfo({
-            lpToken: IERC20(_lpToken),
+            lpToken: IERC20Upgradeable(_lpToken),
             allocPoint: _allocPoint,
             lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
             rewardPerShare: 0,
@@ -119,7 +119,7 @@ contract Pool is Base {
                     bool _visible,
                     bool _depositPause,
                     string memory _descriptionHash)
-    external onlyGovernance {
+    external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
         updatePool(_pid);
         uint256 totalAllocPoint =
@@ -140,7 +140,7 @@ contract Pool is Base {
         emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
     }
 
-    function setPoolInitialized(uint256 _pid) external onlyGovernance {
+    function setPoolInitialized(uint256 _pid) external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
         poolInitialized[_pid] = true;
     }
@@ -152,7 +152,7 @@ contract Pool is Base {
         address[] memory _accounts,
         uint256[] memory _shares,
         uint256[] memory _rewardDebts)
-    external onlyGovernance {
+    external onlyOwner {
         require(!poolInitialized[_pid], "HVE38");
         require(poolInfos.length > _pid, "HVE23");
         require(_accounts.length == _shares.length, "HVE39");

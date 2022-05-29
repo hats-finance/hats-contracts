@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./Swap.sol";
+import "./Base.sol";
 
-contract Withdraw is Swap {
-    using SafeERC20 for IERC20;
+contract Withdraw is Base {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
     * @notice Withdraw user's requested share from the pool.
@@ -61,9 +61,9 @@ contract Withdraw is Swap {
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
-    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee) internal {
+    function safeWithdrawPoolToken(IERC20Upgradeable _lpToken, uint256 _totalAmount, uint256 _fee) internal {
         if (_fee > 0) {
-            _lpToken.safeTransfer(governance(), _fee);
+            _lpToken.safeTransfer(owner(), _fee);
         }
         _lpToken.safeTransfer(msg.sender, _totalAmount - _fee);
     }

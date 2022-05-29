@@ -4,7 +4,7 @@ pragma solidity 0.8.6;
 import "./Base.sol";
 
 contract Deposit is Base {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function depositReward(uint256 _amount) external {
         rewardAvailable += _amount;
