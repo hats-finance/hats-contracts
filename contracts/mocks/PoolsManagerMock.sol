@@ -8,6 +8,7 @@ import "../HATVaults.sol";
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
@@ -17,8 +18,7 @@ contract PoolsManagerMock {
                     uint256[2] memory _bountyVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
-            _hatVaults.addPool(_allocPoint,
-                                _lpTokens[i],
+            _hatVaults.addPool(_lpTokens[i],
                                 _committee,
                                 _bountyLevels,
                                 _bountySplit,
@@ -26,10 +26,12 @@ contract PoolsManagerMock {
                                 _bountyVestingParams,
                                 false,
                                 true);
+            _rewardController.setAllocPoints(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
     }
 
     function setPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256[] memory _pids,
                     uint256 _allocPoint,
                     bool _registered,
@@ -38,10 +40,10 @@ contract PoolsManagerMock {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
-                            _allocPoint,
                             _registered,
                             _depositPause,
                             _descriptionHash);
+            _rewardController.setAllocPoints(_pids[i], _allocPoint);
         }
     }
 

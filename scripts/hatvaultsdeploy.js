@@ -36,17 +36,32 @@ async function main(
   }
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
+  const RewardController = await ethers.getContractFactory("RewardController");
   const hatVaults = await upgrades.deployProxy(HATVaults, [
     rewardsToken,
-    rewardPerBlock,
-    startBlock,
-    multiplierPeriod,
-    governance,
+    deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
   ]);
+
   await hatVaults.deployed();
+
+  const rewardController = await upgrades.deployProxy(RewardController, [
+    governance,
+    hatVaults.address,
+    rewardPerBlock,
+    startBlock,
+    multiplierPeriod,
+  ]);
+
+  await rewardController.deployed();
+
+  await hatVaults.setRewardController(rewardController.address);
+
+  if (governance != deployerAddress) {
+    await hatVaults.transferOwnership(governance);
+  }
 
   if (!silent) {
     console.log("hatVaults address:", hatVaults.address);
@@ -78,7 +93,7 @@ async function main(
     );
   }
 
-  return hatVaults;
+  return { hatVaults, rewardController };
 }
 
 function saveFrontendFiles(contract, name) {

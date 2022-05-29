@@ -90,15 +90,6 @@ contract Params is Base {
     }
 
     /**
-     * @dev setRewardMultipliers - called by hats governance to set reward multipliers
-     * @param _rewardMultipliers reward multipliers
-    */
-    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyOwner {
-        rewardMultipliers = _rewardMultipliers;
-        emit SetRewardMultipliers(_rewardMultipliers);
-    }
-
-    /**
      * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
@@ -179,6 +170,11 @@ contract Params is Base {
     function setFeeSetter(address _newFeeSetter) external onlyOwner {
         feeSetter = _newFeeSetter;
         emit SetFeeSetter(_newFeeSetter);
+    }
+
+    function setRewardController(RewardController _newRewardController) external onlyOwner {
+        rewardController = _newRewardController;
+        emit SetRewardController(address(_newRewardController));
     }
 
     function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
