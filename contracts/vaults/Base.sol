@@ -4,15 +4,16 @@
 pragma solidity 0.8.6;
 
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "../Governable.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
-contract  Base is Governable, ReentrancyGuard {
+contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {
@@ -55,7 +56,7 @@ contract  Base is Governable, ReentrancyGuard {
 
     // Info of each pool.
     struct PoolInfo {
-        IERC20 lpToken;
+        IERC20Upgradeable lpToken;
         uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
@@ -136,10 +137,7 @@ contract  Base is Governable, ReentrancyGuard {
     PoolUpdate[] public globalPoolUpdates;
 
     // Reward Multipliers
-    uint256[24] public rewardMultipliers = [4413, 4413, 8825, 7788, 6873, 6065,
-                                            5353, 4724, 4169, 3679, 3247, 2865,
-                                            2528, 2231, 1969, 1738, 1534, 1353,
-                                            1194, 1054, 930, 821, 724, 639];
+    uint256[24] public rewardMultipliers;
 
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
@@ -197,7 +195,7 @@ contract  Base is Governable, ReentrancyGuard {
     }
 
     modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender || (governance() == msg.sender && feeSetter == address(0)), "HVE35");
+        require(feeSetter == msg.sender || (owner() == msg.sender && feeSetter == address(0)), "HVE35");
         _;
     }
 
@@ -402,4 +400,11 @@ contract  Base is Governable, ReentrancyGuard {
             hackerHat: 500
         });
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[50] private __gap;
 }

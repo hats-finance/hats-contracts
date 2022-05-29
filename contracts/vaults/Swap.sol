@@ -21,7 +21,7 @@ contract Swap is Base {
                         address _routingContract,
                         bytes calldata _routingPayload)
     external
-    onlyGovernance {
+    onlyOwner {
         require(whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
@@ -58,11 +58,11 @@ contract Swap is Base {
             swapToken.transfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        swapToken.transfer(governance(), hatsReceived - hackerReward - burntHats);
+        swapToken.transfer(owner(), hatsReceived - hackerReward - burntHats);
     }
 
     function swapTokenForHAT(uint256 _amount,
-                            IERC20 _token,
+                            IERC20Upgradeable _token,
                             uint256 _amountOutMinimum,
                             address _routingContract,
                             bytes calldata _routingPayload)

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "./Claim.sol";
+import "./Base.sol";
 
-contract Params is Claim {
+contract Params is Base {
 
     /**
     * @dev Set pending request to set pool bounty levels.
@@ -53,7 +53,7 @@ contract Params is Claim {
     external {
         require(_committee != address(0), "HVE21");
         //governance can update committee only if committee was not checked in yet.
-        if (msg.sender == governance() && committees[_pid] != msg.sender) {
+        if (msg.sender == owner() && committees[_pid] != msg.sender) {
             require(!bountyInfos[_pid].committeeCheckIn, "HVE22");
         } else {
             require(committees[_pid] == msg.sender, "HVE01");
@@ -81,7 +81,7 @@ contract Params is Claim {
     */
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
-    onlyGovernance {
+    onlyOwner {
         require(90 days >= _withdrawRequestPendingPeriod, "HVE07");
         require(6 hours <= _withdrawRequestEnablePeriod, "HVE08");
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
@@ -93,7 +93,7 @@ contract Params is Claim {
      * @dev setRewardMultipliers - called by hats governance to set reward multipliers
      * @param _rewardMultipliers reward multipliers
     */
-    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyGovernance {
+    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyOwner {
         rewardMultipliers = _rewardMultipliers;
         emit SetRewardMultipliers(_rewardMultipliers);
     }
@@ -102,7 +102,7 @@ contract Params is Claim {
      * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
-    function setClaimFee(uint256 _fee) external onlyGovernance {
+    function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
     }
@@ -112,7 +112,7 @@ contract Params is Claim {
      * @param _withdrawPeriod withdraw enable period
      * @param _safetyPeriod withdraw disable period
     */
-    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyGovernance {
+    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner {
         require(1 hours <= _withdrawPeriod, "HVE12");
         require(_safetyPeriod <= 6 hours, "HVE13");
         generalParameters.withdrawPeriod = _withdrawPeriod;
@@ -126,7 +126,7 @@ contract Params is Claim {
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
     */
-    function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyGovernance {
+    function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyOwner {
         require(_duration < 120 days, "HVE15");
         require(_periods > 0, "HVE16");
         require(_duration >= _periods, "HVE17");
@@ -141,7 +141,7 @@ contract Params is Claim {
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
     */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyGovernance {
+    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         require(_duration < 180 days, "HVE15");
         require(_periods > 0, "HVE16");
         require(_duration >= _periods, "HVE17");
@@ -158,7 +158,7 @@ contract Params is Claim {
     */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
-    onlyGovernance noSubmittedClaims(_pid) noSafetyPeriod {
+    onlyOwner noSubmittedClaims(_pid) noSafetyPeriod {
         validateSplit(_bountySplit);
         bountyInfos[_pid].bountySplit = _bountySplit;
         emit SetBountySplit(_pid, _bountySplit);
@@ -170,13 +170,13 @@ contract Params is Claim {
     */
     function setBountyLevelsDelay(uint256 _delay)
     external
-    onlyGovernance {
+    onlyOwner {
         require(_delay >= 2 days, "HVE18");
         generalParameters.setBountyLevelsDelay = _delay;
         emit SetBountyLevelsDelay(_delay);
     }
 
-    function setFeeSetter(address _newFeeSetter) external onlyGovernance {
+    function setFeeSetter(address _newFeeSetter) external onlyOwner {
         feeSetter = _newFeeSetter;
         emit SetFeeSetter(_newFeeSetter);
     }
@@ -187,7 +187,7 @@ contract Params is Claim {
         emit SetPoolWithdrawalFee(_pid, _newFee);
     }
 
-    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyGovernance {
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
         whitelistedRouters[_router] = _isWhitelisted;
         emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
