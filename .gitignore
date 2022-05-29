@@ -23,3 +23,4 @@ artifacts
 .private.json
 remix-compiler.config.js
 .DS_Store
+.openzeppelin
