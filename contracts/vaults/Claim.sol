@@ -16,7 +16,10 @@ contract Claim is Base {
     * @param _beneficiary The submitted claim's beneficiary
     * @param _severity The submitted claim's bug severity
     */
-    function submitClaim(uint256 _pid, address _beneficiary, uint256 _severity)
+    function submitClaim(uint256 _pid,
+        address _beneficiary,
+        uint256 _severity,
+        string calldata _descriptionHash)
     external
     onlyCommittee(_pid)
     noSubmittedClaims(_pid) {
@@ -34,7 +37,7 @@ contract Claim is Base {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity, _descriptionHash);
     }
 
     /**
@@ -48,7 +51,7 @@ contract Claim is Base {
         delete submittedClaims[_pid];
         emit DismissClaim(_pid);
     }
-    
+
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committe.
     * Called only by hats governance.
