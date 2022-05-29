@@ -51,7 +51,7 @@ const setup = async function(
     [router.address],
     tokenLockFactory.address,
     true
-  )
+  );
   hatVaults = await HATVaults.at(deployment.hatVaults.address);
   rewardController = await RewardController.at(deployment.rewardController.address);
   hatTimelockController = await HATTimelockController.new(

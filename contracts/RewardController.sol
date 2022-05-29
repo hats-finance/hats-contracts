@@ -18,15 +18,15 @@ contract RewardController is OwnableUpgradeable {
     uint256 public rewardPerBlock;
     // Block from which the vaults contract will start rewarding.
     uint256 public startBlock;
-    uint256 public multiplierPeriod;
+    uint256 public epochLength;
     // Reward Multipliers
-    uint256[24] public rewardMultipliers;
+    uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
     mapping(uint256 => uint256) public poolsAllocPoint;
     mapping(uint256 => uint256) public poolsLastProcessedTotalAllocPoint;
     HATVaults public hatVaults;
 
-    event SetRewardMultipliers(uint256[24] _rewardMultipliers);
+    event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
 
     modifier onlyVaults() {
         require(msg.sender == address(hatVaults), "Only vaults");
@@ -38,15 +38,15 @@ contract RewardController is OwnableUpgradeable {
         HATVaults _hatVaults,
         uint256 _rewardPerBlock,
         uint256 _startRewardingBlock,
-        uint256 _multiplierPeriod
+        uint256 _epochLength
     ) external initializer {
         rewardPerBlock = _rewardPerBlock;
         startBlock = _startRewardingBlock;
-        multiplierPeriod = _multiplierPeriod;
+        epochLength = _epochLength;
         hatVaults = _hatVaults;
         _transferOwnership(_hatGovernance);
 
-        rewardMultipliers = [
+        rewardPerEpoch = [
             4413, 4413, 8825, 7788, 6873, 6065,
             5353, 4724, 4169, 3679, 3247, 2865,
             2528, 2231, 1969, 1738, 1534, 1353,
@@ -55,12 +55,12 @@ contract RewardController is OwnableUpgradeable {
     }
 
     /**
-     * @dev setRewardMultipliers - called by hats governance to set reward multipliers
-     * @param _rewardMultipliers reward multipliers
+     * @dev setRewardPerEpoch- called by hats governance to set reward multipliers
+     * @param _rewardPerEpoch reward multipliers
     */
-    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyOwner {
-        rewardMultipliers = _rewardMultipliers;
-        emit SetRewardMultipliers(_rewardMultipliers);
+    function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
+        rewardPerEpoch = _rewardPerEpoch;
+        emit SetRewardPerEpoch(_rewardPerEpoch);
     }
 
     function setAllocPoints(uint256 _pid, uint256 _allocPoint) external onlyOwner {
@@ -117,27 +117,19 @@ contract RewardController is OwnableUpgradeable {
     view
     returns (uint256 reward) {
         if (_totalAllocPoint > 0) {
-            reward = getMultiplier(_fromBlock, _toBlock) * rewardPerBlock * _allocPoint / _totalAllocPoint / 100;
-        }
-    }
-
-    /**
-    * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
-    * @param _fromBlock range's from block
-    * @param _toBlock range's to block
-    * will revert if from < startBlock or _toBlock < _fromBlock
-    */
-    function getMultiplier(uint256 _fromBlock, uint256 _toBlock) public view returns (uint256 result) {
-        uint256 i = (_fromBlock - startBlock) / multiplierPeriod + 1;
-        for (; i <= MULTIPLIERS_LENGTH; i++) {
-            uint256 endBlock = multiplierPeriod * i + startBlock;
-            if (_toBlock <= endBlock) {
-                break;
+            uint256 result;
+            uint256 i = (_fromBlock - startBlock) / epochLength + 1;
+            for (; i <= MULTIPLIERS_LENGTH; i++) {
+                uint256 endBlock = epochLength * i + startBlock;
+                if (_toBlock <= endBlock) {
+                    break;
+                }
+                result += (endBlock - _fromBlock) * rewardPerEpoch[i-1];
+                _fromBlock = endBlock;
             }
-            result += (endBlock - _fromBlock) * rewardMultipliers[i-1];
-            _fromBlock = endBlock;
+            result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
+            reward = result * rewardPerBlock * _allocPoint / _totalAllocPoint / 100;
         }
-        result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardMultipliers[i-1]);
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {

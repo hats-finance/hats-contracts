@@ -55,7 +55,7 @@ const setup = async function(
     [router.address],
     tokenLockFactory.address,
     true
-  )
+  );
 
   hatVaults = await HATVaults.at(deployment.hatVaults.address);
   rewardController = await RewardController.at(deployment.rewardController.address);
@@ -1535,37 +1535,47 @@ contract("HatVaults", (accounts) => {
     assert.equal((await hatToken.balanceOf(hatVaults.address)).toString(), "0");
   });
 
-  it("getMultiplier - from below startblock will revert ", async () => {
+  it("getRewardForBlocksRange - from below startblock will revert ", async () => {
     await setup(accounts, REWARD_PER_BLOCK, 1);
+    let allocPoint = await rewardController.poolsAllocPoint(0);
+    let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
     try {
-      await rewardController.getMultiplier(0, 1);
+      await rewardController.getRewardForBlocksRange(0, 1, allocPoint, totalAllocPoint);
       assert(false, "from below startblock will revert ");
     } catch (ex) {
       assertVMException(ex);
     }
     await setup(accounts, REWARD_PER_BLOCK, 0);
-    assert.equal((await rewardController.getMultiplier(0, 1)).toNumber(), 4413);
+    assert.equal((await rewardController.getRewardForBlocksRange(0, 1, allocPoint, totalAllocPoint)).toString(), web3.utils.toWei("441.3"));
   });
 
-  it("getMultiplier - from must be <= to", async () => {
+  it("getRewardForBlocksRange - from must be <= to", async () => {
     await setup(accounts, REWARD_PER_BLOCK, 0);
     try {
-      await rewardController.getMultiplier(1, 0);
+      await rewardController.getRewardForBlocksRange(1, 0, 0, 1000);
       assert(false, "from must be <= to");
     } catch (ex) {
       assertVMException(ex);
     }
-    assert.equal((await rewardController.getMultiplier(0, 0)).toNumber(), 0);
+    assert.equal((await rewardController.getRewardForBlocksRange(0, 0, 0, 1000)).toNumber(), 0);
   });
 
-  it("setRewardMultipliers", async () => {
-    var rewardMultipliers = [...Array(24)].map(
+  it("setRewardPerEpoch", async () => {
+    var rewardPerEpoch = [...Array(24)].map(
       () => (Math.random() * 10000) | 0
     );
 
     await setup(accounts, REWARD_PER_BLOCK, 0);
+    let allocPoint = await rewardController.poolsAllocPoint(0);
+    let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
     try {
-      await rewardController.setRewardMultipliers(rewardMultipliers, {
+      await rewardController.setRewardPerEpoch(rewardPerEpoch, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -1573,40 +1583,40 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    let tx = await rewardController.setRewardMultipliers(rewardMultipliers);
-    assert.equal(tx.logs[0].event, "SetRewardMultipliers");
-    let eventRewardMultipliers = tx.logs[0].args._rewardMultipliers;
-    for (let i = 0; i < eventRewardMultipliers.length; i++) {
-      eventRewardMultipliers[i] = parseInt(
-        eventRewardMultipliers[i].toString()
+    let tx = await rewardController.setRewardPerEpoch(rewardPerEpoch);
+    assert.equal(tx.logs[0].event, "SetRewardPerEpoch");
+    let eventRewardPerEpoch = tx.logs[0].args._rewardPerEpoch;
+    for (let i = 0; i < eventRewardPerEpoch.length; i++) {
+      eventRewardPerEpoch[i] = parseInt(
+        eventRewardPerEpoch[i].toString()
       );
-      assert.equal(tx.logs[0].args._rewardMultipliers[i], rewardMultipliers[i]);
+      assert.equal(tx.logs[0].args._rewardPerEpoch[i], rewardPerEpoch[i]);
     }
 
     assert.equal(
-      (await rewardController.getMultiplier(0, 10)).toNumber(),
-      rewardMultipliers[0] * 10
+      (await rewardController.getRewardForBlocksRange(0, 10, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((rewardPerEpoch[0]).toString())
     );
     assert.equal(
-      (await rewardController.getMultiplier(0, 15)).toNumber(),
-      rewardMultipliers[0] * 10 + rewardMultipliers[1] * 5
+      (await rewardController.getRewardForBlocksRange(0, 15, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei(((rewardPerEpoch[0] * 10 + rewardPerEpoch[1] * 5) / 10).toString())
     );
     assert.equal(
-      (await rewardController.getMultiplier(0, 20)).toNumber(),
-      rewardMultipliers[0] * 10 + rewardMultipliers[1] * 10
+      (await rewardController.getRewardForBlocksRange(0, 20, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((rewardPerEpoch[0] + rewardPerEpoch[1]).toString())
     );
     var multiplier = 0;
     for (let i = 0; i < 24; i++) {
-      multiplier += rewardMultipliers[i] * 10;
+      multiplier += rewardPerEpoch[i];
     }
     assert.equal(
-      (await rewardController.getMultiplier(0, 1000)).toNumber(),
-      multiplier
+      (await rewardController.getRewardForBlocksRange(0, 1000, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((multiplier).toString())
     );
   });
 
   it("getMultiplier - ", async () => {
-    var rewardMultipliers = [
+    var rewardPerEpoch = [
       4413,
       4413,
       8825,
@@ -1633,26 +1643,31 @@ contract("HatVaults", (accounts) => {
       639,
     ];
     await setup(accounts, REWARD_PER_BLOCK, 0);
+    let allocPoint = await rewardController.poolsAllocPoint(0);
+    let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
     assert.equal(
-      (await rewardController.getMultiplier(0, 10)).toNumber(),
-      rewardMultipliers[0] * 10
+      (await rewardController.getRewardForBlocksRange(0, 10, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((rewardPerEpoch[0]).toString())
     );
     assert.equal(
-      (await rewardController.getMultiplier(0, 15)).toNumber(),
-      rewardMultipliers[0] * 10 + rewardMultipliers[1] * 5
+      (await rewardController.getRewardForBlocksRange(0, 15, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei(((rewardPerEpoch[0] * 10 + rewardPerEpoch[1] * 5) / 10).toString())
     );
     assert.equal(
-      (await rewardController.getMultiplier(0, 20)).toNumber(),
-      rewardMultipliers[0] * 10 + rewardMultipliers[1] * 10
+      (await rewardController.getRewardForBlocksRange(0, 20, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((rewardPerEpoch[0] + rewardPerEpoch[1]).toString())
     );
     var multiplier = 0;
     for (let i = 0; i < 24; i++) {
-      multiplier += rewardMultipliers[i] * 10;
+      multiplier += rewardPerEpoch[i];
     }
 
     assert.equal(
-      (await rewardController.getMultiplier(0, 1000)).toNumber(),
-      multiplier
+      (await rewardController.getRewardForBlocksRange(0, 1000, allocPoint, totalAllocPoint)).toString(),
+      web3.utils.toWei((multiplier).toString())
     );
     var staker = accounts[1];
     assert.equal((await hatVaults.pendingReward(0, staker)).toNumber(), 0);
@@ -1685,9 +1700,11 @@ contract("HatVaults", (accounts) => {
         )
       ).toString()
     );
-    var multiplier = await rewardController.getMultiplier(
+    var multiplier = await rewardController.getRewardForBlocksRange(
       currentBlockNumber,
-      currentBlockNumber + 1
+      currentBlockNumber + 1,
+      allocPoint,
+      totalAllocPoint
     );
     assert.equal(
       (
@@ -3758,7 +3775,7 @@ contract("HatVaults", (accounts) => {
       [router1.address],
       tokenLockFactory1.address,
       true
-    )
+    );
   
     hatVaults1 = await HATVaults.at(deployment.hatVaults.address);
     rewardController1 = await RewardController.at(deployment.rewardController.address);

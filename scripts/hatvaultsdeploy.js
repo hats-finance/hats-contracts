@@ -3,7 +3,7 @@ async function main(
   rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
   rewardPerBlock = "16185644800000000",
   startBlock = null,
-  multiplierPeriod = "195200",
+  epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
   swapToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
   whitelistedRouters = ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
@@ -52,14 +52,14 @@ async function main(
     hatVaults.address,
     rewardPerBlock,
     startBlock,
-    multiplierPeriod,
+    epochLength,
   ]);
 
   await rewardController.deployed();
 
   await hatVaults.setRewardController(rewardController.address);
 
-  if (governance != deployerAddress) {
+  if (governance !== deployerAddress) {
     await hatVaults.transferOwnership(governance);
   }
 
@@ -82,7 +82,7 @@ async function main(
       startBlock,
       '"',
       '"',
-      multiplierPeriod,
+      epochLength,
       '"',
       '"',
       governance,
