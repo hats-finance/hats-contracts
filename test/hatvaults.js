@@ -1829,6 +1829,12 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
     assert.equal(tx.logs[0].event, "SubmitClaim");
+    assert.equal(tx.logs[0].args._pid, 0);
+    assert.equal(tx.logs[0].args._committee, accounts[1]);
+    assert.equal(tx.logs[0].args._beneficiary, accounts[2]);
+    assert.equal(tx.logs[0].args._severity, 3);
+    assert.equal(tx.logs[0].args._descriptionHash, "description hash");
+
     tx = await hatVaults.approveClaim(0);
     assert.equal(
       await hatToken.balanceOf(hatVaults.address),
