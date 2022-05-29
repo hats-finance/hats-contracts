@@ -393,22 +393,22 @@ contract Base is Governable, ReentrancyGuard {
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         require(_bountySplit.hackerVested
-        + _bountySplit.hacker
-        + _bountySplit.committee
-        + _bountySplit.swapAndBurn
-        + _bountySplit.governanceHat
-        + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
-            "HVE29");
+            + _bountySplit.hacker
+            + _bountySplit.committee
+            + _bountySplit.swapAndBurn
+            + _bountySplit.governanceHat
+            + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
+                "HVE29");
     }
 
     function getDefaultBountySplit() public pure returns (BountySplit memory) {
         return BountySplit({
-            hackerVested : 6000,
-            hacker : 2000,
-            committee : 500,
-            swapAndBurn : 0,
-            governanceHat : 1000,
-            hackerHatVested : 500
+            hackerVested: 6000,
+            hacker: 2000,
+            committee: 500,
+            swapAndBurn: 0,
+            governanceHat: 1000,
+            hackerHatVested: 500
         });
     }
 }
