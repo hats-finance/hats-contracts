@@ -11,7 +11,7 @@ contract Deposit is Base {
         rewardToken.transferFrom(address(msg.sender), address(this), _amount);
         uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
         rewardAvailable += rewardTokenReceived;
-    emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
+        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
 
     /**

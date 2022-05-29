@@ -306,8 +306,8 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         require(rewardAvailable >= _amount, "HVE46");
-        rewardToken.transfer(_to, _amount);
         rewardAvailable -= _amount;
+        rewardToken.transfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
