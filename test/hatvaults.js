@@ -4048,7 +4048,8 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await advanceToSaftyPeriod();
-    await hatVaults.submitClaim(0, accounts[2], 0, { from: accounts[1] });
+    await hatVaults.submitClaim(0, accounts[2], 0, "description hash",
+        { from: accounts[1] });
     await hatVaults.approveClaim(0);
 
     let path = ethers.utils.solidityPack(
