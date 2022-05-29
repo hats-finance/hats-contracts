@@ -398,7 +398,7 @@ contract Base is Governable, ReentrancyGuard {
             + _bountySplit.swapAndBurn
             + _bountySplit.governanceHat
             + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
-                "HVE29");
+            "HVE29");
     }
 
     function getDefaultBountySplit() public pure returns (BountySplit memory) {
