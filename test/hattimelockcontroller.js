@@ -7,6 +7,8 @@ const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const utils = require("./utils.js");
 
+const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+
 var hatVaults;
 var hatTimelockController;
 var hatToken;
@@ -37,7 +39,7 @@ const setup = async function(
   router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-  hatVaults = await HATVaults.new(
+  hatVaults = await HATVaults.at((await deployHatVaults(
     hatToken.address,
     web3.utils.toWei(reward_per_block),
     startBlock,
@@ -45,15 +47,16 @@ const setup = async function(
     accounts[0],
     hatToken.address,
     [router.address],
-    tokenLockFactory.address
-  );
+    tokenLockFactory.address,
+    true
+  )).address);
   hatTimelockController = await HATTimelockController.new(
     hatVaults.address,
     hatGovernanceDelay,
     [accounts[0]],
     [accounts[0]]
   );
-  tx = await hatVaults.transferGovernance(hatTimelockController.address);
+  tx = await hatVaults.transferOwnership(hatTimelockController.address);
   await utils.setMinter(
     hatToken,
     hatVaults.address,
@@ -155,7 +158,7 @@ contract("HatVaults", (accounts) => {
     }
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
-    assert.equal(await hatVaults.governance(), hatTimelockController.address);
+    assert.equal(await hatVaults.owner(), hatTimelockController.address);
     assert.equal(await hatTimelockController.hatVaults(), hatVaults.address);
     assert.equal(
       await hatTimelockController.hasRole(
@@ -318,10 +321,8 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
-    await hatVaults.submitClaim(0, accounts[2], 3, {
-      from: accounts[1],
-    });
-
+    await hatVaults.submitClaim(0, accounts[2], 3, "description hash", {
+      from: accounts[1] });
     try {
       await hatTimelockController.approveClaim(0, { from: accounts[3] });
       assert(false, "only gov");

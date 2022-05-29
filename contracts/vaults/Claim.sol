@@ -4,7 +4,7 @@ pragma solidity 0.8.6;
 import "./Base.sol";
 
 contract Claim is Base {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
     * @notice Called by a committee to submit a claim for a bounty.
@@ -16,7 +16,10 @@ contract Claim is Base {
     * @param _beneficiary The submitted claim's beneficiary
     * @param _severity The submitted claim's bug severity
     */
-    function submitClaim(uint256 _pid, address _beneficiary, uint256 _severity)
+    function submitClaim(uint256 _pid,
+        address _beneficiary,
+        uint256 _severity,
+        string calldata _descriptionHash)
     external
     onlyCommittee(_pid)
     noSubmittedClaims(_pid) {
@@ -34,7 +37,7 @@ contract Claim is Base {
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity, _descriptionHash);
     }
 
     /**
@@ -44,23 +47,23 @@ contract Claim is Base {
     */
     function dismissClaim(uint256 _pid) external {
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == governance() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
+        require(msg.sender == owner() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
         delete submittedClaims[_pid];
         emit DismissClaim(_pid);
     }
-    
+
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
     * Called only by hats governance.
     * @param _pid The pool id
     */
-    function approveClaim(uint256 _pid) external onlyGovernance nonReentrant {
+    function approveClaim(uint256 _pid) external onlyOwner nonReentrant {
         require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
         BountyInfo storage bountyInfo = bountyInfos[_pid];
         SubmittedClaim memory submittedClaim = submittedClaims[_pid];
         delete submittedClaims[_pid];
 
-        IERC20 lpToken = poolInfos[_pid].lpToken;
+        IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
         ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.severity);
         poolInfos[_pid].balance -= claimBounty.hacker
                             + claimBounty.hackerVested
@@ -110,7 +113,7 @@ contract Claim is Base {
         if (generalParameters.claimFee > 0) {
             require(msg.value >= generalParameters.claimFee, "HVE14");
             // solhint-disable-next-line indent
-            payable(governance()).transfer(msg.value);
+            payable(owner()).transfer(msg.value);
         }
         emit Claim(msg.sender, _descriptionHash);
     }
