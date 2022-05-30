@@ -3,13 +3,10 @@
 The contracts in this repositoryd define a number of different roles that have the power to change the way the contracts work. We list them here, with a short description of what an account with this role can do, and to which account this role will be assigned on deployment
 
 - `HatVaults.ProxyOwner`
-
   - set to `HATTimelockController`
   - can upgrade the proxy
   - can `transferOwnership` and `renounceOwnership`
-
 - `HatVaults.owner` ("governance")
-
   - set to `HATTimelockController`
   - can `transferOwnership` and `renounceOwnership` of `HATVaults`
   - can call `addPool` to add a pool
@@ -28,9 +25,7 @@ The contracts in this repositoryd define a number of different roles that have t
   - can call `setPoolInitialized` (Set an "initialized" flag to disable "setShares")
   - can call `setShares` but only if the pool is not initialized
   - can call `setCommittee` but only if the committee has not checked in yet
-
 - `HatVaults - Vault committee` (committee set by each vault)
-
   - a specific address for each vault, typically a multisig
   - can call `committeeCheckIn`
   - can call `setCommittee`
@@ -38,42 +33,28 @@ The contracts in this repositoryd define a number of different roles that have t
   - can call `setPendingBountyLevels`
   - can call `setBountyLevels`
   - can call `setPoolWithdrawalFee` (set the fee for withdrawals from the pool)
-
 - `HatVaults.feeSetter`
-
   - set to `HATTimeLockController`
   - can call `setPoolWithdrawalFee` (set the fee for withdrawals from the pool)
-
 - `RewardController.owner`
-
   - set to HATS governance (not timelocked)
   - can call `setRewardPerEpoch`
   - can call `setAllocPoints`
-
 - `RewardController - proxy.owner`
-
   - set to `HATTimelockController`
   - can upgrade the reward controller
-
 - `HATTimelockController.TIMELOCK_ADMIN_ROLE`
   - set to governance multisig
   - can manage all other roles (subject to timelock)
-
-* `HATTimelockController.PROPOSER_ROLE`
-
+- `HATTimelockController.PROPOSER_ROLE`
   - set to governance multisig
   - can call `schedule` and `scheduleBatch` to schedule any contract call
-
-* `HATTimelockController.EXECUTOR_ROLE`
-
+- `HATTimelockController.EXECUTOR_ROLE`
   - set to "anyone"
   - can call `execute` and `executeBatch` to execute a scheduled operation
-
-* `HATTimelockController.CANCELLER_ROLE`
-
+- `HATTimelockController.CANCELLER_ROLE`
   - set to governance multisig
   - can call `cancel` and cancel any pending operation
-
   - The following functions in HATVaults are **not** subject to a timelock:
     - `addPool`
     - `approveClaim`
