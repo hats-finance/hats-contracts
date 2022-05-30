@@ -57,6 +57,8 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
         uint256 totalShares;
+        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
+        uint256 lastProcessedTotalAllocPoint;
         // total amount of LP tokens in pool
         uint256 balance;
         // fee to take from withdrawals to governance
@@ -117,7 +119,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // the ERC20 contract in which rewards are distributed
     IERC20 public rewardToken;
 
-    mapping(uint256 => uint256) public poolsLastProcessedTotalAllocPoint;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
     ERC20Burnable public swapToken;
     uint256 public constant HUNDRED_PERCENT = 10000;
@@ -273,7 +274,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         }
         uint256 totalShares = pool.totalShares;
         if (totalShares > 0) {
-            uint256 lastProcessedAllocPoint = poolsLastProcessedTotalAllocPoint[_pid];
+            uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
             uint256 reward = rewardController.poolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
@@ -284,7 +285,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal  {
         uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
         if (globalPoolUpdatesLength > 0) {
-            poolsLastProcessedTotalAllocPoint[_pid] = globalPoolUpdatesLength - 1;
+            poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
         }
     }
 

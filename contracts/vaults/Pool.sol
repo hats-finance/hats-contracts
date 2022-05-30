@@ -52,18 +52,20 @@ contract Pool is Base {
 
         uint256 startBlock = rewardController.startBlock();
 
+        uint256 poolId = poolInfos.length;
+
         poolInfos.push(PoolInfo({
             lpToken: IERC20Upgradeable(_lpToken),
             lastRewardBlock: block.number > startBlock ? block.number : startBlock,
+            lastProcessedTotalAllocPoint: 0,
             rewardPerShare: 0,
             totalShares: 0,
             balance: 0,
             withdrawalFee: 0
         }));
    
-        uint256 poolId = poolInfos.length-1;
-        committees[poolId] = _committee;
         setPoolsLastProcessedTotalAllocPoint(poolId);
+        committees[poolId] = _committee;
         uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
         BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
