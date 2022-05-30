@@ -47,13 +47,13 @@ async function main(
 
   await hatVaults.deployed();
 
-  const rewardController = await upgrades.deployProxy(RewardController, [
+  const rewardController = await RewardController.deploy(
     governance,
     hatVaults.address,
     startBlock,
     epochLength,
     rewardPerEpoch,
-  ]);
+  );
 
   await rewardController.deployed();
 

@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./HATVaults.sol";
 
-contract RewardController is OwnableUpgradeable {
+contract RewardController is Ownable {
 
     struct PoolUpdate {
         uint256 blockNumber;// update blocknumber
@@ -26,17 +26,17 @@ contract RewardController is OwnableUpgradeable {
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
 
-    function initialize(
+    constructor(
         address _hatGovernance,
         HATVaults _hatVaults,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _rewardPerEpoch
-    ) external initializer {
+    ) {
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
-        hatVaults = _hatVaults;
         rewardPerEpoch = _rewardPerEpoch;
+        hatVaults = _hatVaults;
         _transferOwnership(_hatGovernance);
     }
 
