@@ -7,9 +7,11 @@ contract Deposit is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function depositReward(uint256 _amount) external {
-        rewardAvailable += _amount;
+        uint256 balanceBefore = rewardToken.balanceOf(address(this));
         rewardToken.transferFrom(address(msg.sender), address(this), _amount);
-        emit DepositReward(_amount, address(rewardToken));
+        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
+        rewardAvailable += rewardTokenReceived;
+        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
 
     /**
@@ -21,9 +23,11 @@ contract Deposit is Base {
     function rewardDepositors(uint256 _pid, uint256 _amount) external {
         require((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT < poolInfos[_pid].totalShares,
         "HVE11");
+        uint256 balanceBefore = poolInfos[_pid].lpToken.balanceOf(address(this));
         poolInfos[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        poolInfos[_pid].balance += _amount;
-        emit RewardDepositors(_pid, _amount);
+        uint256 lpTokenReceived = poolInfos[_pid].lpToken.balanceOf(address(this)) - balanceBefore;
+        poolInfos[_pid].balance += lpTokenReceived;
+        emit RewardDepositors(_pid, _amount, lpTokenReceived);
     }
 
     /**

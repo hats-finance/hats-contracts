@@ -14,6 +14,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint --fix": "eslint --fix .",
+    "test": "hardhat test",
     "coveralls": "hardhat coverage"
   },
   "devDependencies": {

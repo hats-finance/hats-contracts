@@ -6,7 +6,11 @@ import "./Base.sol";
 contract Getters is Base {
     // GET INFO for UI
 
-    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
+    function getBountyLevels(uint256 _pid) external view returns (uint256[] memory) {
+        return bountyInfos[_pid].bountyLevels;
+    }
+
+    function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
