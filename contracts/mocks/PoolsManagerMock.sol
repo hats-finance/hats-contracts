@@ -43,7 +43,7 @@ contract PoolsManagerMock {
                             _registered,
                             _depositPause,
                             _descriptionHash);
-            _rewardController.setAllocPoints(_pids[i], _allocPoint);
+            _rewardController.setAllocPoint(_pids[i], _allocPoint);
         }
     }
 
