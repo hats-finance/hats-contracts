@@ -116,7 +116,7 @@ const setup = async function(
     false,
     true
   );
-  await rewardController.setAllocPoints(
+  await rewardController.setAllocPoint(
     (await hatVaults.getNumberOfPools()) - 1,
     allocPoint
   );
@@ -345,7 +345,7 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -2400,7 +2400,7 @@ contract("HatVaults", (accounts) => {
       false,
       true
     );
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -2533,7 +2533,7 @@ contract("HatVaults", (accounts) => {
       false,
       false
     );
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -2608,7 +2608,7 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -2630,7 +2630,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE23");
     }
     await hatVaults.setPool(0, true, false, "_descriptionHash");
-    await rewardController.setAllocPoints(0, 200);
+    await rewardController.setAllocPoint(0, 200);
 
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -2641,7 +2641,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await hatVaults.setPool(0, true, false, "_descriptionHash");
     await hatVaults.setPool(0, true, false, "_descriptionHash");
-    await rewardController.setAllocPoints(0, 200);
+    await rewardController.setAllocPoint(0, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
     var tx = await hatVaults.claimReward(0, { from: staker });
@@ -2987,7 +2987,7 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -3543,7 +3543,7 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -3555,11 +3555,11 @@ contract("HatVaults", (accounts) => {
     await hatVaults.committeeCheckIn(1, { from: accounts[0] });
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
     await hatVaults.setPool(0, true, false, "123");
-    await rewardController.setAllocPoints(0, 200);
+    await rewardController.setAllocPoint(0, 200);
     // Update twice in one block should be same as once
     await poolManagerMock.updatePoolsTwice(hatVaults.address, 0, 1);
     await hatVaults.setPool(1, true, false, "123");
-    await rewardController.setAllocPoints(1, 200);
+    await rewardController.setAllocPoint(1, 200);
     await hatVaults.massUpdatePools(0, 2);
     assert.equal(
       Math.round(
@@ -3593,9 +3593,9 @@ contract("HatVaults", (accounts) => {
       true
     );
     await hatVaults.setPool(1, true, false, "123");
-    await rewardController.setAllocPoints(1, 200);
+    await rewardController.setAllocPoint(1, 200);
     await hatVaults.setPool(1, true, false, "123");
-    await rewardController.setAllocPoints(1, 0);
+    await rewardController.setAllocPoint(1, 0);
     await stakingToken2.approve(hatVaults.address, web3.utils.toWei("2"), {
       from: staker,
     });
@@ -3721,7 +3721,7 @@ contract("HatVaults", (accounts) => {
       false,
       true
     );
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -3736,7 +3736,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
 
     await hatVaults.setPool(0, true, false, "123");
-    await rewardController.setAllocPoints(0, 200);
+    await rewardController.setAllocPoint(0, 200);
 
     await hatVaults.massUpdatePools(0, 2);
     assert.equal(
@@ -3954,7 +3954,7 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
@@ -3962,7 +3962,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.setCommittee(1, accounts[0], { from: accounts[1] });
     //5
     await hatVaults.setPool(1, true, false, "123");
-    await rewardController.setAllocPoints(1, 300);
+    await rewardController.setAllocPoint(1, 300);
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     assert.equal(await rewardController.getGlobalPoolUpdatesLength(), 3);
@@ -4118,7 +4118,7 @@ contract("HatVaults", (accounts) => {
       false,
       true
     );
-    await rewardController.setAllocPoints(
+    await rewardController.setAllocPoint(
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );

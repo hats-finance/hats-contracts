@@ -13,7 +13,7 @@ contract Getters is Base {
 
         if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
             uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
-            uint256 reward = rewardController.poolReward(_pid, pool.lastRewardBlock, lastProcessedAllocPoint);
+            uint256 reward = rewardController.getPoolReward(_pid, pool.lastRewardBlock, lastProcessedAllocPoint);
             rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
         return user.shares * rewardPerShare / 1e12 - user.rewardDebt;

@@ -15,7 +15,7 @@ import "../tokenlock/ITokenLockFactory.sol";
 import "../RewardController.sol";
 
 
-contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {
@@ -273,16 +273,16 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             return;
         }
         uint256 totalShares = pool.totalShares;
-        if (totalShares > 0) {
+        if (totalShares != 0) {
             uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
-            uint256 reward = rewardController.poolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
+            uint256 reward = rewardController.getPoolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
         pool.lastRewardBlock = block.number;
         setPoolsLastProcessedTotalAllocPoint(_pid);
     }
 
-    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal  {
+    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
         uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
         if (globalPoolUpdatesLength > 0) {
             poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;

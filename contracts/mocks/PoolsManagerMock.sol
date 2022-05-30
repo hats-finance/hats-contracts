@@ -26,7 +26,7 @@ contract PoolsManagerMock {
                                 _bountyVestingParams,
                                 false,
                                 true);
-            _rewardController.setAllocPoints(_hatVaults.getNumberOfPools() - 1, _allocPoint);
+            _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
     }
 

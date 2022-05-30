@@ -49,7 +49,7 @@ contract RewardController is OwnableUpgradeable {
         emit SetRewardPerEpoch(_rewardPerEpoch);
     }
 
-    function setAllocPoints(uint256 _pid, uint256 _allocPoint) external onlyOwner {
+    function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
         // hatVaults.updatePool(_pid);
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolsAllocPoint[_pid] + _allocPoint;
@@ -76,7 +76,7 @@ contract RewardController is OwnableUpgradeable {
     * @param _fromBlock The block from which to start calculation
     * @return reward
     */
-    function poolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastProcessedAllocPoint) external view returns(uint256 reward) {
+    function getPoolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastProcessedAllocPoint) external view returns(uint256 reward) {
         uint256 poolAllocPoint = poolsAllocPoint[_pid];
         uint256 i = _lastProcessedAllocPoint;
         for (; i < globalPoolUpdates.length-1; i++) {
