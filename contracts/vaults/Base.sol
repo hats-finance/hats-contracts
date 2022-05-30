@@ -116,6 +116,8 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // the ERC20 contract in which rewards are distributed
     IERC20 public rewardToken;
+
+    mapping(uint256 => uint256) public poolsLastProcessedTotalAllocPoint;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
     ERC20Burnable public swapToken;
     uint256 public constant HUNDRED_PERCENT = 10000;
@@ -160,8 +162,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     ITokenLockFactory public tokenLockFactory;
 
     RewardController public rewardController;
-
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
@@ -273,11 +273,19 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         }
         uint256 totalShares = pool.totalShares;
         if (totalShares > 0) {
-            uint256 reward = rewardController.poolReward(_pid, lastRewardBlock);
+            uint256 lastProcessedAllocPoint = poolsLastProcessedTotalAllocPoint[_pid];
+            uint256 reward = rewardController.poolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
         pool.lastRewardBlock = block.number;
-        rewardController.setPoolsLastProcessedTotalAllocPoint(_pid);
+        setPoolsLastProcessedTotalAllocPoint(_pid);
+    }
+
+    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal  {
+        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
+        if (globalPoolUpdatesLength > 0) {
+            poolsLastProcessedTotalAllocPoint[_pid] = globalPoolUpdatesLength - 1;
+        }
     }
 
     /**

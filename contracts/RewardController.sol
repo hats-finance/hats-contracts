@@ -23,15 +23,9 @@ contract RewardController is OwnableUpgradeable {
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
     mapping(uint256 => uint256) public poolsAllocPoint;
-    mapping(uint256 => uint256) public poolsLastProcessedTotalAllocPoint;
     HATVaults public hatVaults;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
-
-    modifier onlyVaults() {
-        require(msg.sender == address(hatVaults), "Only vaults");
-        _;
-    }
 
     function initialize(
         address _hatGovernance,
@@ -64,7 +58,7 @@ contract RewardController is OwnableUpgradeable {
     }
 
     function setAllocPoints(uint256 _pid, uint256 _allocPoint) external onlyOwner {
-        hatVaults.updatePool(_pid);
+        // hatVaults.updatePool(_pid);
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolsAllocPoint[_pid] + _allocPoint;
         if (globalPoolUpdates.length > 0 &&
@@ -81,11 +75,7 @@ contract RewardController is OwnableUpgradeable {
         poolsAllocPoint[_pid] = _allocPoint;
     }
 
-    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) external onlyVaults {
-        if (globalPoolUpdates.length > 0) {
-            poolsLastProcessedTotalAllocPoint[_pid] = globalPoolUpdates.length-1;
-        }
-    }
+
 
     /**
     * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
@@ -94,9 +84,9 @@ contract RewardController is OwnableUpgradeable {
     * @param _fromBlock The block from which to start calculation
     * @return reward
     */
-    function poolReward(uint256 _pid, uint256 _fromBlock) external view returns(uint256 reward) {
+    function poolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastProcessedAllocPoint) external view returns(uint256 reward) {
         uint256 poolAllocPoint = poolsAllocPoint[_pid];
-        uint256 i = poolsLastProcessedTotalAllocPoint[_pid];
+        uint256 i = _lastProcessedAllocPoint;
         for (; i < globalPoolUpdates.length-1; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =

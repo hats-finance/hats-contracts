@@ -322,13 +322,6 @@ contract("HatVaults", (accounts) => {
       true
     );
 
-    try {
-      await rewardController.setPoolsLastProcessedTotalAllocPoint(0);
-      assert(false, "Only vaults");
-    } catch (ex) {
-      assertVMException(ex, "Only vaults");
-    }
-
     await rewardController.setAllocPoints(
       (await hatVaults.getNumberOfPools()) - 1,
       100
@@ -1728,7 +1721,7 @@ contract("HatVaults", (accounts) => {
       await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
     assert.equal(
-      (await hatVaults.pendingReward(0, staker)).toString(),
+      (await hatVaults.getPendingReward(0, staker)).toString(),
       (
         await rewardController.getRewardForBlocksRange(
           currentBlockNumber - 1,
@@ -2180,8 +2173,8 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     var timeToFinishRewardPlan =
-      (await hatVaults.MULTIPLIER_PERIOD()) *
-      (await hatVaults.MULTIPLIERS_LENGTH());
+      (await rewardController.epochLength()) *
+      (await rewardController.MULTIPLIERS_LENGTH());
     await utils.increaseTime(timeToFinishRewardPlan);
 
     try {
@@ -3999,10 +3992,7 @@ contract("HatVaults", (accounts) => {
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     assert.equal(await rewardController.getGlobalPoolUpdatesLength(), 3);
-    assert.equal(
-      await rewardController.poolsLastProcessedTotalAllocPoint(0),
-      0
-    );
+    assert.equal(await hatVaults.poolsLastProcessedTotalAllocPoint(0), 0);
     assert.equal(
       (await hatVaults.poolInfos(0)).lastRewardBlock,
       tx.receipt.blockNumber
