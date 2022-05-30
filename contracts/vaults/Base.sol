@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 
+
 contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //Parameters that apply to all the vaults
@@ -77,7 +78,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 vestingDuration;
         uint256 vestingPeriods;
     }
-    
+
     // How to devide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
@@ -90,8 +91,8 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 swapAndBurn;
         // the percentage of the total bounty to be swapped to HATs and sent to governance
         uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker
-        uint256 hackerHat;
+        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+        uint256 hackerHatVested;
     }
 
     // How to devide a bounty for a claim that has been approved, in amounts of pool's tokens
@@ -131,6 +132,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
+    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // Info of each pool.
     PoolInfo[] public poolInfos;
@@ -139,13 +141,12 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Reward Multipliers
     uint256[24] public rewardMultipliers;
 
+    uint256 public rewardAvailable;
+
     // Info of each user that stakes LP tokens. pid => user address => info
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     //pid -> BountyInfo
     mapping (uint256=>BountyInfo) public bountyInfos;
-
-    uint256 public rewardAvailable;
-
     //pid -> committee address
     mapping(uint256=>address) public committees;
     //pid -> amount
@@ -173,7 +174,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     address public feeSetter;
 
     ITokenLockFactory public tokenLockFactory;
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
@@ -203,7 +203,10 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount, uint256 transferredAmount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SafeTransferReward(address indexed user, uint256 indexed pid, uint256 amount, uint256 requestedAmount);
+    event SafeTransferReward(address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address rewardToken);
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
@@ -257,10 +260,15 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
-    event RewardDepositors(uint256 indexed _pid, uint256 indexed _amount);
-    event DepositReward(uint256 indexed _amount, address _rewardToken);
+    event RewardDepositors(uint256 indexed _pid,
+        uint256 indexed _amount,
+        uint256 indexed _transferredAmount);
+    event DepositReward(uint256 indexed _amount,
+        uint256 indexed _transferredAmount,
+        address indexed _rewardToken);
     event ClaimReward(uint256 indexed _pid);
-    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod, uint256 indexed _withdrawRequestEnablePeriod);
+    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod,
+        uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
     event SetBountyLevelsDelay(uint256 indexed _delay);
 
@@ -289,15 +297,18 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
     }
 
-    // Safe rewardToken transfer function, transfer HATs from the contract only if they are earmarked for rewards
+    /**
+    * @dev Safe HAT transfer function, transfer rewards from the contract only if there are enough
+    * rewards available.
+    * @param _to The address to transfer the reward to
+    * @param _amount The amount of rewards to transfer
+    * @param _pid The pool id
+   */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (_amount > rewardAvailable) { 
-            _amount = rewardAvailable; 
-        }
+        require(rewardAvailable >= _amount, "HVE46");
         rewardAvailable -= _amount;
         rewardToken.transfer(_to, _amount);
-        // TODO: fix return of the requested amount
-        emit SafeTransferReward(_to, _pid, _amount, _amount);
+        emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
     /**
@@ -386,7 +397,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             + _bountySplit.committee
             + _bountySplit.swapAndBurn
             + _bountySplit.governanceHat
-            + _bountySplit.hackerHat == HUNDRED_PERCENT,
+            + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
         "HVE29");
     }
 
@@ -397,7 +408,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             committee: 500,
             swapAndBurn: 0,
             governanceHat: 1000,
-            hackerHat: 500
+            hackerHatVested: 500
         });
     }
 

@@ -8,7 +8,7 @@ contract Swap is Base {
     * @dev Swap pool's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of swapToken.
-    * Only governance are authorized to call this function.
+    * Only governance is authorized to call this function.
     * @param _pid the pool id
     * @param _beneficiary beneficiary
     * @param _amountOutMinimum minimum output of swapToken at swap
@@ -16,13 +16,13 @@ contract Swap is Base {
     * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(uint256 _pid,
-                        address _beneficiary,
-                        uint256 _amountOutMinimum,
-                        address _routingContract,
-                        bytes calldata _routingPayload)
+        address _beneficiary,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload)
     external
+
     onlyOwner {
-        require(whitelistedRouters[_routingContract], "HVE44");
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
@@ -36,10 +36,11 @@ contract Swap is Base {
             swapToken.burn(burntHats);
         }
         emit SwapAndBurn(_pid, amount, burntHats);
+
         address tokenLock;
         uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
-           //hacker get its reward via vesting contract
+            //hacker gets her reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(swapToken),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
@@ -62,19 +63,20 @@ contract Swap is Base {
     }
 
     function swapTokenForHAT(uint256 _amount,
-                            IERC20Upgradeable _token,
-                            uint256 _amountOutMinimum,
-                            address _routingContract,
-                            bytes calldata _routingPayload)
+        IERC20Upgradeable _token,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload)
     internal
     returns (uint256 swapTokenReceived)
     {
         if (address(_token) == address(swapToken)) {
             return _amount;
         }
-
+        require(whitelistedRouters[_routingContract], "HVE44");
         require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 balanceBefore = swapToken.balanceOf(address(this));
+        require(rewardAvailable >= _amountOutMinimum, "HVE45");
         (bool success,) = _routingContract.call(_routingPayload);
         require(success, "HVE43");
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;

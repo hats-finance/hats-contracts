@@ -6,17 +6,17 @@ import "./Base.sol";
 contract Getters is Base {
     // GET INFO for UI
 
-    function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {
+    function getBountyLevels(uint256 _pid) external view returns (uint256[] memory) {
         return bountyInfos[_pid].bountyLevels;
     }
 
-    function pendingReward(uint256 _pid, address _user) external view returns (uint256) {
+    function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 rewardPerShare = pool.rewardPerShare;
 
         if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
-            uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length-1);
+            uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length - 1);
             rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
         return user.shares * rewardPerShare / 1e12 - user.rewardDebt;

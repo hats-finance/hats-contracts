@@ -38,7 +38,7 @@ import "./vaults/Withdraw.sol";
 // HVE21: Committee is zero
 // HVE22: Committee already checked in
 // HVE23: Pool does not exist
-// HVE24: Amount is zero
+// HVE24: Amount to swap is zero
 // HVE25: Pending withdraw request exist
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
@@ -59,6 +59,8 @@ import "./vaults/Withdraw.sol";
 // HVE42: User shares must be greater than 0
 // HVE43: Swap was not successful
 // HVE44: Routing contract must be whitelisted
+// HVE45: Not enough HATs for swap
+// HVE46: Not enough rewards to transfer to user
 
 
 /// @title Manage all Hats.finance vaults
