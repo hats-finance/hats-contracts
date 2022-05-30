@@ -3992,7 +3992,6 @@ contract("HatVaults", (accounts) => {
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     assert.equal(await rewardController.getGlobalPoolUpdatesLength(), 3);
-    assert.equal(await hatVaults.poolsLastProcessedTotalAllocPoint(0), 0);
     assert.equal(
       (await hatVaults.poolInfos(0)).lastRewardBlock,
       tx.receipt.blockNumber
