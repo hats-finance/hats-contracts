@@ -35,7 +35,8 @@ contract Deposit is Base {
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {
-        _claimReward(_pid);
+        UserInfo memory user = userInfo[_pid][msg.sender];
+        _claimReward(_pid, user);
         emit ClaimReward(_pid);
     }
 
@@ -49,9 +50,9 @@ contract Deposit is Base {
         require(_amount >= MINIMUM_DEPOSIT, "HVE27");
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
-        _claimReward(_pid);
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+        _claimReward(_pid, user);
         uint256 lpSupply = pool.balance;
         uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
@@ -69,13 +70,12 @@ contract Deposit is Base {
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
     }
 
-    function _claimReward(uint256 _pid) internal nonReentrant {
+    function _claimReward(uint256 _pid, UserInfo memory _user) internal nonReentrant {
         require(bountyInfos[_pid].committeeCheckIn, "HVE40");
-        UserInfo memory user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
-        if (user.shares > 0) {
-            uint256 pending = user.shares * poolInfos[_pid].rewardPerShare / 1e12 - user.rewardDebt;
+        if (_user.shares > 0) {
+            uint256 pending = _user.shares * poolInfos[_pid].rewardPerShare / 1e12 - _user.rewardDebt;
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
