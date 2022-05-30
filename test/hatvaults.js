@@ -1078,15 +1078,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    try {
-      await hatVaults.setPoolWithdrawalFee(0, 100, {
-        from: accounts[1],
-      });
-      assert(false, "only governance when fee setter is 0");
-    } catch (ex) {
-      assertVMException(ex, "HVE35");
-    }
-
+    await hatVaults.setFeeSetter(accounts[0]);
     var tx = await hatVaults.setPoolWithdrawalFee(0, 100);
     assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 100);
     assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
@@ -1153,6 +1145,7 @@ contract("HatVaults", (accounts) => {
   it("Emergency withdraw fee", async () => {
     await setup(accounts);
 
+    await hatVaults.setFeeSetter(accounts[0]);
     tx = await hatVaults.setPoolWithdrawalFee(0, 200);
 
     assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 200);

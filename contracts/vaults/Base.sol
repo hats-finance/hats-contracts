@@ -195,7 +195,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender || (owner() == msg.sender && feeSetter == address(0)), "HVE35");
+        require(feeSetter == msg.sender, "HVE35");
         _;
     }
 
