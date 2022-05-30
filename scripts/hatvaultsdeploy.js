@@ -1,8 +1,8 @@
 const ADDRESSES = require("./addresses.js");
 async function main(
   rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
-  rewardPerBlock = "16185644800000000",
   startBlock = null,
+  rewardPerEpoch,
   epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
   swapToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
@@ -50,9 +50,9 @@ async function main(
   const rewardController = await upgrades.deployProxy(RewardController, [
     governance,
     hatVaults.address,
-    rewardPerBlock,
     startBlock,
     epochLength,
+    rewardPerEpoch,
   ]);
 
   await rewardController.deployed();
@@ -74,9 +74,6 @@ async function main(
       hatVaults.address,
       '"',
       rewardsToken,
-      '"',
-      '"',
-      rewardPerBlock,
       '"',
       '"',
       startBlock,

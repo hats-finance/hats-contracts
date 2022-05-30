@@ -15,7 +15,6 @@ contract RewardController is OwnableUpgradeable {
 
     uint256 public constant MULTIPLIERS_LENGTH = 24;
 
-    uint256 public rewardPerBlock;
     // Block from which the vaults contract will start rewarding.
     uint256 public startBlock;
     uint256 public epochLength;
@@ -30,22 +29,15 @@ contract RewardController is OwnableUpgradeable {
     function initialize(
         address _hatGovernance,
         HATVaults _hatVaults,
-        uint256 _rewardPerBlock,
         uint256 _startRewardingBlock,
-        uint256 _epochLength
+        uint256 _epochLength,
+        uint256[24] memory _rewardPerEpoch
     ) external initializer {
-        rewardPerBlock = _rewardPerBlock;
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         hatVaults = _hatVaults;
+        rewardPerEpoch = _rewardPerEpoch;
         _transferOwnership(_hatGovernance);
-
-        rewardPerEpoch = [
-            4413, 4413, 8825, 7788, 6873, 6065,
-            5353, 4724, 4169, 3679, 3247, 2865,
-            2528, 2231, 1969, 1738, 1534, 1353,
-            1194, 1054, 930, 821, 724, 639
-        ];
     }
 
     /**
@@ -118,7 +110,7 @@ contract RewardController is OwnableUpgradeable {
                 _fromBlock = endBlock;
             }
             result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
-            reward = result * rewardPerBlock * _allocPoint / _totalAllocPoint / 100;
+            reward = result * _allocPoint / _totalAllocPoint / 100;
         }
     }
 

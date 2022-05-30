@@ -16,13 +16,37 @@ var hatTimelockController;
 var hatToken;
 var router;
 var stakingToken;
-var REWARD_PER_BLOCK = "10";
 var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
+let rewardPerEpoch = [
+  web3.utils.toWei("44130"),
+  web3.utils.toWei("44130"),
+  web3.utils.toWei("88250"),
+  web3.utils.toWei("77880"),
+  web3.utils.toWei("68730"),
+  web3.utils.toWei("60650"),
+  web3.utils.toWei("53530"),
+  web3.utils.toWei("47240"),
+  web3.utils.toWei("41690"),
+  web3.utils.toWei("36790"),
+  web3.utils.toWei("32470"),
+  web3.utils.toWei("28650"),
+  web3.utils.toWei("25280"),
+  web3.utils.toWei("22310"),
+  web3.utils.toWei("19690"),
+  web3.utils.toWei("17380"),
+  web3.utils.toWei("15340"),
+  web3.utils.toWei("13530"),
+  web3.utils.toWei("11940"),
+  web3.utils.toWei("10540"),
+  web3.utils.toWei("9300"),
+  web3.utils.toWei("8210"),
+  web3.utils.toWei("7240"),
+  web3.utils.toWei("6390")
+];
 
 const setup = async function(
   accounts,
-  reward_per_block = REWARD_PER_BLOCK,
   startBlock = 0,
   bountyLevels = [],
   bountySplit = [0, 0, 0, 0, 0, 0],
@@ -43,8 +67,8 @@ const setup = async function(
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
   let deployment = await deployHatVaults(
     hatToken.address,
-    web3.utils.toWei(reward_per_block),
     startBlock,
+    rewardPerEpoch,
     halvingAfterBlock,
     accounts[0],
     hatToken.address,

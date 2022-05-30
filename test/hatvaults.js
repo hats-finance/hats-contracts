@@ -18,15 +18,38 @@ var rewardController;
 var hatToken;
 var router;
 var stakingToken;
-var REWARD_PER_BLOCK = "10";
-var REAL_REWARD_PER_BLOCK = "0.0161856448";
 var tokenLockFactory;
 let safeWithdrawBlocksIncrement = 3;
 let hatVaultsExpectedHatsBalance;
+let rewardPerEpoch = [
+  web3.utils.toWei("44130"),
+  web3.utils.toWei("44130"),
+  web3.utils.toWei("88250"),
+  web3.utils.toWei("77880"),
+  web3.utils.toWei("68730"),
+  web3.utils.toWei("60650"),
+  web3.utils.toWei("53530"),
+  web3.utils.toWei("47240"),
+  web3.utils.toWei("41690"),
+  web3.utils.toWei("36790"),
+  web3.utils.toWei("32470"),
+  web3.utils.toWei("28650"),
+  web3.utils.toWei("25280"),
+  web3.utils.toWei("22310"),
+  web3.utils.toWei("19690"),
+  web3.utils.toWei("17380"),
+  web3.utils.toWei("15340"),
+  web3.utils.toWei("13530"),
+  web3.utils.toWei("11940"),
+  web3.utils.toWei("10540"),
+  web3.utils.toWei("9300"),
+  web3.utils.toWei("8210"),
+  web3.utils.toWei("7240"),
+  web3.utils.toWei("6390")
+];
 
 const setup = async function(
   accounts,
-  reward_per_block = REWARD_PER_BLOCK,
   startBlock = 0,
   bountyLevels = [],
   bountySplit = [0, 0, 0, 0, 0, 0],
@@ -48,8 +71,8 @@ const setup = async function(
 
   let deployment = await deployHatVaults(
     hatToken.address,
-    web3.utils.toWei(reward_per_block),
     startBlock,
+    rewardPerEpoch,
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
@@ -373,7 +396,6 @@ contract("HatVaults", (accounts) => {
     var staker = accounts[1];
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [0, 0, 0, 0],
       [8000, 1000, 100, 100, 100, 700]
@@ -405,7 +427,6 @@ contract("HatVaults", (accounts) => {
     var staker = accounts[1];
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [0, 0, 0, 0],
       [8000, 1000, 100, 100, 100, 700]
@@ -458,7 +479,6 @@ contract("HatVaults", (accounts) => {
     try {
       await setup(
         accounts,
-        REWARD_PER_BLOCK,
         0,
         [3000, 5000, 7000, 9000],
         [9000, 0, 200, 0, 100, 800]
@@ -471,7 +491,6 @@ contract("HatVaults", (accounts) => {
     try {
       await setup(
         accounts,
-        REWARD_PER_BLOCK,
         0,
         [3000, 5000, 7000, 9000],
         [8000, 0, 100, 0, 100, 700]
@@ -484,7 +503,6 @@ contract("HatVaults", (accounts) => {
     try {
       await setup(
         accounts,
-        REWARD_PER_BLOCK,
         0,
         [3000, 5000, 7000, 11000],
         [8000, 0, 100, 0, 100, 800]
@@ -496,7 +514,6 @@ contract("HatVaults", (accounts) => {
 
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [3000, 5000, 7000, 9000],
       [8000, 1000, 100, 100, 100, 700]
@@ -681,7 +698,6 @@ contract("HatVaults", (accounts) => {
   it("zero totalAllocPoints", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [3000, 5000, 7000, 9000],
       [8000, 1000, 100, 100, 100, 700],
@@ -1323,7 +1339,6 @@ contract("HatVaults", (accounts) => {
   it("multiple stakes from same account", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -1400,7 +1415,6 @@ contract("HatVaults", (accounts) => {
   it("hat reward withdraw all balance if reward larger than balance", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -1486,12 +1500,12 @@ contract("HatVaults", (accounts) => {
     );
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
-      amountToMint - userHatBalance
+      amountToMint.sub(userHatBalance).toString()
     );
   });
 
   it("getRewardForBlocksRange - from below startblock will revert ", async () => {
-    await setup(accounts, REWARD_PER_BLOCK, 1);
+    await setup(accounts, 1);
     let allocPoint = await rewardController.poolsAllocPoint(0);
     let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
@@ -1508,7 +1522,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
-    await setup(accounts, REWARD_PER_BLOCK, 0);
+    await setup(accounts, 0);
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
@@ -1523,7 +1537,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("getRewardForBlocksRange - from must be <= to", async () => {
-    await setup(accounts, REWARD_PER_BLOCK, 0);
+    await setup(accounts, 0);
     try {
       await rewardController.getRewardForBlocksRange(1, 0, 0, 1000);
       assert(false, "from must be <= to");
@@ -1539,16 +1553,15 @@ contract("HatVaults", (accounts) => {
   });
 
   it("setRewardPerEpoch", async () => {
-    var rewardPerEpoch = [...Array(24)].map(() => (Math.random() * 10000) | 0);
-
-    await setup(accounts, REWARD_PER_BLOCK, 0);
+    var rewardPerEpochRandom = [...Array(24)].map(() => (web3.utils.toWei((Math.random() * 10000 | 0).toString())));
+    await setup(accounts, 0);
     let allocPoint = await rewardController.poolsAllocPoint(0);
     let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
       await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
     try {
-      await rewardController.setRewardPerEpoch(rewardPerEpoch, {
+      await rewardController.setRewardPerEpoch(rewardPerEpochRandom, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -1556,12 +1569,12 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    let tx = await rewardController.setRewardPerEpoch(rewardPerEpoch);
+    let tx = await rewardController.setRewardPerEpoch(rewardPerEpochRandom);
     assert.equal(tx.logs[0].event, "SetRewardPerEpoch");
     let eventRewardPerEpoch = tx.logs[0].args._rewardPerEpoch;
     for (let i = 0; i < eventRewardPerEpoch.length; i++) {
       eventRewardPerEpoch[i] = parseInt(eventRewardPerEpoch[i].toString());
-      assert.equal(tx.logs[0].args._rewardPerEpoch[i], rewardPerEpoch[i]);
+      assert.equal(tx.logs[0].args._rewardPerEpoch[i], rewardPerEpochRandom[i]);
     }
 
     assert.equal(
@@ -1573,7 +1586,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(rewardPerEpoch[0].toString())
+      new web3.utils.BN(rewardPerEpochRandom[0]).div(new web3.utils.BN(10)).toString()
     );
     assert.equal(
       (
@@ -1584,9 +1597,9 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(
-        ((rewardPerEpoch[0] * 10 + rewardPerEpoch[1] * 5) / 10).toString()
-      )
+      new web3.utils.BN(rewardPerEpochRandom[0]).mul(new web3.utils.BN(10)).add(
+        new web3.utils.BN(rewardPerEpochRandom[1]).mul(new web3.utils.BN(5))
+      ).div(new web3.utils.BN(100)).toString()
     );
     assert.equal(
       (
@@ -1597,11 +1610,11 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei((rewardPerEpoch[0] + rewardPerEpoch[1]).toString())
+      new web3.utils.BN(rewardPerEpochRandom[0]).add(new web3.utils.BN(rewardPerEpochRandom[1])).div(new web3.utils.BN(10)).toString()
     );
-    var multiplier = 0;
+    var multiplier = new web3.utils.BN("0");
     for (let i = 0; i < 24; i++) {
-      multiplier += rewardPerEpoch[i];
+      multiplier = multiplier.add(new web3.utils.BN(rewardPerEpochRandom[i]));
     }
     assert.equal(
       (
@@ -1612,38 +1625,12 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(multiplier.toString())
+      multiplier.div(new web3.utils.BN(10)).toString()
     );
   });
 
   it("getMultiplier - ", async () => {
-    var rewardPerEpoch = [
-      4413,
-      4413,
-      8825,
-      7788,
-      6873,
-      6065,
-      5353,
-      4724,
-      4169,
-      3679,
-      3247,
-      2865,
-      2528,
-      2231,
-      1969,
-      1738,
-      1534,
-      1353,
-      1194,
-      1054,
-      930,
-      821,
-      724,
-      639,
-    ];
-    await setup(accounts, REWARD_PER_BLOCK, 0);
+    await setup(accounts, 0);
     let allocPoint = await rewardController.poolsAllocPoint(0);
     let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
@@ -1658,7 +1645,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(rewardPerEpoch[0].toString())
+      new web3.utils.BN(rewardPerEpoch[0]).div(new web3.utils.BN(10)).toString()
     );
     assert.equal(
       (
@@ -1669,9 +1656,9 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(
-        ((rewardPerEpoch[0] * 10 + rewardPerEpoch[1] * 5) / 10).toString()
-      )
+      new web3.utils.BN(rewardPerEpoch[0]).mul(new web3.utils.BN(10)).add(
+        new web3.utils.BN(rewardPerEpoch[1]).mul(new web3.utils.BN(5))
+      ).div(new web3.utils.BN(100)).toString()
     );
     assert.equal(
       (
@@ -1682,11 +1669,11 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei((rewardPerEpoch[0] + rewardPerEpoch[1]).toString())
+      new web3.utils.BN(rewardPerEpoch[0]).add(new web3.utils.BN(rewardPerEpoch[1])).div(new web3.utils.BN(10)).toString()
     );
-    var multiplier = 0;
+    var multiplier = new web3.utils.BN("0");
     for (let i = 0; i < 24; i++) {
-      multiplier += rewardPerEpoch[i];
+      multiplier = multiplier.add(new web3.utils.BN(rewardPerEpoch[i]));
     }
 
     assert.equal(
@@ -1698,7 +1685,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      web3.utils.toWei(multiplier.toString())
+      multiplier.div(new web3.utils.BN(10)).toString()
     );
     var staker = accounts[1];
     assert.equal((await hatVaults.getPendingReward(0, staker)).toNumber(), 0);
@@ -1746,7 +1733,7 @@ contract("HatVaults", (accounts) => {
           1
         )
       ).toString(),
-      multiplier * REWARD_PER_BLOCK
+      multiplier
     );
   });
 
@@ -1818,7 +1805,6 @@ contract("HatVaults", (accounts) => {
   it("approve + stake + exit", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -1972,7 +1958,6 @@ contract("HatVaults", (accounts) => {
   it("approve+ stake simple check rewards", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       0,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -2016,7 +2001,6 @@ contract("HatVaults", (accounts) => {
   it("emergencyWithdraw after approve and check reward", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       0,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -2055,7 +2039,6 @@ contract("HatVaults", (accounts) => {
   it("emergencyWithdraw after approve", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -2164,7 +2147,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit + withdraw after time end (bdp bug)", async () => {
-    await setup(accounts, "1000", (await web3.eth.getBlock("latest")).number);
+    await setup(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -2209,7 +2192,6 @@ contract("HatVaults", (accounts) => {
   it("approve + swapBurnSend", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [],
       [8000, 1000, 0, 250, 350, 400]
@@ -2335,7 +2317,6 @@ contract("HatVaults", (accounts) => {
   it("approve + swapBurnSend weth pool", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       0,
       [],
       [8000, 1000, 0, 250, 350, 400],
@@ -3161,7 +3142,6 @@ contract("HatVaults", (accounts) => {
   it("swapBurnSend return below than minimum should revert", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [3000, 5000, 7000, 9000],
       [8000, 1000, 100, 100, 100, 700],
@@ -3222,7 +3202,6 @@ contract("HatVaults", (accounts) => {
   it("swapBurnSend with bad call should revert", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [3000, 5000, 7000, 9000],
       [8000, 1000, 100, 100, 100, 700]
@@ -3410,7 +3389,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("no vesting", async () => {
-    await setup(accounts, REWARD_PER_BLOCK, 0, [], [0, 10000, 0, 0, 0, 0]);
+    await setup(accounts, 0, [], [0, 10000, 0, 0, 0, 0]);
 
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -3544,7 +3523,6 @@ contract("HatVaults", (accounts) => {
     //  await setup(accounts, REAL_REWARD_PER_BLOCK, 0, [], [0,0, 0, 0,0, 0],10000);
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number
     );
     var staker = accounts[1];
@@ -3600,7 +3578,6 @@ contract("HatVaults", (accounts) => {
   it("addPool with zero alloc point", async () => {
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number
     );
     var staker = accounts[1];
@@ -3643,7 +3620,6 @@ contract("HatVaults", (accounts) => {
   it("setPool x2 v2", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -3838,8 +3814,8 @@ contract("HatVaults", (accounts) => {
     var poolManager = await PoolsManagerMock.new();
     let deployment = await deployHatVaults(
       hatToken1.address,
-      web3.utils.toWei("100"),
       1,
+      rewardPerEpoch,
       10,
       poolManager.address,
       hatToken1.address,
@@ -3892,7 +3868,6 @@ contract("HatVaults", (accounts) => {
   it("stop in the middle", async () => {
     await setup(
       accounts,
-      "1000",
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -3948,7 +3923,6 @@ contract("HatVaults", (accounts) => {
     //await setup(accounts);
     await setup(
       accounts,
-      REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number,
       [],
       [0, 0, 0, 0, 0, 0],
@@ -4130,7 +4104,6 @@ contract("HatVaults", (accounts) => {
   it("withdraw+ deposit + addition HAT ", async () => {
     await setup(
       accounts,
-      REAL_REWARD_PER_BLOCK,
       (await web3.eth.getBlock("latest")).number
     );
     var staker = accounts[1];
@@ -4205,7 +4178,6 @@ contract("HatVaults", (accounts) => {
   it("transferReward to fail if not enough reward tokens", async () => {
     await setup(
       accounts,
-      "100000",
       (await web3.eth.getBlock("latest")).number,
       undefined,
       undefined,
@@ -4238,7 +4210,6 @@ contract("HatVaults", (accounts) => {
   it("swapBurnSend to fail if not enough reward tokens", async () => {
     await setup(
       accounts,
-      "100000",
       (await web3.eth.getBlock("latest")).number,
       undefined,
       [8000, 900, 100, 250, 350, 400],
