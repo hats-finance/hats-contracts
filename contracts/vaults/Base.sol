@@ -12,9 +12,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/ITokenLockFactory.sol";
+import "../RewardController.sol";
 
 
-contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {
@@ -50,15 +51,9 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         //   4. User's `rewardDebt` gets updated.
     }
 
-    struct PoolUpdate {
-        uint256 blockNumber;// update blocknumber
-        uint256 totalAllocPoint; //totalAllocPoint
-    }
-
     // Info of each pool.
     struct PoolInfo {
         IERC20Upgradeable lpToken;
-        uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 rewardPerShare;
         uint256 totalShares;
@@ -123,23 +118,15 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // the ERC20 contract in which rewards are distributed
     IERC20 public rewardToken;
+
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
     ERC20Burnable public swapToken;
-    uint256 public REWARD_PER_BLOCK;
-    // Block from which the vaults contract will start rewarding.
-    uint256 public START_BLOCK;
-    uint256 public MULTIPLIER_PERIOD;
-    uint256 public constant MULTIPLIERS_LENGTH = 24;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // Info of each pool.
     PoolInfo[] public poolInfos;
-    PoolUpdate[] public globalPoolUpdates;
-
-    // Reward Multipliers
-    uint256[24] public rewardMultipliers;
 
     uint256 public rewardAvailable;
 
@@ -175,6 +162,8 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     ITokenLockFactory public tokenLockFactory;
 
+    RewardController public rewardController;
+
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
         _;
@@ -195,7 +184,7 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender || (owner() == msg.sender && feeSetter == address(0)), "HVE35");
+        require(feeSetter == msg.sender, "HVE35");
         _;
     }
 
@@ -213,7 +202,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event CommitteeCheckedIn(uint256 indexed _pid);
 
     event AddPool(uint256 indexed _pid,
-                uint256 indexed _allocPoint,
                 address indexed _lpToken,
                 address _committee,
                 string _descriptionHash,
@@ -222,11 +210,12 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
 
-    event SetPool(uint256 indexed _pid, uint256 indexed _allocPoint, bool indexed _registered, bool _depositPause, string _descriptionHash);
+    event SetPool(uint256 indexed _pid, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
     event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
     event SetFeeSetter(address indexed _newFeeSetter);
+    event SetRewardController(address indexed _newRewardController);
     event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
     event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
 
@@ -258,7 +247,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                         uint256 indexed _withdrawEnableTime);
 
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
-    event SetRewardMultipliers(uint256[24] _rewardMultipliers);
     event SetClaimFee(uint256 _fee);
     event RewardDepositors(uint256 indexed _pid,
         uint256 indexed _amount,
@@ -285,16 +273,20 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             return;
         }
         uint256 totalShares = pool.totalShares;
-        uint256 lastPoolUpdate = globalPoolUpdates.length-1;
-        if (totalShares == 0) {
-            pool.lastRewardBlock = block.number;
-            pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
-            return;
+        if (totalShares != 0) {
+            uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
+            uint256 reward = rewardController.getPoolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
+            pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
-        uint256 reward = calcPoolReward(_pid, lastRewardBlock, lastPoolUpdate);
-        pool.rewardPerShare += (reward * 1e12 / totalShares);
         pool.lastRewardBlock = block.number;
-        pool.lastProcessedTotalAllocPoint = lastPoolUpdate;
+        setPoolsLastProcessedTotalAllocPoint(_pid);
+    }
+
+    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
+        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
+        if (globalPoolUpdatesLength > 0) {
+            poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
+        }
     }
 
     /**
@@ -309,60 +301,6 @@ contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         rewardAvailable -= _amount;
         rewardToken.transfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
-    }
-
-    /**
-    * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
-    * and sum up all rewards periods from pool.lastRewardBlock until current block number.
-    * @param _pid The pool id
-    * @param _fromBlock The block from which to start calculation
-    * @param _lastPoolUpdateIndex index of last PoolUpdate in globalPoolUpdates to calculate for
-    * @return reward
-    */
-    function calcPoolReward(uint256 _pid, uint256 _fromBlock, uint256 _lastPoolUpdateIndex) public view returns(uint256 reward) {
-        uint256 poolAllocPoint = poolInfos[_pid].allocPoint;
-        uint256 i = poolInfos[_pid].lastProcessedTotalAllocPoint;
-        for (; i < _lastPoolUpdateIndex; i++) {
-            uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
-            reward =
-            reward + getRewardForBlocksRange(_fromBlock,
-                                            nextUpdateBlock,
-                                            poolAllocPoint,
-                                            globalPoolUpdates[i].totalAllocPoint);
-            _fromBlock = nextUpdateBlock;
-        }
-        return reward + getRewardForBlocksRange(_fromBlock,
-                                                block.number,
-                                                poolAllocPoint,
-                                                globalPoolUpdates[i].totalAllocPoint);
-    }
-
-    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
-    public
-    view
-    returns (uint256 reward) {
-        if (_totalAllocPoint > 0) {
-            reward = getMultiplier(_fromBlock, _toBlock) * REWARD_PER_BLOCK * _allocPoint / _totalAllocPoint / 100;
-        }
-    }
-
-    /**
-    * @dev getMultiplier - multiply blocks with relevant multiplier for specific range
-    * @param _fromBlock range's from block
-    * @param _toBlock range's to block
-    * will revert if from < START_BLOCK or _toBlock < _fromBlock
-    */
-    function getMultiplier(uint256 _fromBlock, uint256 _toBlock) public view returns (uint256 result) {
-        uint256 i = (_fromBlock - START_BLOCK) / MULTIPLIER_PERIOD + 1;
-        for (; i <= MULTIPLIERS_LENGTH; i++) {
-            uint256 endBlock = MULTIPLIER_PERIOD * i + START_BLOCK;
-            if (_toBlock <= endBlock) {
-                break;
-            }
-            result += (endBlock - _fromBlock) * rewardMultipliers[i-1];
-            _fromBlock = endBlock;
-        }
-        result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardMultipliers[i-1]);
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {

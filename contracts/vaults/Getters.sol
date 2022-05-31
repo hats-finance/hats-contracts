@@ -12,14 +12,11 @@ contract Getters is Base {
         uint256 rewardPerShare = pool.rewardPerShare;
 
         if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
-            uint256 reward = calcPoolReward(_pid, pool.lastRewardBlock, globalPoolUpdates.length - 1);
+            uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
+            uint256 reward = rewardController.getPoolReward(_pid, pool.lastRewardBlock, lastProcessedAllocPoint);
             rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
         return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
-    }
-
-    function getGlobalPoolUpdatesLength() external view returns (uint256) {
-        return globalPoolUpdates.length;
     }
 
     function getNumberOfPools() external view returns (uint256) {
