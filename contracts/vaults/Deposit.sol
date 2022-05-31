@@ -8,7 +8,7 @@ contract Deposit is Base {
 
     function depositReward(uint256 _amount) external {
         uint256 balanceBefore = rewardToken.balanceOf(address(this));
-        rewardToken.transferFrom(address(msg.sender), address(this), _amount);
+        rewardToken.transferFrom(msg.sender, address(this), _amount);
         uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
         rewardAvailable += rewardTokenReceived;
         emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
@@ -68,7 +68,7 @@ contract Deposit is Base {
         if (_amount > 0) { // will only be 0 in case of claimReward
             uint256 lpSupply = pool.balance;
             uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
-            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
             _transferredAmount = pool.lpToken.balanceOf(address(this)) - balanceBefore;
             pool.balance += _transferredAmount;
             uint256 userShares = _transferredAmount;
