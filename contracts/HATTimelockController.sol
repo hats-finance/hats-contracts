@@ -18,7 +18,6 @@ contract HATTimelockController is TimelockController {
     ) TimelockController(_minDelay, _proposers, _executors) {
         require(address(_hatVaults) != address(0), "HATTimelockController: HATVaults address must not be 0");
         hatVaults = _hatVaults;
-
     }
     
     // Whitelisted functions
@@ -27,8 +26,7 @@ contract HATTimelockController is TimelockController {
         hatVaults.approveClaim(_pid);
     }
 
-    function addPool(uint256 _allocPoint,
-                    address _lpToken,
+    function addPool(address _lpToken,
                     address _committee,
                     uint256[] memory _bountyLevels,
                     HATVaults.BountySplit memory _bountySplit,
@@ -39,7 +37,6 @@ contract HATTimelockController is TimelockController {
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
-            _allocPoint,
             _lpToken,
             _committee,
             _bountyLevels,
@@ -52,18 +49,21 @@ contract HATTimelockController is TimelockController {
     }
 
     function setPool(uint256 _pid,
-                    uint256 _allocPoint,
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyRole(PROPOSER_ROLE) {
         hatVaults.setPool(
             _pid,
-            _allocPoint,
             _registered,
             _depositPause,
             _descriptionHash
         );
+    }
+
+    function setAllocPoint(uint256 _pid, uint256 _allocPoint)
+    external onlyRole(PROPOSER_ROLE) {
+        hatVaults.rewardController().setAllocPoint(_pid, _allocPoint);
     }
 
     function swapBurnSend(uint256 _pid,

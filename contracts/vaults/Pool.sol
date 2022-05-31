@@ -21,7 +21,6 @@ contract Pool is Base {
 
     /**
     * @dev Add a new pool. Can be called only by governance.
-    * @param _allocPoint The pool's allocation point
     * @param _lpToken The pool's token
     * @param _committee The pool's committee addres
     * @param _bountyLevels The pool's bounty levels.
@@ -35,8 +34,7 @@ contract Pool is Base {
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods
     */
-    function addPool(uint256 _allocPoint,
-                    address _lpToken,
+    function addPool(address _lpToken,
                     address _committee,
                     uint256[] memory _bountyLevels,
                     BountySplit memory _bountySplit,
@@ -52,30 +50,21 @@ contract Pool is Base {
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
 
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
-        if (globalPoolUpdates.length > 0 &&
-            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
+        uint256 startBlock = rewardController.startBlock();
+
+        uint256 poolId = poolInfos.length;
+
         poolInfos.push(PoolInfo({
             lpToken: IERC20Upgradeable(_lpToken),
-            allocPoint: _allocPoint,
-            lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
+            lastRewardBlock: block.number > startBlock ? block.number : startBlock,
+            lastProcessedTotalAllocPoint: 0,
             rewardPerShare: 0,
             totalShares: 0,
-            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
             balance: 0,
             withdrawalFee: 0
         }));
    
-        uint256 poolId = poolInfos.length-1;
+        setPoolsLastProcessedTotalAllocPoint(poolId);
         committees[poolId] = _committee;
         uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
@@ -95,7 +84,6 @@ contract Pool is Base {
         poolInitialized[poolId] = _isInitialized;
 
         emit AddPool(poolId,
-            _allocPoint,
             _lpToken,
             _committee,
             _descriptionHash,
@@ -108,36 +96,19 @@ contract Pool is Base {
     /**
     * @dev setPool
     * @param _pid the pool id
-    * @param _allocPoint the pool allocation point
     * @param _visible is this pool visible in the UI
     * @param _depositPause pause pool deposit (default false).
     * This parameter can be used by the UI to include or exclude the pool
     * @param _descriptionHash the hash of the pool description.
     */
     function setPool(uint256 _pid,
-                    uint256 _allocPoint,
                     bool _visible,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
-        updatePool(_pid);
-        uint256 totalAllocPoint =
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        - poolInfos[_pid].allocPoint + _allocPoint;
-
-        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-        poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
-        emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
+        emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyOwner {
