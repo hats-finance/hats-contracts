@@ -69,7 +69,7 @@ contract Claim is Base {
                             + claimBounty.hackerVested
                             + claimBounty.committee
                             + claimBounty.swapAndBurn
-                            + claimBounty.hackerHat
+                            + claimBounty.hackerHatVested
                             + claimBounty.governanceHat;
         address tokenLock;
         if (claimBounty.hackerVested > 0) {
@@ -96,7 +96,7 @@ contract Claim is Base {
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
         swapAndBurns[_pid] += claimBounty.swapAndBurn;
         governanceHatRewards[_pid] += claimBounty.governanceHat;
-        hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHat;
+        hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHatVested;
 
         emit ApproveClaim(_pid,
                         msg.sender,
@@ -141,7 +141,7 @@ contract Claim is Base {
         claimBounty.governanceHat =
         totalBountyAmount * bountyInfos[_pid].bountySplit.governanceHat
         / (HUNDRED_PERCENT * HUNDRED_PERCENT);
-        claimBounty.hackerHat =
+        claimBounty.hackerHatVested =
         totalBountyAmount * bountyInfos[_pid].bountySplit.hackerHatVested
         / (HUNDRED_PERCENT * HUNDRED_PERCENT);
     }

@@ -15,22 +15,37 @@ import "../RewardController.sol";
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
-    //Parameters that apply to all the vaults
+    // Parameters that apply to all the vaults
     struct GeneralParameters {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
-        //withdraw enable period. safetyPeriod starts when finished.
+        // withdraw enable period. safetyPeriod starts when finished.
         uint256 withdrawPeriod;
-        //withdraw disable period - time for the commitee to gather and decide on actions, withdrawals are not possible in this time
-        //withdrawPeriod starts when finished.
+        // withdraw disable period - time for the committee to gather and decide on actions,
+        // withdrawals are not possible in this time. withdrawPeriod starts when finished.
         uint256 safetyPeriod;
-        uint256 setMaxBountyDelay;
         // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
         // (after which withdrawal is not possible)
         uint256 withdrawRequestEnablePeriod;
         // period of time that has to pass after withdraw request until withdraw is possible
         uint256 withdrawRequestPendingPeriod;
+        uint256 setMaxBountyDelay;
         uint256 claimFee;  //claim fee in ETH
+    }
+
+    // Info of each pool.
+    struct PoolInfo {
+        IERC20Upgradeable lpToken;
+        // total amount of LP tokens in pool
+        uint256 balance;
+        uint256 totalShares;
+        uint256 rewardPerShare;
+        uint256 lastRewardBlock;
+        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the
+        // total allocation points - 1)
+        uint256 lastProcessedTotalAllocPoint;
+        // fee to take from withdrawals to governance
+        uint256 withdrawalFee;
     }
 
     struct UserInfo {
@@ -49,20 +64,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         //   4. User's `rewardDebt` gets updated.
     }
 
-    // Info of each pool.
-    struct PoolInfo {
-        IERC20Upgradeable lpToken;
-        uint256 lastRewardBlock;
-        uint256 rewardPerShare;
-        uint256 totalShares;
-        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the total allocation points - 1)
-        uint256 lastProcessedTotalAllocPoint;
-        // total amount of LP tokens in pool
-        uint256 balance;
-        // fee to take from withdrawals to governance
-        uint256 withdrawalFee;
-    }
-
     // Info of each pool's bounty policy.
     struct BountyInfo {
         BountySplit bountySplit;
@@ -72,7 +73,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 vestingPeriods;
     }
 
-    // How to devide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
+    // How to divide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
         uint256 hackerVested;
@@ -88,78 +89,174 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 hackerHatVested;
     }
 
-    // How to devide a bounty for a claim that has been approved, in amounts of pool's tokens
+    // How to divide a bounty for a claim that has been approved, in amounts of pool's tokens
     struct ClaimBounty {
-        uint256 hackerVested;
         uint256 hacker;
+        uint256 hackerVested;
         uint256 committee;
         uint256 swapAndBurn;
+        uint256 hackerHatVested;
         uint256 governanceHat;
-        uint256 hackerHat;
     }
 
     // Info of a claim that has been submitted by a committee
     struct SubmittedClaim {
         address beneficiary;
         uint256 bountyPercentage;
-        // the address of the committee at the time of the submittal, so that this committee
-        // will be payed their share of the bounty in case the committee changes before claim approval
+        // the address of the committee at the time of the submittal, so that this committee will
+        // be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
     }
 
     struct PendingMaxBounty {
-        uint256 timestamp;
         uint256 maxBounty;
+        uint256 timestamp;
     }
 
 
-    // the ERC20 contract in which rewards are distributed
-    IERC20 public rewardToken;
-    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will typically be HATs
-    ERC20Burnable public swapToken;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
+    //PARAMETERS FOR ALL VAULTS
+    GeneralParameters public generalParameters;
+    RewardController public rewardController;
+    ITokenLockFactory public tokenLockFactory;
+    address public feeSetter;
+    // the ERC20 contract in which rewards are distributed
+    IERC20 public rewardToken;
+    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
+    // typically be HATs
+    ERC20Burnable public swapToken;
+    uint256 public rewardAvailable;
+    mapping(address => bool) public whitelistedRouters;
+
+    //PARAMETERS PER VAULT
     // Info of each pool.
     PoolInfo[] public poolInfos;
-
-    uint256 public rewardAvailable;
-
-    // Info of each user that stakes LP tokens. pid => user address => info
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
-    //pid -> BountyInfo
-    mapping (uint256=>BountyInfo) public bountyInfos;
     //pid -> committee address
-    mapping(uint256=>address) public committees;
+    mapping(uint256 => address) public committees;
+    // Info of each user that stakes LP tokens. pid => user address => info
+    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    //pid -> BountyInfo
+    mapping(uint256=>BountyInfo) public bountyInfos;
+    //poolId -> PendingMaxBounty
+    mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
+    mapping(uint256 => bool) public poolInitialized;
+    mapping(uint256 => bool) public poolDepositPause;
+    //poolId -> (address -> requestTime)
+    // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
+    mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
+
+    //PARAMETERS PER CLAIM
+    //pid -> SubmittedClaim
+    mapping(uint256 => SubmittedClaim) public submittedClaims;
     //pid -> amount
     mapping(uint256 => uint256) public swapAndBurns;
     //hackerAddress ->(pid->amount)
     mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
     //pid -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
-    //pid -> SubmittedClaim
-    mapping(uint256 => SubmittedClaim) public submittedClaims;
-    //poolId -> (address -> requestTime)
-    // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
-    mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
-    //poolId -> PendingMaxBounty
-    mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
 
-    mapping(uint256 => bool) public poolDepositPause;
+    event SafeTransferReward(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address rewardToken
+    );
+    event Claim(address indexed _claimer, string _descriptionHash);
+    event SubmitClaim(
+        uint256 indexed _pid,
+        address _committee,
+        address indexed _beneficiary,
+        uint256 indexed _bountyPercentage,
+        string _descriptionHash
+    );
+    event ApproveClaim(
+        uint256 indexed _pid,
+        address indexed _committee,
+        address indexed _beneficiary,
+        uint256 _bountyPercentage,
+        address _tokenLock,
+        ClaimBounty _claimBounty
+    );
+    event DismissClaim(uint256 indexed _pid);
 
-    mapping(uint256 => bool) public poolInitialized;
+    event Deposit(address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        uint256 transferredAmount
+    );
+    event SetClaimFee(uint256 _fee);
+    event RewardDepositors(uint256 indexed _pid,
+        uint256 indexed _amount,
+        uint256 indexed _transferredAmount
+    );
+    event DepositReward(uint256 indexed _amount,
+        uint256 indexed _transferredAmount,
+        address indexed _rewardToken
+    );
+    event ClaimReward(uint256 indexed _pid);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
+    event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    event CommitteeCheckedIn(uint256 indexed _pid);
+    event AddPool(
+        uint256 indexed _pid,
+        address indexed _lpToken,
+        address _committee,
+        string _descriptionHash,
+        uint256 _maxBounty,
+        BountySplit _bountySplit,
+        uint256 _bountyVestingDuration,
+        uint256 _bountyVestingPeriods
+    );
+    event SetPool(
+        uint256 indexed _pid,
+        bool indexed _registered,
+        bool _depositPause,
+        string _descriptionHash
+    );
+    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
+    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
+    event SetFeeSetter(address indexed _newFeeSetter);
+    event SetRewardController(address indexed _newRewardController);
+    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
+    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
+    event SwapAndSend(
+        uint256 indexed _pid,
+        address indexed _beneficiary,
+        uint256 indexed _amountSwapped,
+        uint256 _amountReceived,
+        address _tokenLock
+    );
+    event SwapAndBurn(
+        uint256 indexed _pid,
+        uint256 indexed _amountSwapped,
+        uint256 indexed _amountBurned
+    );
+    event SetVestingParams(
+        uint256 indexed _pid,
+        uint256 indexed _duration,
+        uint256 indexed _periods
+    );
+    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
+    event WithdrawRequest(
+        uint256 indexed _pid,
+        address indexed _beneficiary,
+        uint256 indexed _withdrawEnableTime
+    );
+    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
 
-    mapping(address=>bool) public whitelistedRouters;
+    event SetWithdrawRequestParams(
+        uint256 indexed _withdrawRequestPendingPeriod,
+        uint256 indexed _withdrawRequestEnablePeriod
+    );
+    event SetMaxBountyDelay(uint256 indexed _delay);
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
-    GeneralParameters public generalParameters;
-
-    address public feeSetter;
-
-    ITokenLockFactory public tokenLockFactory;
-
-    RewardController public rewardController;
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
@@ -172,11 +269,11 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier noSafetyPeriod() {
-      //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
-      // solhint-disable-next-line not-rely-on-time
+        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-        generalParameters.withdrawPeriod,
-        "HVE03");
+            generalParameters.withdrawPeriod,
+            "HVE03");
         _;
     }
 
@@ -185,79 +282,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
-
-    event Deposit(address indexed user, uint256 indexed pid, uint256 amount, uint256 transferredAmount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event SafeTransferReward(address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address rewardToken);
-    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
-
-    event SetCommittee(uint256 indexed _pid, address indexed _committee);
-    event CommitteeCheckedIn(uint256 indexed _pid);
-
-    event AddPool(uint256 indexed _pid,
-                address indexed _lpToken,
-                address _committee,
-                string _descriptionHash,
-                uint256 _maxBounty,
-                BountySplit _bountySplit,
-                uint256 _bountyVestingDuration,
-                uint256 _bountyVestingPeriods);
-
-    event SetPool(uint256 indexed _pid, bool indexed _registered, bool _depositPause, string _descriptionHash);
-    event Claim(address indexed _claimer, string _descriptionHash);
-    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
-    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetFeeSetter(address indexed _newFeeSetter);
-    event SetRewardController(address indexed _newRewardController);
-    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
-    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
-
-    event SwapAndSend(uint256 indexed _pid,
-                    address indexed _beneficiary,
-                    uint256 indexed _amountSwapped,
-                    uint256 _amountReceived,
-                    address _tokenLock);
-
-    event SwapAndBurn(uint256 indexed _pid, uint256 indexed _amountSwapped, uint256 indexed _amountBurned);
-    event SetVestingParams(uint256 indexed _pid, uint256 indexed _duration, uint256 indexed _periods);
-    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
-
-    event ApproveClaim(uint256 indexed _pid,
-                    address indexed _committee,
-                    address indexed _beneficiary,
-                    uint256 _bountyPercentage,
-                    address _tokenLock,
-                    ClaimBounty _claimBounty);
-
-    event SubmitClaim(uint256 indexed _pid,
-        address _committee,
-        address indexed _beneficiary,
-        uint256 indexed _bountyPercentage,
-        string _descriptionHash);
-
-    event WithdrawRequest(uint256 indexed _pid,
-                        address indexed _beneficiary,
-                        uint256 indexed _withdrawEnableTime);
-
-    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
-    event SetClaimFee(uint256 _fee);
-    event RewardDepositors(uint256 indexed _pid,
-        uint256 indexed _amount,
-        uint256 indexed _transferredAmount);
-    event DepositReward(uint256 indexed _amount,
-        uint256 indexed _transferredAmount,
-        address indexed _rewardToken);
-    event ClaimReward(uint256 indexed _pid);
-    event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod,
-        uint256 indexed _withdrawRequestEnablePeriod);
-    event DismissClaim(uint256 indexed _pid);
-    event SetMaxBountyDelay(uint256 indexed _delay);
-
-    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
     /**
     * @dev Update the pool's rewardPerShare, not more then once per block
