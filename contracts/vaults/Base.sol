@@ -26,7 +26,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         //withdraw disable period - time for the commitee to gather and decide on actions, withdrawals are not possible in this time
         //withdrawPeriod starts when finished.
         uint256 safetyPeriod;
-        uint256 setBountyLevelsDelay;
+        uint256 setMaxBountyDelay;
         // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
         // (after which withdrawal is not possible)
         uint256 withdrawRequestEnablePeriod;
@@ -68,7 +68,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of each pool's bounty policy.
     struct BountyInfo {
         BountySplit bountySplit;
-        uint256[] bountyLevels;
+        uint256 maxBounty;
         bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
@@ -103,16 +103,16 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of a claim that has been submitted by a committee
     struct SubmittedClaim {
         address beneficiary;
-        uint256 severity;
+        uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee
         // will be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
     }
 
-    struct PendingBountyLevels {
+    struct PendingMaxBounty {
         uint256 timestamp;
-        uint256[] bountyLevels;
+        uint256 maxBounty;
     }
 
 
@@ -147,8 +147,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     //poolId -> (address -> requestTime)
     // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
     mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
-    //poolId -> PendingBountyLevels
-    mapping(uint256 => PendingBountyLevels) public pendingBountyLevels;
+    //poolId -> PendingMaxBounty
+    mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
 
     mapping(uint256 => bool) public poolDepositPause;
 
@@ -205,7 +205,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                 address indexed _lpToken,
                 address _committee,
                 string _descriptionHash,
-                uint256[] _bountyLevels,
+                uint256 _maxBounty,
                 BountySplit _bountySplit,
                 uint256 _bountyVestingDuration,
                 uint256 _bountyVestingPeriods);
@@ -213,11 +213,11 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event SetPool(uint256 indexed _pid, bool indexed _registered, bool _depositPause, string _descriptionHash);
     event Claim(address indexed _claimer, string _descriptionHash);
     event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
-    event SetBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels);
+    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetRewardController(address indexed _newRewardController);
     event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
-    event SetPendingBountyLevels(uint256 indexed _pid, uint256[] _bountyLevels, uint256 _timeStamp);
+    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
 
     event SwapAndSend(uint256 indexed _pid,
                     address indexed _beneficiary,
@@ -232,14 +232,14 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event ApproveClaim(uint256 indexed _pid,
                     address indexed _committee,
                     address indexed _beneficiary,
-                    uint256 _severity,
+                    uint256 _bountyPercentage,
                     address _tokenLock,
                     ClaimBounty _claimBounty);
 
     event SubmitClaim(uint256 indexed _pid,
         address _committee,
         address indexed _beneficiary,
-        uint256 indexed _severity,
+        uint256 indexed _bountyPercentage,
         string _descriptionHash);
 
     event WithdrawRequest(uint256 indexed _pid,
@@ -258,7 +258,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event SetWithdrawRequestParams(uint256 indexed _withdrawRequestPendingPeriod,
         uint256 indexed _withdrawRequestEnablePeriod);
     event DismissClaim(uint256 indexed _pid);
-    event SetBountyLevelsDelay(uint256 indexed _delay);
+    event SetMaxBountyDelay(uint256 indexed _delay);
 
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
 
@@ -301,32 +301,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         rewardAvailable -= _amount;
         rewardToken.transfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
-    }
-
-    /**
-    * @dev Check bounty levels.
-    * Each level should be less than or equal to `HUNDRED_PERCENT`
-    * If _bountyLevels length is 0, default bounty levels will be returned ([2000, 4000, 6000, 8000]).
-    * @param _bountyLevels The bounty levels array
-    * @return bountyLevels
-    */
-    function checkBountyLevels(uint256[] memory _bountyLevels)
-    internal
-    pure
-    returns (uint256[] memory bountyLevels) {
-        uint256 i;
-        if (_bountyLevels.length == 0) {
-            bountyLevels = new uint256[](4);
-            for (i; i < 4; i++) {
-            //defaultRewardLevels = [2000, 4000, 6000, 8000];
-                bountyLevels[i] = 2000*(i+1);
-            }
-        } else {
-            for (i; i < _bountyLevels.length; i++) {
-                require(_bountyLevels[i] <= HUNDRED_PERCENT, "HVE33");
-            }
-            bountyLevels = _bountyLevels;
-        }
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {

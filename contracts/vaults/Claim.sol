@@ -14,11 +14,11 @@ contract Claim is Base {
     * until the Hats governance will approve or dismiss this claim.
     * @param _pid The pool id
     * @param _beneficiary The submitted claim's beneficiary
-    * @param _severity The submitted claim's bug severity
+    * @param _bountyPercentage The submitted claim's bug requested reward percentage
     */
     function submitClaim(uint256 _pid,
         address _beneficiary,
-        uint256 _severity,
+        uint256 _bountyPercentage,
         string calldata _descriptionHash)
     external
     onlyCommittee(_pid)
@@ -28,16 +28,16 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod, "HVE05");
-        require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
+        require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
 
         submittedClaims[_pid] = SubmittedClaim({
             beneficiary: _beneficiary,
-            severity: _severity,
+            bountyPercentage: _bountyPercentage,
             committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp
         });
-        emit SubmitClaim(_pid, msg.sender, _beneficiary, _severity, _descriptionHash);
+        emit SubmitClaim(_pid, msg.sender, _beneficiary, _bountyPercentage, _descriptionHash);
     }
 
     /**
@@ -64,7 +64,7 @@ contract Claim is Base {
         delete submittedClaims[_pid];
 
         IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.severity);
+        ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.bountyPercentage);
         poolInfos[_pid].balance -= claimBounty.hacker
                             + claimBounty.hackerVested
                             + claimBounty.committee
@@ -101,7 +101,7 @@ contract Claim is Base {
         emit ApproveClaim(_pid,
                         msg.sender,
                         submittedClaim.beneficiary,
-                        submittedClaim.severity,
+                        submittedClaim.bountyPercentage,
                         tokenLock,
                         claimBounty);
         assert(poolInfos[_pid].balance > 0);
@@ -118,15 +118,14 @@ contract Claim is Base {
         emit Claim(msg.sender, _descriptionHash);
     }
 
-    function calcClaimBounty(uint256 _pid, uint256 _severity)
+    function calcClaimBounty(uint256 _pid, uint256 _bountyPercentage)
     public
     view
     returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = poolInfos[_pid].balance;
         require(totalSupply > 0, "HVE28");
-        require(_severity < bountyInfos[_pid].bountyLevels.length, "HVE06");
-        uint256 totalBountyAmount =
-        totalSupply * bountyInfos[_pid].bountyLevels[_severity];
+        require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
+        uint256 totalBountyAmount = totalSupply * _bountyPercentage;
         claimBounty.hackerVested =
         totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested
         / (HUNDRED_PERCENT * HUNDRED_PERCENT);

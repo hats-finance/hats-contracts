@@ -12,7 +12,7 @@ contract PoolsManagerMock {
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
-                    uint256[] memory _bountyLevels,
+                    uint256 _maxBounty,
                     HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams) external {
@@ -20,7 +20,7 @@ contract PoolsManagerMock {
         for (uint256 i=0; i < _lpTokens.length; i++) {
             _hatVaults.addPool(_lpTokens[i],
                                 _committee,
-                                _bountyLevels,
+                                _maxBounty,
                                 _bountySplit,
                                 _descriptionHash,
                                 _bountyVestingParams,
