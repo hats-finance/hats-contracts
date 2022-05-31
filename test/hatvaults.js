@@ -394,14 +394,7 @@ contract("HatVaults", (accounts) => {
 
   it("dismiss can be called by anyone after 5 weeks delay", async () => {
     var staker = accounts[1];
-    await setup(accounts, REWARD_PER_BLOCK, 0, 8000, [
-      8000,
-      1000,
-      100,
-      100,
-      100,
-      700,
-    ]);
+    await setup(accounts, 0, 9000, [9000, 0, 200, 0, 100, 700]);
 
     await advanceToSaftyPeriod();
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -1861,14 +1854,7 @@ contract("HatVaults", (accounts) => {
   }).timeout(40000);
 
   it("approve+ stake simple check rewards", async () => {
-    await setup(
-      accounts,
-      REAL_REWARD_PER_BLOCK,
-      0,
-      8000,
-      [0, 0, 0, 0, 0, 0],
-      10000
-    );
+    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -1905,14 +1891,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("emergencyWithdraw after approve and check reward", async () => {
-    await setup(
-      accounts,
-      REAL_REWARD_PER_BLOCK,
-      0,
-      8000,
-      [0, 0, 0, 0, 0, 0],
-      10000
-    );
+    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
     var staker = accounts[1];
     var staker2 = accounts[3];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
@@ -2097,14 +2076,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + swapBurnSend", async () => {
-    await setup(accounts, REWARD_PER_BLOCK, 0, 8000, [
-      8000,
-      1000,
-      0,
-      250,
-      350,
-      400,
-    ]);
+    await setup(accounts, 0, 8000, [8000, 1000, 0, 250, 350, 400]);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -3300,7 +3272,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("no vesting", async () => {
-    await setup(accounts, REWARD_PER_BLOCK, 0, 8000, [0, 10000, 0, 0, 0, 0]);
+    await setup(accounts, 0, 8000, [0, 10000, 0, 0, 0, 0]);
 
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
@@ -4080,7 +4052,6 @@ contract("HatVaults", (accounts) => {
   it("transferReward to fail if not enough reward tokens", async () => {
     await setup(
       accounts,
-      "100000",
       (await web3.eth.getBlock("latest")).number,
       8000,
       undefined,
@@ -4113,7 +4084,6 @@ contract("HatVaults", (accounts) => {
   it("swapBurnSend to fail if not enough reward tokens", async () => {
     await setup(
       accounts,
-      "100000",
       (await web3.eth.getBlock("latest")).number,
       8000,
       [8000, 900, 100, 250, 350, 400],
