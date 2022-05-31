@@ -334,7 +334,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it.only("swapBurnSend", async () => {
+  it("swapBurnSend", async () => {
     await setup(accounts);
     var staker = accounts[4];
     var staker2 = accounts[3];
