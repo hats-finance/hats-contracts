@@ -353,9 +353,16 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
-    await hatVaults.submitClaim(0, accounts[2], 3, "description hash", {
-      from: accounts[1],
-    });
+    const bountyPercentage = 300;
+    await hatVaults.submitClaim(
+      0,
+      accounts[2],
+      bountyPercentage,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
     try {
       await hatTimelockController.approveClaim(0, { from: accounts[3] });
       assert(false, "only gov");
@@ -429,7 +436,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(log.event, "SwapAndBurn");
     assert.equal(
       log.args._amountSwapped.toString(),
-      new web3.utils.BN(web3.utils.toWei("0.8"))
+      new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
         .mul(
           new web3.utils.BN(
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
@@ -439,6 +446,7 @@ contract("HatVaults", (accounts) => {
             )
           )
         )
+        .div(new web3.utils.BN("10000"))
         .div(new web3.utils.BN("10000"))
         .toString()
     );
