@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/ITokenLockFactory.sol";
 import "../RewardController.sol";
 
-contract  Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //Parameters that apply to all the vaults
     struct GeneralParameters {
