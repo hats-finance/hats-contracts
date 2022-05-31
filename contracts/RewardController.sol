@@ -32,6 +32,7 @@ contract RewardController is Ownable {
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _rewardPerEpoch
+    // solhint-disable-next-line func-visibility
     ) {
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
