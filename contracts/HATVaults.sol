@@ -68,10 +68,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @dev initialize -
     * @param _rewardToken The reward token address 
-    * @param _rewardPerBlock The reward amount per block that the contract will reward pools
-    * @param _startRewardingBlock Start block from which the contract will start rewarding
-    * @param _multiplierPeriod A fixed period value. Each period will have its own multiplier value,
-    *        which sets the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
     * @param _hatGovernance The governance address.
     *        Some of the contracts functions are limited only to governance:
     *         addPool, setPool, dismissClaim, approveClaim,
@@ -84,22 +80,18 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     */
     function initialize(
         address _rewardToken,
-        uint256 _rewardPerBlock,
-        uint256 _startRewardingBlock,
-        uint256 _multiplierPeriod,
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
-        ITokenLockFactory _tokenLockFactory
-    // solhint-disable-next-line func-visibility
+        ITokenLockFactory _tokenLockFactory,
+        RewardController _rewardController
+
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
         rewardToken = IERC20(_rewardToken);
         swapToken = ERC20Burnable(_swapToken);
-        REWARD_PER_BLOCK = _rewardPerBlock;
-        START_BLOCK = _startRewardingBlock;
-        MULTIPLIER_PERIOD = _multiplierPeriod;
+        
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -115,12 +107,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-
-        rewardMultipliers = [
-            4413, 4413, 8825, 7788, 6873, 6065,
-            5353, 4724, 4169, 3679, 3247, 2865,
-            2528, 2231, 1969, 1738, 1534, 1353,
-            1194, 1054, 930, 821, 724, 639
-        ];
+        setRewardController(_rewardController);
     }
 }

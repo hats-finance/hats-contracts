@@ -1,9 +1,9 @@
 const ADDRESSES = require("./addresses.js");
 async function main(
   rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
-  rewardPerBlock = "16185644800000000",
   startBlock = null,
-  multiplierPeriod = "195200",
+  rewardPerEpoch,
+  epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
   swapToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
   whitelistedRouters = ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
@@ -36,17 +36,30 @@ async function main(
   }
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
+  const RewardController = await ethers.getContractFactory("RewardController");
+  const rewardController = await RewardController.deploy(
+    governance,
+    startBlock,
+    epochLength,
+    rewardPerEpoch
+  );
+
+  await rewardController.deployed();
+
   const hatVaults = await upgrades.deployProxy(HATVaults, [
     rewardsToken,
-    rewardPerBlock,
-    startBlock,
-    multiplierPeriod,
-    governance,
+    deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
+    rewardController.address,
   ]);
+
   await hatVaults.deployed();
+
+  if (governance !== deployerAddress) {
+    await hatVaults.transferOwnership(governance);
+  }
 
   if (!silent) {
     console.log("hatVaults address:", hatVaults.address);
@@ -61,13 +74,10 @@ async function main(
       rewardsToken,
       '"',
       '"',
-      rewardPerBlock,
-      '"',
-      '"',
       startBlock,
       '"',
       '"',
-      multiplierPeriod,
+      epochLength,
       '"',
       '"',
       governance,
@@ -78,7 +88,7 @@ async function main(
     );
   }
 
-  return hatVaults;
+  return { hatVaults, rewardController };
 }
 
 function saveFrontendFiles(contract, name) {
