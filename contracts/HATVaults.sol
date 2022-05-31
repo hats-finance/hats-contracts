@@ -20,7 +20,7 @@ import "./vaults/Withdraw.sol";
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
-// HVE06: _severity is not in the range
+// HVE06: reward percentage is higher than the max bounty
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
@@ -47,7 +47,7 @@ import "./vaults/Withdraw.sol";
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
 // HVE32: Wrong amount received
-// HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
+// HVE33: Bounty cannot be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or equal to 2%
@@ -110,7 +110,7 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             hatVestingPeriods: 90,
             withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
-            setBountyLevelsDelay: 2 days,
+            setMaxBountyDelay: 2 days,
             withdrawRequestEnablePeriod: 7 days,
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0

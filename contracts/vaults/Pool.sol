@@ -24,8 +24,7 @@ contract Pool is Base {
     * @param _allocPoint The pool's allocation point
     * @param _lpToken The pool's token
     * @param _committee The pool's committee addres
-    * @param _bountyLevels The pool's bounty levels.
-        Each level is a number between 0 and `HUNDRED_PERCENT`, which represents the percentage of the pool to be rewarded for each severity.
+    * @param _maxBounty The pool's max bounty.
     * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
         Each entry is a number between 0 and `HUNDRED_PERCENT`.
         Total splits should be equal to `HUNDRED_PERCENT`.
@@ -38,7 +37,7 @@ contract Pool is Base {
     function addPool(uint256 _allocPoint,
                     address _lpToken,
                     address _committee,
-                    uint256[] memory _bountyLevels,
+                    uint256 _maxBounty,
                     BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams,
@@ -51,6 +50,7 @@ contract Pool is Base {
         require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
+        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
 
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
@@ -77,14 +77,13 @@ contract Pool is Base {
    
         uint256 poolId = poolInfos.length-1;
         committees[poolId] = _committee;
-        uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
         BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
         getDefaultBountySplit() : _bountySplit;
   
         validateSplit(bountySplit);
         bountyInfos[poolId] = BountyInfo({
-            bountyLevels: bountyLevels,
+            maxBounty: _maxBounty,
             bountySplit: bountySplit,
             committeeCheckIn: false,
             vestingDuration: _bountyVestingParams[0],
@@ -99,7 +98,7 @@ contract Pool is Base {
             _lpToken,
             _committee,
             _descriptionHash,
-            bountyLevels,
+            _maxBounty,
             bountySplit,
             _bountyVestingParams[0],
             _bountyVestingParams[1]);
