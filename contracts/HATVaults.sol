@@ -83,7 +83,9 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
-        ITokenLockFactory _tokenLockFactory
+        ITokenLockFactory _tokenLockFactory,
+        RewardController _rewardController
+
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
@@ -105,5 +107,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
+        setRewardController(_rewardController);
     }
 }

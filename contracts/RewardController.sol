@@ -22,13 +22,11 @@ contract RewardController is Ownable {
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
     mapping(uint256 => uint256) public poolsAllocPoint;
-    HATVaults public hatVaults;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
 
     constructor(
         address _hatGovernance,
-        HATVaults _hatVaults,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _rewardPerEpoch
@@ -37,7 +35,6 @@ contract RewardController is Ownable {
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         rewardPerEpoch = _rewardPerEpoch;
-        hatVaults = _hatVaults;
         _transferOwnership(_hatGovernance);
     }
 
@@ -51,7 +48,6 @@ contract RewardController is Ownable {
     }
 
     function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
-        // hatVaults.updatePool(_pid);
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
         globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolsAllocPoint[_pid] + _allocPoint;
         if (globalPoolUpdates.length > 0 &&

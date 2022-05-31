@@ -172,7 +172,7 @@ contract Params is Base {
         emit SetFeeSetter(_newFeeSetter);
     }
 
-    function setRewardController(RewardController _newRewardController) external onlyOwner {
+    function setRewardController(RewardController _newRewardController) public onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(address(_newRewardController));
     }
