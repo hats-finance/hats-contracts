@@ -24,7 +24,7 @@ contract Params is Base {
     }
 
     /**
-   * @dev Set the pool max bount  to the already pending max bounty.
+   * @dev Set the pool max bounty to the already pending max bounty.
    * The function can be called only by the pool committee.
    * Cannot be called if there are claims that have been submitted.
    * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
