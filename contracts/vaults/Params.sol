@@ -6,42 +6,41 @@ import "./Base.sol";
 contract Params is Base {
 
     /**
-    * @dev Set pending request to set pool bounty levels.
-    * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.
+    * @dev Set pending request to set pool max bounty.
     * The function can be called only by the pool committee.
     * Cannot be called if there are claims that have been submitted.
-    * Each level should be less than or equal to `HUNDRED_PERCENT`
+    * Max bounty should be less than or equal to `HUNDRED_PERCENT`
     * @param _pid The pool id
-    * @param _bountyLevels The array of bounty level per severity
+    * @param _maxBounty The maximum bounty percentage that can be paid out
     */
-    function setPendingBountyLevels(uint256 _pid, uint256[] memory _bountyLevels)
+    function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
     external
     onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        pendingBountyLevels[_pid].bountyLevels = checkBountyLevels(_bountyLevels);
+        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
+        pendingMaxBounty[_pid].maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
-        pendingBountyLevels[_pid].timestamp = block.timestamp;
-        emit SetPendingBountyLevels(_pid, _bountyLevels, pendingBountyLevels[_pid].timestamp);
+        pendingMaxBounty[_pid].timestamp = block.timestamp;
+        emit SetPendingMaxBounty(_pid, _maxBounty, pendingMaxBounty[_pid].timestamp);
     }
 
     /**
-   * @dev Set the pool token bounty levels to the already pending bounty levels.
-   * The bounty level represents the percentage of the pool which will be given as a bounty for a certain severity.
+   * @dev Set the pool max bount  to the already pending max bounty.
    * The function can be called only by the pool committee.
    * Cannot be called if there are claims that have been submitted.
-   * Can only be called if there are bounty levels pending approval, and the time delay since setting the pending bounty
-   * levels had passed.
-   * Each level should be less than `HUNDRED_PERCENT`
+   * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
+   * had passed.
+   * Max bounty should be less than `HUNDRED_PERCENT`
    * @param _pid The pool id
  */
-    function setBountyLevels(uint256 _pid)
+    function setMaxBounty(uint256 _pid)
     external
     onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        require(pendingBountyLevels[_pid].timestamp > 0, "HVE19");
+        require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - pendingBountyLevels[_pid].timestamp > generalParameters.setBountyLevelsDelay, "HVE20");
-        bountyInfos[_pid].bountyLevels = pendingBountyLevels[_pid].bountyLevels;
-        delete pendingBountyLevels[_pid];
-        emit SetBountyLevels(_pid, bountyInfos[_pid].bountyLevels);
+        require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
+        bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
+        delete pendingMaxBounty[_pid];
+        emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
     }
 
     /**
@@ -157,15 +156,16 @@ contract Params is Base {
     }
 
     /**
-    * @dev Set the timelock delay for setting bounty levels (the time between setPendingBountyLevels and setBountyLevels)
+    * @dev Set the timelock delay for setting the max bounty
+    * (the time between setPendingMaxBounty and setMaxBounty)
     * @param _delay The delay time
     */
-    function setBountyLevelsDelay(uint256 _delay)
+    function setMaxBountyDelay(uint256 _delay)
     external
     onlyOwner {
         require(_delay >= 2 days, "HVE18");
-        generalParameters.setBountyLevelsDelay = _delay;
-        emit SetBountyLevelsDelay(_delay);
+        generalParameters.setMaxBountyDelay = _delay;
+        emit SetMaxBountyDelay(_delay);
     }
 
     function setFeeSetter(address _newFeeSetter) external onlyOwner {

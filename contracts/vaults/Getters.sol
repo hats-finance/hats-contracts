@@ -19,10 +19,6 @@ contract Getters is Base {
         return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
     }
 
-    function getBountyLevels(uint256 _pid) external view returns(uint256[] memory) {
-        return bountyInfos[_pid].bountyLevels;
-    }
-
     function getNumberOfPools() external view returns (uint256) {
         return poolInfos.length;
     }
