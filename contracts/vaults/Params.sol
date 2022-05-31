@@ -45,7 +45,8 @@ contract Params is Base {
     }
 
     /**
-    * @dev setCommittee - set new committee address.
+    * @dev Set new committee address. Can be called by existing committee if it had checked in, or
+    * by the governance otherwise.
     * @param _pid pool id
     * @param _committee new committee address
     */
