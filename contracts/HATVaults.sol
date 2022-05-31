@@ -33,8 +33,8 @@ import "./vaults/Withdraw.sol";
 // HVE16: Vesting periods cannot be zero
 // HVE17: Vesting duration smaller than periods
 // HVE18: Delay is too short
-// HVE19: No pending set bounty levels
-// HVE20: Delay period for setting bounty levels had not passed
+// HVE19: No pending max bounty
+// HVE20: Delay period for setting max bounty had not passed
 // HVE21: Committee is zero
 // HVE22: Committee already checked in
 // HVE23: Pool does not exist
@@ -47,7 +47,7 @@ import "./vaults/Withdraw.sol";
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
 // HVE32: Wrong amount received
-// HVE33: Bounty cannot be more than `HUNDRED_PERCENT`
+// HVE33: Max bounty cannot be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or equal to 2%

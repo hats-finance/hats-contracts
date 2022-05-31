@@ -155,7 +155,8 @@ contract Params is Base {
     }
 
     /**
-    * @dev Set the timelock delay for setting bounty levels (the time between setPendingMaxBounty and setMaxBounty)
+    * @dev Set the timelock delay for setting the max bounty
+    * (the time between setPendingMaxBounty and setMaxBounty)
     * @param _delay The delay time
     */
     function setMaxBountyDelay(uint256 _delay)
