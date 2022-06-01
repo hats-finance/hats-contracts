@@ -300,12 +300,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function getDefaultBountySplit() public pure returns (BountySplit memory) {
         return BountySplit({
-        hackerVested: 6000,
-        hacker: 2000,
-        committee: 500,
-        swapAndBurn: 0,
-        governanceHat: 1000,
-        hackerHatVested: 500
+            hackerVested: 6000,
+            hacker: 2000,
+            committee: 500,
+            swapAndBurn: 0,
+            governanceHat: 1000,
+            hackerHatVested: 500
         });
     }
 
