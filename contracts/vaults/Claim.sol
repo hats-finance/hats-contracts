@@ -46,14 +46,17 @@ contract Claim is Base {
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            isChallenged: false
         });
         emit SubmitClaim(_pid, msg.sender, _beneficiary, _bountyPercentage, _descriptionHash);
     }
 
-    function isChallenged(uint256 _pid) onlyArbitrator external {
-        // TODO: challenge logic in HATVaults.
-        require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
+    function isChallenged(uint256 _claimId) onlyArbitrator external {
+        // TODO: uncomment next line when we have the mapping available
+        // require(activeClaims[_claimId], "Can only challenge an active claim");
+        submittedClaims[_claimId].isChallenged = true;
+
     }
 
 

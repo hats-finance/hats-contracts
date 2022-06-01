@@ -106,6 +106,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         // be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
+        bool isChallenged;
     }
 
     struct PendingMaxBounty {

@@ -48,7 +48,7 @@ let rewardPerEpoch = [
   web3.utils.toWei("6390"),
 ];
 
-export const setup = async function(
+const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
@@ -4141,3 +4141,5 @@ contract("HatVaults", (accounts) => {
     }
   });
 });
+
+module.exports = { setup };

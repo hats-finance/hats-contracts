@@ -13,7 +13,7 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const { upgradeHatVaults } = require("../scripts/hatvaultsupgrade.js");
 
-import setup from "./hatvaults.js";
+const { setup } = require("./hatvaults.js");
 
 contract("HatVaults", (accounts) => {
   it("Arbitrator logic", async () => {
