@@ -100,6 +100,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // Info of a claim that has been submitted by a committee
     struct SubmittedClaim {
+        uint256 claimId;
         address beneficiary;
         uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee will
@@ -133,28 +134,29 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     //PARAMETERS PER VAULT
     // Info of each pool.
     PoolInfo[] public poolInfos;
-    //pid -> committee address
+    // poolId -> committee address
     mapping(uint256 => address) public committees;
-    // Info of each user that stakes LP tokens. pid => user address => info
+    // Info of each user that stakes LP tokens. poolId => user address => info
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    //pid -> BountyInfo
+    // poolId -> BountyInfo
     mapping(uint256=>BountyInfo) public bountyInfos;
-    //poolId -> PendingMaxBounty
+    // poolId -> PendingMaxBounty
     mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
+    // poolId -> claimId
     mapping(uint256 => bool) public poolInitialized;
     mapping(uint256 => bool) public poolDepositPause;
-    //poolId -> (address -> requestTime)
+    // poolId -> (address -> requestTime)
     // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
     mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
 
     //PARAMETERS PER CLAIM
-    //pid -> SubmittedClaim
+    // claimId -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
-    //pid -> amount
+    // claimId -> amount
     mapping(uint256 => uint256) public swapAndBurns;
-    //hackerAddress ->(pid->amount)
-    mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
-    //pid -> amount
+    // claimId -> amount
+    mapping(uint256 => uint256) public hackersHatRewards;
+    // claimId -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
 
     event SafeTransferReward(
