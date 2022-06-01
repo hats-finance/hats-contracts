@@ -139,7 +139,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of each user that stakes LP tokens. poolId => user address => info
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     // poolId -> BountyInfo
-    mapping(uint256=>BountyInfo) public bountyInfos;
+    mapping(uint256 => BountyInfo) public bountyInfos;
     // poolId -> PendingMaxBounty
     mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
     // poolId -> claimId

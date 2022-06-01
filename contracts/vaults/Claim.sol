@@ -45,7 +45,8 @@ contract Claim is Base {
         uint256 nonce;
         do
         {
-        claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce)));
+            claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce)));
+            nonce++;
         } while (claimId == 0 || submittedClaims[claimId].beneficiary != address(0));
         submittedClaims[claimId] = SubmittedClaim({
             pid: _pid,
