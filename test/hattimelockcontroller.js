@@ -364,20 +364,22 @@ contract("HatVaults", (accounts) => {
       }
     );
     try {
-      await hatTimelockController.approveClaim(0, { from: accounts[3] });
+      await hatTimelockController.approveClaim(0, bountyPercentage, {
+        from: accounts[3],
+      });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await hatVaults.approveClaim(0);
+      await hatVaults.approveClaim(0, bountyPercentage);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
-    await hatTimelockController.approveClaim(0);
+    await hatTimelockController.approveClaim(0, bountyPercentage);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
