@@ -37,6 +37,7 @@ contract Params is Base {
     */
     function setArbitrator(address _arbitrator) external onlyOwner {
         arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
     }
 
     /**

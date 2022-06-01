@@ -202,6 +202,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 indexed _withdrawRequestPendingPeriod,
         uint256 indexed _withdrawRequestEnablePeriod

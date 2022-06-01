@@ -121,6 +121,10 @@ const setup = async function(
     allocPoint
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
+  return {
+    hatVaults,
+    hatToken,
+  };
 };
 
 function assertVMException(error, expectedError = "") {
@@ -4149,4 +4153,4 @@ contract("HatVaults", (accounts) => {
   });
 });
 
-module.exports = { setup };
+module.exports = { assertVMException, setup };
