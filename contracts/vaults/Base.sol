@@ -100,7 +100,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // Info of a claim that has been submitted by a committee
     struct SubmittedClaim {
-        uint256 claimId;
+        uint256 pid;
         address beneficiary;
         uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee will
@@ -143,6 +143,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // poolId -> PendingMaxBounty
     mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
     // poolId -> claimId
+    mapping(uint256 => uint256) public activeClaims;
     mapping(uint256 => bool) public poolInitialized;
     mapping(uint256 => bool) public poolDepositPause;
     // poolId -> (address -> requestTime)
@@ -152,11 +153,11 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     //PARAMETERS PER CLAIM
     // claimId -> SubmittedClaim
     mapping(uint256 => SubmittedClaim) public submittedClaims;
-    // claimId -> amount
+    // poolId -> amount
     mapping(uint256 => uint256) public swapAndBurns;
-    // claimId -> amount
-    mapping(uint256 => uint256) public hackersHatRewards;
-    // claimId -> amount
+    // hackerAddress -> (pid -> amount)
+    mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
+    // poolId -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
 
     event SafeTransferReward(
@@ -168,6 +169,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event Claim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         uint256 indexed _pid,
+        uint256 _claimId,
         address _committee,
         address indexed _beneficiary,
         uint256 indexed _bountyPercentage,
@@ -175,13 +177,14 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event ApproveClaim(
         uint256 indexed _pid,
+        uint256 indexed _claimId,
         address indexed _committee,
-        address indexed _beneficiary,
+        address _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
         ClaimBounty _claimBounty
     );
-    event DismissClaim(uint256 indexed _pid);
+    event DismissClaim(uint256 indexed _pid, uint256 indexed _claimId);
     event Deposit(address indexed user,
         uint256 indexed pid,
         uint256 amount,
@@ -276,7 +279,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier noSubmittedClaims(uint256 _pid) {
-        require(submittedClaims[_pid].beneficiary == address(0), "HVE02");
+        require(activeClaims[_pid] == 0, "HVE02");
         _;
     }
 
