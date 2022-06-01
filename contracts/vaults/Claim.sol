@@ -41,7 +41,12 @@ contract Claim is Base {
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod, "HVE05");
         require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
-        uint256 claimId = uint256(keccak256(abi.encodePacked(_pid, block.number)));
+        uint256 claimId;
+        uint256 nonce;
+        do
+        {
+        claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce)));
+        } while (claimId == 0 || submittedClaims[claimId].beneficiary != address(0));
         submittedClaims[claimId] = SubmittedClaim({
             pid: _pid,
             beneficiary: _beneficiary,
