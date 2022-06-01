@@ -23,7 +23,6 @@ contract HATTimelockController is TimelockController {
     // Whitelisted functions
 
     function approveClaim(uint256 _pid, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
-        // TODO: check that severity is legitimate.
         hatVaults.approveClaim(_pid, _bountyPercentage);
     }
 
