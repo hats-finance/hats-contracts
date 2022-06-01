@@ -39,7 +39,7 @@ contract RewardController is Ownable {
     }
 
     /**
-     * @dev setRewardPerEpoch- called by hats governance to set reward multipliers
+     * @dev Called by owner to set reward multipliers
      * @param _rewardPerEpoch reward multipliers
     */
     function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
