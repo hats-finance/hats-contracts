@@ -45,7 +45,7 @@ contract Deposit is Base {
     * @param _pid The pool id
     * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
     **/
-    function deposit(uint256 _pid, uint256 _amount) external {
+    function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         require(!poolDepositPause[_pid], "HVE26");
         require(_amount >= MINIMUM_DEPOSIT, "HVE27");
         //clear withdraw request
@@ -55,7 +55,7 @@ contract Deposit is Base {
         _claimReward(_pid, user);
         uint256 lpSupply = pool.balance;
         uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
-        pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+        pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         uint256 transferredAmount = pool.lpToken.balanceOf(address(this)) - balanceBefore;
         pool.balance += transferredAmount;
         uint256 userShares = transferredAmount;
@@ -70,7 +70,7 @@ contract Deposit is Base {
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
     }
 
-    function _claimReward(uint256 _pid, UserInfo memory _user) internal nonReentrant {
+    function _claimReward(uint256 _pid, UserInfo memory _user) internal {
         require(bountyInfos[_pid].committeeCheckIn, "HVE40");
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
