@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.6;
 
-
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./vaults/Claim.sol";
 import "./vaults/Deposit.sol";
@@ -12,7 +11,6 @@ import "./vaults/Pool.sol";
 import "./vaults/Swap.sol";
 import "./vaults/Getters.sol";
 import "./vaults/Withdraw.sol";
-
 
 // Errors:
 // HVE01: Only committee
@@ -61,7 +59,6 @@ import "./vaults/Withdraw.sol";
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
-
 
 /// @title Manage all Hats.finance vaults
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {

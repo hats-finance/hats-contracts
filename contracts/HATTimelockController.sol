@@ -3,10 +3,8 @@
 
 pragma solidity 0.8.6;
 
-
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaults.sol";
-
 
 contract HATTimelockController is TimelockController {
     HATVaults public hatVaults;

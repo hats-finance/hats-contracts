@@ -4,6 +4,7 @@ pragma solidity 0.8.6;
 import "./Base.sol";
 
 contract Swap is Base {
+
     /**
     * @dev Swap pool's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
@@ -21,7 +22,6 @@ contract Swap is Base {
         address _routingContract,
         bytes calldata _routingPayload)
     external
-
     onlyOwner {
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
