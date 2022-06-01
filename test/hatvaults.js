@@ -2014,7 +2014,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     let claimId2 = tx.logs[0].args._claimId;
-    assert.isTrue(claimId.toString() != claimId2.toString());
+    assert.isTrue(claimId.toString() !== claimId2.toString());
     await hatVaults.approveClaim(claimId2);
     await advanceToNoneSaftyPeriod();
 
@@ -2917,7 +2917,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     let claimId2 = tx.logs[0].args._claimId;
-    assert.isTrue(claimId.toString() != claimId2.toString());
+    assert.isTrue(claimId.toString() !== claimId2.toString());
     await hatVaults.approveClaim(claimId);
     await hatVaults.approveClaim(claimId2);
 
