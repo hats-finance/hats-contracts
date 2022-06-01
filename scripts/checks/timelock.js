@@ -66,7 +66,7 @@ async function main() {
   );
 
   await checkResult(`Timelock is HATVaults governance`, async () => {
-    const currentGov = await hatVaults.governance();
+    const currentGov = await hatVaults.owner();
     if (currentGov === hatTimelockControllerAddress) {
       return true;
     } else {

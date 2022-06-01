@@ -5,8 +5,8 @@ pragma solidity 0.8.6;
 import "./CloneFactory.sol";
 import "./ITokenLock.sol";
 import "./ITokenLockFactory.sol";
-import "openzeppelin-solidity/contracts/utils/Address.sol";
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 /**

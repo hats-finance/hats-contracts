@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract ERC20Mock is ERC20 {
@@ -11,6 +11,7 @@ contract ERC20Mock is ERC20 {
 
     bool public approveDisableFlag;
     bool public approveZeroDisableFlag;
+    bool public badTransferFlag;
 
     constructor(
         string memory _name,
@@ -20,6 +21,7 @@ contract ERC20Mock is ERC20 {
     ERC20(_name, _symbol) {
         approveDisableFlag = false;
         approveZeroDisableFlag = false;
+        badTransferFlag = false;
     }
 
     function approveDisable(bool _approveDisable) external {
@@ -28,6 +30,10 @@ contract ERC20Mock is ERC20 {
 
     function approveZeroDisable(bool _approveZeroDisable) external {
         approveZeroDisableFlag = _approveZeroDisable;
+    }
+
+    function setBadTransferFlag(bool _badTransferFlag) external {
+        badTransferFlag = _badTransferFlag;
     }
 
     function mint(address _to, uint256 _amount) public {
@@ -50,4 +56,15 @@ contract ERC20Mock is ERC20 {
         return true;
     }
 
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        if (badTransferFlag) {
+            super._transfer(from, to, amount / 2);
+        } else {
+            super._transfer(from, to, amount);
+        }
+    }
 }

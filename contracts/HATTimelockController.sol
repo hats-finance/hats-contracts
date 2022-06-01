@@ -4,7 +4,7 @@
 pragma solidity 0.8.6;
 
 
-import "openzeppelin-solidity/contracts/governance/TimelockController.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaults.sol";
 
 
@@ -20,62 +20,68 @@ contract HATTimelockController is TimelockController {
     ) TimelockController(_minDelay, _proposers, _executors) {
         require(address(_hatVaults) != address(0), "HATTimelockController: HATVaults address must not be 0");
         hatVaults = _hatVaults;
-
     }
     
     // Whitelisted functions
 
-    function approveClaim(uint256 _pid, uint256 _severity) external onlyRole(PROPOSER_ROLE) {
+    function approveClaim(uint256 _pid, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
         // TODO: check that severity is legitimate.
-        hatVaults.approveClaim(_pid, _severity);
+        hatVaults.approveClaim(_pid, _bountyPercentage);
     }
 
-    function addPool(uint256 _allocPoint,
-                    address _lpToken,
+    function addPool(address _lpToken,
                     address _committee,
-                    uint256[] memory _rewardsLevels,
-                    HATVaults.RewardsSplit memory _rewardsSplit,
+                    uint256 _maxBounty,
+                    HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _rewardVestingParams)
+                    uint256[2] memory _bountyVestingParams,
+                    bool _isPaused,
+                    bool _isInitialized)
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
-            _allocPoint,
             _lpToken,
             _committee,
-            _rewardsLevels,
-            _rewardsSplit,
+            _maxBounty,
+            _bountySplit,
             _descriptionHash,
-            _rewardVestingParams
+            _bountyVestingParams,
+            _isPaused,
+            _isInitialized
         );
     }
 
     function setPool(uint256 _pid,
-                    uint256 _allocPoint,
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyRole(PROPOSER_ROLE) {
         hatVaults.setPool(
             _pid,
-            _allocPoint,
             _registered,
             _depositPause,
             _descriptionHash
         );
     }
 
+    function setAllocPoint(uint256 _pid, uint256 _allocPoint)
+    external onlyRole(PROPOSER_ROLE) {
+        hatVaults.rewardController().setAllocPoint(_pid, _allocPoint);
+    }
+
     function swapBurnSend(uint256 _pid,
                         address _beneficiary,
                         uint256 _amountOutMinimum,
-                        uint24[2] memory _fees)
+                        address _routingContract,
+                        bytes calldata _routingPayload)
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.swapBurnSend(
             _pid,
             _beneficiary,
             _amountOutMinimum,
-            _fees
+            _routingContract,
+            _routingPayload
         );
     }
 }

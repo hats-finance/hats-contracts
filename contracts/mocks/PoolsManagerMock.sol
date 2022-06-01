@@ -8,26 +8,30 @@ import "../HATVaults.sol";
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
-                    uint256[] memory _rewardsLevels,
-                    HATMaster.RewardsSplit memory _rewardsSplit,
+                    uint256 _maxBounty,
+                    HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _rewardVestingParams) external {
+                    uint256[2] memory _bountyVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
-            _hatVaults.addPool(_allocPoint,
-                                _lpTokens[i],
+            _hatVaults.addPool(_lpTokens[i],
                                 _committee,
-                                _rewardsLevels,
-                                _rewardsSplit,
+                                _maxBounty,
+                                _bountySplit,
                                 _descriptionHash,
-                                _rewardVestingParams);
+                                _bountyVestingParams,
+                                false,
+                                true);
+            _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
     }
 
     function setPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256[] memory _pids,
                     uint256 _allocPoint,
                     bool _registered,
@@ -36,10 +40,10 @@ contract PoolsManagerMock {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
-                            _allocPoint,
                             _registered,
                             _depositPause,
                             _descriptionHash);
+            _rewardController.setAllocPoint(_pids[i], _allocPoint);
         }
     }
 

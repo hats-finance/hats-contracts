@@ -13,7 +13,5 @@ interface IHATVaults {
 
     function getChallengePeriod() external returns (uint256);
 
-    function getMaxSeverity(uint256 _poolId) external returns (uint256);
-
     function committees(uint256 _poolId) external returns (address);
 }

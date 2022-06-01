@@ -6,6 +6,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("hardhat-contract-sizer");
 require("hardhat-watcher");
 require("hardhat-gas-reporter");
+require('@openzeppelin/hardhat-upgrades');
 require("dotenv").config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -52,6 +53,7 @@ module.exports = {
       gas: "auto",
     },
     hardhat: {
+      allowUnlimitedContractSize: true,
       accounts: [
         {
           privateKey:
@@ -171,9 +173,17 @@ module.exports = {
     disambiguatePaths: true,
   },
   watcher: {
+    compile: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+    },
     test: {
       tasks: ["test"],
       files: ["./test", "./contracts", "./scripts"],
+    },
+    "size-contracts": {
+      tasks: ["size-contracts"],
+      files: ["./contracts"],
     },
     check: {
       tasks: [
