@@ -6,6 +6,17 @@ import "./Base.sol";
 contract Claim is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
+    // this can be use later on by the claimer to prove her claim
+    function claim(string memory _descriptionHash) external payable {
+        if (generalParameters.claimFee > 0) {
+            require(msg.value >= generalParameters.claimFee, "HVE14");
+            // solhint-disable-next-line indent
+            payable(owner()).transfer(msg.value);
+        }
+        emit Claim(msg.sender, _descriptionHash);
+    }
+
     /**
     * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
@@ -38,18 +49,6 @@ contract Claim is Base {
             createdAt: block.timestamp
         });
         emit SubmitClaim(_pid, msg.sender, _beneficiary, _bountyPercentage, _descriptionHash);
-    }
-
-    /**
-    * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
-    * @param _pid The pool id
-    */
-    function dismissClaim(uint256 _pid) external {
-        // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == owner() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
-        delete submittedClaims[_pid];
-        emit DismissClaim(_pid);
     }
 
     /**
@@ -107,15 +106,16 @@ contract Claim is Base {
         assert(poolInfos[_pid].balance > 0);
     }
 
-    //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
-    // this can be use later on by the claimer to prove her claim
-    function claim(string memory _descriptionHash) external payable {
-        if (generalParameters.claimFee > 0) {
-            require(msg.value >= generalParameters.claimFee, "HVE14");
-            // solhint-disable-next-line indent
-            payable(owner()).transfer(msg.value);
-        }
-        emit Claim(msg.sender, _descriptionHash);
+    /**
+      * @notice Dismiss a claim for a bounty submitted by a committee.
+    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
+    * @param _pid The pool id
+    */
+    function dismissClaim(uint256 _pid) external {
+        // solhint-disable-next-line not-rely-on-time
+        require(msg.sender == owner() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
+        delete submittedClaims[_pid];
+        emit DismissClaim(_pid);
     }
 
     function calcClaimBounty(uint256 _pid, uint256 _bountyPercentage)

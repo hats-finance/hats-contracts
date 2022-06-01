@@ -5,42 +5,9 @@ import "./Base.sol";
 
 contract Params is Base {
 
-    /**
-    * @dev Set pending request to set pool max bounty.
-    * The function can be called only by the pool committee.
-    * Cannot be called if there are claims that have been submitted.
-    * Max bounty should be less than or equal to `HUNDRED_PERCENT`
-    * @param _pid The pool id
-    * @param _maxBounty The maximum bounty percentage that can be paid out
-    */
-    function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
-    external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
-        pendingMaxBounty[_pid].maxBounty = _maxBounty;
-        // solhint-disable-next-line not-rely-on-time
-        pendingMaxBounty[_pid].timestamp = block.timestamp;
-        emit SetPendingMaxBounty(_pid, _maxBounty, pendingMaxBounty[_pid].timestamp);
-    }
-
-    /**
-   * @dev Set the pool max bounty to the already pending max bounty.
-   * The function can be called only by the pool committee.
-   * Cannot be called if there are claims that have been submitted.
-   * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
-   * had passed.
-   * Max bounty should be less than `HUNDRED_PERCENT`
-   * @param _pid The pool id
- */
-    function setMaxBounty(uint256 _pid)
-    external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
-        // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
-        bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
-        delete pendingMaxBounty[_pid];
-        emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
+    function setFeeSetter(address _newFeeSetter) external onlyOwner {
+        feeSetter = _newFeeSetter;
+        emit SetFeeSetter(_newFeeSetter);
     }
 
     /**
@@ -62,16 +29,6 @@ contract Params is Base {
         committees[_pid] = _committee;
 
         emit SetCommittee(_pid, _committee);
-    }
-
-    /**
-    * @dev committeeCheckIn - committee check in.
-    * deposit is enable only after committee check in
-    * @param _pid pool id
-    */
-    function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
-        bountyInfos[_pid].committeeCheckIn = true;
-        emit CommitteeCheckedIn(_pid);
     }
 
     /**
@@ -168,14 +125,9 @@ contract Params is Base {
         emit SetMaxBountyDelay(_delay);
     }
 
-    function setFeeSetter(address _newFeeSetter) external onlyOwner {
-        feeSetter = _newFeeSetter;
-        emit SetFeeSetter(_newFeeSetter);
-    }
-
-    function setRewardController(RewardController _newRewardController) public onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(address(_newRewardController));
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
+        whitelistedRouters[_router] = _isWhitelisted;
+        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 
     function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
@@ -184,8 +136,56 @@ contract Params is Base {
         emit SetPoolWithdrawalFee(_pid, _newFee);
     }
 
-    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
-        whitelistedRouters[_router] = _isWhitelisted;
-        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
+    /**
+       * @dev committeeCheckIn - committee check in.
+    * deposit is enable only after committee check in
+    * @param _pid pool id
+    */
+    function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
+        bountyInfos[_pid].committeeCheckIn = true;
+        emit CommitteeCheckedIn(_pid);
+    }
+
+    /**
+   * @dev Set pending request to set pool max bounty.
+    * The function can be called only by the pool committee.
+    * Cannot be called if there are claims that have been submitted.
+    * Max bounty should be less than or equal to `HUNDRED_PERCENT`
+    * @param _pid The pool id
+    * @param _maxBounty The maximum bounty percentage that can be paid out
+    */
+    function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
+    external
+    onlyCommittee(_pid) noSubmittedClaims(_pid) {
+        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
+        pendingMaxBounty[_pid].maxBounty = _maxBounty;
+        // solhint-disable-next-line not-rely-on-time
+        pendingMaxBounty[_pid].timestamp = block.timestamp;
+        emit SetPendingMaxBounty(_pid, _maxBounty, pendingMaxBounty[_pid].timestamp);
+    }
+
+    /**
+   * @dev Set the pool max bounty to the already pending max bounty.
+   * The function can be called only by the pool committee.
+   * Cannot be called if there are claims that have been submitted.
+   * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
+   * had passed.
+   * Max bounty should be less than `HUNDRED_PERCENT`
+   * @param _pid The pool id
+ */
+    function setMaxBounty(uint256 _pid)
+    external
+    onlyCommittee(_pid) noSubmittedClaims(_pid) {
+        require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
+        bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
+        delete pendingMaxBounty[_pid];
+        emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
+    }
+
+    function setRewardController(RewardController _newRewardController) public onlyOwner {
+        rewardController = _newRewardController;
+        emit SetRewardController(address(_newRewardController));
     }
 }

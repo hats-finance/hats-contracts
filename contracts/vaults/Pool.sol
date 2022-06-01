@@ -4,20 +4,6 @@ pragma solidity 0.8.6;
 import "./Base.sol";
 
 contract Pool is Base {
-    /**
-    * @dev massUpdatePools - Update reward variables for all pools
-    * Be careful of gas spending!
-    * @param _fromPid update pools range from this pool id
-    * @param _toPid update pools range to this pool id
-    */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfos.length, "HVE38");
-        require(_fromPid <= _toPid, "HVE39");
-        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
-            updatePool(pid);
-        }
-        emit MassUpdatePools(_fromPid, _toPid);
-    }
 
     /**
     * @dev Add a new pool. Can be called only by governance.
@@ -137,5 +123,20 @@ contract Pool is Base {
             });
             pool.totalShares += _shares[i];
         }
+    }
+
+    /**
+   * @dev massUpdatePools - Update reward variables for all pools
+    * Be careful of gas spending!
+    * @param _fromPid update pools range from this pool id
+    * @param _toPid update pools range to this pool id
+    */
+    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
+        require(_toPid <= poolInfos.length, "HVE38");
+        require(_fromPid <= _toPid, "HVE39");
+        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
+            updatePool(pid);
+        }
+        emit MassUpdatePools(_fromPid, _toPid);
     }
 }

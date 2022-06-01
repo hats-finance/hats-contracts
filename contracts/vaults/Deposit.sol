@@ -6,12 +6,27 @@ import "./Base.sol";
 contract Deposit is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    function depositReward(uint256 _amount) external {
-        uint256 balanceBefore = rewardToken.balanceOf(address(this));
-        rewardToken.transferFrom(msg.sender, address(this), _amount);
-        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
-        rewardAvailable += rewardTokenReceived;
-        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
+    /**
+    * @notice Deposit tokens to pool
+    * @param _pid The pool id
+    * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
+    **/
+    function deposit(uint256 _pid, uint256 _amount) external {
+        require(!poolDepositPause[_pid], "HVE26");
+        require(_amount >= MINIMUM_DEPOSIT, "HVE27");
+        //clear withdraw request
+        withdrawEnableStartTime[_pid][msg.sender] = 0;
+        uint256 transferredAmount = _deposit(_pid, _amount);
+        emit Deposit(msg.sender, _pid, _amount, transferredAmount);
+    }
+
+    /**
+     * @notice Transfer the sender their pending share of rewards.
+     * @param _pid The pool id
+     */
+    function claimReward(uint256 _pid) external {
+        _deposit(_pid, 0);
+        emit ClaimReward(_pid);
     }
 
     /**
@@ -30,27 +45,12 @@ contract Deposit is Base {
         emit RewardDepositors(_pid, _amount, lpTokenReceived);
     }
 
-    /**
-     * @notice Transfer the sender their pending share of rewards.
-     * @param _pid The pool id
-     */
-    function claimReward(uint256 _pid) external {
-        _deposit(_pid, 0);
-        emit ClaimReward(_pid);
-    }
-
-    /**
-    * @notice Deposit tokens to pool
-    * @param _pid The pool id
-    * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
-    **/
-    function deposit(uint256 _pid, uint256 _amount) external {
-        require(!poolDepositPause[_pid], "HVE26");
-        require(_amount >= MINIMUM_DEPOSIT, "HVE27");
-        //clear withdraw request
-        withdrawEnableStartTime[_pid][msg.sender] = 0;
-        uint256 transferredAmount = _deposit(_pid, _amount);
-        emit Deposit(msg.sender, _pid, _amount, transferredAmount);
+    function depositReward(uint256 _amount) external {
+        uint256 balanceBefore = rewardToken.balanceOf(address(this));
+        rewardToken.transferFrom(msg.sender, address(this), _amount);
+        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
+        rewardAvailable += rewardTokenReceived;
+        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal nonReentrant returns(uint256 _transferredAmount) {

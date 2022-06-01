@@ -14,7 +14,6 @@ import "../tokenlock/ITokenLockFactory.sol";
 import "../RewardController.sol";
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
-
     // Parameters that apply to all the vaults
     struct GeneralParameters {
         uint256 hatVestingDuration;
@@ -114,7 +113,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 timestamp;
     }
 
-
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
@@ -182,13 +180,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         ClaimBounty _claimBounty
     );
     event DismissClaim(uint256 indexed _pid);
-
     event Deposit(address indexed user,
         uint256 indexed pid,
         uint256 amount,
         uint256 transferredAmount
     );
-    event SetClaimFee(uint256 _fee);
+    event ClaimReward(uint256 indexed _pid);
     event RewardDepositors(uint256 indexed _pid,
         uint256 indexed _amount,
         uint256 indexed _transferredAmount
@@ -197,12 +194,28 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 indexed _transferredAmount,
         address indexed _rewardToken
     );
-    event ClaimReward(uint256 indexed _pid);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
+    event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    event SetWithdrawRequestParams(
+        uint256 indexed _withdrawRequestPendingPeriod,
+        uint256 indexed _withdrawRequestEnablePeriod
+    );
+    event SetClaimFee(uint256 _fee);
+    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+    event SetVestingParams(
+        uint256 indexed _pid,
+        uint256 indexed _duration,
+        uint256 indexed _periods
+    );
+    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
+    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
+    event SetMaxBountyDelay(uint256 indexed _delay);
+    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
     event CommitteeCheckedIn(uint256 indexed _pid);
+    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
+    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
+    event SetRewardController(address indexed _newRewardController);
     event AddPool(
         uint256 indexed _pid,
         address indexed _lpToken,
@@ -219,12 +232,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         bool _depositPause,
         string _descriptionHash
     );
-    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
-    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetFeeSetter(address indexed _newFeeSetter);
-    event SetRewardController(address indexed _newRewardController);
-    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
-    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
+    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
+    event SwapAndBurn(
+        uint256 indexed _pid,
+        uint256 indexed _amountSwapped,
+        uint256 indexed _amountBurned
+    );
     event SwapAndSend(
         uint256 indexed _pid,
         address indexed _beneficiary,
@@ -232,34 +245,31 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 _amountReceived,
         address _tokenLock
     );
-    event SwapAndBurn(
-        uint256 indexed _pid,
-        uint256 indexed _amountSwapped,
-        uint256 indexed _amountBurned
-    );
-    event SetVestingParams(
-        uint256 indexed _pid,
-        uint256 indexed _duration,
-        uint256 indexed _periods
-    );
-    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
     event WithdrawRequest(
         uint256 indexed _pid,
         address indexed _beneficiary,
         uint256 indexed _withdrawEnableTime
     );
-    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
-    event SetWithdrawRequestParams(
-        uint256 indexed _withdrawRequestPendingPeriod,
-        uint256 indexed _withdrawRequestEnablePeriod
-    );
-    event SetMaxBountyDelay(uint256 indexed _delay);
-    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
-
+    modifier onlyFeeSetter() {
+        require(feeSetter == msg.sender, "HVE35");
+        _;
+    }
 
     modifier onlyCommittee(uint256 _pid) {
         require(committees[_pid] == msg.sender, "HVE01");
+        _;
+    }
+
+    modifier noSafetyPeriod() {
+        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp %
+        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+            generalParameters.withdrawPeriod,
+            "HVE03");
         _;
     }
 
@@ -267,21 +277,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(submittedClaims[_pid].beneficiary == address(0), "HVE02");
         _;
     }
-
-    modifier noSafetyPeriod() {
-        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
-        // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-            generalParameters.withdrawPeriod,
-            "HVE03");
-        _;
-    }
-
-    modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender, "HVE35");
-        _;
-    }
-
 
     /**
     * @dev Update the pool's rewardPerShare, not more then once per block
@@ -303,11 +298,15 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         setPoolsLastProcessedTotalAllocPoint(_pid);
     }
 
-    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
-        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
-        if (globalPoolUpdatesLength > 0) {
-            poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
-        }
+    function getDefaultBountySplit() public pure returns (BountySplit memory) {
+        return BountySplit({
+        hackerVested: 6000,
+        hacker: 2000,
+        committee: 500,
+        swapAndBurn: 0,
+        governanceHat: 1000,
+        hackerHatVested: 500
+        });
     }
 
     /**
@@ -324,6 +323,13 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
+    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
+        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
+        if (globalPoolUpdatesLength > 0) {
+            poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
+        }
+    }
+
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         require(_bountySplit.hackerVested
             + _bountySplit.hacker
@@ -332,17 +338,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             + _bountySplit.governanceHat
             + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
         "HVE29");
-    }
-
-    function getDefaultBountySplit() public pure returns (BountySplit memory) {
-        return BountySplit({
-            hackerVested: 6000,
-            hacker: 2000,
-            committee: 500,
-            swapAndBurn: 0,
-            governanceHat: 1000,
-            hackerHatVested: 500
-        });
     }
 
     /**
