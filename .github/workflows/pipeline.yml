@@ -37,8 +37,8 @@ jobs:
       - name: JS Lint
         run: |
           npx eslint .
-     # - name: Solidity Test Coverage
-    #    run: npm run coveralls
+      - name: Solidity Test Coverage
+        run: npm run coveralls
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
