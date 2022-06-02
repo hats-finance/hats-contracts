@@ -73,7 +73,7 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function approveClaim(uint256 _claimId) external onlyOwner nonReentrant {
-        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
+        SubmittedClaim storage submittedClaim = submittedClaims[_claimId];
         require(submittedClaim.beneficiary != address(0), "HVE10");
         uint256 pid = submittedClaim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
@@ -128,7 +128,7 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
-        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
+        SubmittedClaim storage submittedClaim = submittedClaims[_claimId];
         uint256 pid = submittedClaim.pid;
         // solhint-disable-next-line not-rely-on-time
         require(msg.sender == owner() || submittedClaim.createdAt + 5 weeks < block.timestamp, "HVE09");
