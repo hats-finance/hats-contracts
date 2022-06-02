@@ -83,7 +83,7 @@ contract Withdraw is Base {
     // and also sets the withdrawRequest to 0
     function checkWithdrawAndResetWithdrawEnableStartTime(uint256 _pid)
         internal
-        noSubmittedClaims(_pid)
+        noActiveClaims(_pid)
         noSafetyPeriod
     {
         // check that withdrawRequestPendingPeriod had passed
