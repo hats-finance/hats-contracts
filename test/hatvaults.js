@@ -3156,7 +3156,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("claim", async () => {
+  it("log claim", async () => {
     await setup(accounts);
     let someHash = "0x00000000000000000000000000000000000001";
     let fee = web3.utils.toWei("1");
@@ -3172,7 +3172,7 @@ contract("HatVaults", (accounts) => {
       await web3.eth.getBalance(accounts[0])
     );
     try {
-      await hatVaults.claim(someHash, {
+      await hatVaults.logClaim(someHash, {
         from: accounts[3],
         value: web3.utils.toWei("0.9"),
       });
@@ -3180,7 +3180,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE14");
     }
-    tx = await hatVaults.claim(someHash, {
+    tx = await hatVaults.logClaim(someHash, {
       from: accounts[3],
       value: web3.utils.toWei("1"),
     });
@@ -3188,7 +3188,7 @@ contract("HatVaults", (accounts) => {
       await web3.eth.getBalance(accounts[0])
     );
     assert.equal(govBalanceAfter.sub(govBalanceBefore), fee);
-    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].event, "LogClaim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
   });
