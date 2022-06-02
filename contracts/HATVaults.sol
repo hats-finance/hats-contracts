@@ -59,6 +59,7 @@ import "./vaults/Withdraw.sol";
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
+// HVE47: Only arbitrator
 
 /// @title Manage all Hats.finance vaults
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
@@ -106,5 +107,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
         });
         setRewardController(_rewardController);
         arbitrator = owner();
+        challengePeriod = 3 days;
     }
 }

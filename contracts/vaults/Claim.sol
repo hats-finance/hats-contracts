@@ -68,21 +68,23 @@ contract Claim is Base {
         );
     }
 
-    function isChallenged(uint256 _claimId) onlyArbitrator external {
-        // TODO: uncomment next line when we have the mapping available
-        // require(activeClaims[_claimId], "Can only challenge an active claim");
+    function challenge(uint256 _claimId) onlyArbitrator external {
+        require(activeClaims[_claimId] != 0, "Can only challenge an active claim");
         submittedClaims[_claimId].isChallenged = true;
-
     }
-
 
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * Called only by hats governance.
+    * callable by the  arbitrator, if isChallenged == true
+    * Callable by anyone after challengePeriod is passed and isChallenged == false
     * @param _claimId The claim ID
     */
-    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external onlyOwner nonReentrant {
+    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
+        require(
+          ((msg.sender == arbitrator && submittedClaim.isChallenged) ||
+          (submittedClaim.createdAt + challengePeriod < block.timestamp)), "HVEXX"
+        );
         submittedClaim.bountyPercentage = _bountyPercentage;
         require(submittedClaim.beneficiary != address(0), "HVE10");
         uint256 pid = submittedClaim.pid;
@@ -139,10 +141,9 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
-        // TODO: it's the arbitrator that dismisses the claim here, not governance
         uint256 pid = submittedClaims[_claimId].pid;
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == owner() || submittedClaims[_claimId].createdAt + 5 weeks < block.timestamp, "HVE09");
+        require(msg.sender == arbitrator || submittedClaims[_claimId].createdAt + 5 weeks < block.timestamp, "HVE09");
         require(submittedClaims[_claimId].beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
         delete submittedClaims[_claimId];

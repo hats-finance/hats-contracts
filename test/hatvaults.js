@@ -106,6 +106,9 @@ const setup = async function(
     web3.utils.toWei(rewardInVaults.toString())
   );
   hatVaultsExpectedHatsBalance = rewardInVaults;
+
+  // setting challenge period to 0 will make running tests a bit easier
+  await hatVaults.setChallengePeriod(0);
   await hatVaults.addPool(
     stakingToken.address,
     accounts[1],
@@ -124,6 +127,7 @@ const setup = async function(
   return {
     hatVaults,
     hatToken,
+    stakingToken,
   };
 };
 
@@ -4294,4 +4298,4 @@ contract("HatVaults", (accounts) => {
   });
 });
 
-module.exports = { assertVMException, setup };
+module.exports = { assertVMException, setup, rewardPerEpoch };

@@ -13,10 +13,10 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const { upgradeHatVaults } = require("../scripts/hatvaultsupgrade.js");
 
-const { setup, assertVMException } = require("./hatvaults.js");
+const { setup, assertVMException, rewardPerEpoch } = require("./hatvaults.js");
 
 contract("HatVaults", (accounts) => {
-  it.only("Set arbitrator", async () => {
+  it("Set arbitrator", async () => {
     const { hatVaults } = await setup(accounts);
     try {
       await hatVaults.setArbitrator(accounts[1], {
@@ -33,4 +33,8 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetArbitrator");
     assert.equal(tx.logs[0].args._arbitrator, accounts[1]);
   });
+  // TODO:
+  // - now in setup, challengePeriod is set to 0, so we are not really testing the arbitrator logic like that
+  // - test setChallengPeriod
+  // - test the whole arbitrator logic
 });

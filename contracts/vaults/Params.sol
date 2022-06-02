@@ -64,6 +64,11 @@ contract Params is Base {
         emit SetClaimFee(_fee);
     }
 
+    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        challengePeriod = _challengePeriod; 
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
     /**
      * @dev setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
      * @param _withdrawPeriod withdraw enable period

@@ -119,9 +119,9 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
    // NOTE: the spec says it should be constant but it'd be more flexible to have it as a general parameter.
-    uint256 public constant CHALLENGE_PERIOD = 3 days;
 
     //PARAMETERS FOR ALL VAULTS
+    uint256 public challengePeriod;
     GeneralParameters public generalParameters;
     RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
@@ -207,6 +207,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    event SetChallengePeriod(uint256 _challengePeriod);
     event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 indexed _withdrawRequestPendingPeriod,
