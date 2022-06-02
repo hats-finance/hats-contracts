@@ -1798,6 +1798,13 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE10");
     }
 
+    try {
+      await hatVaults.dismissClaim(0);
+      assert(false, "there is no pending approval");
+    } catch (ex) {
+      assertVMException(ex, "HVE10");
+    }
+
     tx = await hatVaults.submitClaim(0, accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
