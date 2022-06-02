@@ -354,7 +354,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
     const bountyPercentage = 300;
-    await hatVaults.submitClaim(
+    let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
       bountyPercentage,
@@ -363,23 +363,36 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+    let claimId = tx.logs[0].args._claimId;
     try {
+<<<<<<< HEAD
       await hatTimelockController.approveClaim(0, bountyPercentage, {
         from: accounts[3],
       });
+=======
+      await hatTimelockController.approveClaim(claimId, { from: accounts[3] });
+>>>>>>> 200-use-a-claimid-instead-of-poolid
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
+<<<<<<< HEAD
       await hatVaults.approveClaim(0, bountyPercentage);
+=======
+      await hatVaults.approveClaim(claimId);
+>>>>>>> 200-use-a-claimid-instead-of-poolid
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
+<<<<<<< HEAD
     await hatTimelockController.approveClaim(0, bountyPercentage);
+=======
+    await hatTimelockController.approveClaim(claimId);
+>>>>>>> 200-use-a-claimid-instead-of-poolid
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
@@ -421,7 +434,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex);
     }
 
-    var tx = await hatTimelockController.swapBurnSend(
+    tx = await hatTimelockController.swapBurnSend(
       0,
       accounts[1],
       0,

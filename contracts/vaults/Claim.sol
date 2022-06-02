@@ -33,15 +33,23 @@ contract Claim is Base {
         string calldata _descriptionHash)
     external
     onlyCommittee(_pid)
-    noSubmittedClaims(_pid) {
+    noSubmittedClaims(_pid)
+    {
         require(_beneficiary != address(0), "HVE04");
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod, "HVE05");
         require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
-
-        submittedClaims[_pid] = SubmittedClaim({
+        uint256 claimId;
+        uint256 nonce;
+        do
+        {
+            claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce)));
+            nonce++;
+        } while (claimId == 0 || submittedClaims[claimId].beneficiary != address(0));
+        submittedClaims[claimId] = SubmittedClaim({
+            pid: _pid,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
@@ -49,7 +57,15 @@ contract Claim is Base {
             createdAt: block.timestamp,
             isChallenged: false
         });
-        emit SubmitClaim(_pid, msg.sender, _beneficiary, _bountyPercentage, _descriptionHash);
+        activeClaims[_pid] = claimId;
+        emit SubmitClaim(
+            _pid,
+            claimId,
+            msg.sender,
+            _beneficiary,
+            _bountyPercentage,
+            _descriptionHash
+        );
     }
 
     function isChallenged(uint256 _claimId) onlyArbitrator external {
@@ -63,23 +79,22 @@ contract Claim is Base {
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
     * Called only by hats governance.
-    * @param _pid The pool id
+    * @param _claimId The claim ID
     */
-    function approveClaim(uint256 _pid, uint256 _bountyPercentage) external onlyOwner nonReentrant {
-        require(submittedClaims[_pid].beneficiary != address(0), "HVE10");
-        BountyInfo storage bountyInfo = bountyInfos[_pid];
-        SubmittedClaim memory submittedClaim = submittedClaims[_pid];
+    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external onlyOwner nonReentrant {
+        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
         submittedClaim.bountyPercentage = _bountyPercentage;
-        delete submittedClaims[_pid];
-
-        IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(_pid, submittedClaim.bountyPercentage);
-        poolInfos[_pid].balance -= claimBounty.hacker
-                            + claimBounty.hackerVested
-                            + claimBounty.committee
-                            + claimBounty.swapAndBurn
-                            + claimBounty.hackerHatVested
-                            + claimBounty.governanceHat;
+        require(submittedClaim.beneficiary != address(0), "HVE10");
+        uint256 pid = submittedClaim.pid;
+        BountyInfo storage bountyInfo = bountyInfos[pid];
+        IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
+        ClaimBounty memory claimBounty = calcClaimBounty(pid, submittedClaim.bountyPercentage);
+        poolInfos[pid].balance -= claimBounty.hacker
+            + claimBounty.hackerVested
+            + claimBounty.committee
+            + claimBounty.swapAndBurn
+            + claimBounty.hackerHatVested
+            + claimBounty.governanceHat;
         address tokenLock;
         if (claimBounty.hackerVested > 0) {
         //hacker gets part of bounty to a vesting contract
@@ -103,30 +118,35 @@ contract Claim is Base {
         lpToken.safeTransfer(submittedClaim.beneficiary, claimBounty.hacker);
         lpToken.safeTransfer(submittedClaim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
-        swapAndBurns[_pid] += claimBounty.swapAndBurn;
-        governanceHatRewards[_pid] += claimBounty.governanceHat;
-        hackersHatRewards[submittedClaim.beneficiary][_pid] += claimBounty.hackerHatVested;
-
-        emit ApproveClaim(_pid,
-                        msg.sender,
-                        submittedClaim.beneficiary,
-                        submittedClaim.bountyPercentage,
-                        tokenLock,
-                        claimBounty);
-        assert(poolInfos[_pid].balance > 0);
+        swapAndBurns[pid] += claimBounty.swapAndBurn;
+        governanceHatRewards[pid] += claimBounty.governanceHat;
+        hackersHatRewards[submittedClaim.beneficiary][pid] += claimBounty.hackerHatVested;
+        delete activeClaims[pid];
+        delete submittedClaims[_claimId];
+        emit ApproveClaim(pid,
+            _claimId,
+            msg.sender,
+            submittedClaim.beneficiary,
+            submittedClaim.bountyPercentage,
+            tokenLock,
+            claimBounty);
+        assert(poolInfos[pid].balance > 0);
     }
 
     /**
-      * @notice Dismiss a claim for a bounty submitted by a committee.
+    * @notice Dismiss a claim for a bounty submitted by a committee.
     * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
-    * @param _pid The pool id
+    * @param _claimId The claim ID
     */
-    function dismissClaim(uint256 _pid) external {
+    function dismissClaim(uint256 _claimId) external {
         // TODO: it's the arbitrator that dismisses the claim here, not governance
+        uint256 pid = submittedClaims[_claimId].pid;
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == owner() || submittedClaims[_pid].createdAt + 5 weeks < block.timestamp, "HVE09");
-        delete submittedClaims[_pid];
-        emit DismissClaim(_pid);
+        require(msg.sender == owner() || submittedClaims[_claimId].createdAt + 5 weeks < block.timestamp, "HVE09");
+        require(submittedClaims[_claimId].beneficiary != address(0), "HVE10");
+        delete activeClaims[pid];
+        delete submittedClaims[_claimId];
+        emit DismissClaim(pid, _claimId);
     }
 
 
