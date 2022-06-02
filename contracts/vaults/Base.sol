@@ -34,6 +34,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // Info of each pool.
     struct PoolInfo {
+        bool committeeCheckedIn;
         IERC20Upgradeable lpToken;
         // total amount of LP tokens in pool
         uint256 balance;
@@ -67,7 +68,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     struct BountyInfo {
         BountySplit bountySplit;
         uint256 maxBounty;
-        bool committeeCheckIn;
         uint256 vestingDuration;
         uint256 vestingPeriods;
     }

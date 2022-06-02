@@ -41,6 +41,7 @@ contract Pool is Base {
         uint256 poolId = poolInfos.length;
 
         poolInfos.push(PoolInfo({
+            committeeCheckedIn: false,
             lpToken: IERC20Upgradeable(_lpToken),
             lastRewardBlock: block.number > startBlock ? block.number : startBlock,
             lastProcessedTotalAllocPoint: 0,
@@ -60,7 +61,6 @@ contract Pool is Base {
         bountyInfos[poolId] = BountyInfo({
             maxBounty: _maxBounty,
             bountySplit: bountySplit,
-            committeeCheckIn: false,
             vestingDuration: _bountyVestingParams[0],
             vestingPeriods: _bountyVestingParams[1]
         });
