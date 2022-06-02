@@ -3161,7 +3161,7 @@ contract("HatVaults", (accounts) => {
     let someHash = "0x00000000000000000000000000000000000001";
     let fee = web3.utils.toWei("1");
     var tx = await hatVaults.logClaim(someHash, { from: accounts[3] });
-    assert.equal(tx.logs[0].event, "Claim");
+    assert.equal(tx.logs[0].event, "LogClaim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
 
