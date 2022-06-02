@@ -120,7 +120,6 @@ contract Claim is Base {
             submittedClaim.bountyPercentage,
             tokenLock,
             claimBounty);
-        assert(poolInfos[pid].balance > 0);
     }
 
     /**
