@@ -276,7 +276,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyArbitrator() {
-        require(arbitrator == msg.sender, "HVE38");
+        require(arbitrator == msg.sender, "HVE47");
         _;
     }
 
