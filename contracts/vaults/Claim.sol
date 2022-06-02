@@ -129,10 +129,11 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
-        uint256 pid = submittedClaims[_claimId].pid;
+        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
+        uint256 pid = submittedClaim.pid;
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == owner() || submittedClaims[_claimId].createdAt + 5 weeks < block.timestamp, "HVE09");
-        require(submittedClaims[_claimId].beneficiary != address(0), "HVE10");
+        require(msg.sender == owner() || submittedClaim.createdAt + 5 weeks < block.timestamp, "HVE09");
+        require(submittedClaim.beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
         delete submittedClaims[_claimId];
         emit DismissClaim(pid, _claimId);
