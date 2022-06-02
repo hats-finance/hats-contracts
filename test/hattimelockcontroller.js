@@ -365,34 +365,22 @@ contract("HatVaults", (accounts) => {
     );
     let claimId = tx.logs[0].args._claimId;
     try {
-<<<<<<< HEAD
-      await hatTimelockController.approveClaim(0, bountyPercentage, {
+      await hatTimelockController.approveClaim(claimId, bountyPercentage, {
         from: accounts[3],
       });
-=======
-      await hatTimelockController.approveClaim(claimId, { from: accounts[3] });
->>>>>>> 200-use-a-claimid-instead-of-poolid
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-<<<<<<< HEAD
-      await hatVaults.approveClaim(0, bountyPercentage);
-=======
-      await hatVaults.approveClaim(claimId);
->>>>>>> 200-use-a-claimid-instead-of-poolid
+      await hatVaults.approveClaim(claimId, bountyPercentage);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
-<<<<<<< HEAD
-    await hatTimelockController.approveClaim(0, bountyPercentage);
-=======
-    await hatTimelockController.approveClaim(claimId);
->>>>>>> 200-use-a-claimid-instead-of-poolid
+    await hatTimelockController.approveClaim(claimId, bountyPercentage);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
