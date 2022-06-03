@@ -65,8 +65,13 @@ contract Params is Base {
     }
 
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
-        challengePeriod = _challengePeriod; 
+        challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
+    }
+
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
     /**

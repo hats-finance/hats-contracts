@@ -99,7 +99,7 @@ const setup = async function(
 };
 
 contract("HatVaults", (accounts) => {
-  async function advanceToSaftyPeriod() {
+  async function advanceToSafetyPeriod() {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
     let withdrawPeriod = (
@@ -318,7 +318,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     const bountyPercentage = 300;
     let tx = await hatVaults.submitClaim(
       0,

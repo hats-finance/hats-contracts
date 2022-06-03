@@ -12,6 +12,11 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const { upgradeHatVaults } = require("../scripts/hatvaultsupgrade.js");
+const {
+  assertVMException,
+  advanceToSafetyPeriod: advanceToSafetyPeriod_,
+  rewardPerEpoch,
+} = require("./common.js");
 
 var hatVaults;
 var rewardController;
@@ -21,32 +26,6 @@ var stakingToken;
 var tokenLockFactory;
 let safeWithdrawBlocksIncrement = 3;
 let hatVaultsExpectedHatsBalance;
-let rewardPerEpoch = [
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("88250"),
-  web3.utils.toWei("77880"),
-  web3.utils.toWei("68730"),
-  web3.utils.toWei("60650"),
-  web3.utils.toWei("53530"),
-  web3.utils.toWei("47240"),
-  web3.utils.toWei("41690"),
-  web3.utils.toWei("36790"),
-  web3.utils.toWei("32470"),
-  web3.utils.toWei("28650"),
-  web3.utils.toWei("25280"),
-  web3.utils.toWei("22310"),
-  web3.utils.toWei("19690"),
-  web3.utils.toWei("17380"),
-  web3.utils.toWei("15340"),
-  web3.utils.toWei("13530"),
-  web3.utils.toWei("11940"),
-  web3.utils.toWei("10540"),
-  web3.utils.toWei("9300"),
-  web3.utils.toWei("8210"),
-  web3.utils.toWei("7240"),
-  web3.utils.toWei("6390"),
-];
 
 const setup = async function(
   accounts,
@@ -132,28 +111,6 @@ const setup = async function(
   };
 };
 
-function assertVMException(error, expectedError = "") {
-  let condition =
-    error.message.search("VM Exception") > -1 ||
-    error.message.search("Transaction reverted") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a VM Exception, got this instead:" + error.message
-  );
-  if (expectedError) {
-    assert(
-      error.message ===
-        "VM Exception while processing transaction: reverted with reason string '" +
-          expectedError +
-          "'",
-      "Expected error to be: " +
-        expectedError +
-        ", got this instead:" +
-        error.message
-    );
-  }
-}
-
 contract("HatVaults", (accounts) => {
   //this function will increment 4 blocks in local testnet
   async function safeWithdraw(pid, amount, staker) {
@@ -180,21 +137,8 @@ contract("HatVaults", (accounts) => {
     return await hatVaults.withdraw(pid, amount, { from: staker });
   }
 
-  async function advanceToSaftyPeriod() {
-    let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-
-    let withdrawPeriod = (
-      await hatVaults.generalParameters()
-    ).withdrawPeriod.toNumber();
-    let safetyPeriod = (
-      await hatVaults.generalParameters()
-    ).safetyPeriod.toNumber();
-
-    if (currentTimeStamp % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
-      await utils.increaseTime(
-        withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod))
-      );
-    }
+  async function advanceToSafetyPeriod() {
+    return advanceToSafetyPeriod_(hatVaults);
   }
 
   //advanced time to a withdraw enable period
@@ -405,7 +349,7 @@ contract("HatVaults", (accounts) => {
     var staker = accounts[1];
     await setup(accounts, 0, 9000, [9000, 0, 200, 0, 100, 700]);
 
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
     });
@@ -575,7 +519,7 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.bountyInfos(0)).bountySplit.hackerHatVested.toString(),
       "800"
     );
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -694,7 +638,7 @@ contract("HatVaults", (accounts) => {
     }
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
 
     let tx = await hatVaults.submitClaim(
       0,
@@ -1756,7 +1700,7 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await stakingToken.mint(staker2, web3.utils.toWei("1"));
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -1797,7 +1741,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE05");
     }
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     try {
       await hatVaults.submitClaim(0, accounts[2], 8001, "description hash", {
         from: accounts[1],
@@ -1919,7 +1863,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -1968,7 +1912,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
 
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2019,7 +1963,7 @@ contract("HatVaults", (accounts) => {
     );
 
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2068,7 +2012,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2080,7 +2024,7 @@ contract("HatVaults", (accounts) => {
     );
     let claimId = tx.logs[0].args._claimId;
     await hatVaults.approveClaim(claimId, 4000);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     tx = await hatVaults.submitClaim(0, accounts[2], 4000, "description hash", {
       from: accounts[1],
     });
@@ -2190,7 +2134,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE24");
     }
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2305,7 +2249,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2417,7 +2361,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE24");
     }
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       1,
       accounts[2],
@@ -2660,7 +2604,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -2766,7 +2710,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -3009,7 +2953,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -3172,7 +3116,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -3240,7 +3184,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -3322,7 +3266,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -3431,7 +3375,7 @@ contract("HatVaults", (accounts) => {
     //stake
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -4255,7 +4199,7 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -4304,4 +4248,9 @@ contract("HatVaults", (accounts) => {
   });
 });
 
-module.exports = { assertVMException, setup, rewardPerEpoch };
+module.exports = {
+  assertVMException,
+  setup,
+  rewardPerEpoch,
+  advanceToSafetyPeriod: advanceToSafetyPeriod_,
+};

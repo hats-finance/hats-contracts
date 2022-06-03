@@ -79,11 +79,13 @@ contract Claim is Base {
 
         require(claim.beneficiary != address(0), "HVE10");
         require(
-          ((msg.sender == arbitrator && claim.isChallenged) ||
-          (claim.createdAt + challengePeriod < block.timestamp)), "HVEXX"
+            ((msg.sender == arbitrator && claim.isChallenged) ||
+            (claim.createdAt + challengePeriod < block.timestamp)), "HVE48"
         );
 
-        claim.bountyPercentage = _bountyPercentage;
+        if (msg.sender == arbitrator) {
+           claim.bountyPercentage = _bountyPercentage;
+        }
         uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
@@ -120,8 +122,7 @@ contract Claim is Base {
         swapAndBurns[pid] += claimBounty.swapAndBurn;
         governanceHatRewards[pid] += claimBounty.governanceHat;
         hackersHatRewards[claim.beneficiary][pid] += claimBounty.hackerHatVested;
-        delete activeClaims[pid];
-        delete claims[_claimId];
+        // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(pid,
             _claimId,
             msg.sender,
@@ -129,6 +130,8 @@ contract Claim is Base {
             claim.bountyPercentage,
             tokenLock,
             claimBounty);
+        delete activeClaims[pid];
+        delete claims[_claimId];
     }
 
     /**
@@ -142,7 +145,7 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         require(
           ((msg.sender == arbitrator && claim.isChallenged) ||
-          (claim.createdAt + 5 weeks < block.timestamp)), "HVE09");
+          (claim.createdAt + challengeTimeOutPeriod < block.timestamp)), "HVE09");
         require(claim.beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
         delete claims[_claimId];
