@@ -71,7 +71,7 @@ contract Deposit is Base {
     }
 
     function _claimReward(uint256 _pid, UserInfo memory _user) internal {
-        require(bountyInfos[_pid].committeeCheckIn, "HVE40");
+        require(poolInfos[_pid].committeeCheckedIn, "HVE40");
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (_user.shares > 0) {
