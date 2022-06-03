@@ -21,7 +21,7 @@ contract Params is Base {
         require(_committee != address(0), "HVE21");
         //governance can update committee only if committee was not checked in yet.
         if (msg.sender == owner() && committees[_pid] != msg.sender) {
-            require(!bountyInfos[_pid].committeeCheckIn, "HVE22");
+            require(!poolInfos[_pid].committeeCheckedIn, "HVE22");
         } else {
             require(committees[_pid] == msg.sender, "HVE01");
         }
@@ -142,7 +142,7 @@ contract Params is Base {
     * @param _pid pool id
     */
     function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
-        bountyInfos[_pid].committeeCheckIn = true;
+        poolInfos[_pid].committeeCheckedIn = true;
         emit CommitteeCheckedIn(_pid);
     }
 
