@@ -141,7 +141,8 @@ contract Claim is Base {
         uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
         require(
-          ((msg.sender == arbitrator && claim.isChallenged) || (claim.createdAt + 5 weeks < block.timestamp)), "HVE09");
+          ((msg.sender == arbitrator && claim.isChallenged) ||
+          (claim.createdAt + 5 weeks < block.timestamp)), "HVE09");
         require(claim.beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
         delete claims[_claimId];
