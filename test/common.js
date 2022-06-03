@@ -142,28 +142,6 @@ const setup = async function(
   };
 };
 
-function assertVMException(error, expectedError = "") {
-  let condition =
-    error.message.search("VM Exception") > -1 ||
-    error.message.search("Transaction reverted") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a VM Exception, got this instead:" + error.message
-  );
-  if (expectedError) {
-    assert(
-      error.message ===
-        "VM Exception while processing transaction: reverted with reason string '" +
-          expectedError +
-          "'",
-      "Expected error to be: " +
-        expectedError +
-        ", got this instead:" +
-        error.message
-    );
-  }
-}
-
 async function advanceToSafetyPeriod(hatVaults) {
   let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 

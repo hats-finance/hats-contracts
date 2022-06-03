@@ -2,12 +2,10 @@ const utils = require("./utils.js");
 const { contract } = require("hardhat");
 const {
   setup,
-  assertVMException,
   advanceToSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
 } = require("./common.js");
-const { BigNumber } = require("ethers");
 
 contract("HatVaults", (accounts) => {
   it("Set arbitrator", async () => {
