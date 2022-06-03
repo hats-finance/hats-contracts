@@ -98,8 +98,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 governanceHat;
     }
 
-    // Info of a claim that has been submitted by a committee
-    struct SubmittedClaim {
+    // Info of a claim for a bounty payout that has been submitted by a committee
+    struct Claim {
         uint256 pid;
         address beneficiary;
         uint256 bountyPercentage;
@@ -136,6 +136,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     ERC20Burnable public swapToken;
     uint256 public rewardAvailable;
     mapping(address => bool) public whitelistedRouters;
+    uint256 internal nonce;
 
     //PARAMETERS PER VAULT
     // Info of each pool.
@@ -157,8 +158,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
 
     //PARAMETERS PER CLAIM
-    // claimId -> SubmittedClaim
-    mapping(uint256 => SubmittedClaim) public submittedClaims;
+    // claimId -> Claim
+    mapping(uint256 => Claim) public claims;
     // poolId -> amount
     mapping(uint256 => uint256) public swapAndBurns;
     // hackerAddress -> (pid -> amount)
@@ -172,7 +173,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 amount,
         address rewardToken
     );
-    event Claim(address indexed _claimer, string _descriptionHash);
+    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         uint256 indexed _pid,
         uint256 _claimId,
@@ -291,7 +292,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
-    modifier noSubmittedClaims(uint256 _pid) {
+    modifier noActiveClaims(uint256 _pid) {
         require(activeClaims[_pid] == 0, "HVE02");
         _;
     }

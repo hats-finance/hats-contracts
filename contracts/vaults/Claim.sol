@@ -8,13 +8,13 @@ contract Claim is Base {
 
     //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
     // this can be use later on by the claimer to prove her claim
-    function claim(string memory _descriptionHash) external payable {
+    function logClaim(string memory _descriptionHash) external payable {
         if (generalParameters.claimFee > 0) {
             require(msg.value >= generalParameters.claimFee, "HVE14");
             // solhint-disable-next-line indent
             payable(owner()).transfer(msg.value);
         }
-        emit Claim(msg.sender, _descriptionHash);
+        emit LogClaim(msg.sender, _descriptionHash);
     }
 
     /**
@@ -33,7 +33,7 @@ contract Claim is Base {
         string calldata _descriptionHash)
     external
     onlyCommittee(_pid)
-    noSubmittedClaims(_pid)
+    noActiveClaims(_pid)
     {
         require(_beneficiary != address(0), "HVE04");
         // require we are in safetyPeriod
@@ -42,13 +42,8 @@ contract Claim is Base {
         generalParameters.withdrawPeriod, "HVE05");
         require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
         uint256 claimId;
-        uint256 nonce;
-        do
-        {
-            claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce)));
-            nonce++;
-        } while (claimId == 0 || submittedClaims[claimId].beneficiary != address(0));
-        submittedClaims[claimId] = SubmittedClaim({
+        claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce++)));
+        claims[claimId] = Claim({
             pid: _pid,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
@@ -80,17 +75,19 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
-        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
+        Claim storage claim = claims[_claimId];
+
+        require(claim.beneficiary != address(0), "HVE10");
         require(
           ((msg.sender == arbitrator && submittedClaim.isChallenged) ||
           (submittedClaim.createdAt + challengePeriod < block.timestamp)), "HVEXX"
         );
+
         submittedClaim.bountyPercentage = _bountyPercentage;
-        require(submittedClaim.beneficiary != address(0), "HVE10");
-        uint256 pid = submittedClaim.pid;
+        uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(pid, submittedClaim.bountyPercentage);
+        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
         poolInfos[pid].balance -= claimBounty.hacker
             + claimBounty.hackerVested
             + claimBounty.committee
@@ -103,7 +100,7 @@ contract Claim is Base {
             tokenLock = tokenLockFactory.createTokenLock(
             address(lpToken),
             0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
-            submittedClaim.beneficiary,
+            claim.beneficiary,
             claimBounty.hackerVested,
             // solhint-disable-next-line not-rely-on-time
             block.timestamp, //start
@@ -117,22 +114,21 @@ contract Claim is Base {
             );
             lpToken.safeTransfer(tokenLock, claimBounty.hackerVested);
         }
-        lpToken.safeTransfer(submittedClaim.beneficiary, claimBounty.hacker);
-        lpToken.safeTransfer(submittedClaim.committee, claimBounty.committee);
+        lpToken.safeTransfer(claim.beneficiary, claimBounty.hacker);
+        lpToken.safeTransfer(claim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
         swapAndBurns[pid] += claimBounty.swapAndBurn;
         governanceHatRewards[pid] += claimBounty.governanceHat;
-        hackersHatRewards[submittedClaim.beneficiary][pid] += claimBounty.hackerHatVested;
+        hackersHatRewards[claim.beneficiary][pid] += claimBounty.hackerHatVested;
         delete activeClaims[pid];
-        delete submittedClaims[_claimId];
+        delete claims[_claimId];
         emit ApproveClaim(pid,
             _claimId,
             msg.sender,
-            submittedClaim.beneficiary,
-            submittedClaim.bountyPercentage,
+            claim.beneficiary,
+            claim.bountyPercentage,
             tokenLock,
             claimBounty);
-        assert(poolInfos[pid].balance > 0);
     }
 
     /**
@@ -141,14 +137,14 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
-        SubmittedClaim memory submittedClaim = submittedClaims[_claimId];
-        uint256 pid = submittedClaim.pid;
+        Claim storage claim = claims[_claimId];
+        uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
         require(
-          ((msg.sender == arbitrator && submittedClaim.isChallenged) || (submittedClaim.createdAt + 5 weeks < block.timestamp)), "HVE09");
-        require(submittedClaims[_claimId].beneficiary != address(0), "HVE10");
+          ((msg.sender == arbitrator && claim.isChallenged) || (claim.createdAt + 5 weeks < block.timestamp)), "HVE09");
+        require(claim.beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
-        delete submittedClaims[_claimId];
+        delete claims[_claimId];
         emit DismissClaim(pid, _claimId);
     }
 

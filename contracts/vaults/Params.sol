@@ -120,7 +120,7 @@ contract Params is Base {
     */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
-    onlyOwner noSubmittedClaims(_pid) noSafetyPeriod {
+    onlyOwner noActiveClaims(_pid) noSafetyPeriod {
         validateSplit(_bountySplit);
         bountyInfos[_pid].bountySplit = _bountySplit;
         emit SetBountySplit(_pid, _bountySplit);
@@ -170,7 +170,7 @@ contract Params is Base {
     */
     function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
     external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
+    onlyCommittee(_pid) noActiveClaims(_pid) {
         require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
         pendingMaxBounty[_pid].maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
@@ -189,7 +189,7 @@ contract Params is Base {
  */
     function setMaxBounty(uint256 _pid)
     external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
+    onlyCommittee(_pid) noActiveClaims(_pid) {
         require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
