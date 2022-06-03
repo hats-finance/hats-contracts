@@ -695,6 +695,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSaftyPeriod();
+
     let tx = await hatVaults.submitClaim(
       0,
       accounts[2],
@@ -705,7 +706,6 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
-    await hatVaults.approveClaim(claimId);
     try {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -713,6 +713,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
 
+    await hatVaults.challenge(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
@@ -812,7 +813,6 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     let claimId = tx.logs[0].args._claimId;
-    await hatVaults.challenge(claimId);
     try {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -820,13 +820,14 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
 
+    await hatVaults.challenge(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
 
     let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
-    let rewardPerShare = new web3.utils.BNt
+    let rewardPerShare = new web3.utils.BN(
       (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
