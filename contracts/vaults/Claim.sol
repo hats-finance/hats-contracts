@@ -65,7 +65,7 @@ contract Claim is Base {
 
     function challenge(uint256 _claimId) onlyArbitrator external {
         require(activeClaims[_claimId] != 0, "Can only challenge an active claim");
-        submittedClaims[_claimId].isChallenged = true;
+        claims[_claimId].isChallenged = true;
     }
 
     /**
@@ -79,11 +79,11 @@ contract Claim is Base {
 
         require(claim.beneficiary != address(0), "HVE10");
         require(
-          ((msg.sender == arbitrator && submittedClaim.isChallenged) ||
-          (submittedClaim.createdAt + challengePeriod < block.timestamp)), "HVEXX"
+          ((msg.sender == arbitrator && claim.isChallenged) ||
+          (claim.createdAt + challengePeriod < block.timestamp)), "HVEXX"
         );
 
-        submittedClaim.bountyPercentage = _bountyPercentage;
+        claim.bountyPercentage = _bountyPercentage;
         uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
