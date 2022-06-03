@@ -57,7 +57,8 @@ const setup = async function(
   routerReturnType = 0,
   allocPoint = 100,
   weth = false,
-  rewardInVaults = 2500000
+  rewardInVaults = 2500000,
+  challengePeriod = 0
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
@@ -108,7 +109,7 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
   // setting challenge period to 0 will make running tests a bit easier
-  await hatVaults.setChallengePeriod(0);
+  await hatVaults.setChallengePeriod(challengePeriod);
   await hatVaults.addPool(
     stakingToken.address,
     accounts[1],
@@ -420,6 +421,7 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
+    await hatVaults.challenge(claimId);
     try {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
       assert(false, "only governance can dismiss before delay");
@@ -584,6 +586,7 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
+    await hatVaults.challenge(claimId);
     try {
       await hatVaults.setPendingMaxBounty(0, 8000, { from: accounts[1] });
       assert(false, "there is already pending approval");
@@ -702,7 +705,7 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
-
+    await hatVaults.approveClaim(claimId);
     try {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -809,6 +812,7 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
     let claimId = tx.logs[0].args._claimId;
+    await hatVaults.challenge(claimId);
     try {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -822,7 +826,7 @@ contract("HatVaults", (accounts) => {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
 
     let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
-    let rewardPerShare = new web3.utils.BN(
+    let rewardPerShare = new web3.utils.BNt
       (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
@@ -1768,6 +1772,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE28");
     }
+    await hatVaults.challenge(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
