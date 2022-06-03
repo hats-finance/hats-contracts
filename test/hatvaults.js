@@ -108,7 +108,7 @@ const setup = async function(
   );
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
-  // setting challenge period to 0 will make running tests a bit easier
+  // setting challengeClaim period to 0 will make running tests a bit easier
   await hatVaults.setChallengePeriod(challengePeriod);
   await hatVaults.addPool(
     stakingToken.address,
@@ -421,7 +421,7 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
-    await hatVaults.challenge(claimId);
+    await hatVaults.challengeClaim(claimId);
     try {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
       assert(false, "only governance can dismiss before delay");
@@ -586,7 +586,7 @@ contract("HatVaults", (accounts) => {
       }
     );
     let claimId = tx.logs[0].args._claimId;
-    await hatVaults.challenge(claimId);
+    await hatVaults.challengeClaim(claimId);
     try {
       await hatVaults.setPendingMaxBounty(0, 8000, { from: accounts[1] });
       assert(false, "there is already pending approval");
@@ -713,7 +713,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
 
-    await hatVaults.challenge(claimId);
+    await hatVaults.challengeClaim(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
@@ -820,7 +820,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "HVE02");
     }
 
-    await hatVaults.challenge(claimId);
+    await hatVaults.challengeClaim(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);
@@ -1773,7 +1773,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "HVE28");
     }
-    await hatVaults.challenge(claimId);
+    await hatVaults.challengeClaim(claimId);
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._pid, 0);

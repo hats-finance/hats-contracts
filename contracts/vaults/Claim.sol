@@ -63,7 +63,7 @@ contract Claim is Base {
         );
     }
 
-    function challenge(uint256 _claimId) external onlyArbitrator {
+    function challengeClaim(uint256 _claimId) external onlyArbitrator {
         require(claims[_claimId].beneficiary != address(0), "HVE10");
         claims[_claimId].isChallenged = true;
     }
