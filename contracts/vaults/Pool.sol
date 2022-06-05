@@ -13,7 +13,7 @@ contract Pool is Base {
     * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
         Each entry is a number between 0 and `HUNDRED_PERCENT`.
         Total splits should be equal to `HUNDRED_PERCENT`.
-        If no bounty is specified for the hacker (direct or vested in pool's token), the default bounty split will be used.
+        Bounty must be specified for the hacker (direct or vested in pool's token).
     * @param _descriptionHash the hash of the pool description.
     * @param _bountyVestingParams vesting params for the bounty
     *        _bountyVestingParams[0] - vesting duration
@@ -53,10 +53,7 @@ contract Pool is Base {
    
         setPoolsLastProcessedTotalAllocPoint(poolId);
         committees[poolId] = _committee;
-  
-        BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
-        getDefaultBountySplit() : _bountySplit;
-  
+
         validateSplit(bountySplit);
         bountyInfos[poolId] = BountyInfo({
             maxBounty: _maxBounty,

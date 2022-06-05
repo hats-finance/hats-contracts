@@ -59,6 +59,7 @@ import "./vaults/Withdraw.sol";
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
+// HVE47: Bounty split must include hacker payout
 
 /// @title Manage all Hats.finance vaults
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
