@@ -28,9 +28,6 @@ jobs:
       - name: Compile contracts
         run: |
           npx hardhat compile
-      - name: Unit tests
-        run: |
-          npx hardhat test
       - name: Solidity Lint
         run: |
           npx hardhat check
