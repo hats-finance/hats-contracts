@@ -54,10 +54,10 @@ contract Pool is Base {
         setPoolsLastProcessedTotalAllocPoint(poolId);
         committees[poolId] = _committee;
 
-        validateSplit(bountySplit);
+        validateSplit(_bountySplit);
         bountyInfos[poolId] = BountyInfo({
             maxBounty: _maxBounty,
-            bountySplit: bountySplit,
+            bountySplit: _bountySplit,
             vestingDuration: _bountyVestingParams[0],
             vestingPeriods: _bountyVestingParams[1]
         });
@@ -70,7 +70,7 @@ contract Pool is Base {
             _committee,
             _descriptionHash,
             _maxBounty,
-            bountySplit,
+            _bountySplit,
             _bountyVestingParams[0],
             _bountyVestingParams[1]);
     }
