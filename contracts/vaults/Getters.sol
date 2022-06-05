@@ -4,7 +4,6 @@ pragma solidity 0.8.6;
 import "./Base.sol";
 
 contract Getters is Base {
-    // GET INFO for UI
 
     function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfos[_pid];

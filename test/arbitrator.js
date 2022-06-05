@@ -11,15 +11,17 @@ contract("HatVaults", (accounts) => {
   it("Set arbitrator", async () => {
     const { hatVaults } = await setup(accounts);
     await assertFunctionRaisesException(
-      hatVaults.setArbitrator(accounts[1], { from: accounts[1] }),
+      hatVaults.setGlobalParameter("arbitrator", accounts[1], {
+        from: accounts[1],
+      }),
       "Ownable: caller is not the owner"
     );
 
-    tx = await hatVaults.setArbitrator(accounts[1]);
+    tx = await hatVaults.setGlobalParameter("arbitrator", accounts[1]);
 
     assert.equal(await hatVaults.arbitrator(), accounts[1]);
-    assert.equal(tx.logs[0].event, "SetArbitrator");
-    assert.equal(tx.logs[0].args._arbitrator, accounts[1]);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._newValue, accounts[1]);
   });
 
   it("Set challenge period", async () => {
@@ -32,8 +34,9 @@ contract("HatVaults", (accounts) => {
     tx = await hatVaults.setChallengePeriod(123);
 
     assert.equal(await hatVaults.challengePeriod(), 123);
-    assert.equal(tx.logs[0].event, "SetChallengePeriod");
-    assert.equal(tx.logs[0].args._challengePeriod, 123);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._name, "challengePeriod");
+    assert.equal(tx.logs[0].args._newValue, 123);
   });
 
   it("Set challengeTimeOutPeriod", async () => {
@@ -46,8 +49,8 @@ contract("HatVaults", (accounts) => {
     tx = await hatVaults.setChallengeTimeOutPeriod(123);
 
     assert.equal(await hatVaults.challengeTimeOutPeriod(), 123);
-    assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 123);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._newValue, 123);
   });
 
   it("No challenge - approve claim", async () => {
@@ -94,7 +97,8 @@ contract("HatVaults", (accounts) => {
     const owner = accounts[0];
     const staker = accounts[1];
     const arbitrator = accounts[2];
-    await hatVaults.setArbitrator(arbitrator);
+    await hatVaults.setGlobalParameter("arbitrator", arbitrator);
+
     await advanceToSafetyPeriod(hatVaults);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
@@ -137,7 +141,7 @@ contract("HatVaults", (accounts) => {
     hatVaults.setChallengePeriod(1000);
     const owner = accounts[0];
     const arbitrator = accounts[1];
-    await hatVaults.setArbitrator(arbitrator);
+    await hatVaults.setGlobalParameter("arbitrator", arbitrator);
     await advanceToSafetyPeriod(hatVaults);
     const claimId = await submitClaim(hatVaults, { accounts });
 
@@ -154,4 +158,6 @@ contract("HatVaults", (accounts) => {
     );
     await hatVaults.dismissClaim(claimId, { from: arbitrator });
   });
+
+  it("TO BE DONE: challenge - timeout", async () => {});
 });

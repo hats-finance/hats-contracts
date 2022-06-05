@@ -5,10 +5,10 @@ import "./Base.sol";
 
 contract Params is Base {
 
-    function setFeeSetter(address _newFeeSetter) external onlyOwner {
-        feeSetter = _newFeeSetter;
-        emit SetFeeSetter(_newFeeSetter);
-    }
+    // function setFeeSetter(address _newFeeSetter) external onlyOwner {
+    //     feeSetter = _newFeeSetter;
+    //     emit SetGlobalParameter("feeSetter", _newFeeSetter);
+    // }
 
     /**
     * @dev Set new committee address. Can be called by existing committee if it had checked in, or
@@ -35,11 +35,46 @@ contract Params is Base {
      * @dev setArbitrator - called by hats governance to set arbitrator
      * @param _arbitrator New arbitrator.
     */
-    function setArbitrator(address _arbitrator) external onlyOwner {
-        arbitrator = _arbitrator;
-        emit SetArbitrator(_arbitrator);
+    // function setArbitrator(address _arbitrator) external onlyOwner {
+    //     arbitrator = _arbitrator;
+    //     emit SetGlobalParameter("arbitrator", _arbitrator);
+    // }
+   /**
+     * @dev setGlobalParamater - called by hats governance to set arbitrator
+     * @param _name Name of the parameter.
+     * @param _newValue New arbitrator.
+    */
+    function setGlobalParameter(string calldata _name, address _newValue) external onlyOwner {
+        if (keccak256(abi.encodePacked(_name)) == keccak256("arbitrator")) {
+          arbitrator = _newValue;
+        } else if (keccak256(abi.encodePacked(_name)) == keccak256("feeSetter")) {
+          feeSetter = _newValue;
+        } else if (keccak256(abi.encodePacked(_name)) == keccak256("rewardController")) {
+          rewardController = RewardController(_newValue);
+
+        } else {
+          require(false, "Unknown address parameter name");
+        }
+        emit SetGlobalParameter(_name, _newValue);
     }
 
+    function setGlobalParameterUint(string calldata _name, uint256 _newValue) external onlyOwner {
+        if (keccak256(abi.encodePacked(_name)) == keccak256("challengePeriod")) {
+            challengePeriod = _newValue;
+        } else if (keccak256(abi.encodePacked(_name)) == keccak256("challengeTimeOutPeriod")) {
+            challengeTimeOutPeriod = _newValue;
+        } else if (keccak256(abi.encodePacked(_name)) == keccak256("claimFee")) {
+            generalParameters.claimFee = _newValue;
+        } else if (keccak256(abi.encodePacked(_name)) == keccak256("setMaxBountyDelay")) {
+            // onlyOwner {
+            require(_newValue >= 2 days, "HVE18");
+            generalParameters.setMaxBountyDelay = _newValue;
+
+        } else {
+            require(false, "Unknown uint256 parameter name");
+        }
+        emit SetGlobalParameter(_name, _newValue);
+    }
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
     * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
@@ -59,20 +94,20 @@ contract Params is Base {
      * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
-    function setClaimFee(uint256 _fee) external onlyOwner {
-        generalParameters.claimFee = _fee;
-        emit SetClaimFee(_fee);
-    }
+    // function setClaimFee(uint256 _fee) external onlyOwner {
+    //     generalParameters.claimFee = _fee;
+    //     emit SetClaimFee(_fee);
+    // }
 
-    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
-        challengePeriod = _challengePeriod;
-        emit SetChallengePeriod(_challengePeriod);
-    }
+    // function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+    //     challengePeriod = _challengePeriod;
+    //     emit SetGlobalParameter("challengePeriod", _challengePeriod);
+    // }
 
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
-        challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
-    }
+    // function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+    //     challengeTimeOutPeriod = _challengeTimeOutPeriod;
+    //     emit SetGlobalParameter("challengeTimeOutPeriod", _challengeTimeOutPeriod);
+    // }
 
     /**
      * @dev setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
@@ -134,15 +169,15 @@ contract Params is Base {
     /**
     * @dev Set the timelock delay for setting the max bounty
     * (the time between setPendingMaxBounty and setMaxBounty)
-    * @param _delay The delay time
+    * param _delay The delay time
     */
-    function setMaxBountyDelay(uint256 _delay)
-    external
-    onlyOwner {
-        require(_delay >= 2 days, "HVE18");
-        generalParameters.setMaxBountyDelay = _delay;
-        emit SetMaxBountyDelay(_delay);
-    }
+    // function setMaxBountyDelay(uint256 _delay)
+    // external
+    // onlyOwner {
+    //     require(_delay >= 2 days, "HVE18");
+    //     generalParameters.setMaxBountyDelay = _delay;
+    //     emit SetMaxBountyDelay(_delay);
+    // }
 
     function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
         whitelistedRouters[_router] = _isWhitelisted;
@@ -203,8 +238,8 @@ contract Params is Base {
         emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
     }
 
-    function setRewardController(RewardController _newRewardController) public onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(address(_newRewardController));
-    }
+    // function setRewardController(RewardController _newRewardController) public onlyOwner {
+    //     rewardController = _newRewardController;
+    //     emit SetRewardController(address(_newRewardController));
+    // }
 }

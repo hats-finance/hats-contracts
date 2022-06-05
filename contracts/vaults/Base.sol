@@ -206,16 +206,18 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 indexed _transferredAmount,
         address indexed _rewardToken
     );
-    event SetFeeSetter(address indexed _newFeeSetter);
+    event SetGlobalParameter(string _name, uint256 _newValue);
+    event SetGlobalParameter(string _name, address _newValue);
+    // event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
-    event SetChallengePeriod(uint256 _challengePeriod);
-    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrator(address indexed _arbitrator);
+    // event SetChallengePeriod(uint256 _challengePeriod);
+    // event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    // event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 indexed _withdrawRequestPendingPeriod,
         uint256 indexed _withdrawRequestEnablePeriod
     );
-    event SetClaimFee(uint256 _fee);
+    // event SetClaimFee(uint256 _fee);
     event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
     event SetVestingParams(
         uint256 indexed _pid,
@@ -230,7 +232,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event CommitteeCheckedIn(uint256 indexed _pid);
     event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetRewardController(address indexed _newRewardController);
+    // event SetRewardController(address indexed _newRewardController);
     event AddPool(
         uint256 indexed _pid,
         address indexed _lpToken,

@@ -88,7 +88,7 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  await hatVaults.setChallengePeriod(challengePeriod);
+  await hatVaults.setGlobalParameterUint("challengePeriod", challengePeriod);
   await hatVaults.addPool(
     stakingToken.address,
     accounts[1],
@@ -969,10 +969,30 @@ contract("HatVaults", (accounts) => {
     await hatVaults.withdrawRequest(0, { from: staker });
   });
 
+  it("Set reward controller", async () => {
+    await setup(accounts);
+    try {
+      await hatVaults.setGlobalParameter("rewardController", accounts[1], {
+        from: accounts[1],
+      });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+    const newController = accounts[2];
+    const tx = await hatVaults.setGlobalParameter(
+      "rewardController",
+      newController
+    );
+    assert.equal(await hatVaults.rewardController(), newController);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._name, "rewardController");
+    assert.equal(tx.logs[0].args._newValue, newController);
+  });
   it("Set fee and fee setter", async () => {
     await setup(accounts);
     try {
-      await hatVaults.setFeeSetter(accounts[1], {
+      await hatVaults.setGlobalParameter("feeSetter", accounts[1], {
         from: accounts[1],
       });
       assert(false, "only gov");
@@ -980,18 +1000,18 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await hatVaults.setFeeSetter(accounts[0]);
+    await hatVaults.setGlobalParameter("feeSetter", accounts[0]);
     var tx = await hatVaults.setPoolWithdrawalFee(0, 100);
     assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 100);
     assert.equal(tx.logs[0].event, "SetPoolWithdrawalFee");
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._newFee, 100);
 
-    tx = await hatVaults.setFeeSetter(accounts[1]);
+    tx = await hatVaults.setGlobalParameter("feeSetter", accounts[1]);
 
     assert.equal(await hatVaults.feeSetter(), accounts[1]);
-    assert.equal(tx.logs[0].event, "SetFeeSetter");
-    assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._newValue, accounts[1]);
 
     try {
       await hatVaults.setPoolWithdrawalFee(0, 100);
@@ -1046,8 +1066,7 @@ contract("HatVaults", (accounts) => {
 
   it("Emergency withdraw fee", async () => {
     await setup(accounts);
-
-    await hatVaults.setFeeSetter(accounts[0]);
+    await hatVaults.setGlobalParameter("feeSetter", accounts[0]);
     tx = await hatVaults.setPoolWithdrawalFee(0, 200);
 
     assert.equal((await hatVaults.poolInfos(0)).withdrawalFee, 200);
@@ -3221,9 +3240,10 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
 
-    tx = await hatVaults.setClaimFee(fee);
-    assert.equal(tx.logs[0].event, "SetClaimFee");
-    assert.equal(tx.logs[0].args._fee, fee);
+    tx = await hatVaults.setGlobalParameterUint("claimFee", fee);
+    assert.equal(tx.logs[0].event, "SetGlobalParameter");
+    assert.equal(tx.logs[0].args._name, "claimFee");
+    assert.equal(tx.logs[0].args._newValue, fee);
     var govBalanceBefore = new web3.utils.BN(
       await web3.eth.getBalance(accounts[0])
     );
