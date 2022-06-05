@@ -49,7 +49,7 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [0, 0, 0, 0, 0, 0],
+  bountySplit = [6000, 2000, 500, 0, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -132,7 +132,7 @@ function assertVMException(error) {
   );
 }
 
-contract("HatVaults", (accounts) => {
+contract("HatTimelockController", (accounts) => {
   async function advanceToSaftyPeriod() {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
@@ -217,7 +217,7 @@ contract("HatVaults", (accounts) => {
         hatToken.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+          [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -233,7 +233,7 @@ contract("HatVaults", (accounts) => {
         hatToken.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -270,7 +270,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -453,12 +453,13 @@ contract("HatVaults", (accounts) => {
     );
     assert.equal(
       log.args._amountBurned.toString(),
-      new web3.utils.BN(web3.utils.toWei("1"))
+        new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
         .mul(
-          new web3.utils.BN(
+           new web3.utils.BN(
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           )
         )
+        .div(new web3.utils.BN("10000"))
         .div(new web3.utils.BN("10000"))
         .toString()
     );
