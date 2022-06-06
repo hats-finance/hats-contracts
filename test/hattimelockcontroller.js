@@ -18,13 +18,17 @@ var router;
 var stakingToken;
 var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
-const { assertVMException, rewardPerEpoch } = require("./hatvaults.js");
+const {
+  assertVMException,
+  rewardPerEpoch,
+  advanceToSafetyPeriod,
+} = require("./hatvaults.js");
 
 const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [0, 0, 0, 0, 0, 0],
+  bountySplit = [6000, 2000, 500, 0, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -98,24 +102,7 @@ const setup = async function(
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
 
-contract("HatVaults", (accounts) => {
-  async function advanceToSafetyPeriod() {
-    let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-
-    let withdrawPeriod = (
-      await hatVaults.generalParameters()
-    ).withdrawPeriod.toNumber();
-    let safetyPeriod = (
-      await hatVaults.generalParameters()
-    ).safetyPeriod.toNumber();
-
-    if (currentTimeStamp % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
-      await utils.increaseTime(
-        withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod))
-      );
-    }
-  }
-
+contract("HatTimelockController", (accounts) => {
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
@@ -183,7 +170,7 @@ contract("HatVaults", (accounts) => {
         hatToken.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -199,7 +186,7 @@ contract("HatVaults", (accounts) => {
         hatToken.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -236,7 +223,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -318,7 +305,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSafetyPeriod();
+    await advanceToSafetyPeriod(hatVaults);
     const bountyPercentage = 300;
     let tx = await hatVaults.submitClaim(
       0,
@@ -421,12 +408,13 @@ contract("HatVaults", (accounts) => {
     );
     assert.equal(
       log.args._amountBurned.toString(),
-      new web3.utils.BN(web3.utils.toWei("1"))
+      new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
         .mul(
           new web3.utils.BN(
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           )
         )
+        .div(new web3.utils.BN("10000"))
         .div(new web3.utils.BN("10000"))
         .toString()
     );

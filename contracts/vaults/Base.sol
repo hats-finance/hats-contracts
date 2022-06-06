@@ -318,17 +318,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         setPoolsLastProcessedTotalAllocPoint(_pid);
     }
 
-    function getDefaultBountySplit() public pure returns (BountySplit memory) {
-        return BountySplit({
-            hackerVested: 6000,
-            hacker: 2000,
-            committee: 500,
-            swapAndBurn: 0,
-            governanceHat: 1000,
-            hackerHatVested: 500
-        });
-    }
-
     /**
     * @dev Safe HAT transfer function, transfer rewards from the contract only if there are enough
     * rewards available.
@@ -351,6 +340,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
+        require(_bountySplit.hacker + _bountySplit.hackerVested != 0, "HVE47");
         require(_bountySplit.hackerVested
             + _bountySplit.hacker
             + _bountySplit.committee

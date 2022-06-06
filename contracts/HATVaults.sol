@@ -59,8 +59,9 @@ import "./vaults/Withdraw.sol";
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
-// HVE47: Only arbitrator
+// HVE47: Bounty split must include hacker payout
 // HVE48: Claim can only be approved if challengeperiod is over, or if the caller is the arbitrator
+
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and

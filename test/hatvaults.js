@@ -31,7 +31,7 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [0, 0, 0, 0, 0, 0],
+  bountySplit = [6000, 2000, 500, 0, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -285,7 +285,7 @@ contract("HatVaults", (accounts) => {
 
     //set other pool with different committee
     let maxBounty = 8000;
-    let bountySplit = [0, 0, 0, 0, 0, 0];
+    let bountySplit = [6000, 2000, 500, 0, 1000, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     await hatVaults.addPool(
       stakingToken2.address,
@@ -1204,7 +1204,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
     var staker = accounts[1];
@@ -1280,7 +1280,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000,
       0,
       100,
@@ -1686,7 +1686,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -1851,7 +1851,7 @@ contract("HatVaults", (accounts) => {
   }).timeout(40000);
 
   it("approve+ stake simple check rewards", async () => {
-    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10000);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -1895,7 +1895,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("emergencyWithdraw after approve and check reward", async () => {
-    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10000);
     var staker = accounts[1];
     var staker2 = accounts[3];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
@@ -1938,7 +1938,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -2316,7 +2316,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3515,7 +3515,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3562,7 +3562,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[0],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3598,7 +3598,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -3613,7 +3613,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         utils.NULL_ADDRESS,
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -3629,7 +3629,7 @@ contract("HatVaults", (accounts) => {
         utils.NULL_ADDRESS,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -3645,7 +3645,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [10, 86400],
         false,
@@ -3661,7 +3661,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [121 * 24 * 3600, 10],
         false,
@@ -3674,10 +3674,26 @@ contract("HatVaults", (accounts) => {
 
     try {
       await hatVaults.addPool(
+          stakingToken2.address,
+          accounts[1],
+          8000,
+          [0, 0, 500, 0, 9000, 500],
+          "_descriptionHash",
+          [86400, 10],
+          false,
+          true
+      );
+      assert(false, "bounty payout to hacker is zero");
+    } catch (ex) {
+      assertVMException(ex, "HVE47");
+    }
+
+    try {
+      await hatVaults.addPool(
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 0],
         false,
@@ -3691,7 +3707,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3815,7 +3831,7 @@ contract("HatVaults", (accounts) => {
       [stakingToken2.address, stakingToken3.address],
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10]
     );
@@ -3846,7 +3862,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10,
       0,
       100,
@@ -3901,7 +3917,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -3923,7 +3939,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -4085,7 +4101,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
