@@ -11,7 +11,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev Set new committee address. Can be called by existing committee if it had checked in, or
+    * @notice Set new committee address. Can be called by existing committee if it had checked in, or
     * by the governance otherwise.
     * @param _pid pool id
     * @param _committee new committee address
@@ -33,7 +33,7 @@ contract Params is Base {
     }
 
    /**
-     * @dev setArbitrator - called by hats governance to set arbitrator
+     * @notice setArbitrator - called by hats governance to set arbitrator
      * @param _arbitrator New arbitrator.
     */
     function setArbitrator(address _arbitrator) external onlyOwner {
@@ -42,7 +42,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
+    * @notice setWithdrawRequestParams - called by hats governance to set withdraw request params
     * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
     * @param _withdrawRequestEnablePeriod - the time period where the withdraw is enable for a withdraw request.
     */
@@ -59,7 +59,7 @@ contract Params is Base {
     }
 
     /**
-     * @dev Called by hats governance to set fee for submitting a claim to any vault
+     * @notice Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
     function setClaimFee(uint256 _fee) external onlyOwner {
@@ -78,7 +78,7 @@ contract Params is Base {
     }
 
     /**
-     * @dev setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
+     * @notice setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
      * @param _withdrawPeriod withdraw enable period
      * @param _safetyPeriod withdraw disable period
     */
@@ -91,7 +91,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
+    * @notice setVestingParams - set pool vesting params for rewarding claim reporter with the pool token
     * @param _pid pool id
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
@@ -106,7 +106,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all pools
+    * @notice setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all pools
     * the function can be called only by governance.
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
@@ -121,7 +121,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev Set the pool token bounty split upon an approval
+    * @notice Set the pool token bounty split upon an approval
     * The function can be called only by governance.
     * @param _pid The pool id
     * @param _bountySplit The bounty split
@@ -135,7 +135,7 @@ contract Params is Base {
     }
 
     /**
-    * @dev Set the timelock delay for setting the max bounty
+    * @notice Set the timelock delay for setting the max bounty
     * (the time between setPendingMaxBounty and setMaxBounty)
     * @param _delay The delay time
     */
@@ -159,7 +159,7 @@ contract Params is Base {
     }
 
     /**
-       * @dev committeeCheckIn - committee check in.
+       * @notice committeeCheckIn - committee check in.
     * deposit is enable only after committee check in
     * @param _pid pool id
     */
@@ -169,7 +169,7 @@ contract Params is Base {
     }
 
     /**
-   * @dev Set pending request to set pool max bounty.
+   * @notice Set pending request to set pool max bounty.
     * The function can be called only by the pool committee.
     * Cannot be called if there are claims that have been submitted.
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`
@@ -188,7 +188,7 @@ contract Params is Base {
     }
 
     /**
-   * @dev Set the pool max bounty to the already pending max bounty.
+   * @notice Set the pool max bounty to the already pending max bounty.
    * The function can be called only by the pool committee.
    * Cannot be called if there are claims that have been submitted.
    * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty

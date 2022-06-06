@@ -38,4 +38,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Solidity contract sizes
-        run: npx hardhat size-contracts
+        run: npx hardhat compile && npx hardhat size-contracts

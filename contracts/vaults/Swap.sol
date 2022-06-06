@@ -4,9 +4,10 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Swap is Base {
+    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
 
     /**
-    * @dev Swap pool's token to swapToken.
+    * @notice Swap pool's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of swapToken.
     * Only governance is authorized to call this function.
@@ -40,7 +41,7 @@ contract Swap is Base {
         address tokenLock;
         uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
-            //hacker gets her reward via vesting contract
+            // hacker gets her reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(swapToken),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
@@ -51,15 +52,15 @@ contract Swap is Base {
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp + generalParameters.hatVestingDuration, //end
                 generalParameters.hatVestingPeriods,
-                0, //no release start
-                0, //no cliff
+                0, // no release start
+                0, // no cliff
                 ITokenLock.Revocability.Disabled,
                 true
             );
-            swapToken.transfer(tokenLock, hackerReward);
+            swapToken.safeTransfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        swapToken.transfer(owner(), hatsReceived - hackerReward - burntHats);
+        swapToken.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
     }
 
     function swapTokenForHAT(uint256 _amount,
@@ -78,11 +79,14 @@ contract Swap is Base {
         if (!_token.approve(_routingContract, _amount))
             revert TokenApproveFailed();
         uint256 balanceBefore = swapToken.balanceOf(address(this));
+
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = _routingContract.call(_routingPayload);
         if (!success) revert SwapFailed();
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
         if (swapTokenReceived < _amountOutMinimum)
             revert AmountSwappedLessThenMinimum();
+            
         if (!_token.approve(address(_routingContract), 0))
             revert TokenApproveResetFailed();
     }

@@ -6,8 +6,12 @@ import "./Base.sol";
 contract Claim is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    //_descriptionHash - a hash of an ipfs encrypted file which describe the claim.
-    // this can be use later on by the claimer to prove her claim
+    /**
+    * @notice emit an event that includes the given _descriptionHash
+    * This can be used by the claimer as evidence that she had access to the information at the time of the call
+    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
+    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
+    */
     function logClaim(string memory _descriptionHash) external payable {
         if (generalParameters.claimFee > 0) {
             if (msg.value < generalParameters.claimFee)
@@ -43,8 +47,7 @@ contract Claim is Base {
         generalParameters.withdrawPeriod) revert NotSafetyPeriod();
         if (_bountyPercentage > bountyInfos[_pid].maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        uint256 claimId;
-        claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce++)));
+        uint256 claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce++)));
         claims[claimId] = Claim({
             pid: _pid,
             beneficiary: _beneficiary,
@@ -65,6 +68,12 @@ contract Claim is Base {
         );
     }
 
+    /**
+    * @notice Called by a the arbitrator to challenge a claim
+    * This will pause the vault for withdrawals until the claim is resolved
+    * @param _claimId The id of the claim
+    */
+
     function challengeClaim(uint256 _claimId) external onlyArbitrator {
         if (claims[_claimId].beneficiary == address(0))
             revert NoActiveClaimExists();
@@ -76,6 +85,8 @@ contract Claim is Base {
     * callable by the  arbitrator, if isChallenged == true
     * Callable by anyone after challengePeriod is passed and isChallenged == false
     * @param _claimId The claim ID
+    * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
+    * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
     */
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
@@ -84,39 +95,44 @@ contract Claim is Base {
             (claim.createdAt + challengePeriod > block.timestamp))
         revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 
-        if (msg.sender == arbitrator) {
-            claim.bountyPercentage = _bountyPercentage;
-        }
         uint256 pid = claim.pid;
+        address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
         ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
-        poolInfos[pid].balance -= claimBounty.hacker
-            + claimBounty.hackerVested
-            + claimBounty.committee
-            + claimBounty.swapAndBurn
-            + claimBounty.hackerHatVested
-            + claimBounty.governanceHat;
-        address tokenLock;
+
+        if (msg.sender == arbitrator) {
+            claim.bountyPercentage = _bountyPercentage;
+        }
+
+        poolInfos[pid].balance -=
+            claimBounty.hacker +
+            claimBounty.hackerVested +
+            claimBounty.committee +
+            claimBounty.swapAndBurn +
+            claimBounty.hackerHatVested +
+            claimBounty.governanceHat;
+
         if (claimBounty.hackerVested > 0) {
-        //hacker gets part of bounty to a vesting contract
+            //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
-            address(lpToken),
-            0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
-            claim.beneficiary,
-            claimBounty.hackerVested,
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp, //start
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp + bountyInfo.vestingDuration, //end
-            bountyInfo.vestingPeriods,
-            0, //no release start
-            0, //no cliff
-            ITokenLock.Revocability.Disabled,
-            false
+                address(lpToken),
+                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                claim.beneficiary,
+                claimBounty.hackerVested,
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp, //start
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp + bountyInfo.vestingDuration, //end
+                bountyInfo.vestingPeriods,
+                0, //no release start
+                0, //no cliff
+                ITokenLock.Revocability.Disabled,
+                false
             );
             lpToken.safeTransfer(tokenLock, claimBounty.hackerVested);
         }
+
         lpToken.safeTransfer(claim.beneficiary, claimBounty.hacker);
         lpToken.safeTransfer(claim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
@@ -131,6 +147,7 @@ contract Claim is Base {
             claim.bountyPercentage,
             tokenLock,
             claimBounty);
+
         delete activeClaims[pid];
         delete claims[_claimId];
     }

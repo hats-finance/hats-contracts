@@ -7,7 +7,7 @@ const {
   assertFunctionRaisesException,
 } = require("./common.js");
 
-contract("HatVaults", (accounts) => {
+contract("HatVaults Arbitrator", (accounts) => {
   it("Set arbitrator", async () => {
     const { hatVaults } = await setup(accounts);
     await assertFunctionRaisesException(
@@ -98,6 +98,12 @@ contract("HatVaults", (accounts) => {
     await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
+
+    // challengeClaim will fail if passing an non-existent claimID
+    assertFunctionRaisesException(
+      hatVaults.challengeClaim("1234", { from: accounts[2] }),
+      "HVE10"
+    );
 
     // only arbitrator can challenge the claim
     assertFunctionRaisesException(

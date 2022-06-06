@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./vaults/Claim.sol";
 import "./vaults/Deposit.sol";
 import "./vaults/Params.sol";
@@ -109,6 +108,9 @@ error OnlyArbitrator();
 // HVE48: Claim can only be approved if challenge period is over, or if the
 // caller is the arbitrator
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+// HVE47: Bounty split must include hacker payout
+error BountySplitMustIncludeHackerPayout();
+
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and
@@ -120,7 +122,7 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 /// https://github.com/hats-finance/hats-contracts
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
-    * @dev initialize -
+    * @notice initialize -
     * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
     * Some of the contracts functions are limited only to governance:
@@ -145,8 +147,8 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
-        rewardToken = IERC20(_rewardToken);
-        swapToken = ERC20Burnable(_swapToken);
+        rewardToken = IERC20Upgradeable(_rewardToken);
+        swapToken = ERC20BurnableUpgradeable(_swapToken);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
