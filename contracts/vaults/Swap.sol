@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Swap is Base {
+    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
 
     /**
     * @dev Swap pool's token to swapToken.
@@ -56,10 +57,10 @@ contract Swap is Base {
                 ITokenLock.Revocability.Disabled,
                 true
             );
-            swapToken.transfer(tokenLock, hackerReward);
+            swapToken.safeTransfer(tokenLock, hackerReward);
         }
         emit SwapAndSend(_pid, _beneficiary, amount, hackerReward, tokenLock);
-        swapToken.transfer(owner(), hatsReceived - hackerReward - burntHats);
+        swapToken.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
     }
 
     function swapTokenForHAT(uint256 _amount,
