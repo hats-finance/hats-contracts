@@ -3685,7 +3685,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "bounty payout to hacker is zero");
     } catch (ex) {
-      assertVMException(ex, "HVE47");
+      assertVMException(ex, "BountySplitMustIncludeHackerPayout");
     }
 
     try {
