@@ -97,7 +97,7 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyOwner {
-        if (_duration > 120 days) revert VestingDurationTooLong();
+        if (_duration >= 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         bountyInfos[_pid].vestingDuration = _duration;
@@ -112,7 +112,7 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
-        if (_duration > 180 days) revert VestingDurationTooLong();
+        if (_duration >= 180 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         generalParameters.hatVestingDuration = _duration;

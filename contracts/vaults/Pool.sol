@@ -111,8 +111,8 @@ contract Pool is Base {
         uint256[] memory _shares,
         uint256[] memory _rewardDebts)
     external onlyOwner {
-        if (poolInitialized[_pid]) revert PoolMustNotBeInitialized();
         if (poolInfos.length < _pid) revert PoolDoesNotExist();
+        if (poolInitialized[_pid]) revert PoolMustNotBeInitialized();
         if (_accounts.length != _shares.length ||
             _accounts.length != _rewardDebts.length)
             revert SetSharesArraysMustHaveSameLength();
