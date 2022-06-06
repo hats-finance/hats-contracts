@@ -370,7 +370,10 @@ contract("HatVaults", (accounts) => {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
       assert(false, "only governance can dismiss before delay");
     } catch (ex) {
-      assertVMException(ex, "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod");
+      assertVMException(
+        ex,
+        "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+      );
     }
     await utils.increaseTime(1);
     await utils.increaseTime(5 * 7 * 24 * 60 * 60);
@@ -3674,14 +3677,14 @@ contract("HatVaults", (accounts) => {
 
     try {
       await hatVaults.addPool(
-          stakingToken2.address,
-          accounts[1],
-          8000,
-          [0, 0, 500, 0, 9000, 500],
-          "_descriptionHash",
-          [86400, 10],
-          false,
-          true
+        stakingToken2.address,
+        accounts[1],
+        8000,
+        [0, 0, 500, 0, 9000, 500],
+        "_descriptionHash",
+        [86400, 10],
+        false,
+        true
       );
       assert(false, "bounty payout to hacker is zero");
     } catch (ex) {
@@ -4195,7 +4198,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "NotEnoughRewardsToTransferToUser");
     }
   });
-
 });
 
 module.exports = {
