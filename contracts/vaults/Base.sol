@@ -308,7 +308,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /**
-    * @dev Update the pool's rewardPerShare, not more then once per block
+    * @notice Update the pool's rewardPerShare, not more then once per block
     * @param _pid The pool id
     */
     function updatePool(uint256 _pid) public {
@@ -331,7 +331,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /**
-    * @dev Safe HAT transfer function, transfer rewards from the contract only if there are enough
+    * @notice Safe HAT transfer function, transfer rewards from the contract only if there are enough
     * rewards available.
     * @param _to The address to transfer the reward to
     * @param _amount The amount of rewards to transfer
@@ -366,7 +366,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
+     * @notice This empty reserved space is put in place to allow future versions to add new
      * variables without shifting down storage in the inheritance chain.
      * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */

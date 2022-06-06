@@ -7,7 +7,7 @@ contract Swap is Base {
     using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
 
     /**
-    * @dev Swap pool's token to swapToken.
+    * @notice Swap pool's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of swapToken.
     * Only governance is authorized to call this function.

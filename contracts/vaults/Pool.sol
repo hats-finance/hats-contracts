@@ -6,7 +6,7 @@ import "./Base.sol";
 contract Pool is Base {
 
     /**
-    * @dev Add a new pool. Can be called only by governance.
+    * @notice Add a new pool. Can be called only by governance.
     * @param _lpToken The pool's token
     * @param _committee The pool's committee addres
     * @param _maxBounty The pool's max bounty.
@@ -77,7 +77,7 @@ contract Pool is Base {
     }
 
     /**
-    * @dev change the information for a pool
+    * @notice change the information for a pool
     * ony calleable by the owner of the contract
     * @param _pid the pool id
     * @param _visible is this pool visible in the UI
@@ -98,7 +98,7 @@ contract Pool is Base {
         emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
     /**
-    * @dev set the flag that the pool is initialized to true
+    * @notice set the flag that the pool is initialized to true
     * ony calleable by the owner of the contract
     * @param _pid the pool id
     */
@@ -109,7 +109,7 @@ contract Pool is Base {
     }
 
     /**
-    * @dev set the shares of users in a pool
+    * @notice set the shares of users in a pool
     * only calleable by the owner, and only when a pool is not initialized
     * This function is used for migrating older pool data to this new contract
     * (and this function can be removed in the next upgrade, because the current version is upgradeable)
@@ -142,7 +142,7 @@ contract Pool is Base {
     }
 
     /**
-    * @dev massUpdatePools - Update reward variables for all pools
+    * @notice massUpdatePools - Update reward variables for all pools
     * Be careful of gas spending!
     * @param _fromPid update pools range from this pool id
     * @param _toPid update pools range to this pool id

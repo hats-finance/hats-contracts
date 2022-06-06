@@ -7,7 +7,7 @@ contract Claim is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
-    * @dev emit an event that includes the given _descriptionHash
+    * @notice emit an event that includes the given _descriptionHash
     * This can be used by the claimer as evidence that she had access to the information at the time of the call
     * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
     * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
@@ -22,7 +22,7 @@ contract Claim is Base {
     }
 
     /**
-    * @dev Called by a committee to submit a claim for a bounty.
+    * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
     * This function should be called only on a safety period, where withdrawals are disabled.
     * Upon a call to this function by the committee the pool withdrawals will be disabled
@@ -71,7 +71,7 @@ contract Claim is Base {
     }
 
     /**
-    * @dev Called by a the arbitrator to challenge a claim
+    * @notice Called by a the arbitrator to challenge a claim
     * This will pause the vault for withdrawals until the claim is resolved
     * @param _claimId The id of the claim
     */
@@ -82,7 +82,7 @@ contract Claim is Base {
     }
 
     /**
-    * @dev Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
+    * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
     * callable by the  arbitrator, if isChallenged == true
     * Callable by anyone after challengePeriod is passed and isChallenged == false
     * @param _claimId The claim ID
@@ -157,7 +157,7 @@ contract Claim is Base {
     }
 
     /**
-    * @dev Dismiss a claim for a bounty submitted by a committee.
+    * @notice Dismiss a claim for a bounty submitted by a committee.
     * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
     * @param _claimId The claim ID
     */

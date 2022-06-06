@@ -7,7 +7,7 @@ contract Deposit is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
-    * @dev Deposit tokens to pool
+    * @notice Deposit tokens to pool
     * Caller must have set an allowance first
     * @param _pid The pool id
     * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
@@ -46,7 +46,7 @@ contract Deposit is Base {
     }
 
      /**
-     * @dev Transfer to the sender their pending share of rewards.
+     * @notice Transfer to the sender their pending share of rewards.
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {
@@ -58,7 +58,7 @@ contract Deposit is Base {
     }
 
     /**
-     * @dev rewardDepositors - add pool tokens to reward depositors in the pool's native token0
+     * @notice rewardDepositors - add pool tokens to reward depositors in the pool's native token0
      * The funds will be given to depositors pro rata upon withdraw
      * The sender of the transaction must have approved the spend before calling this function
      * @param _pid pool id
@@ -77,7 +77,7 @@ contract Deposit is Base {
         emit RewardDepositors(_pid, _amount, lpTokenReceived);
     }
     /**
-     * @dev add reward tokens to the hatVaults contrac, to be distributed as rewards
+     * @notice add reward tokens to the hatVaults contrac, to be distributed as rewards
      * The sender of the transaction must have approved the spend before calling this function
      * @param _amount amount of rewardToken to add
     */

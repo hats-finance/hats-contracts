@@ -6,7 +6,7 @@ import "./Base.sol";
 contract Getters is Base {
 
     /**
-     * @dev calculate the amount of rewards an account can claim for having contributed to a specific pool
+     * @notice calculate the amount of rewards an account can claim for having contributed to a specific pool
      * @param _pid the id of the pool
      * @param _user the account for which the reward is calculated
     */
@@ -20,7 +20,7 @@ contract Getters is Base {
             uint256 reward = rewardController.getPoolReward(_pid, pool.lastRewardBlock, lastProcessedAllocPoint);
             rewardPerShare += (reward * 1e12 / pool.totalShares);
         }
-        
+
         return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
     }
 

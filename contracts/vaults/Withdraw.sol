@@ -7,7 +7,7 @@ contract Withdraw is Base {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
-    * @dev Submit a request to withdraw funds from pool # `_pid`.
+    * @notice Submit a request to withdraw funds from pool # `_pid`.
     * The request will only be approved if the last action was a deposit or withdrawal or in case the last action was a withdraw request,
     * that the pending period (of `generalParameters.withdrawRequestPendingPeriod`) had ended and the withdraw enable period (of `generalParameters.withdrawRequestEnablePeriod`)
     * had also ended.
@@ -25,7 +25,7 @@ contract Withdraw is Base {
     }
 
     /**
-    * @dev Withdraw user's requested share from the pool.
+    * @notice Withdraw user's requested share from the pool.
     * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
     * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
     * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
@@ -63,7 +63,7 @@ contract Withdraw is Base {
     }
 
     /**
-    * @dev Withdraw all user's pool share without claim for reward.
+    * @notice Withdraw all user's pool share without claim for reward.
     * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
     * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
     * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
@@ -91,7 +91,7 @@ contract Withdraw is Base {
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }
 
-    // @dev Checks that the sender can perform a withdraw at this time
+    // @notice Checks that the sender can perform a withdraw at this time
     // and also sets the withdrawRequest to 0
     function checkWithdrawAndResetWithdrawEnableStartTime(uint256 _pid)
         internal
