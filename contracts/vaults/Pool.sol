@@ -6,7 +6,7 @@ import "./Base.sol";
 contract Pool is Base {
 
     /**
-    * @dev Add a new pool. Can be called only by governance.
+    * @notice Add a new pool. Can be called only by governance.
     * @param _lpToken The pool's token
     * @param _committee The pool's committee addres
     * @param _maxBounty The pool's max bounty.
@@ -19,16 +19,17 @@ contract Pool is Base {
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods
     */
-    function addPool(address _lpToken,
-                    address _committee,
-                    uint256 _maxBounty,
-                    BountySplit memory _bountySplit,
-                    string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams,
-                    bool _isPaused,
-                    bool _isInitialized)
-    external
-    onlyOwner {
+    function addPool(
+        address _lpToken,
+        address _committee,
+        uint256 _maxBounty,
+        BountySplit memory _bountySplit,
+        string memory _descriptionHash,
+        uint256[2] memory _bountyVestingParams,
+        bool _isPaused,
+        bool _isInitialized
+    ) external onlyOwner {
+
         require(_bountyVestingParams[0] < 120 days, "HVE15");
         require(_bountyVestingParams[1] > 0, "HVE16");
         require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
@@ -36,8 +37,9 @@ contract Pool is Base {
         require(_lpToken != address(0), "HVE34");
         require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
 
-        uint256 startBlock = rewardController.startBlock();
+        validateSplit(_bountySplit);
 
+        uint256 startBlock = rewardController.startBlock();
         uint256 poolId = poolInfos.length;
 
         poolInfos.push(PoolInfo({
@@ -51,10 +53,7 @@ contract Pool is Base {
             withdrawalFee: 0
         }));
    
-        setPoolsLastProcessedTotalAllocPoint(poolId);
-        committees[poolId] = _committee;
 
-        validateSplit(_bountySplit);
         bountyInfos[poolId] = BountyInfo({
             maxBounty: _maxBounty,
             bountySplit: _bountySplit,
@@ -62,6 +61,8 @@ contract Pool is Base {
             vestingPeriods: _bountyVestingParams[1]
         });
 
+        setPoolsLastProcessedTotalAllocPoint(poolId);
+        committees[poolId] = _committee;
         poolDepositPause[poolId] = _isPaused;
         poolInitialized[poolId] = _isInitialized;
 
@@ -76,28 +77,43 @@ contract Pool is Base {
     }
 
     /**
-    * @dev setPool
+    * @notice change the information for a pool
+    * ony calleable by the owner of the contract
     * @param _pid the pool id
     * @param _visible is this pool visible in the UI
     * @param _depositPause pause pool deposit (default false).
     * This parameter can be used by the UI to include or exclude the pool
     * @param _descriptionHash the hash of the pool description.
     */
-    function setPool(uint256 _pid,
-                    bool _visible,
-                    bool _depositPause,
-                    string memory _descriptionHash)
-    external onlyOwner {
+    function setPool(
+        uint256 _pid,
+        bool _visible,
+        bool _depositPause,
+        string memory _descriptionHash
+    ) external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
+
         poolDepositPause[_pid] = _depositPause;
+
         emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
-
+    /**
+    * @notice set the flag that the pool is initialized to true
+    * ony calleable by the owner of the contract
+    * @param _pid the pool id
+    */
     function setPoolInitialized(uint256 _pid) external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
+
         poolInitialized[_pid] = true;
     }
 
+    /**
+    * @notice set the shares of users in a pool
+    * only calleable by the owner, and only when a pool is not initialized
+    * This function is used for migrating older pool data to this new contract
+    * (and this function can be removed in the next upgrade, because the current version is upgradeable)
+    */
     function setShares(
         uint256 _pid,
         uint256 _rewardPerShare,
@@ -110,9 +126,12 @@ contract Pool is Base {
         require(poolInfos.length > _pid, "HVE23");
         require(_accounts.length == _shares.length, "HVE39");
         require(_accounts.length == _rewardDebts.length, "HVE39");
+
         PoolInfo storage pool = poolInfos[_pid];
+
         pool.rewardPerShare = _rewardPerShare;
         pool.balance = _balance;
+
         for (uint256 i = 0; i < _accounts.length; i++) {
             userInfo[_pid][_accounts[i]] = UserInfo({
                 shares: _shares[i],
@@ -123,7 +142,7 @@ contract Pool is Base {
     }
 
     /**
-   * @dev massUpdatePools - Update reward variables for all pools
+    * @notice massUpdatePools - Update reward variables for all pools
     * Be careful of gas spending!
     * @param _fromPid update pools range from this pool id
     * @param _toPid update pools range to this pool id
@@ -131,9 +150,11 @@ contract Pool is Base {
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
         require(_toPid <= poolInfos.length, "HVE38");
         require(_fromPid <= _toPid, "HVE39");
+
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }
+
         emit MassUpdatePools(_fromPid, _toPid);
     }
 }
