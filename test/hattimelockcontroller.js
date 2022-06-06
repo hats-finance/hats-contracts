@@ -18,7 +18,11 @@ var router;
 var stakingToken;
 var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
-const { assertVMException, rewardPerEpoch } = require("./hatvaults.js");
+const {
+  assertVMException,
+  rewardPerEpoch,
+  advanceToSafetyPeriod,
+} = require("./hatvaults.js");
 
 const setup = async function(
   accounts,
@@ -301,7 +305,7 @@ contract("HatTimelockController", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSafetyPeriod();
+    await advanceToSafetyPeriod(hatVaults);
     const bountyPercentage = 300;
     let tx = await hatVaults.submitClaim(
       0,
