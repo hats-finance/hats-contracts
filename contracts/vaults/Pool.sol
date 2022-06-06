@@ -44,7 +44,7 @@ contract Pool is Base {
             revert MaxBountyCannotBeMoreThanHundredPercent();
             
         validateSplit(_bountySplit);
-        
+
         uint256 startBlock = rewardController.startBlock();
         uint256 poolId = poolInfos.length;
 
@@ -58,7 +58,6 @@ contract Pool is Base {
             balance: 0,
             withdrawalFee: 0
         }));
-   
 
         bountyInfos[poolId] = BountyInfo({
             maxBounty: _maxBounty,

@@ -459,12 +459,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
             revert BountySplitMustIncludeHackerPayout();
 
-        if (_bountySplit.hackerVested
-            + _bountySplit.hacker
-            + _bountySplit.committee
-            + _bountySplit.swapAndBurn
-            + _bountySplit.governanceHat
-            + _bountySplit.hackerHatVested != HUNDRED_PERCENT)
+        if (_bountySplit.hackerVested +
+            _bountySplit.hacker +
+            _bountySplit.committee +
+            _bountySplit.swapAndBurn +
+            _bountySplit.governanceHat +
+            _bountySplit.hackerHatVested != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
     }
 
