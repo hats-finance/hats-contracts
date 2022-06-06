@@ -14,8 +14,7 @@ import "./vaults/Withdraw.sol";
 
 // Errors:
 // HVE01: Only committee
-error HVE01();
-// HVE02: Claim submitted
+// HVE02: Active claim exists
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
@@ -23,7 +22,7 @@ error HVE01();
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
-// HVE10: No claim submitted
+// HVE10: No active claim exists
 // HVE11: Amount to reward is too big
 // HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
@@ -62,19 +61,29 @@ error HVE01();
 // HVE46: Not enough rewards to transfer to user
 
 /// @title Manage all Hats.finance vaults
+/// Hats.finance is a proactive bounty protocol for white hat hackers and
+/// auditors, where projects, community members, and stakeholders incentivize
+/// protocol security and responsible disclosure.
+/// Hats create scalable vaults using the project’s own token. The value of the
+/// bounty increases with the success of the token and project.
+/// This project is open-source and can be found on:
+/// https://github.com/hats-finance/hats-contracts
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @dev initialize -
     * @param _rewardToken The reward token address 
     * @param _hatGovernance The governance address.
-    *        Some of the contracts functions are limited only to governance:
-    *         addPool, setPool, dismissClaim, approveClaim,
-    *         setHatVestingParams, setVestingParams, setRewardsSplit
-    * @param  _swapToken the token that part of a payout will be swapped for and burned - this would typically be HATs
-    * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
-
+    * Some of the contracts functions are limited only to governance:
+    * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
+    * setVestingParams, setRewardsSplit
+    * @param _swapToken the token that part of a payout will be swapped for
+    * and burned - this would typically be HATs
+    * @param _whitelistedRouters initial list of whitelisted routers allowed to
+    * be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
+    * @param _rewardController Address of the reward controller to be used to
+    * manage the reward distribution.
     */
     function initialize(
         address _rewardToken,
@@ -83,13 +92,11 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory,
         RewardController _rewardController
-
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
         rewardToken = IERC20(_rewardToken);
         swapToken = ERC20Burnable(_swapToken);
-        
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
