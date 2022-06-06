@@ -12,6 +12,107 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 import "../tokenlock/TokenLockFactory.sol";
 import "../RewardController.sol";
 
+// Errors:
+// Only committee
+error OnlyCommittee();
+// Active claim exists
+error ActiveClaimExists();
+// Safety period
+error SafetyPeriod();
+// Beneficiary is zero
+error BeneficiaryIsZero();
+// Not safety period
+error NotSafetyPeriod();
+// Bounty percentage is higher than the max bounty
+error BountyPercentageHigherThanMaxBounty();
+// Withdraw request pending period must be <= 3 months
+error WithdrawRequestPendingPeriodTooLong();
+// Withdraw request enabled period must be >= 6 hour
+error WithdrawRequestEnabledPeriodTooShort();
+// Only callable by governance or after challenge timeout period
+error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+// No active claim exists
+error NoActiveClaimExists();
+// Amount to reward is too big
+error AmountToRewardTooBig();
+// Withdraw period must be >= 1 hour
+error WithdrawPeriodTooShort();
+// Safety period must be <= 6 hours
+error SafetyPeriodTooLong();
+// Not enough fee paid
+error NotEnoughFeePaid();
+// Vesting duration is too long
+error VestingDurationTooLong();
+// Vesting periods cannot be zero
+error VestingPeriodsCannotBeZero();
+// Vesting duration smaller than periods
+error VestingDurationSmallerThanPeriods();
+// Delay is too short
+error DelayTooShort();
+// No pending max bounty
+error NoPendingMaxBounty();
+// Delay period for setting max bounty had not passed
+error DelayPeriodForSettingMaxBountyHadNotPassed();
+// Committee is zero
+error CommitteeIsZero();
+// Committee already checked in
+error CommitteeAlreadyCheckedIn();
+// Pool does not exist
+error PoolDoesNotExist();
+// Amount to swap is zero
+error AmountToSwapIsZero();
+// Pending withdraw request exists
+error PendingWithdrawRequestExists();
+// Deposit paused
+error DepositPaused();
+// Amount less than 1e6
+error AmountLessThanMinDeposit();
+// Pool balance is zero
+error PoolBalanceIsZero();
+// Total bounty split % should be `HUNDRED_PERCENT`
+error TotalSplitPercentageShouldBeHundredPercent();
+// Withdraw request is invalid
+error InvalidWithdrawRequest();
+// Token approve failed
+error TokenApproveFailed();
+// Wrong amount received
+error AmountSwappedLessThanMinimum();
+// Max bounty cannot be more than `HUNDRED_PERCENT`
+error MaxBountyCannotBeMoreThanHundredPercent();
+// LP token is zero
+error LPTokenIsZero();
+// Only fee setter
+error OnlyFeeSetter();
+// Fee must be less than or equal to 2%
+error PoolWithdrawalFeeTooBig();
+// Token approve reset failed
+error TokenApproveResetFailed();
+// Pool must not be initialized
+error PoolMustNotBeInitialized();
+error InvalidPoolRange();
+// Set shares arrays must have same length
+error SetSharesArraysMustHaveSameLength();
+// Committee not checked in yet
+error CommitteeNotCheckedInYet();
+// Not enough user balance
+error NotEnoughUserBalance();
+// User shares must be greater than 0
+error UserSharesMustBeGreaterThanZero();
+// Swap was not successful
+error SwapFailed();
+// Routing contract must be whitelisted
+error RoutingContractNotWhitelisted();
+// Not enough rewards to transfer to user
+error NotEnoughRewardsToTransferToUser();
+// Only arbitrator
+error OnlyArbitrator();
+// Claim can only be approved if challenge period is over, or if the
+// caller is the arbitrator
+error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+// Bounty split must include hacker payout
+error BountySplitMustIncludeHackerPayout();
+
+
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Parameters that apply to all the vaults
     using SafeERC20Upgradeable for IERC20Upgradeable;
