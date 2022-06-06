@@ -93,13 +93,13 @@ contract Pool is Base {
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyOwner {
-        if (poolInfos.length < _pid) revert PoolDoesNotExist();
+        if (poolInfos.length <= _pid) revert PoolDoesNotExist();
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyOwner {
-        if (poolInfos.length < _pid) revert PoolDoesNotExist();
+        if (poolInfos.length <= _pid) revert PoolDoesNotExist();
         poolInitialized[_pid] = true;
     }
 
@@ -111,7 +111,7 @@ contract Pool is Base {
         uint256[] memory _shares,
         uint256[] memory _rewardDebts)
     external onlyOwner {
-        if (poolInfos.length < _pid) revert PoolDoesNotExist();
+        if (poolInfos.length <= _pid) revert PoolDoesNotExist();
         if (poolInitialized[_pid]) revert PoolMustNotBeInitialized();
         if (_accounts.length != _shares.length ||
             _accounts.length != _rewardDebts.length)
