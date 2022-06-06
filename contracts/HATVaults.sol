@@ -44,8 +44,12 @@ error HVE10();
 // HVE25: Pending withdraw request exist
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
+<<<<<<< HEAD
 // HVE28: totalSupply is zero
 error HVE28();
+=======
+// HVE28: Pool balance is zero
+>>>>>>> develop
 // HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
@@ -64,6 +68,8 @@ error HVE28();
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
+// HVE47: Only arbitrator
+// HVE48: Claim can only be approved if challengeperiod is over, or if the caller is the arbitrator
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and
@@ -76,7 +82,7 @@ error HVE28();
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @dev initialize -
-    * @param _rewardToken The reward token address 
+    * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
     * Some of the contracts functions are limited only to governance:
     * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
@@ -118,5 +124,8 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             claimFee: 0
         });
         setRewardController(_rewardController);
+        arbitrator = owner();
+        challengePeriod = 3 days;
+        challengeTimeOutPeriod = 5 weeks;
     }
 }

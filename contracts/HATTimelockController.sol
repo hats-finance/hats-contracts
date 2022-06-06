@@ -22,8 +22,8 @@ contract HATTimelockController is TimelockController {
     
     // Whitelisted functions
 
-    function approveClaim(uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
-        hatVaults.approveClaim(_claimId);
+    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
+        hatVaults.approveClaim(_claimId, _bountyPercentage);
     }
 
     function addPool(address _lpToken,

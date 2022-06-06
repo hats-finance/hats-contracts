@@ -49,7 +49,8 @@ contract Claim is Base {
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            isChallenged: false
         });
         activeClaims[_pid] = claimId;
         emit SubmitClaim(
@@ -62,14 +63,28 @@ contract Claim is Base {
         );
     }
 
+    function challengeClaim(uint256 _claimId) external onlyArbitrator {
+        require(claims[_claimId].beneficiary != address(0), "HVE10");
+        claims[_claimId].isChallenged = true;
+    }
+
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * Called only by hats governance.
+    * callable by the  arbitrator, if isChallenged == true
+    * Callable by anyone after challengePeriod is passed and isChallenged == false
     * @param _claimId The claim ID
     */
-    function approveClaim(uint256 _claimId) external onlyOwner nonReentrant {
+    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
         if(claim.beneficiary == address(0)) revert HVE10();
+        require(
+            ((msg.sender == arbitrator && claim.isChallenged) ||
+            (claim.createdAt + challengePeriod < block.timestamp)), "HVE48"
+        );
+
+        if (msg.sender == arbitrator) {
+            claim.bountyPercentage = _bountyPercentage;
+        }
         uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
@@ -106,8 +121,7 @@ contract Claim is Base {
         swapAndBurns[pid] += claimBounty.swapAndBurn;
         governanceHatRewards[pid] += claimBounty.governanceHat;
         hackersHatRewards[claim.beneficiary][pid] += claimBounty.hackerHatVested;
-        delete activeClaims[pid];
-        delete claims[_claimId];
+        // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(pid,
             _claimId,
             msg.sender,
@@ -115,6 +129,8 @@ contract Claim is Base {
             claim.bountyPercentage,
             tokenLock,
             claimBounty);
+        delete activeClaims[pid];
+        delete claims[_claimId];
     }
 
     /**
@@ -126,12 +142,13 @@ contract Claim is Base {
         Claim storage claim = claims[_claimId];
         uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
-        require(msg.sender == owner() || claim.createdAt + 5 weeks < block.timestamp, "HVE09");
+        require((msg.sender == arbitrator && claim.isChallenged) || (claim.createdAt + challengeTimeOutPeriod < block.timestamp), "HVE09");
         if(claim.beneficiary == address(0)) revert HVE10();
         delete activeClaims[pid];
         delete claims[_claimId];
         emit DismissClaim(pid, _claimId);
     }
+
 
     function calcClaimBounty(uint256 _pid, uint256 _bountyPercentage)
     public

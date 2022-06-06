@@ -107,6 +107,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         // be payed their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
+        bool isChallenged;
     }
 
     struct PendingMaxBounty {
@@ -119,10 +120,15 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     //PARAMETERS FOR ALL VAULTS
+    uint256 public challengePeriod; // time during which a claim can be challenged by the arbitrator
+    uint256 public challengeTimeOutPeriod; // time after which a challenged claim is automatically dismissed
     GeneralParameters public generalParameters;
     RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
     address public feeSetter;
+
+    address public arbitrator;
+
     // the ERC20 contract in which rewards are distributed
     IERC20 public rewardToken;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
@@ -202,6 +208,9 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
+    event SetChallengePeriod(uint256 _challengePeriod);
+    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 indexed _withdrawRequestPendingPeriod,
         uint256 indexed _withdrawRequestEnablePeriod
@@ -266,6 +275,11 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     modifier onlyCommittee(uint256 _pid) {
         if (committees[_pid] != msg.sender) revert HVE01();
+        _;
+    }
+
+    modifier onlyArbitrator() {
+        require(arbitrator == msg.sender, "HVE47");
         _;
     }
 
