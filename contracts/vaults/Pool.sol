@@ -1,31 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "./Base.sol";
 
 contract Pool is Base {
-    /**
-    * @dev massUpdatePools - Update reward variables for all pools
-    * Be careful of gas spending!
-    * @param _fromPid update pools range from this pool id
-    * @param _toPid update pools range to this pool id
-    */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfos.length, "HVE38");
-        require(_fromPid <= _toPid, "HVE39");
-        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
-            updatePool(pid);
-        }
-        emit MassUpdatePools(_fromPid, _toPid);
-    }
 
     /**
     * @dev Add a new pool. Can be called only by governance.
-    * @param _allocPoint The pool's allocation point
     * @param _lpToken The pool's token
     * @param _committee The pool's committee addres
-    * @param _bountyLevels The pool's bounty levels.
-        Each level is a number between 0 and `HUNDRED_PERCENT`, which represents the percentage of the pool to be rewarded for each severity.
+    * @param _maxBounty The pool's max bounty.
     * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
         Each entry is a number between 0 and `HUNDRED_PERCENT`.
         Total splits should be equal to `HUNDRED_PERCENT`.
@@ -35,10 +19,9 @@ contract Pool is Base {
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods
     */
-    function addPool(uint256 _allocPoint,
-                    address _lpToken,
+    function addPool(address _lpToken,
                     address _committee,
-                    uint256[] memory _bountyLevels,
+                    uint256 _maxBounty,
                     BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams,
@@ -51,42 +34,33 @@ contract Pool is Base {
         require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
         require(_committee != address(0), "HVE21");
         require(_lpToken != address(0), "HVE34");
+        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
 
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
-        if (globalPoolUpdates.length > 0 &&
-            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
+        uint256 startBlock = rewardController.startBlock();
+
+        uint256 poolId = poolInfos.length;
+
         poolInfos.push(PoolInfo({
+            committeeCheckedIn: false,
             lpToken: IERC20Upgradeable(_lpToken),
-            allocPoint: _allocPoint,
-            lastRewardBlock: block.number > START_BLOCK ? block.number : START_BLOCK,
+            lastRewardBlock: block.number > startBlock ? block.number : startBlock,
+            lastProcessedTotalAllocPoint: 0,
             rewardPerShare: 0,
             totalShares: 0,
-            lastProcessedTotalAllocPoint: globalPoolUpdates.length-1,
             balance: 0,
             withdrawalFee: 0
         }));
    
-        uint256 poolId = poolInfos.length-1;
+        setPoolsLastProcessedTotalAllocPoint(poolId);
         committees[poolId] = _committee;
-        uint256[] memory bountyLevels = checkBountyLevels(_bountyLevels);
   
         BountySplit memory bountySplit = (_bountySplit.hackerVested == 0 && _bountySplit.hacker == 0) ?
         getDefaultBountySplit() : _bountySplit;
   
         validateSplit(bountySplit);
         bountyInfos[poolId] = BountyInfo({
-            bountyLevels: bountyLevels,
+            maxBounty: _maxBounty,
             bountySplit: bountySplit,
-            committeeCheckIn: false,
             vestingDuration: _bountyVestingParams[0],
             vestingPeriods: _bountyVestingParams[1]
         });
@@ -95,11 +69,10 @@ contract Pool is Base {
         poolInitialized[poolId] = _isInitialized;
 
         emit AddPool(poolId,
-            _allocPoint,
             _lpToken,
             _committee,
             _descriptionHash,
-            bountyLevels,
+            _maxBounty,
             bountySplit,
             _bountyVestingParams[0],
             _bountyVestingParams[1]);
@@ -108,36 +81,19 @@ contract Pool is Base {
     /**
     * @dev setPool
     * @param _pid the pool id
-    * @param _allocPoint the pool allocation point
     * @param _visible is this pool visible in the UI
     * @param _depositPause pause pool deposit (default false).
     * This parameter can be used by the UI to include or exclude the pool
     * @param _descriptionHash the hash of the pool description.
     */
     function setPool(uint256 _pid,
-                    uint256 _allocPoint,
                     bool _visible,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyOwner {
         require(poolInfos.length > _pid, "HVE23");
-        updatePool(_pid);
-        uint256 totalAllocPoint =
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint
-        - poolInfos[_pid].allocPoint + _allocPoint;
-
-        if (globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalPoolUpdates.push(PoolUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-        poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
-        emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
+        emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyOwner {
@@ -167,5 +123,20 @@ contract Pool is Base {
             });
             pool.totalShares += _shares[i];
         }
+    }
+
+    /**
+   * @dev massUpdatePools - Update reward variables for all pools
+    * Be careful of gas spending!
+    * @param _fromPid update pools range from this pool id
+    * @param _toPid update pools range to this pool id
+    */
+    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
+        require(_toPid <= poolInfos.length, "HVE38");
+        require(_fromPid <= _toPid, "HVE39");
+        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
+            updatePool(pid);
+        }
+        emit MassUpdatePools(_fromPid, _toPid);
     }
 }

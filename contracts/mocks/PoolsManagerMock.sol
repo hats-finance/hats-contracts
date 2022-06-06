@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "../HATVaults.sol";
 
@@ -8,28 +8,30 @@ import "../HATVaults.sol";
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
-                    uint256[] memory _bountyLevels,
+                    uint256 _maxBounty,
                     HATVaults.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
-            _hatVaults.addPool(_allocPoint,
-                                _lpTokens[i],
+            _hatVaults.addPool(_lpTokens[i],
                                 _committee,
-                                _bountyLevels,
+                                _maxBounty,
                                 _bountySplit,
                                 _descriptionHash,
                                 _bountyVestingParams,
                                 false,
                                 true);
+            _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
     }
 
     function setPools(HATVaults _hatVaults,
+                    RewardController _rewardController,
                     uint256[] memory _pids,
                     uint256 _allocPoint,
                     bool _registered,
@@ -38,10 +40,10 @@ contract PoolsManagerMock {
 
         for (uint256 i=0; i < _pids.length; i++) {
             _hatVaults.setPool(_pids[i],
-                            _allocPoint,
                             _registered,
                             _depositPause,
                             _descriptionHash);
+            _rewardController.setAllocPoint(_pids[i], _allocPoint);
         }
     }
 

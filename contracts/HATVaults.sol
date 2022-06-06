@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.6;
-
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./vaults/Claim.sol";
@@ -13,18 +12,17 @@ import "./vaults/Swap.sol";
 import "./vaults/Getters.sol";
 import "./vaults/Withdraw.sol";
 
-
 // Errors:
 // HVE01: Only committee
-// HVE02: Claim submitted
+// HVE02: Active claim exists
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
-// HVE06: _severity is not in the range
+// HVE06: reward percentage is higher than the max bounty
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
-// HVE10: No claim submitted
+// HVE10: No active claim exists
 // HVE11: Amount to reward is too big
 // HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
@@ -33,8 +31,8 @@ import "./vaults/Withdraw.sol";
 // HVE16: Vesting periods cannot be zero
 // HVE17: Vesting duration smaller than periods
 // HVE18: Delay is too short
-// HVE19: No pending set bounty levels
-// HVE20: Delay period for setting bounty levels had not passed
+// HVE19: No pending max bounty
+// HVE20: Delay period for setting max bounty had not passed
 // HVE21: Committee is zero
 // HVE22: Committee already checked in
 // HVE23: Pool does not exist
@@ -42,12 +40,12 @@ import "./vaults/Withdraw.sol";
 // HVE25: Pending withdraw request exist
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
-// HVE28: totalSupply is zero
+// HVE28: Pool balance is zero
 // HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
 // HVE32: Wrong amount received
-// HVE33: Bounty level can not be more than `HUNDRED_PERCENT`
+// HVE33: Max bounty cannot be more than `HUNDRED_PERCENT`
 // HVE34: LP token is zero
 // HVE35: Only fee setter
 // HVE36: Fee must be less than or equal to 2%
@@ -61,45 +59,46 @@ import "./vaults/Withdraw.sol";
 // HVE44: Routing contract must be whitelisted
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
-
+// HVE47: Only arbitrator
+// HVE48: Claim can only be approved if challengeperiod is over, or if the caller is the arbitrator
 
 /// @title Manage all Hats.finance vaults
+/// Hats.finance is a proactive bounty protocol for white hat hackers and
+/// auditors, where projects, community members, and stakeholders incentivize
+/// protocol security and responsible disclosure.
+/// Hats create scalable vaults using the project’s own token. The value of the
+/// bounty increases with the success of the token and project.
+/// This project is open-source and can be found on:
+/// https://github.com/hats-finance/hats-contracts
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @dev initialize -
-    * @param _rewardToken The reward token address 
-    * @param _rewardPerBlock The reward amount per block that the contract will reward pools
-    * @param _startRewardingBlock Start block from which the contract will start rewarding
-    * @param _multiplierPeriod A fixed period value. Each period will have its own multiplier value,
-    *        which sets the reward for each period. e.g a value of 100000 means that each such period is 100000 blocks.
+    * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
-    *        Some of the contracts functions are limited only to governance:
-    *         addPool, setPool, dismissClaim, approveClaim,
-    *         setHatVestingParams, setVestingParams, setRewardsSplit
-    * @param  _swapToken the token that part of a payout will be swapped for and burned - this would typically be HATs
-    * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
-
+    * Some of the contracts functions are limited only to governance:
+    * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
+    * setVestingParams, setRewardsSplit
+    * @param _swapToken the token that part of a payout will be swapped for
+    * and burned - this would typically be HATs
+    * @param _whitelistedRouters initial list of whitelisted routers allowed to
+    * be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
+    * @param _rewardController Address of the reward controller to be used to
+    * manage the reward distribution.
     */
     function initialize(
         address _rewardToken,
-        uint256 _rewardPerBlock,
-        uint256 _startRewardingBlock,
-        uint256 _multiplierPeriod,
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
-        ITokenLockFactory _tokenLockFactory
-    // solhint-disable-next-line func-visibility
+        ITokenLockFactory _tokenLockFactory,
+        RewardController _rewardController
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
         rewardToken = IERC20(_rewardToken);
         swapToken = ERC20Burnable(_swapToken);
-        REWARD_PER_BLOCK = _rewardPerBlock;
-        START_BLOCK = _startRewardingBlock;
-        MULTIPLIER_PERIOD = _multiplierPeriod;
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -110,17 +109,14 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             hatVestingPeriods: 90,
             withdrawPeriod: 11 hours,
             safetyPeriod: 1 hours,
-            setBountyLevelsDelay: 2 days,
+            setMaxBountyDelay: 2 days,
             withdrawRequestEnablePeriod: 7 days,
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-
-        rewardMultipliers = [
-            4413, 4413, 8825, 7788, 6873, 6065,
-            5353, 4724, 4169, 3679, 3247, 2865,
-            2528, 2231, 1969, 1738, 1534, 1353,
-            1194, 1054, 930, 821, 724, 639
-        ];
+        setRewardController(_rewardController);
+        arbitrator = owner();
+        challengePeriod = 3 days;
+        challengeTimeOutPeriod = 5 weeks;
     }
 }

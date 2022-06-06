@@ -1,51 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "./Base.sol";
 
 contract Params is Base {
 
-    /**
-    * @dev Set pending request to set pool bounty levels.
-    * The bounty level represents the percentage of the pool which will be given as a reward for a certain severity.
-    * The function can be called only by the pool committee.
-    * Cannot be called if there are claims that have been submitted.
-    * Each level should be less than or equal to `HUNDRED_PERCENT`
-    * @param _pid The pool id
-    * @param _bountyLevels The array of bounty level per severity
-    */
-    function setPendingBountyLevels(uint256 _pid, uint256[] memory _bountyLevels)
-    external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        pendingBountyLevels[_pid].bountyLevels = checkBountyLevels(_bountyLevels);
-        // solhint-disable-next-line not-rely-on-time
-        pendingBountyLevels[_pid].timestamp = block.timestamp;
-        emit SetPendingBountyLevels(_pid, _bountyLevels, pendingBountyLevels[_pid].timestamp);
+    function setFeeSetter(address _newFeeSetter) external onlyOwner {
+        feeSetter = _newFeeSetter;
+        emit SetFeeSetter(_newFeeSetter);
     }
 
     /**
-   * @dev Set the pool token bounty levels to the already pending bounty levels.
-   * The bounty level represents the percentage of the pool which will be given as a bounty for a certain severity.
-   * The function can be called only by the pool committee.
-   * Cannot be called if there are claims that have been submitted.
-   * Can only be called if there are bounty levels pending approval, and the time delay since setting the pending bounty
-   * levels had passed.
-   * Each level should be less than `HUNDRED_PERCENT`
-   * @param _pid The pool id
- */
-    function setBountyLevels(uint256 _pid)
-    external
-    onlyCommittee(_pid) noSubmittedClaims(_pid) {
-        require(pendingBountyLevels[_pid].timestamp > 0, "HVE19");
-        // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - pendingBountyLevels[_pid].timestamp > generalParameters.setBountyLevelsDelay, "HVE20");
-        bountyInfos[_pid].bountyLevels = pendingBountyLevels[_pid].bountyLevels;
-        delete pendingBountyLevels[_pid];
-        emit SetBountyLevels(_pid, bountyInfos[_pid].bountyLevels);
-    }
-
-    /**
-    * @dev setCommittee - set new committee address.
+    * @dev Set new committee address. Can be called by existing committee if it had checked in, or
+    * by the governance otherwise.
     * @param _pid pool id
     * @param _committee new committee address
     */
@@ -54,7 +21,7 @@ contract Params is Base {
         require(_committee != address(0), "HVE21");
         //governance can update committee only if committee was not checked in yet.
         if (msg.sender == owner() && committees[_pid] != msg.sender) {
-            require(!bountyInfos[_pid].committeeCheckIn, "HVE22");
+            require(!poolInfos[_pid].committeeCheckedIn, "HVE22");
         } else {
             require(committees[_pid] == msg.sender, "HVE01");
         }
@@ -64,14 +31,13 @@ contract Params is Base {
         emit SetCommittee(_pid, _committee);
     }
 
-    /**
-    * @dev committeeCheckIn - committee check in.
-    * deposit is enable only after committee check in
-    * @param _pid pool id
+   /**
+     * @dev setArbitrator - called by hats governance to set arbitrator
+     * @param _arbitrator New arbitrator.
     */
-    function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
-        bountyInfos[_pid].committeeCheckIn = true;
-        emit CommitteeCheckedIn(_pid);
+    function setArbitrator(address _arbitrator) external onlyOwner {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
     }
 
     /**
@@ -90,21 +56,22 @@ contract Params is Base {
     }
 
     /**
-     * @dev setRewardMultipliers - called by hats governance to set reward multipliers
-     * @param _rewardMultipliers reward multipliers
-    */
-    function setRewardMultipliers(uint256[24] memory _rewardMultipliers) external onlyOwner {
-        rewardMultipliers = _rewardMultipliers;
-        emit SetRewardMultipliers(_rewardMultipliers);
-    }
-
-    /**
      * @dev Called by hats governance to set fee for submitting a claim to any vault
      * @param _fee claim fee in ETH
     */
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
+    }
+
+    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        challengePeriod = _challengePeriod;
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
     /**
@@ -158,27 +125,28 @@ contract Params is Base {
     */
     function setBountySplit(uint256 _pid, BountySplit memory _bountySplit)
     external
-    onlyOwner noSubmittedClaims(_pid) noSafetyPeriod {
+    onlyOwner noActiveClaims(_pid) noSafetyPeriod {
         validateSplit(_bountySplit);
         bountyInfos[_pid].bountySplit = _bountySplit;
         emit SetBountySplit(_pid, _bountySplit);
     }
 
     /**
-    * @dev Set the timelock delay for setting bounty levels (the time between setPendingBountyLevels and setBountyLevels)
+    * @dev Set the timelock delay for setting the max bounty
+    * (the time between setPendingMaxBounty and setMaxBounty)
     * @param _delay The delay time
     */
-    function setBountyLevelsDelay(uint256 _delay)
+    function setMaxBountyDelay(uint256 _delay)
     external
     onlyOwner {
         require(_delay >= 2 days, "HVE18");
-        generalParameters.setBountyLevelsDelay = _delay;
-        emit SetBountyLevelsDelay(_delay);
+        generalParameters.setMaxBountyDelay = _delay;
+        emit SetMaxBountyDelay(_delay);
     }
 
-    function setFeeSetter(address _newFeeSetter) external onlyOwner {
-        feeSetter = _newFeeSetter;
-        emit SetFeeSetter(_newFeeSetter);
+    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
+        whitelistedRouters[_router] = _isWhitelisted;
+        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 
     function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
@@ -187,8 +155,56 @@ contract Params is Base {
         emit SetPoolWithdrawalFee(_pid, _newFee);
     }
 
-    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
-        whitelistedRouters[_router] = _isWhitelisted;
-        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
+    /**
+       * @dev committeeCheckIn - committee check in.
+    * deposit is enable only after committee check in
+    * @param _pid pool id
+    */
+    function committeeCheckIn(uint256 _pid) external onlyCommittee(_pid) {
+        poolInfos[_pid].committeeCheckedIn = true;
+        emit CommitteeCheckedIn(_pid);
+    }
+
+    /**
+   * @dev Set pending request to set pool max bounty.
+    * The function can be called only by the pool committee.
+    * Cannot be called if there are claims that have been submitted.
+    * Max bounty should be less than or equal to `HUNDRED_PERCENT`
+    * @param _pid The pool id
+    * @param _maxBounty The maximum bounty percentage that can be paid out
+    */
+    function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
+    external
+    onlyCommittee(_pid) noActiveClaims(_pid) {
+        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
+        pendingMaxBounty[_pid].maxBounty = _maxBounty;
+        // solhint-disable-next-line not-rely-on-time
+        pendingMaxBounty[_pid].timestamp = block.timestamp;
+        emit SetPendingMaxBounty(_pid, _maxBounty, pendingMaxBounty[_pid].timestamp);
+    }
+
+    /**
+   * @dev Set the pool max bounty to the already pending max bounty.
+   * The function can be called only by the pool committee.
+   * Cannot be called if there are claims that have been submitted.
+   * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
+   * had passed.
+   * Max bounty should be less than `HUNDRED_PERCENT`
+   * @param _pid The pool id
+ */
+    function setMaxBounty(uint256 _pid)
+    external
+    onlyCommittee(_pid) noActiveClaims(_pid) {
+        require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
+        bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
+        delete pendingMaxBounty[_pid];
+        emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
+    }
+
+    function setRewardController(RewardController _newRewardController) public onlyOwner {
+        rewardController = _newRewardController;
+        emit SetRewardController(address(_newRewardController));
     }
 }
