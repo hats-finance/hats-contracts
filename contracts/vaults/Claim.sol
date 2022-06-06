@@ -84,7 +84,7 @@ contract Claim is Base {
         );
 
         if (msg.sender == arbitrator) {
-           claim.bountyPercentage = _bountyPercentage;
+            claim.bountyPercentage = _bountyPercentage;
         }
         uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
@@ -143,9 +143,7 @@ contract Claim is Base {
         Claim storage claim = claims[_claimId];
         uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
-        require(
-          ((msg.sender == arbitrator && claim.isChallenged) ||
-          (claim.createdAt + challengeTimeOutPeriod < block.timestamp)), "HVE09");
+        require((msg.sender == arbitrator && claim.isChallenged) || (claim.createdAt + challengeTimeOutPeriod < block.timestamp), "HVE09");
         require(claim.beneficiary != address(0), "HVE10");
         delete activeClaims[pid];
         delete claims[_claimId];
