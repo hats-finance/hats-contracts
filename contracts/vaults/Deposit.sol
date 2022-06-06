@@ -64,7 +64,7 @@ contract Deposit is Base {
 
     function depositReward(uint256 _amount) external {
         uint256 balanceBefore = rewardToken.balanceOf(address(this));
-        rewardToken.transferFrom(msg.sender, address(this), _amount);
+        rewardToken.safeTransferFrom(msg.sender, address(this), _amount);
         uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
         rewardAvailable += rewardTokenReceived;
         emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));

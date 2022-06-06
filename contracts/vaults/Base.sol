@@ -8,13 +8,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "../tokenlock/ITokenLockFactory.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "../tokenlock/TokenLockFactory.sol";
 import "../RewardController.sol";
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Parameters that apply to all the vaults
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
+    
     struct GeneralParameters {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
@@ -130,10 +132,10 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     address public arbitrator;
 
     // the ERC20 contract in which rewards are distributed
-    IERC20 public rewardToken;
+    IERC20Upgradeable public rewardToken;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20Burnable public swapToken;
+    ERC20BurnableUpgradeable public swapToken;
     uint256 public rewardAvailable;
     mapping(address => bool) public whitelistedRouters;
     uint256 internal nonce;
@@ -328,7 +330,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
         require(rewardAvailable >= _amount, "HVE46");
         rewardAvailable -= _amount;
-        rewardToken.transfer(_to, _amount);
+        rewardToken.safeTransfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
