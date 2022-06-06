@@ -70,21 +70,13 @@ contract("HatVaults", (accounts) => {
     // go and pass the challenge period
     await utils.increaseTime(2000);
 
-    const claim = await hatVaults.claims(claimId);
-    const poolinfo = await hatVaults.poolInfos(claim.pid);
-    console.log(claim);
-    console.log(poolinfo);
-    console.log(claim.pid);
-    console.log(poolinfo.balance.toString());
     // challenge period is over
     // anyone can now approve the claim, accepting the claim with the same amount is fine
     const tx = await hatVaults.approveClaim(claimId, 1234, {
       from: accounts[2],
     });
-    console.log(tx.logs[1]);
     assert.equal(tx.logs[1].event, "ApproveClaim");
     assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
-    // TODO: check that the amount (1234) is ignored in this case
   });
 
   it("challenge - approve Claim ", async () => {
