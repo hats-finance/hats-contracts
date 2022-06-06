@@ -3674,14 +3674,14 @@ contract("HatVaults", (accounts) => {
 
     try {
       await hatVaults.addPool(
-          stakingToken2.address,
-          accounts[1],
-          8000,
-          [0, 0, 500, 0, 9000, 500],
-          "_descriptionHash",
-          [86400, 10],
-          false,
-          true
+        stakingToken2.address,
+        accounts[1],
+        8000,
+        [0, 0, 500, 0, 9000, 500],
+        "_descriptionHash",
+        [86400, 10],
+        false,
+        true
       );
       assert(false, "bounty payout to hacker is zero");
     } catch (ex) {
@@ -4196,7 +4196,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("swapBurnSend to fail if not enough reward tokens", async () => {
+  it.only("swapBurnSend to fail if not enough reward tokens", async () => {
     await setup(
       accounts,
       (await web3.eth.getBlock("latest")).number,
