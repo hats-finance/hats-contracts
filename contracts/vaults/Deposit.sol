@@ -13,10 +13,10 @@ contract Deposit is Base {
     * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
     **/
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
-        require(!poolDepositPause[_pid], "HVE26");
-        require(_amount >= MINIMUM_DEPOSIT, "HVE27");
-
-        // clear withdraw request
+        if (poolDepositPause[_pid]) revert DepositPaused();
+        if (_amount < MINIMUM_DEPOSIT) revert AmountLessThanMinDeposit();
+        
+        //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -65,8 +65,8 @@ contract Deposit is Base {
      * @param _amount amount of pool's native token to add
     */
     function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {
-        require((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT < poolInfos[_pid].totalShares,
-        "HVE11");
+        if ((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT >=
+            poolInfos[_pid].totalShares) revert AmountToRewardTooBig();
 
         uint256 balanceBefore = poolInfos[_pid].lpToken.balanceOf(address(this));
         poolInfos[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -91,7 +91,8 @@ contract Deposit is Base {
     }
 
     function _claimReward(uint256 _pid, UserInfo memory _user) internal {
-        require(poolInfos[_pid].committeeCheckedIn, "HVE40");
+        if (!poolInfos[_pid].committeeCheckedIn)
+            revert CommitteeNotCheckedInYet();
         updatePool(_pid);
         // if the user already has funds in the pool, give the previous reward
         if (_user.shares > 0) {

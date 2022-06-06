@@ -18,12 +18,13 @@ contract Params is Base {
     */
     function setCommittee(uint256 _pid, address _committee)
     external {
-        require(_committee != address(0), "HVE21");
+        if (_committee == address(0)) revert CommitteeIsZero();
         //governance can update committee only if committee was not checked in yet.
         if (msg.sender == owner() && committees[_pid] != msg.sender) {
-            require(!poolInfos[_pid].committeeCheckedIn, "HVE22");
+            if (poolInfos[_pid].committeeCheckedIn)
+                revert CommitteeAlreadyCheckedIn();
         } else {
-            require(committees[_pid] == msg.sender, "HVE01");
+            if (committees[_pid] != msg.sender) revert OnlyCommittee();
         }
 
         committees[_pid] = _committee;
@@ -48,8 +49,10 @@ contract Params is Base {
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
     onlyOwner {
-        require(90 days >= _withdrawRequestPendingPeriod, "HVE07");
-        require(6 hours <= _withdrawRequestEnablePeriod, "HVE08");
+        if (90 days < _withdrawRequestPendingPeriod)
+            revert WithdrawRequestPendingPeriodTooLong();
+        if (6 hours > _withdrawRequestEnablePeriod)
+            revert WithdrawRequestEnabledPeriodTooShort();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
         emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
@@ -80,8 +83,8 @@ contract Params is Base {
      * @param _safetyPeriod withdraw disable period
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner {
-        require(1 hours <= _withdrawPeriod, "HVE12");
-        require(_safetyPeriod <= 6 hours, "HVE13");
+        if (1 hours > _withdrawPeriod) revert WithdrawPeriodTooShort();
+        if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
         generalParameters.safetyPeriod = _safetyPeriod;
         emit SetWithdrawSafetyPeriod(_withdrawPeriod, _safetyPeriod);
@@ -94,9 +97,9 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setVestingParams(uint256 _pid, uint256 _duration, uint256 _periods) external onlyOwner {
-        require(_duration < 120 days, "HVE15");
-        require(_periods > 0, "HVE16");
-        require(_duration >= _periods, "HVE17");
+        if (_duration >= 120 days) revert VestingDurationTooLong();
+        if (_periods == 0) revert VestingPeriodsCannotBeZero();
+        if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         bountyInfos[_pid].vestingDuration = _duration;
         bountyInfos[_pid].vestingPeriods = _periods;
         emit SetVestingParams(_pid, _duration, _periods);
@@ -109,9 +112,9 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
-        require(_duration < 180 days, "HVE15");
-        require(_periods > 0, "HVE16");
-        require(_duration >= _periods, "HVE17");
+        if (_duration >= 180 days) revert VestingDurationTooLong();
+        if (_periods == 0) revert VestingPeriodsCannotBeZero();
+        if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         generalParameters.hatVestingDuration = _duration;
         generalParameters.hatVestingPeriods = _periods;
         emit SetHatVestingParams(_duration, _periods);
@@ -139,7 +142,7 @@ contract Params is Base {
     function setMaxBountyDelay(uint256 _delay)
     external
     onlyOwner {
-        require(_delay >= 2 days, "HVE18");
+        if (_delay < 2 days) revert DelayTooShort();
         generalParameters.setMaxBountyDelay = _delay;
         emit SetMaxBountyDelay(_delay);
     }
@@ -150,7 +153,7 @@ contract Params is Base {
     }
 
     function setPoolWithdrawalFee(uint256 _pid, uint256 _newFee) external onlyFeeSetter {
-        require(_newFee <= MAX_FEE, "HVE36");
+        if (_newFee > MAX_FEE) revert PoolWithdrawalFeeTooBig();
         poolInfos[_pid].withdrawalFee = _newFee;
         emit SetPoolWithdrawalFee(_pid, _newFee);
     }
@@ -176,7 +179,8 @@ contract Params is Base {
     function setPendingMaxBounty(uint256 _pid, uint256 _maxBounty)
     external
     onlyCommittee(_pid) noActiveClaims(_pid) {
-        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
         pendingMaxBounty[_pid].maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty[_pid].timestamp = block.timestamp;
@@ -195,9 +199,11 @@ contract Params is Base {
     function setMaxBounty(uint256 _pid)
     external
     onlyCommittee(_pid) noActiveClaims(_pid) {
-        require(pendingMaxBounty[_pid].timestamp > 0, "HVE19");
+        if (pendingMaxBounty[_pid].timestamp == 0) revert NoPendingMaxBounty();
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - pendingMaxBounty[_pid].timestamp > generalParameters.setMaxBountyDelay, "HVE20");
+        if (block.timestamp - pendingMaxBounty[_pid].timestamp <
+            generalParameters.setMaxBountyDelay)
+            revert DelayPeriodForSettingMaxBountyHadNotPassed();
         bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
         delete pendingMaxBounty[_pid];
         emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);

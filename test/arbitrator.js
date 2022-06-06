@@ -108,22 +108,22 @@ contract("HatVaults Arbitrator", (accounts) => {
     // only arbitrator can challenge the claim
     assertFunctionRaisesException(
       hatVaults.challengeClaim(claimId, { from: accounts[2] }),
-      "HVE47"
+      "OnlyArbitrator"
     );
     assertFunctionRaisesException(
       hatVaults.challengeClaim(claimId, { from: owner }),
-      "HVE47"
+      "OnlyArbitrator"
     );
     await hatVaults.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 8000, { from: staker }),
-      "HVE48"
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 8000, { from: owner }),
-      "HVE48"
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await hatVaults.approveClaim(claimId, 8000, { from: arbitrator });
@@ -143,12 +143,12 @@ contract("HatVaults Arbitrator", (accounts) => {
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: accounts[2] }),
-      "HVE09"
+      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
     );
 
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: owner }),
-      "HVE09"
+      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
     );
     await hatVaults.dismissClaim(claimId, { from: arbitrator });
   });
