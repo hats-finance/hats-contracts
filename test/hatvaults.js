@@ -3157,7 +3157,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "router return less than minimum");
     } catch (ex) {
-      assertVMException(ex, "AmountSwappedLessThenMinimum");
+      assertVMException(ex, "AmountSwappedLessThanMinimum");
     }
   });
 
