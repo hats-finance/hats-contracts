@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import "../tokenlock/tokenLockFactory.sol";
+import "../tokenlock/TokenLockFactory.sol";
 import "../RewardController.sol";
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
