@@ -79,7 +79,7 @@ contract Withdraw is Base {
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         if (user.shares == 0) revert UserSharesMustBeGreaterThanZero();
-        uint256 factoredBalance = user.shares * pool.balance / pool.totalShares;
+        uint256 factoredBalance = (user.shares * pool.balance) / pool.totalShares;
         uint256 fee = (factoredBalance * pool.withdrawalFee) / HUNDRED_PERCENT;
 
         pool.totalShares -= user.shares;

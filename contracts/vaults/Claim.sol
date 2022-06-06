@@ -92,7 +92,7 @@ contract Claim is Base {
         Claim storage claim = claims[_claimId];
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         if (!(msg.sender == arbitrator && claim.isChallenged) &&
-            (claim.createdAt + challengePeriod > block.timestamp))
+            (claim.createdAt + challengePeriod >= block.timestamp))
         revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 
         uint256 pid = claim.pid;

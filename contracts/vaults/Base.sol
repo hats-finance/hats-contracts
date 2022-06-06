@@ -296,7 +296,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
-        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >
+        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
             generalParameters.withdrawPeriod) revert SafetyPeriod();
         _;
     }

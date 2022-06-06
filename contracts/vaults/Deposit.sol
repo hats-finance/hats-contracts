@@ -64,8 +64,8 @@ contract Deposit is Base {
      * @param _pid pool id
      * @param _amount amount of pool's native token to add
     */
-    function rewardDepositors(uint256 _pid, uint256 _amount) external {
-        if ((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT >
+    function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {
+        if ((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT >=
             poolInfos[_pid].totalShares) revert AmountToRewardTooBig();
 
         uint256 balanceBefore = poolInfos[_pid].lpToken.balanceOf(address(this));

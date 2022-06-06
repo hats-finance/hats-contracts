@@ -85,7 +85,7 @@ contract Swap is Base {
         if (!success) revert SwapFailed();
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
         if (swapTokenReceived < _amountOutMinimum)
-            revert AmountSwappedLessThenMinimum();
+            revert AmountSwappedLessThanMinimum();
             
         if (!_token.approve(address(_routingContract), 0))
             revert TokenApproveResetFailed();
