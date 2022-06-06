@@ -12,103 +12,103 @@ import "./vaults/Getters.sol";
 import "./vaults/Withdraw.sol";
 
 // Errors:
-// HVE01: Only committee
+// Only committee
 error OnlyCommittee();
-// HVE02: Active claim exists
+// Active claim exists
 error ActiveClaimExists();
-// HVE03: Safety period
+// Safety period
 error SafetyPeriod();
-// HVE04: Beneficiary is zero
+// Beneficiary is zero
 error BeneficiaryIsZero();
-// HVE05: Not safety period
+// Not safety period
 error NotSafetyPeriod();
-// HVE06: Bounty percentage is higher than the max bounty
+// Bounty percentage is higher than the max bounty
 error BountyPercentageHigherThanMaxBounty();
-// HVE07: Withdraw request pending period must be <= 3 months
+// Withdraw request pending period must be <= 3 months
 error WithdrawRequestPendingPeriodTooLong();
-// HVE08: Withdraw request enabled period must be >= 6 hour
+// Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
-// HVE09: Only callable by governance or after challenge timeout period
+// Only callable by governance or after challenge timeout period
 error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
-// HVE10: No active claim exists
+// No active claim exists
 error NoActiveClaimExists();
-// HVE11: Amount to reward is too big
+// Amount to reward is too big
 error AmountToRewardTooBig();
-// HVE12: Withdraw period must be >= 1 hour
+// Withdraw period must be >= 1 hour
 error WithdrawPeriodTooShort();
-// HVE13: Safety period must be <= 6 hours
+// Safety period must be <= 6 hours
 error SafetyPeriodTooLong();
-// HVE14: Not enough fee paid
+// Not enough fee paid
 error NotEnoughFeePaid();
-// HVE15: Vesting duration is too long
+// Vesting duration is too long
 error VestingDurationTooLong();
-// HVE16: Vesting periods cannot be zero
+// Vesting periods cannot be zero
 error VestingPeriodsCannotBeZero();
-// HVE17: Vesting duration smaller than periods
+// Vesting duration smaller than periods
 error VestingDurationSmallerThanPeriods();
-// HVE18: Delay is too short
+// Delay is too short
 error DelayTooShort();
-// HVE19: No pending max bounty
+// No pending max bounty
 error NoPendingMaxBounty();
-// HVE20: Delay period for setting max bounty had not passed
+// Delay period for setting max bounty had not passed
 error DelayPeriodForSettingMaxBountyHadNotPassed();
-// HVE21: Committee is zero
+// Committee is zero
 error CommitteeIsZero();
-// HVE22: Committee already checked in
+// Committee already checked in
 error CommitteeAlreadyCheckedIn();
-// HVE23: Pool does not exist
+// Pool does not exist
 error PoolDoesNotExist();
-// HVE24: Amount to swap is zero
+// Amount to swap is zero
 error AmountToSwapIsZero();
-// HVE25: Pending withdraw request exists
+// Pending withdraw request exists
 error PendingWithdrawRequestExists();
-// HVE26: Deposit paused
+// Deposit paused
 error DepositPaused();
-// HVE27: Amount less than 1e6
+// Amount less than 1e6
 error AmountLessThanMinDeposit();
-// HVE28: Pool balance is zero
+// Pool balance is zero
 error PoolBalanceIsZero();
-// HVE29: Total bounty split % should be `HUNDRED_PERCENT`
+// Total bounty split % should be `HUNDRED_PERCENT`
 error TotalSplitPercentageShouldBeHundredPercent();
-// HVE30: Withdraw request is invalid
+// Withdraw request is invalid
 error InvalidWithdrawRequest();
-// HVE31: Token approve failed
+// Token approve failed
 error TokenApproveFailed();
-// HVE32: Wrong amount received
-error AmountSwappedLessThenMinimum();
-// HVE33: Max bounty cannot be more than `HUNDRED_PERCENT`
+// Wrong amount received
+error AmountSwappedLessThanMinimum();
+// Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
-// HVE34: LP token is zero
+// LP token is zero
 error LPTokenIsZero();
-// HVE35: Only fee setter
+// Only fee setter
 error OnlyFeeSetter();
-// HVE36: Fee must be less than or equal to 2%
+// Fee must be less than or equal to 2%
 error PoolWithdrawalFeeTooBig();
-// HVE37: Token approve reset failed
+// Token approve reset failed
 error TokenApproveResetFailed();
-// HVE38: Pool must not be initialized
+// Pool must not be initialized
 error PoolMustNotBeInitialized();
 error InvalidPoolRange();
-// HVE39: Set shares arrays must have same length
+// Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
-// HVE40: Committee not checked in yet
+// Committee not checked in yet
 error CommitteeNotCheckedInYet();
-// HVE41: Not enough user balance
+// Not enough user balance
 error NotEnoughUserBalance();
-// HVE42: User shares must be greater than 0
+// User shares must be greater than 0
 error UserSharesMustBeGreaterThanZero();
-// HVE43: Swap was not successful
+// Swap was not successful
 error SwapFailed();
-// HVE44: Routing contract must be whitelisted
+// Routing contract must be whitelisted
 error RoutingContractNotWhitelisted();
-// HVE46: Not enough rewards to transfer to user
+// Not enough rewards to transfer to user
 error NotEnoughRewardsToTransferToUser();
-// HVE47: Only arbitrator
+// Only arbitrator
 error OnlyArbitrator();
-// HVE48: Claim can only be approved if challenge period is over, or if the
+// Claim can only be approved if challenge period is over, or if the
 // caller is the arbitrator
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
-// HVE47: Bounty split must include hacker payout
+// Bounty split must include hacker payout
 error BountySplitMustIncludeHackerPayout();
 
 
