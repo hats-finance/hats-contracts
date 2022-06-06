@@ -6,7 +6,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("hardhat-contract-sizer");
 require("hardhat-watcher");
 require("hardhat-gas-reporter");
-require('@openzeppelin/hardhat-upgrades');
+require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -159,7 +159,7 @@ module.exports = {
     },
   },
   solidity: {
-    version: "0.8.6",
+    version: "0.8.14",
     settings: {
       optimizer: {
         enabled: true,
