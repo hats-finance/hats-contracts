@@ -44,12 +44,7 @@ error HVE10();
 // HVE25: Pending withdraw request exist
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
-<<<<<<< HEAD
-// HVE28: totalSupply is zero
 error HVE28();
-=======
-// HVE28: Pool balance is zero
->>>>>>> develop
 // HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
