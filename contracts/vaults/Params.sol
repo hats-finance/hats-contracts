@@ -23,7 +23,7 @@ contract Params is Base {
         if (msg.sender == owner() && committees[_pid] != msg.sender) {
             require(!poolInfos[_pid].committeeCheckedIn, "HVE22");
         } else {
-            require(committees[_pid] == msg.sender, "HVE01");
+            if(committees[_pid] != msg.sender) revert HVE01();
         }
 
         committees[_pid] = _committee;

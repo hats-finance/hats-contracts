@@ -14,15 +14,19 @@ import "./vaults/Withdraw.sol";
 
 // Errors:
 // HVE01: Only committee
+error HVE01();
 // HVE02: Active claim exists
+error HVE02();
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
 // HVE06: reward percentage is higher than the max bounty
+error HVE06();
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
 // HVE10: No active claim exists
+error HVE10();
 // HVE11: Amount to reward is too big
 // HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
@@ -41,6 +45,7 @@ import "./vaults/Withdraw.sol";
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
 // HVE28: totalSupply is zero
+error HVE28();
 // HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed

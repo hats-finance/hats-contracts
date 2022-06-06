@@ -40,7 +40,7 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
         generalParameters.withdrawPeriod, "HVE05");
-        require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
+        if(_bountyPercentage > bountyInfos[_pid].maxBounty) revert HVE06();
         uint256 claimId;
         claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce++)));
         claims[claimId] = Claim({
@@ -69,7 +69,7 @@ contract Claim is Base {
     */
     function approveClaim(uint256 _claimId) external onlyOwner nonReentrant {
         Claim storage claim = claims[_claimId];
-        require(claim.beneficiary != address(0), "HVE10");
+        if(claim.beneficiary == address(0)) revert HVE10();
         uint256 pid = claim.pid;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
@@ -127,7 +127,7 @@ contract Claim is Base {
         uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
         require(msg.sender == owner() || claim.createdAt + 5 weeks < block.timestamp, "HVE09");
-        require(claim.beneficiary != address(0), "HVE10");
+        if(claim.beneficiary == address(0)) revert HVE10();
         delete activeClaims[pid];
         delete claims[_claimId];
         emit DismissClaim(pid, _claimId);
@@ -138,8 +138,8 @@ contract Claim is Base {
     view
     returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = poolInfos[_pid].balance;
-        require(totalSupply > 0, "HVE28");
-        require(_bountyPercentage <= bountyInfos[_pid].maxBounty, "HVE06");
+        if(totalSupply == 0) revert HVE28();
+        if(_bountyPercentage > bountyInfos[_pid].maxBounty) revert HVE06();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
         claimBounty.hackerVested =
         totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested

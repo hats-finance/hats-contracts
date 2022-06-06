@@ -265,7 +265,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyCommittee(uint256 _pid) {
-        require(committees[_pid] == msg.sender, "HVE01");
+        if (committees[_pid] != msg.sender) revert HVE01();
         _;
     }
 
@@ -280,7 +280,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier noActiveClaims(uint256 _pid) {
-        require(activeClaims[_pid] == 0, "HVE02");
+        if(activeClaims[_pid] != 0) revert HVE02();
         _;
     }
 
