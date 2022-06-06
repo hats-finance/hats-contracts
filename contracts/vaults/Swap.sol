@@ -41,7 +41,7 @@ contract Swap is Base {
         address tokenLock;
         uint256 hackerReward = hatsReceived * amountForHackersHatRewards / amount;
         if (hackerReward > 0) {
-            //hacker gets her reward via vesting contract
+            // hacker gets her reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(swapToken),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
@@ -52,8 +52,8 @@ contract Swap is Base {
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp + generalParameters.hatVestingDuration, //end
                 generalParameters.hatVestingPeriods,
-                0, //no release start
-                0, //no cliff
+                0, // no release start
+                0, // no cliff
                 ITokenLock.Revocability.Disabled,
                 true
             );
@@ -74,14 +74,18 @@ contract Swap is Base {
         if (address(_token) == address(swapToken)) {
             return _amount;
         }
+
         require(whitelistedRouters[_routingContract], "HVE44");
+
         require(_token.approve(_routingContract, _amount), "HVE31");
+
         uint256 balanceBefore = swapToken.balanceOf(address(this));
-        require(rewardAvailable >= _amountOutMinimum, "HVE45");
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = _routingContract.call(_routingPayload);
         require(success, "HVE43");
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
         require(swapTokenReceived >= _amountOutMinimum, "HVE32");
+
         require(_token.approve(address(_routingContract), 0), "HVE37");
     }
 }
