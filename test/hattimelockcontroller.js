@@ -18,32 +18,7 @@ var router;
 var stakingToken;
 var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
-let rewardPerEpoch = [
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("88250"),
-  web3.utils.toWei("77880"),
-  web3.utils.toWei("68730"),
-  web3.utils.toWei("60650"),
-  web3.utils.toWei("53530"),
-  web3.utils.toWei("47240"),
-  web3.utils.toWei("41690"),
-  web3.utils.toWei("36790"),
-  web3.utils.toWei("32470"),
-  web3.utils.toWei("28650"),
-  web3.utils.toWei("25280"),
-  web3.utils.toWei("22310"),
-  web3.utils.toWei("19690"),
-  web3.utils.toWei("17380"),
-  web3.utils.toWei("15340"),
-  web3.utils.toWei("13530"),
-  web3.utils.toWei("11940"),
-  web3.utils.toWei("10540"),
-  web3.utils.toWei("9300"),
-  web3.utils.toWei("8210"),
-  web3.utils.toWei("7240"),
-  web3.utils.toWei("6390"),
-];
+const { assertVMException, rewardPerEpoch } = require("./hatvaults.js");
 
 const setup = async function(
   accounts,
@@ -77,6 +52,7 @@ const setup = async function(
     true
   );
   hatVaults = await HATVaults.at(deployment.hatVaults.address);
+  await hatVaults.setChallengePeriod(0);
   rewardController = await RewardController.at(
     deployment.rewardController.address
   );
@@ -122,6 +98,7 @@ const setup = async function(
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
 
+
 function assertVMException(error) {
   let condition =
     error.message.search("VM Exception") > -1 ||
@@ -134,6 +111,7 @@ function assertVMException(error) {
 
 contract("HatTimelockController", (accounts) => {
   async function advanceToSaftyPeriod() {
+
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
     let withdrawPeriod = (
@@ -352,7 +330,7 @@ contract("HatTimelockController", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSaftyPeriod();
+    await advanceToSafetyPeriod();
     const bountyPercentage = 300;
     let tx = await hatVaults.submitClaim(
       0,
@@ -365,20 +343,22 @@ contract("HatTimelockController", (accounts) => {
     );
     let claimId = tx.logs[0].args._claimId;
     try {
-      await hatTimelockController.approveClaim(claimId, { from: accounts[3] });
+      await hatTimelockController.approveClaim(claimId, bountyPercentage, {
+        from: accounts[3],
+      });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
-    try {
-      await hatVaults.approveClaim(claimId);
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+    // try {
+    //   await hatVaults.approveClaim(claimId, bountyPercentage);
+    //   assert(false, "only gov");
+    // } catch (ex) {
+    //   assertVMException(ex);
+    // }
 
-    await hatTimelockController.approveClaim(claimId);
+    await hatTimelockController.approveClaim(claimId, bountyPercentage);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],

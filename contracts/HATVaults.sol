@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./vaults/Claim.sol";
@@ -14,7 +14,7 @@ import "./vaults/Withdraw.sol";
 
 // Errors:
 // HVE01: Only committee
-// HVE02: Claim submitted
+// HVE02: Active claim exists
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
 // HVE05: Not safety period
@@ -22,7 +22,7 @@ import "./vaults/Withdraw.sol";
 // HVE07: Withdraw request pending period must be <= 3 months
 // HVE08: Withdraw request enabled period must be >= 6 hour
 // HVE09: Only callable by governance or after 5 weeks
-// HVE10: No claim submitted
+// HVE10: No active claim exists
 // HVE11: Amount to reward is too big
 // HVE12: Withdraw period must be >= 1 hour
 // HVE13: Safety period must be <= 6 hours
@@ -40,7 +40,7 @@ import "./vaults/Withdraw.sol";
 // HVE25: Pending withdraw request exist
 // HVE26: Deposit paused
 // HVE27: Amount less than 1e6
-// HVE28: totalSupply is zero
+// HVE28: Pool balance is zero
 // HVE29: Total split % should be `HUNDRED_PERCENT`
 // HVE30: Withdraw request is invalid
 // HVE31: Token approve failed
@@ -60,21 +60,33 @@ import "./vaults/Withdraw.sol";
 // HVE45: Not enough HATs for swap
 // HVE46: Not enough rewards to transfer to user
 // HVE47: Bounty split must include hacker payout
+// HVE48: Claim can only be approved if challengeperiod is over, or if the caller is the arbitrator
+
 
 /// @title Manage all Hats.finance vaults
+/// Hats.finance is a proactive bounty protocol for white hat hackers and
+/// auditors, where projects, community members, and stakeholders incentivize
+/// protocol security and responsible disclosure.
+/// Hats create scalable vaults using the project’s own token. The value of the
+/// bounty increases with the success of the token and project.
+/// This project is open-source and can be found on:
+/// https://github.com/hats-finance/hats-contracts
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @dev initialize -
-    * @param _rewardToken The reward token address 
+    * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
-    *        Some of the contracts functions are limited only to governance:
-    *         addPool, setPool, dismissClaim, approveClaim,
-    *         setHatVestingParams, setVestingParams, setRewardsSplit
-    * @param  _swapToken the token that part of a payout will be swapped for and burned - this would typically be HATs
-    * @param _whitelistedRouters initial list of whitelisted routers allowed to be used to swap tokens for HAT token.
-
+    * Some of the contracts functions are limited only to governance:
+    * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
+    * setVestingParams, setRewardsSplit
+    * @param _swapToken the token that part of a payout will be swapped for
+    * and burned - this would typically be HATs
+    * @param _whitelistedRouters initial list of whitelisted routers allowed to
+    * be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
+    * @param _rewardController Address of the reward controller to be used to
+    * manage the reward distribution.
     */
     function initialize(
         address _rewardToken,
@@ -83,13 +95,11 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory,
         RewardController _rewardController
-
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
         rewardToken = IERC20(_rewardToken);
         swapToken = ERC20Burnable(_swapToken);
-        
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -106,5 +116,8 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             claimFee: 0
         });
         setRewardController(_rewardController);
+        arbitrator = owner();
+        challengePeriod = 3 days;
+        challengeTimeOutPeriod = 5 weeks;
     }
 }

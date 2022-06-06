@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaults.sol";
@@ -22,8 +22,8 @@ contract HATTimelockController is TimelockController {
     
     // Whitelisted functions
 
-    function approveClaim(uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
-        hatVaults.approveClaim(_claimId);
+    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
+        hatVaults.approveClaim(_claimId, _bountyPercentage);
     }
 
     function addPool(address _lpToken,
