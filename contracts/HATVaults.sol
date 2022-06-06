@@ -14,57 +14,101 @@ import "./vaults/Withdraw.sol";
 
 // Errors:
 // HVE01: Only committee
-error HVE01();
+error OnlyCommittee();
 // HVE02: Active claim exists
-error HVE02();
+error ActiveClaimExists();
 // HVE03: Safety period
+error SafetyPeriod();
 // HVE04: Beneficiary is zero
+error BeneficiaryIsZero();
 // HVE05: Not safety period
-// HVE06: reward percentage is higher than the max bounty
-error HVE06();
+error NotSafetyPeriod();
+// HVE06: Bounty percentage is higher than the max bounty
+error BountyPercentageHigherThanMaxBounty();
 // HVE07: Withdraw request pending period must be <= 3 months
+error WithdrawRequestPendingPeriodTooLong();
 // HVE08: Withdraw request enabled period must be >= 6 hour
-// HVE09: Only callable by governance or after 5 weeks
+error WithdrawRequestEnabledPeriodTooShort();
+// HVE09: Only callable by governance or after challenge timeout period
+error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
 // HVE10: No active claim exists
-error HVE10();
+error NoActiveClaimExists();
 // HVE11: Amount to reward is too big
+error AmountToRewardTooBig();
 // HVE12: Withdraw period must be >= 1 hour
+error WithdrawPeriodTooShort();
 // HVE13: Safety period must be <= 6 hours
+error SafetyPeriodTooLong();
 // HVE14: Not enough fee paid
+error NotEnoughFeePaid();
 // HVE15: Vesting duration is too long
+error VestingDurationTooLong();
 // HVE16: Vesting periods cannot be zero
+error VestingPeriodsCannotBeZero();
 // HVE17: Vesting duration smaller than periods
+error VestingDurationSmallerThanPeriods();
 // HVE18: Delay is too short
+error DelayTooShort();
 // HVE19: No pending max bounty
+error NoPendingMaxBounty();
 // HVE20: Delay period for setting max bounty had not passed
+error DelayPeriodForSettingMaxBountyHadNotPassed();
 // HVE21: Committee is zero
+error CommitteeIsZero();
 // HVE22: Committee already checked in
+error CommitteeAlreadyCheckedIn();
 // HVE23: Pool does not exist
+error PoolDoesNotExist();
 // HVE24: Amount to swap is zero
-// HVE25: Pending withdraw request exist
+error AmountToSwapIsZero();
+// HVE25: Pending withdraw request exists
+error PendingWithdrawRequestExists();
 // HVE26: Deposit paused
+error DepositPaused();
 // HVE27: Amount less than 1e6
-error HVE28();
-// HVE29: Total split % should be `HUNDRED_PERCENT`
+error AmountLessThanMinDeposit();
+// HVE28: Pool balance is zero
+error PoolBalanceIsZero();
+// HVE29: Total bounty split % should be `HUNDRED_PERCENT`
+error TotalSplitPercentageShouldBeHundredPercent();
 // HVE30: Withdraw request is invalid
+error InvalidWithdrawRequest();
 // HVE31: Token approve failed
+error TokenApproveFailed();
 // HVE32: Wrong amount received
+error AmountSwappedLessThenMinimum();
 // HVE33: Max bounty cannot be more than `HUNDRED_PERCENT`
+error MaxBountyCannotBeMoreThanHundredPercent();
 // HVE34: LP token is zero
+error LPTokenIsZero();
 // HVE35: Only fee setter
+error OnlyFeeSetter();
 // HVE36: Fee must be less than or equal to 2%
+error PoolWithdrawalFeeTooBig();
 // HVE37: Token approve reset failed
+error TokenApproveResetFailed();
 // HVE38: Pool must not be initialized
+error PoolMustNotBeInitialized();
+error InvalidPoolRange();
 // HVE39: Set shares arrays must have same length
+error SetSharesArraysMustHaveSameLength();
 // HVE40: Committee not checked in yet
+error CommitteeNotCheckedInYet();
 // HVE41: Not enough user balance
+error NotEnoughUserBalance();
 // HVE42: User shares must be greater than 0
+error UserSharesMustBeGreaterThanZero();
 // HVE43: Swap was not successful
+error SwapFailed();
 // HVE44: Routing contract must be whitelisted
-// HVE45: Not enough HATs for swap
+error RoutingContractNotWhitelisted();
 // HVE46: Not enough rewards to transfer to user
+error NotEnoughRewardsToTransferToUser();
 // HVE47: Only arbitrator
-// HVE48: Claim can only be approved if challengeperiod is over, or if the caller is the arbitrator
+error OnlyArbitrator();
+// HVE48: Claim can only be approved if challenge period is over, or if the
+// caller is the arbitrator
+error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and

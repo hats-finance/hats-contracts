@@ -29,13 +29,15 @@ contract Pool is Base {
                     bool _isInitialized)
     external
     onlyOwner {
-        require(_bountyVestingParams[0] < 120 days, "HVE15");
-        require(_bountyVestingParams[1] > 0, "HVE16");
-        require(_bountyVestingParams[0] >= _bountyVestingParams[1], "HVE17");
-        require(_committee != address(0), "HVE21");
-        require(_lpToken != address(0), "HVE34");
-        require(_maxBounty <= HUNDRED_PERCENT, "HVE33");
-
+        if (_bountyVestingParams[0] > 120 days)
+            revert VestingDurationTooLong();
+        if (_bountyVestingParams[1] == 0) revert VestingPeriodsCannotBeZero();
+        if (_bountyVestingParams[0] < _bountyVestingParams[1])
+            revert VestingDurationSmallerThanPeriods();
+        if (_committee == address(0)) revert CommitteeIsZero();
+        if (_lpToken == address(0)) revert LPTokenIsZero();
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
         uint256 startBlock = rewardController.startBlock();
 
         uint256 poolId = poolInfos.length;
@@ -91,13 +93,13 @@ contract Pool is Base {
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyOwner {
-        require(poolInfos.length > _pid, "HVE23");
+        if (poolInfos.length < _pid) revert PoolDoesNotExist();
         poolDepositPause[_pid] = _depositPause;
         emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
     }
 
     function setPoolInitialized(uint256 _pid) external onlyOwner {
-        require(poolInfos.length > _pid, "HVE23");
+        if (poolInfos.length < _pid) revert PoolDoesNotExist();
         poolInitialized[_pid] = true;
     }
 
@@ -109,10 +111,11 @@ contract Pool is Base {
         uint256[] memory _shares,
         uint256[] memory _rewardDebts)
     external onlyOwner {
-        require(!poolInitialized[_pid], "HVE38");
-        require(poolInfos.length > _pid, "HVE23");
-        require(_accounts.length == _shares.length, "HVE39");
-        require(_accounts.length == _rewardDebts.length, "HVE39");
+        if (poolInitialized[_pid]) revert PoolMustNotBeInitialized();
+        if (poolInfos.length < _pid) revert PoolDoesNotExist();
+        if (_accounts.length != _shares.length ||
+            _accounts.length != _rewardDebts.length)
+            revert SetSharesArraysMustHaveSameLength();
         PoolInfo storage pool = poolInfos[_pid];
         pool.rewardPerShare = _rewardPerShare;
         pool.balance = _balance;
@@ -132,8 +135,8 @@ contract Pool is Base {
     * @param _toPid update pools range to this pool id
     */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        require(_toPid <= poolInfos.length, "HVE38");
-        require(_fromPid <= _toPid, "HVE39");
+        if (_toPid > poolInfos.length || _fromPid > _toPid)
+            revert InvalidPoolRange();
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
             updatePool(pid);
         }

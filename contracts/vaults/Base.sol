@@ -269,32 +269,31 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender, "HVE35");
+        if (feeSetter != msg.sender) revert OnlyFeeSetter();
         _;
     }
 
     modifier onlyCommittee(uint256 _pid) {
-        if (committees[_pid] != msg.sender) revert HVE01();
+        if (committees[_pid] != msg.sender) revert OnlyCommittee();
         _;
     }
 
     modifier onlyArbitrator() {
-        require(arbitrator == msg.sender, "HVE47");
+        if (arbitrator != msg.sender) revert OnlyArbitrator();
         _;
     }
 
     modifier noSafetyPeriod() {
         //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp %
-        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-            generalParameters.withdrawPeriod,
-            "HVE03");
+        if (block.timestamp %
+        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >
+            generalParameters.withdrawPeriod) revert SafetyPeriod();
         _;
     }
 
     modifier noActiveClaims(uint256 _pid) {
-        if(activeClaims[_pid] != 0) revert HVE02();
+        if (activeClaims[_pid] != 0) revert ActiveClaimExists();
         _;
     }
 
@@ -337,7 +336,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     * @param _pid The pool id
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        require(rewardAvailable >= _amount, "HVE46");
+        if (rewardAvailable < _amount)
+            revert NotEnoughRewardsToTransferToUser();
         rewardAvailable -= _amount;
         rewardToken.transfer(_to, _amount);
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
@@ -351,13 +351,13 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
-        require(_bountySplit.hackerVested
+        if (_bountySplit.hackerVested
             + _bountySplit.hacker
             + _bountySplit.committee
             + _bountySplit.swapAndBurn
             + _bountySplit.governanceHat
-            + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
-        "HVE29");
+            + _bountySplit.hackerHatVested != HUNDRED_PERCENT)
+            revert TotalSplitPercentageShouldBeHundredPercent();
     }
 
     /**

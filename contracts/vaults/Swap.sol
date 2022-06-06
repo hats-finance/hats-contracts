@@ -26,7 +26,7 @@ contract Swap is Base {
         uint256 amountToSwapAndBurn = swapAndBurns[_pid];
         uint256 amountForHackersHatRewards = hackersHatRewards[_beneficiary][_pid];
         uint256 amount = amountToSwapAndBurn + amountForHackersHatRewards + governanceHatRewards[_pid];
-        require(amount > 0, "HVE24");
+        if (amount == 0) revert AmountToSwapIsZero();
         swapAndBurns[_pid] = 0;
         governanceHatRewards[_pid] = 0;
         hackersHatRewards[_beneficiary][_pid] = 0;
@@ -73,14 +73,17 @@ contract Swap is Base {
         if (address(_token) == address(swapToken)) {
             return _amount;
         }
-        require(whitelistedRouters[_routingContract], "HVE44");
-        require(_token.approve(_routingContract, _amount), "HVE31");
+        if (!whitelistedRouters[_routingContract])
+            revert RoutingContractNotWhitelisted();
+        if (!_token.approve(_routingContract, _amount))
+            revert TokenApproveFailed();
         uint256 balanceBefore = swapToken.balanceOf(address(this));
-        require(rewardAvailable >= _amountOutMinimum, "HVE45");
         (bool success,) = _routingContract.call(_routingPayload);
-        require(success, "HVE43");
+        if (!success) revert SwapFailed();
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
-        require(swapTokenReceived >= _amountOutMinimum, "HVE32");
-        require(_token.approve(address(_routingContract), 0), "HVE37");
+        if (swapTokenReceived < _amountOutMinimum)
+            revert AmountSwappedLessThenMinimum();
+        if (!_token.approve(address(_routingContract), 0))
+            revert TokenApproveResetFailed();
     }
 }

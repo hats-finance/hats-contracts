@@ -10,7 +10,8 @@ contract Claim is Base {
     // this can be use later on by the claimer to prove her claim
     function logClaim(string memory _descriptionHash) external payable {
         if (generalParameters.claimFee > 0) {
-            require(msg.value >= generalParameters.claimFee, "HVE14");
+            if (msg.value < generalParameters.claimFee)
+                revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
             payable(owner()).transfer(msg.value);
         }
@@ -35,12 +36,13 @@ contract Claim is Base {
     onlyCommittee(_pid)
     noActiveClaims(_pid)
     {
-        require(_beneficiary != address(0), "HVE04");
+        if (_beneficiary == address(0)) revert BeneficiaryIsZero();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
-        generalParameters.withdrawPeriod, "HVE05");
-        if(_bountyPercentage > bountyInfos[_pid].maxBounty) revert HVE06();
+        if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+        generalParameters.withdrawPeriod) revert NotSafetyPeriod();
+        if (_bountyPercentage > bountyInfos[_pid].maxBounty)
+            revert BountyPercentageHigherThanMaxBounty();
         uint256 claimId;
         claimId = uint256(keccak256(abi.encodePacked(_pid, block.number, nonce++)));
         claims[claimId] = Claim({
@@ -64,7 +66,8 @@ contract Claim is Base {
     }
 
     function challengeClaim(uint256 _claimId) external onlyArbitrator {
-        if (claims[_claimId].beneficiary == address(0)) revert HVE10();
+        if (claims[_claimId].beneficiary == address(0))
+            revert NoActiveClaimExists();
         claims[_claimId].isChallenged = true;
     }
 
@@ -76,11 +79,10 @@ contract Claim is Base {
     */
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
-        if(claim.beneficiary == address(0)) revert HVE10();
-        require(
-            ((msg.sender == arbitrator && claim.isChallenged) ||
-            (claim.createdAt + challengePeriod < block.timestamp)), "HVE48"
-        );
+        if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
+        if (!(msg.sender == arbitrator && claim.isChallenged) &&
+            (claim.createdAt + challengePeriod > block.timestamp))
+        revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 
         if (msg.sender == arbitrator) {
             claim.bountyPercentage = _bountyPercentage;
@@ -142,8 +144,10 @@ contract Claim is Base {
         Claim storage claim = claims[_claimId];
         uint256 pid = claim.pid;
         // solhint-disable-next-line not-rely-on-time
-        require((msg.sender == arbitrator && claim.isChallenged) || (claim.createdAt + challengeTimeOutPeriod < block.timestamp), "HVE09");
-        if(claim.beneficiary == address(0)) revert HVE10();
+        if (!(msg.sender == arbitrator && claim.isChallenged) &&
+            (claim.createdAt + challengeTimeOutPeriod > block.timestamp))
+            revert OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+        if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         delete activeClaims[pid];
         delete claims[_claimId];
         emit DismissClaim(pid, _claimId);
@@ -155,8 +159,9 @@ contract Claim is Base {
     view
     returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = poolInfos[_pid].balance;
-        if(totalSupply == 0) revert HVE28();
-        if(_bountyPercentage > bountyInfos[_pid].maxBounty) revert HVE06();
+        if (totalSupply == 0) revert PoolBalanceIsZero();
+        if (_bountyPercentage > bountyInfos[_pid].maxBounty)
+            revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
         claimBounty.hackerVested =
         totalBountyAmount * bountyInfos[_pid].bountySplit.hackerVested
