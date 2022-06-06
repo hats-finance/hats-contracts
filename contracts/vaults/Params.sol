@@ -31,6 +31,15 @@ contract Params is Base {
         emit SetCommittee(_pid, _committee);
     }
 
+   /**
+     * @dev setArbitrator - called by hats governance to set arbitrator
+     * @param _arbitrator New arbitrator.
+    */
+    function setArbitrator(address _arbitrator) external onlyOwner {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
+    }
+
     /**
     * @dev setWithdrawRequestParams - called by hats governance to set withdraw request params
     * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
@@ -53,6 +62,16 @@ contract Params is Base {
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
+    }
+
+    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        challengePeriod = _challengePeriod;
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
     /**
