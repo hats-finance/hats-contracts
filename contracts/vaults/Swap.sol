@@ -79,8 +79,7 @@ contract Swap is Base {
 
         require(_token.approve(_routingContract, _amount), "HVE31");
         uint256 balanceBefore = swapToken.balanceOf(address(this));
-        require(rewardAvailable >= _amountOutMinimum, "HVE45");
-        // solhint-disable-next-line avoid-low-level-calls
+
         (bool success,) = _routingContract.call(_routingPayload);
         require(success, "HVE43");
         swapTokenReceived = swapToken.balanceOf(address(this)) - balanceBefore;
