@@ -98,36 +98,7 @@ const setup = async function(
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
 };
 
-
-function assertVMException(error) {
-  let condition =
-    error.message.search("VM Exception") > -1 ||
-    error.message.search("Transaction reverted") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a VM Exception, got this instead:" + error.message
-  );
-}
-
 contract("HatTimelockController", (accounts) => {
-  async function advanceToSaftyPeriod() {
-
-    let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-
-    let withdrawPeriod = (
-      await hatVaults.generalParameters()
-    ).withdrawPeriod.toNumber();
-    let safetyPeriod = (
-      await hatVaults.generalParameters()
-    ).safetyPeriod.toNumber();
-
-    if (currentTimeStamp % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
-      await utils.increaseTime(
-        withdrawPeriod - (currentTimeStamp % (withdrawPeriod + safetyPeriod))
-      );
-    }
-  }
-
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await hatVaults.poolInfos(0)).lastRewardBlock;
@@ -195,7 +166,7 @@ contract("HatTimelockController", (accounts) => {
         hatToken.address,
         accounts[1],
         8000,
-          [6000, 2000, 500, 0, 1000, 500],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -433,9 +404,9 @@ contract("HatTimelockController", (accounts) => {
     );
     assert.equal(
       log.args._amountBurned.toString(),
-        new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
+      new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
         .mul(
-           new web3.utils.BN(
+          new web3.utils.BN(
             (await hatVaults.bountyInfos(0)).bountySplit.swapAndBurn
           )
         )

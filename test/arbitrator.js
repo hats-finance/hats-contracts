@@ -7,7 +7,7 @@ const {
   assertFunctionRaisesException,
 } = require("./common.js");
 
-contract("HatVaults", (accounts) => {
+contract("HatVaults Arbitrator", (accounts) => {
   it("Set arbitrator", async () => {
     const { hatVaults } = await setup(accounts);
     await assertFunctionRaisesException(
