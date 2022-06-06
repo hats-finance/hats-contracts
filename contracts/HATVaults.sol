@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./vaults/Claim.sol";
@@ -14,6 +14,7 @@ import "./vaults/Withdraw.sol";
 
 // Errors:
 // HVE01: Only committee
+error HVE01();
 // HVE02: Claim submitted
 // HVE03: Safety period
 // HVE04: Beneficiary is zero
