@@ -154,7 +154,7 @@ contract Claim is Base {
 
     /**
     * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
+    * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
@@ -163,7 +163,7 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         if (!(msg.sender == arbitrator && claim.isChallenged) &&
             (claim.createdAt + challengeTimeOutPeriod > block.timestamp))
-            revert OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+            revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         delete activeClaims[pid];
         delete claims[_claimId];

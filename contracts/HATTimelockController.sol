@@ -26,6 +26,14 @@ contract HATTimelockController is TimelockController {
         hatVaults.approveClaim(_claimId, _bountyPercentage);
     }
 
+    function challengeClaim(uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
+        hatVaults.challengeClaim(_claimId);
+    }
+
+    function dismissClaim(uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
+        hatVaults.dismissClaim(_claimId);
+    }
+
     function addPool(address _lpToken,
                     address _committee,
                     uint256 _maxBounty,
