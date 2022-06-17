@@ -46,7 +46,7 @@ contract Withdraw is Base {
         updatePool(_pid);
 
         uint256 pending = ((user.shares * pool.rewardPerShare) / 1e12) - user.rewardDebt;
-
+        user.rewardDebt += pending;
         if (pending > 0) {
             safeTransferReward(msg.sender, pending, _pid);
         }
@@ -60,8 +60,6 @@ contract Withdraw is Base {
             safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
 
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
-
         emit Withdraw(msg.sender, _pid, _shares);
     }
 
@@ -73,7 +71,7 @@ contract Withdraw is Base {
     * had finished.
     * @param _pid The pool id
     **/
-    function emergencyWithdraw(uint256 _pid) external {
+    function emergencyWithdraw(uint256 _pid) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
 
         PoolInfo storage pool = poolInfos[_pid];
