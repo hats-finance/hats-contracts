@@ -128,7 +128,7 @@ contract("HatVaults Arbitrator", (accounts) => {
     );
 
     assert.equal((await hatVaults.claims(claimId)).bountyPercentage, 8000);
-    var stakingTokenBalanceBefore = await stakingToken.balanceOf(hatVaults.address)
+    var stakingTokenBalanceBefore = await stakingToken.balanceOf(hatVaults.address);
     var tx = await hatVaults.approveClaim(claimId, 6000, { from: arbitrator });
     assert.equal(tx.logs[1].event, "ApproveClaim");
     assert.equal(tx.logs[1].args._bountyPercentage, 6000);
