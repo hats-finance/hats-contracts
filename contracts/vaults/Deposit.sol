@@ -40,7 +40,6 @@ contract Deposit is Base {
 
         user.shares += userShares;
         pool.totalShares += userShares;
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
 
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
     }
@@ -97,6 +96,7 @@ contract Deposit is Base {
         // if the user already has funds in the pool, give the previous reward
         if (_user.shares > 0) {
             uint256 pending = _user.shares * poolInfos[_pid].rewardPerShare / 1e12 - _user.rewardDebt;
+            userInfo[_pid][msg.sender].rewardDebt += pending;
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
