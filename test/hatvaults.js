@@ -1189,7 +1189,6 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].event, "ClaimReward");
     assert.equal(tx.logs[1].args._pid, 0);
 
-    console.log(expectedReward.toString())
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
       new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(expectedReward).toString()
@@ -1232,7 +1231,6 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].event, "ClaimReward");
     assert.equal(tx.logs[1].args._pid, 0);
 
-    console.log(expectedReward.toString())
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
       new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(expectedReward).toString()
