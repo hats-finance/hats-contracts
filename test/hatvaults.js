@@ -2430,6 +2430,34 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("cannot deposit to pool before initialized", async () => {
+    await setup(accounts);
+
+    await hatVaults.setPoolInitialized(0);
+
+    await hatVaults.addPool(
+      stakingToken.address,
+      accounts[1],
+      8000,
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10],
+      false,
+      false
+    );
+    await rewardController.setAllocPoint(
+      (await hatVaults.getNumberOfPools()) - 1,
+      100
+    );
+
+    try {
+      await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
+      assert(false, "pool must be initialized");
+    } catch (ex) {
+      assertVMException(ex, "PoolMustBeInitialized");
+    }
+  });
+
   it("set shares", async () => {
     await setup(accounts);
     try {
