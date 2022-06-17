@@ -101,17 +101,17 @@ contract("HatVaults Arbitrator", (accounts) => {
     const claimId = await submitClaim(hatVaults, { accounts });
 
     // challengeClaim will fail if passing an non-existent claimID
-    assertFunctionRaisesException(
+    await assertFunctionRaisesException(
       hatVaults.challengeClaim("1234", { from: accounts[2] }),
-      "HVE10"
+      "NoActiveClaimExists"
     );
 
     // only arbitrator can challenge the claim
-    assertFunctionRaisesException(
-      hatVaults.challengeClaim(claimId, { from: accounts[2] }),
+    await assertFunctionRaisesException(
+      hatVaults.challengeClaim(claimId, { from: accounts[1] }),
       "OnlyArbitrator"
     );
-    assertFunctionRaisesException(
+    await assertFunctionRaisesException(
       hatVaults.challengeClaim(claimId, { from: owner }),
       "OnlyArbitrator"
     );
@@ -120,6 +120,15 @@ contract("HatVaults Arbitrator", (accounts) => {
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 6000, { from: staker }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 10001, { from: accounts[2] }),
+      "BountyPercentageHigherThanMaxBounty"
+    );
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8001, { from: accounts[2] }),
+      "BountyPercentageHigherThanMaxBounty"
     );
 
     await assertFunctionRaisesException(
