@@ -14,6 +14,7 @@ contract Deposit is Base {
     **/
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         if (poolDepositPause[_pid]) revert DepositPaused();
+        if (!poolInitialized[_pid]) revert PoolMustBeInitialized();
         if (_amount < MINIMUM_DEPOSIT) revert AmountLessThanMinDeposit();
         
         //clear withdraw request
@@ -40,7 +41,6 @@ contract Deposit is Base {
 
         user.shares += userShares;
         pool.totalShares += userShares;
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
 
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
     }
@@ -97,6 +97,7 @@ contract Deposit is Base {
         // if the user already has funds in the pool, give the previous reward
         if (_user.shares > 0) {
             uint256 pending = _user.shares * poolInfos[_pid].rewardPerShare / 1e12 - _user.rewardDebt;
+            userInfo[_pid][msg.sender].rewardDebt += pending;
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
