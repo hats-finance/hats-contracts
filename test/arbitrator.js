@@ -1,4 +1,5 @@
 const utils = require("./utils.js");
+const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const { contract } = require("hardhat");
 const {
   setup,
@@ -80,7 +81,7 @@ contract("HatVaults Arbitrator", (accounts) => {
   });
 
   it("challenge - approve Claim ", async () => {
-    const { hatVaults } = await setup(accounts);
+    const { hatVaults, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaults.setChallengePeriod(1000);
     const owner = accounts[0];
@@ -117,16 +118,43 @@ contract("HatVaults Arbitrator", (accounts) => {
     await hatVaults.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      hatVaults.approveClaim(claimId, 8000, { from: staker }),
+      hatVaults.approveClaim(claimId, 6000, { from: staker }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await assertFunctionRaisesException(
-      hatVaults.approveClaim(claimId, 8000, { from: owner }),
+      hatVaults.approveClaim(claimId, 6000, { from: owner }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
-    await hatVaults.approveClaim(claimId, 8000, { from: arbitrator });
+    assert.equal((await hatVaults.claims(claimId)).bountyPercentage, 8000);
+    var stakingTokenBalanceBefore = await stakingToken.balanceOf(hatVaults.address)
+    var tx = await hatVaults.approveClaim(claimId, 6000, { from: arbitrator });
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._bountyPercentage, 6000);
+    assert.equal(
+      (await stakingToken.balanceOf(hatVaults.address)).toString(),
+      stakingTokenBalanceBefore.sub(new web3.utils.BN(web3.utils.toWei("0.51"))).toString()
+    );
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
+    var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.6"));
+    var expectedHackerBalance = depositValutBNAfterClaim
+      .mul(new web3.utils.BN(6000))
+      .div(new web3.utils.BN(10000));
+    assert.isTrue(
+      (await stakingToken.balanceOf(vestingTokenLock.address)).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      new web3.utils.BN(tx.logs[1].args._claimBounty.hackerVested).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
+    );
   });
 
   it("challenge - dismiss claim", async () => {
