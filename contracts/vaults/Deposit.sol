@@ -67,10 +67,11 @@ contract Deposit is Base {
     function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {
         if ((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT >=
             poolInfos[_pid].totalShares) revert AmountToRewardTooBig();
-
-        uint256 balanceBefore = poolInfos[_pid].lpToken.balanceOf(address(this));
-        poolInfos[_pid].lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 lpTokenReceived = poolInfos[_pid].lpToken.balanceOf(address(this)) - balanceBefore;
+        
+        IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
+        uint256 balanceBefore = lpToken.balanceOf(address(this));
+        lpToken.safeTransferFrom(msg.sender, address(this), _amount);
+        uint256 lpTokenReceived = lpToken.balanceOf(address(this)) - balanceBefore;
 
         poolInfos[_pid].balance += lpTokenReceived;
 
