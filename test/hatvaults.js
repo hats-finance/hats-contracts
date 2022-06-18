@@ -289,7 +289,7 @@ contract("HatVaults", (accounts) => {
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     await hatVaults.addPool(
       stakingToken2.address,
-      accounts[1],
+      accounts[3],
       maxBounty,
       bountySplit,
       "_descriptionHash",
@@ -302,6 +302,8 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.getNumberOfPools()) - 1,
       100
     );
+
+    assert.equal(await hatVaults.committees(1), accounts[3]);
 
     await hatVaults.setCommittee(1, accounts[1]);
 
