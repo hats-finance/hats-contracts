@@ -10,11 +10,10 @@ contract Deposit is Base {
     * @notice Deposit tokens to pool
     * Caller must have set an allowance first
     * @param _pid The pool id
-    * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
+    * @param _amount Amount of pool's token to deposit.
     **/
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         if (poolDepositPause[_pid]) revert DepositPaused();
-        if (_amount < MINIMUM_DEPOSIT) revert AmountLessThanMinDeposit();
         
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
@@ -38,6 +37,7 @@ contract Deposit is Base {
             userShares = pool.totalShares * transferredAmount / lpSupply;
         }
 
+        if (userShares == 0) revert AmountLessThanMinDeposit();
         user.shares += userShares;
         pool.totalShares += userShares;
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
@@ -58,16 +58,13 @@ contract Deposit is Base {
     }
 
     /**
-     * @notice rewardDepositors - add pool tokens to reward depositors in the pool's native token0
+     * @notice rewardDepositors - add pool tokens to reward depositors in the pool's native token
      * The funds will be given to depositors pro rata upon withdraw
      * The sender of the transaction must have approved the spend before calling this function
      * @param _pid pool id
      * @param _amount amount of pool's native token to add
     */
-    function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {
-        if ((poolInfos[_pid].balance + _amount) / MINIMUM_DEPOSIT >=
-            poolInfos[_pid].totalShares) revert AmountToRewardTooBig();
-        
+    function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {        
         IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
         uint256 balanceBefore = lpToken.balanceOf(address(this));
         lpToken.safeTransferFrom(msg.sender, address(this), _amount);

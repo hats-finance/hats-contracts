@@ -65,7 +65,7 @@ error AmountToSwapIsZero();
 error PendingWithdrawRequestExists();
 // Deposit paused
 error DepositPaused();
-// Amount less than 1e6
+// Amount less than minimum for 1 share
 error AmountLessThanMinDeposit();
 // Pool balance is zero
 error PoolBalanceIsZero();
@@ -220,7 +220,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // PARAMETERS FOR ALL VAULTS
     // time during which a claim can be challenged by the arbitrator
