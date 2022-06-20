@@ -4006,17 +4006,17 @@ contract("HatVaults", (accounts) => {
     var staker2 = accounts[5];
     var rewarder = accounts[6];
 
-    await stakingToken.approve(hatVaults.address, web3.utils.toWei("3000000"), {
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("3"), {
       from: rewarder,
     });
-    await stakingToken.approve(hatVaults.address, web3.utils.toWei("4"), {
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
     });
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
       from: staker2,
     });
 
-    await stakingToken.mint(rewarder, web3.utils.toWei("3000000"));
+    await stakingToken.mint(rewarder, web3.utils.toWei("3"));
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await stakingToken.mint(staker2, web3.utils.toWei("2"));
 
@@ -4049,10 +4049,10 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._pid, 0);
     assert.equal(tx.logs[0].args._amount, web3.utils.toWei("2"));
     assert.equal((await hatVaults.poolInfos(0)).balance, web3.utils.toWei("6"));
-    await stakingToken.mint(hatVaults.address, web3.utils.toWei("100"));
     assert.equal((await stakingToken.balanceOf(staker)).toString(), 0);
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), 0);
     await hatVaults.withdraw(0, web3.utils.toWei("1"), { from: staker });
-    await hatVaults.withdraw(0, web3.utils.toWei("2"), { from: staker2 });
+    await hatVaults.withdraw(0, web3.utils.toWei("1"), { from: staker2 });
     assert.equal(
       (await stakingToken.balanceOf(staker)).toString(),
       web3.utils.toWei("3")
