@@ -1228,7 +1228,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(poolManagerMock.address), 0);
 
     let expectedReward = await calculateExpectedReward(poolManagerMock.address);
-    var tx = await poolManagerMock.claimRewardTwice(hatVaults.address, 0);
+    await poolManagerMock.claimRewardTwice(hatVaults.address, 0);
     assert.equal(
       (await hatToken.balanceOf(hatVaults.address)).toString(),
       new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(expectedReward).toString()
