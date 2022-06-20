@@ -68,6 +68,17 @@ contract("HatVaults Arbitrator", (accounts) => {
     await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: accounts[2] }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: accounts[3] }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+
     // go and pass the challenge period
     await utils.increaseTime(2000);
 
