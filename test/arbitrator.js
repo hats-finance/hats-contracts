@@ -57,6 +57,7 @@ contract("HatVaults Arbitrator", (accounts) => {
     await advanceToSafetyPeriod(hatVaults);
 
     const staker = accounts[1];
+    await hatVaults.setArbitrator(accounts[3]);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
     await stakingToken.mint(staker, web3.utils.toWei("2"));
@@ -120,6 +121,14 @@ contract("HatVaults Arbitrator", (accounts) => {
       hatVaults.approveClaim(claimId, 8000, { from: staker }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: owner }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+
+    // go and pass the challenge period
+    await utils.increaseTime(2000);
 
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 8000, { from: owner }),
