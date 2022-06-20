@@ -6,6 +6,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("hardhat-contract-sizer");
 require("hardhat-watcher");
 require("hardhat-gas-reporter");
+require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -34,6 +35,7 @@ module.exports = {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
   gasReporter: {
+    enabled: true,
     currency: "USD",
     coinmarketcap: process.env.COINMARKETCAP,
     gasPrice: 100,
@@ -52,6 +54,7 @@ module.exports = {
       gas: "auto",
     },
     hardhat: {
+      allowUnlimitedContractSize: true,
       accounts: [
         {
           privateKey:
@@ -157,7 +160,7 @@ module.exports = {
     },
   },
   solidity: {
-    version: "0.8.6",
+    version: "0.8.14",
     settings: {
       optimizer: {
         enabled: true,
@@ -171,9 +174,17 @@ module.exports = {
     disambiguatePaths: true,
   },
   watcher: {
+    compile: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+    },
     test: {
       tasks: ["test"],
       files: ["./test", "./contracts", "./scripts"],
+    },
+    "size-contracts": {
+      tasks: ["size-contracts"],
+      files: ["./contracts"],
     },
     check: {
       tasks: [
