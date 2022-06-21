@@ -167,7 +167,8 @@ contract("HatVaults", (accounts) => {
       (await hatVaults.poolInfos(0)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = (await hatVaults.userInfo(0, staker)).shares;
+    let userShares = (await hatVaults.userInfo(0, staker)).shares;
+    let stakerAmount = userShares;
     let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
     let totalAllocPoint = (
       await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
@@ -179,8 +180,8 @@ contract("HatVaults", (accounts) => {
       totalAllocPoint
     );
     let lpSupply = await stakingToken.balanceOf(hatVaults.address);
+    let rewardDebt = userShares.mul(rewardPerShare).div(onee12);// (await hatVaults.userInfo(0, staker)).rewardDebt;
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
-    let rewardDebt = (await hatVaults.userInfo(0, staker)).rewardDebt;
     return stakerAmount
       .mul(rewardPerShare)
       .div(onee12)
@@ -1156,6 +1157,82 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("claim reward from pool with existing funds claims only from user deposit time", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    try {
+      await hatVaults.calcClaimBounty(0, 8001);
+      assert(false, "reward percentage is too high");
+    } catch (ex) {
+      assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
+    }
+    var tx = await hatVaults.claimReward(0, { from: staker });
+    assert.equal(tx.logs[1].event, "ClaimReward");
+    assert.equal(tx.logs[1].args._pid, 0);
+
+    assert.equal(
+      (await hatToken.balanceOf(hatVaults.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(expectedReward).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker), 0);
+    assert.equal(
+      await stakingToken.balanceOf(hatVaults.address),
+      web3.utils.toWei("1")
+    );
+    hatVaultsExpectedHatsBalance = await hatToken.balanceOf(hatVaults.address);
+
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
+    expectedReward = await calculateExpectedReward(staker2);
+
+    var tx = await hatVaults.claimReward(0, { from: staker2 });
+    assert.equal(tx.logs[1].event, "ClaimReward");
+    assert.equal(tx.logs[1].args._pid, 0);
+
+    assert.equal(
+      (await hatToken.balanceOf(hatVaults.address)).toString(),
+      hatVaultsExpectedHatsBalance.sub(expectedReward).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker2)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker2), 0);
+    assert.equal(
+      await stakingToken.balanceOf(hatVaults.address),
+      web3.utils.toWei("2")
+    );
+
+  });
+
   it("claim reward", async () => {
     await setup(
       accounts,
@@ -1204,7 +1281,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("cannot claim reward twice", async () => {
+  it("cannot claim the same reward twice", async () => {
     await setup(
       accounts,
       (await web3.eth.getBlock("latest")).number,
