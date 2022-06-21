@@ -180,7 +180,7 @@ contract("HatVaults", (accounts) => {
       totalAllocPoint
     );
     let lpSupply = await stakingToken.balanceOf(hatVaults.address);
-    let rewardDebt = userShares.mul(rewardPerShare).div(onee12);// (await hatVaults.userInfo(0, staker)).rewardDebt;
+    let rewardDebt = userShares.mul(rewardPerShare).div(onee12);
     rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
     return stakerAmount
       .mul(rewardPerShare)
@@ -1191,7 +1191,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
     }
-    var tx = await hatVaults.claimReward(0, { from: staker });
+    let tx = await hatVaults.claimReward(0, { from: staker });
     assert.equal(tx.logs[1].event, "ClaimReward");
     assert.equal(tx.logs[1].args._pid, 0);
 
@@ -1213,7 +1213,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker2 });
     expectedReward = await calculateExpectedReward(staker2);
 
-    var tx = await hatVaults.claimReward(0, { from: staker2 });
+    tx = await hatVaults.claimReward(0, { from: staker2 });
     assert.equal(tx.logs[1].event, "ClaimReward");
     assert.equal(tx.logs[1].args._pid, 0);
 
