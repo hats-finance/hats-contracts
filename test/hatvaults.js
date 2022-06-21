@@ -320,6 +320,13 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
+      await hatVaults.claimReward(1, { from: staker });
+      assert(false, "cannot deposit before committee check in");
+    } catch (ex) {
+      assertVMException(ex, "CommitteeNotCheckedInYet");
+    }
+
+    try {
       await hatVaults.committeeCheckIn(1, { from: accounts[0] });
       assert(false, "only committee can check in");
     } catch (ex) {
@@ -1204,6 +1211,70 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei("1")
     );
   });
+
+  it("claim reward before deposit", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    var staker = accounts[1];
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+
+    let expectedReward = 0;
+
+    let tx = await hatVaults.claimReward(0, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._pid, 0);
+
+    assert.equal(
+      (await hatToken.balanceOf(hatVaults.address)).toString(),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString()).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      "0"
+    );
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await stakingToken.balanceOf(hatVaults.address),
+      web3.utils.toWei("0")
+    );
+
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    assert.equal(
+      await hatToken.balanceOf(hatVaults.address),
+      web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
+    );
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    expectedReward = await calculateExpectedReward(staker);
+
+    tx = await hatVaults.claimReward(0, { from: staker });
+    assert.equal(tx.logs[1].event, "ClaimReward");
+    assert.equal(tx.logs[1].args._pid, 0);
+
+    assert.equal(
+      (await hatToken.balanceOf(hatVaults.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())).sub(expectedReward).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker), 0);
+    assert.equal(
+      await stakingToken.balanceOf(hatVaults.address),
+      web3.utils.toWei("1")
+    );
+  });
+
 
   it("cannot claim the same reward twice", async () => {
     await setup(
