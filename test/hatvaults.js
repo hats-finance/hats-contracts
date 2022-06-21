@@ -372,7 +372,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(
         ex,
-        "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
       );
     }
     await utils.increaseTime(1);

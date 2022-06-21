@@ -165,7 +165,7 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         if (!(msg.sender == arbitrator && claim.isChallenged) &&
             (claim.createdAt + challengeTimeOutPeriod > block.timestamp))
-            revert OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+            revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         delete activeClaims[pid];
         delete claims[_claimId];
