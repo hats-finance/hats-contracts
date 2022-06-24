@@ -50,7 +50,7 @@ contract Deposit is Base {
      * @notice Transfer to the sender their pending share of rewards.
      * @param _pid The pool id
      */
-    function claimReward(uint256 _pid) external {
+    function claimReward(uint256 _pid) external nonReentrant {
         UserInfo memory user = userInfo[_pid][msg.sender];
 
         _claimReward(_pid, user);
