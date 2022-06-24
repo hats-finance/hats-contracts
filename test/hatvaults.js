@@ -320,13 +320,6 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaults.claimReward(1, { from: staker });
-      assert(false, "cannot deposit before committee check in");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeNotCheckedInYet");
-    }
-
-    try {
       await hatVaults.committeeCheckIn(1, { from: accounts[0] });
       assert(false, "only committee can check in");
     } catch (ex) {

@@ -25,7 +25,6 @@ contract Deposit is Base {
         updatePool(_pid);
         if (user.shares > 0) {
             uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-            // no need to update the rewardDebt yet because this function is nonReentrant
             if (pending > 0) {
                 safeTransferReward(msg.sender, pending, _pid);
             }
@@ -59,16 +58,14 @@ contract Deposit is Base {
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {
-        if (!poolInfos[_pid].committeeCheckedIn)
-            revert CommitteeNotCheckedInYet();
         updatePool(_pid);
 
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 rewardPerShare = poolInfos[_pid].rewardPerShare;
         if (user.shares > 0) {
             uint256 pending = user.shares * rewardPerShare / 1e12 - user.rewardDebt;
-            user.rewardDebt = user.shares * rewardPerShare / 1e12;
             if (pending > 0) {
+                user.rewardDebt = user.shares * rewardPerShare / 1e12;
                 safeTransferReward(msg.sender, pending, _pid);
             }
         }
