@@ -16,8 +16,8 @@ contract RewardController is Ownable {
     uint256 public constant MULTIPLIERS_LENGTH = 24;
 
     // Block from which the vaults contract will start rewarding.
-    uint256 public startBlock;
-    uint256 public epochLength;
+    uint256 public immutable startBlock;
+    uint256 public immutable epochLength;
     // Reward Multipliers
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;

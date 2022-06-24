@@ -23,9 +23,14 @@ const {
   rewardPerEpoch,
   advanceToSafetyPeriod,
 } = require("./hatvaults.js");
+const {
+  submitClaim,
+  assertFunctionRaisesException,
+} = require("./common.js");
 
 const setup = async function(
   accounts,
+  challengePeriod=0,
   startBlock = 0,
   maxBounty = 8000,
   bountySplit = [6000, 2000, 500, 0, 1000, 500],
@@ -56,7 +61,7 @@ const setup = async function(
     true
   );
   hatVaults = await HATVaults.at(deployment.hatVaults.address);
-  await hatVaults.setChallengePeriod(0);
+  await hatVaults.setChallengePeriod(challengePeriod);
   rewardController = await RewardController.at(
     deployment.rewardController.address
   );
@@ -66,6 +71,7 @@ const setup = async function(
     [accounts[0]],
     [accounts[0]]
   );
+  await hatVaults.setArbitrator(hatTimelockController.address);
   tx = await hatVaults.transferOwnership(hatTimelockController.address);
   tx = await rewardController.transferOwnership(hatTimelockController.address);
   await utils.setMinter(
@@ -426,5 +432,95 @@ contract("HatTimelockController", (accounts) => {
     )[0];
     assert.equal(log.event, "SwapAndSend");
     assert.equal(log.args._amountReceived.toString(), "0");
+  });
+
+  it("challenge - approve Claim ", async () => {
+    await setup(accounts, 1000);
+    const staker = accounts[1];
+    // set challenge period to 1000
+    // hatVaults.setChallengePeriod(1000);
+    await advanceToSafetyPeriod(hatVaults);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await hatVaults.updatePool(0);
+
+    const claimId = await submitClaim(hatVaults, { accounts });
+
+    assertFunctionRaisesException(
+      hatVaults.challengeClaim(claimId),
+      "OnlyArbitrator"
+    );
+    await hatTimelockController.challengeClaim(claimId);
+
+    await hatTimelockController.approveClaim(claimId, 8000);
+  });
+
+  it("challenge - dismiss claim", async () => {
+    await setup(accounts, 1000);
+    // set challenge period to 1000
+    await advanceToSafetyPeriod(hatVaults);
+    const claimId = await submitClaim(hatVaults, { accounts });
+    await hatTimelockController.challengeClaim(claimId);
+    // now that the claim is challenged, only arbitrator can accept or dismiss
+    await assertFunctionRaisesException(
+      hatVaults.dismissClaim(claimId),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+    await hatTimelockController.dismissClaim(claimId);
+  });
+
+  it("setCommittee", async () => {
+    await setup(accounts);
+
+    //set other pool with different committee
+    let maxBounty = 8000;
+    let bountySplit = [6000, 2000, 500, 0, 1000, 500];
+    var stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    await hatTimelockController.addPool(
+      stakingToken2.address,
+      accounts[3],
+      maxBounty,
+      bountySplit,
+      "_descriptionHash",
+      [86400, 10],
+      false,
+      true
+    );
+
+    await hatTimelockController.setAllocPoint(
+      (await hatVaults.getNumberOfPools()) - 1,
+      100
+    );
+
+    assert.equal(await hatVaults.committees(1), accounts[3]);
+
+    try {
+      await hatVaults.setCommittee(1, accounts[2]);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await hatTimelockController.setCommittee(1, accounts[1]);
+
+    assert.equal(await hatVaults.committees(1), accounts[1]);
+
+    let tx = await hatVaults.committeeCheckIn(1, { from: accounts[1] });
+    assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
+    assert.equal(tx.logs[0].args._pid, 1);
+
+    try {
+      await hatTimelockController.setCommittee(1, accounts[2]);
+      assert(false, "committee already checked in");
+    } catch (ex) {
+      assertVMException(ex, "CommitteeAlreadyCheckedIn");
+    }
+    await hatVaults.setCommittee(1, accounts[2], { from: accounts[1] });
+    await hatVaults.setCommittee(1, accounts[1], { from: accounts[2] });
   });
 });
