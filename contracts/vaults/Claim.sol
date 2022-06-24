@@ -91,9 +91,11 @@ contract Claim is Base {
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
-        if (!(msg.sender == arbitrator && claim.isChallenged) &&
-            (claim.createdAt + challengePeriod >= block.timestamp))
-        revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        if (claim.isChallenged) {
+            if (msg.sender != arbitrator) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        } else {
+            if (block.timestamp <= claim.createdAt + challengePeriod) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        }
 
         uint256 pid = claim.pid;
         address tokenLock;
