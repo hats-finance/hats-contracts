@@ -101,11 +101,12 @@ contract Claim is Base {
         address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         if (msg.sender == arbitrator) {
             claim.bountyPercentage = _bountyPercentage;
         }
+
+        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         poolInfos[pid].balance -=
             claimBounty.hacker +
@@ -156,7 +157,7 @@ contract Claim is Base {
 
     /**
     * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
+    * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {

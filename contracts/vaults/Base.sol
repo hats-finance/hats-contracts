@@ -89,6 +89,8 @@ error PoolWithdrawalFeeTooBig();
 error TokenApproveResetFailed();
 // Pool must not be initialized
 error PoolMustNotBeInitialized();
+// Pool must be initialized
+error PoolMustBeInitialized();
 error InvalidPoolRange();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
