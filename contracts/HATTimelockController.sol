@@ -93,4 +93,23 @@ contract HATTimelockController is TimelockController {
             _routingPayload
         );
     }
+
+    function setShares(
+        uint256 _pid,
+        uint256 _rewardPerShare,
+        uint256 _balance,
+        address[] memory _accounts,
+        uint256[] memory _shares,
+        uint256[] memory _rewardDebts)
+    external
+    onlyRole(PROPOSER_ROLE) {
+        hatVaults.setShares(
+            _pid,
+            _rewardPerShare,
+            _balance,
+            _accounts,
+            _shares,
+            _rewardDebts
+        );
+    }
 }

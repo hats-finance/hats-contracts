@@ -2534,6 +2534,21 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "SetSharesArraysMustHaveSameLength");
     }
 
+    try {
+      await hatVaults.setShares(
+        1,
+        10,
+        100,
+        [accounts[0], accounts[1]],
+        [1, 2],
+        [1, 2],
+        { from: accounts[1] }
+      );
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
     await hatVaults.setShares(
       1,
       10,
