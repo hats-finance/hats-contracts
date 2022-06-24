@@ -29,8 +29,8 @@ error BountyPercentageHigherThanMaxBounty();
 error WithdrawRequestPendingPeriodTooLong();
 // Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
-// Only callable by governance or after challenge timeout period
-error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+// Only callable by arbitrator or after challenge timeout period
+error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
 // Amount to reward is too big

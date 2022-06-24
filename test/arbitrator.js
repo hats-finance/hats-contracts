@@ -180,12 +180,12 @@ contract("HatVaults Arbitrator", (accounts) => {
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: accounts[2] }),
-      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
 
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: owner }),
-      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
     await hatVaults.dismissClaim(claimId, { from: arbitrator });
   });

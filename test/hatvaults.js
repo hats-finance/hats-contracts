@@ -370,11 +370,11 @@ contract("HatVaults", (accounts) => {
     await hatVaults.challengeClaim(claimId);
     try {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
-      assert(false, "only governance can dismiss before delay");
+      assert(false, "only arbitrator can dismiss before delay");
     } catch (ex) {
       assertVMException(
         ex,
-        "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
       );
     }
     await utils.increaseTime(1);
