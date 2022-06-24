@@ -99,11 +99,12 @@ contract Claim is Base {
         address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         if (msg.sender == arbitrator) {
             claim.bountyPercentage = _bountyPercentage;
         }
+
+        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         poolInfos[pid].balance -=
             claimBounty.hacker +
