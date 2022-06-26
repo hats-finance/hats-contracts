@@ -1,0 +1,17 @@
+{
+    "goerli": {
+        "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
+        "executors": [
+            "0x8e3c87eccdfee5410113152e5891ac61e9bbe0b9",
+            "0x0b7602011ec2b862bc157ff08d27b1018aeb18d5",
+            "0x1ab111e086514160d403110c3b872ffa696d035b",
+            "0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778",
+            "0x853d2d862e2a2c76ef8a4f6ef2b8a9fb3da1f604" 
+        ],
+        "tokenLockFactory": "0x28e7A5BDeBC3758Ea07Aa553f9B8f87Eff588101",
+        "hatToken": "0x81ce6022297Ab5e15ba295159aA4BDac6b84A76D",
+        "whitelistedRouters": [
+          "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+        ]
+    }
+}

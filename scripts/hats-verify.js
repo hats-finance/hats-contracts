@@ -73,4 +73,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { verifyTimelock: main };
+module.exports = { verifyHatsContracts: main };

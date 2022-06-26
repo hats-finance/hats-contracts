@@ -44,11 +44,17 @@ async function main() {
     ADDRESSES[network.name]["tokenLockFactory"] = tokenLockFactory.address;
     fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
   }
+
+  return { hatTokenLock, tokenLockFactory };
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
+
+module.exports = { deployTokenLockFactory: main };

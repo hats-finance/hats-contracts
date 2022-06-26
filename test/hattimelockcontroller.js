@@ -8,7 +8,7 @@ const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 
-const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { deployHatVaults } = require("../scripts/hatvaults-deploy.js");
 
 var hatVaults;
 var rewardController;

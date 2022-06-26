@@ -15,7 +15,7 @@ async function main() {
     hatTimelockControllerAddress
   );
 
-  const hatVaults = await HATVaults.at(addresses.hatVaultsAddress);
+  const hatVaults = await HATVaults.at(addresses.hatVaults);
 
   const EXECUTOR_ROLE = await hatTimelockController.EXECUTOR_ROLE();
   const PROPOSER_ROLE = await hatTimelockController.PROPOSER_ROLE();
@@ -72,17 +72,6 @@ async function main() {
     } else {
       console.warn(
         `current governance of hatvaults is ${currentGov} (expected the timelock at ${hatTimelockControllerAddress})`
-      );
-      return false;
-    }
-  });
-  await checkResult(`Timelock is HATVaults pending governance`, async () => {
-    const currentGov = await hatVaults.governancePending();
-    if (currentGov === hatTimelockControllerAddress) {
-      return true;
-    } else {
-      console.warn(
-        `current governancePending of hatvaults is ${currentGov} (expected the timelock at ${hatTimelockControllerAddress})`
       );
       return false;
     }

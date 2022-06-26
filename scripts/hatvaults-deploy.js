@@ -6,30 +6,30 @@ async function main(
   rewardsToken = ADDRESSES[network.name].hatToken,
   startBlock = null,
   rewardPerEpoch = [
-    web3.utils.toWei("44130"),
-    web3.utils.toWei("44130"),
-    web3.utils.toWei("88250"),
-    web3.utils.toWei("77880"),
-    web3.utils.toWei("68730"),
-    web3.utils.toWei("60650"),
-    web3.utils.toWei("53530"),
-    web3.utils.toWei("47240"),
-    web3.utils.toWei("41690"),
-    web3.utils.toWei("36790"),
-    web3.utils.toWei("32470"),
-    web3.utils.toWei("28650"),
-    web3.utils.toWei("25280"),
-    web3.utils.toWei("22310"),
-    web3.utils.toWei("19690"),
-    web3.utils.toWei("17380"),
-    web3.utils.toWei("15340"),
-    web3.utils.toWei("13530"),
-    web3.utils.toWei("11940"),
-    web3.utils.toWei("10540"),
-    web3.utils.toWei("9300"),
-    web3.utils.toWei("8210"),
-    web3.utils.toWei("7240"),
-    web3.utils.toWei("6390"),
+    "44130000000000000000000",
+    "44130000000000000000000",
+    "88250000000000000000000",
+    "77880000000000000000000",
+    "68730000000000000000000",
+    "60650000000000000000000",
+    "53530000000000000000000",
+    "47240000000000000000000",
+    "41690000000000000000000",
+    "36790000000000000000000",
+    "32470000000000000000000",
+    "28650000000000000000000",
+    "25280000000000000000000",
+    "22310000000000000000000",
+    "19690000000000000000000",
+    "17380000000000000000000",
+    "15340000000000000000000",
+    "13530000000000000000000",
+    "11940000000000000000000",
+    "10540000000000000000000",
+    "9300000000000000000000",
+    "8210000000000000000000",
+    "7240000000000000000000",
+    "6390000000000000000000",
   ],
   epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
@@ -85,27 +85,22 @@ async function main(
 
   await hatVaults.deployed();
 
+  const hatVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address)
   if (!silent) {
-    const hatsVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address)
 
     console.log("rewardController address:", rewardController.address);
     console.log("hatVaults address:", hatVaults.address);
-    console.log("hatsVaultsImplementation address:", hatsVaultsImplementation);
+    console.log("hatVaultsImplementation address:", hatVaultsImplementation);
 
     if (network.name !== "hardhat") {
       ADDRESSES[network.name]["rewardController"] = rewardController.address;
       ADDRESSES[network.name]["hatVaults"] = hatVaults.address;
-      ADDRESSES[network.name]["hatVaultsImplementation"] = hatsVaultsImplementation;
-      ADDRESSES[network.name]["rewardControllerParams"] = [
-        startBlock,
-        epochLength,
-        rewardPerEpoch
-      ];
+      ADDRESSES[network.name]["hatVaultsImplementation"] = hatVaultsImplementation;
       fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
     }
   }
 
-  return { hatVaults, rewardController };
+  return { hatVaults, rewardController, hatVaultsImplementation};
 }
 
 if (require.main === module) {

@@ -31,21 +31,25 @@
   },
   "goerli": {
     "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
-    "timelock": "0xeFF7b2eab5397f3b6F2Ac08a91446AC512Ab7c98",
     "executors": [
-      "0x68CE551D27687182C52Bd4aBc5C7584a0d5Bd685"
+      "0x8e3c87eccdfee5410113152e5891ac61e9bbe0b9",
+      "0x0b7602011ec2b862bc157ff08d27b1018aeb18d5",
+      "0x1ab111e086514160d403110c3b872ffa696d035b",
+      "0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778",
+      "0x853d2d862e2a2c76ef8a4f6ef2b8a9fb3da1f604"
     ],
-    "tokenLockFactory": "0x28e7A5BDeBC3758Ea07Aa553f9B8f87Eff588101",
     "hatToken": "0x81ce6022297Ab5e15ba295159aA4BDac6b84A76D",
-    "whitelistedRouters": [
-      "0xE592427A0AEce92De3Edee1F18E0157C05861564"
-    ],
     "hatTokenLock": "0xe0B8a9D761d8F3E05D2fFf2EA916E7abbb8D98f3",
-    "rewardController": "0x215AAf070aa1dB0C23C25704Db9D277bd1311182",
-    "hatVaults": "0xB17566BBDB95932b0C587BB0CeFaA461C592531a",
+    "tokenLockFactory": "0x28e7A5BDeBC3758Ea07Aa553f9B8f87Eff588101",
+    "rewardController": "0xbf436D3d1e947A2AD75FDC321Ce5dE442D406d3c",
+    "hatVaults": "0xbc69Ca2Bb6486Dd75F76F427a62b507414f945eB",
     "hatVaultsImplementation": "0x4D22e37Eb4d71D1acc5f4889a65936D2a44A2f15",
+    "timelock": "0x0D15cc7dDB251554874db190e327978EAb80418f",
     "rewardControllerParams": [
-      7123891,
+      {
+        "type": "BigNumber",
+        "hex": "0x6cb547"
+      },
       "195200",
       [
         "44130000000000000000000",
@@ -73,6 +77,9 @@
         "7240000000000000000000",
         "6390000000000000000000"
       ]
+    ],
+    "whitelistedRouters": [
+      "0xE592427A0AEce92De3Edee1F18E0157C05861564"
     ]
   },
   "hardhat": {
