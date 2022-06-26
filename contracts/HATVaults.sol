@@ -64,7 +64,7 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        setRewardController(_rewardController);
+        rewardController = _rewardController;
         arbitrator = owner();
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;

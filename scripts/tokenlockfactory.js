@@ -1,3 +1,5 @@
+const ADDRESSES = require("./addresses.json");
+const fs = require("fs");
 
 async function main() {
   // This is just a convenience check
@@ -11,9 +13,10 @@ async function main() {
 
   // ethers is avaialble in the global scope
   const [deployer] = await ethers.getSigners();
+  const deployerAddress = await deployer.getAddress();
   console.log(
     "Deploying the contracts with the account:",
-    await deployer.getAddress()
+    deployerAddress
   );
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -24,43 +27,23 @@ async function main() {
 
   console.log("hatTokenLock address:", hatTokenLock.address);
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatTokenLock,"HATTokenLock");
-
   const TokenLockFactory = await ethers.getContractFactory("TokenLockFactory");
   const tokenLockFactory = await TokenLockFactory.deploy(hatTokenLock.address);
   await tokenLockFactory.deployed();
 
   console.log("tokenLockFactory address:", tokenLockFactory.address);
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(tokenLockFactory,"TokenLockFactory");
+  if (network.name !== "hardhat") {
+    let governance = ADDRESSES[network.name].governance;
 
-}
-
-function saveFrontendFiles(contract,name) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir,{recursive: true});
+    if (deployerAddress.toLowerCase() !== governance.toLowerCase()) {
+      await tokenLockFactory.transferOwnership(governance);
+      console.log("Trnasferred factory ownership to:", governance);
+    }
+    ADDRESSES[network.name]["hatTokenLock"] = hatTokenLock.address;
+    ADDRESSES[network.name]["tokenLockFactory"] = tokenLockFactory.address;
+    fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
   }
-
-  var data = JSON.parse(fs.readFileSync(contractsDir + "/contract-address.json",
-                             {encoding:'utf8', flag:'r'}));
-  data[name] = contract.address;
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify(data, undefined, 2)
-  );
-
-  const ContractArtifact = artifacts.readArtifactSync(name);
-
-  fs.writeFileSync(
-    contractsDir + "/"+name+".json",
-    JSON.stringify(ContractArtifact, null, 2)
-  );
 }
 
 main()

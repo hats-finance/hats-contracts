@@ -1,5 +1,6 @@
 const { network } = require("hardhat");
-const ADDRESSES = require("./addresses.js");
+const ADDRESSES = require("./addresses.json");
+const fs = require("fs");
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -19,10 +20,8 @@ async function main() {
   if (!governance && network.name === "hardhat") {
     governance = deployerAddress;
   }
-  //rinkeby hattoken deployment
-  const timelockDelay = 3600 * 24 * 2; // 2 days
-  //const governance  = await deployer.getAddress();
-  //const timelockDelay = 1;
+
+  const timelockDelay = network.name === "mainnet" ? 3600 * 24 * 2 : 60 * 5; // 2 days for mainnet or 5 minutes for testnets
 
   console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -33,29 +32,10 @@ async function main() {
 
   console.log("hatToken address:", hatToken.address);
 
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(hatToken);
-}
-
-function saveFrontendFiles(hatToken) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir, { recursive: true });
+  if (network.name !== "hardhat") {
+    ADDRESSES[network.name]["hatToken"] = hatToken.address;
+    fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
   }
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify({ HATToken: hatToken.address }, undefined, 2)
-  );
-
-  const HATTokenArtifact = artifacts.readArtifactSync("HATToken");
-
-  fs.writeFileSync(
-    contractsDir + "/HATToken.json",
-    JSON.stringify(HATTokenArtifact, null, 2)
-  );
 }
 
 main()

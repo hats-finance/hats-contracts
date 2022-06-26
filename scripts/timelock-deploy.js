@@ -1,12 +1,14 @@
 const { network } = require("hardhat");
-const CONFIG = require("./addresses.js");
-const { verifyTimelock } = require("./timelock-verify.js");
+const ADDRESSES = require("./addresses.json");
 const { renounceRole } = require("./timelock-renounceRole.js");
+const fs = require("fs");
+
+let hatTimelockController;
 
 async function main(config) {
   // This is just a convenience check
   if (!config) {
-    config = CONFIG[network.name];
+    config = ADDRESSES[network.name];
   }
   const addresses = config;
 
@@ -22,9 +24,9 @@ async function main(config) {
   if (config.minDelay) {
     hatGovernanceDelay = config.minDelay;
   } else {
-    hatGovernanceDelay = 60 * 60 * 24 * 7; // 7 days
+    hatGovernanceDelay = network.name === "mainnet" ?  60 * 60 * 24 * 7 : 60 * 5; // 7 days for mainnet or 5 minutes for testnets
   }
-  const hatVaultsAddress = config.hatVaultsAddress;
+  const hatVaultsAddress = config.hatVaults;
   let executors = config.executors;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -34,15 +36,33 @@ async function main(config) {
   );
   console.log(`waiting for HATTimeLockController to deploy..`);
   console.log("Deploying the contracts with the account:", deployerAddress);
-  var hatTimelockController;
   if (network.name !== "hardhat") {
-    hatTimelockController = await HATTimelockController.deploy(
+    let timelock = await HATTimelockController.deploy(
       hatVaultsAddress,
       hatGovernanceDelay, // minDelay
       [governance], // proposers
       executors // executors
     );
-    await hatTimelockController.deployed();
+    await timelock.deployed();
+
+    ADDRESSES[network.name]["timelock"] = timelock.address;
+    fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
+    //verify
+    try {
+      await hre.run("verify:verify", {
+        address: timelock.address,
+        constructorArguments: [
+          hatVaultsAddress,
+          hatGovernanceDelay,
+          [governance],
+          executors,
+        ],
+      });
+    } catch (error) {
+      console.log("Verification failed with error: " + error);
+    }
+
+    hatTimelockController = timelock;
   } else {
     // if network is hardhat, then we are running a test, and we use a different deploymnet method
     const HATTimelockControllerArtifact = artifacts.require(
@@ -69,47 +89,7 @@ async function main(config) {
     deployer: deployer.address,
   });
 
-  // We also save the contract's artifacts and address in the frontend directory
-  if (network.name !== "hardhat") {
-    await verifyTimelock(
-      config.update({ timelock: hatTimeLockController.address })
-    );
-    saveFrontendFiles(hatTimelockController, "HATTimelockController");
-  }
-  //verify
-
   return hatTimelockController;
-}
-
-function saveFrontendFiles(contract, name) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir, { recursive: true });
-  }
-
-  var data = JSON.parse(
-    fs.readFileSync(contractsDir + "/contract-address.json", {
-      encoding: "utf8",
-      flag: "r",
-    })
-  );
-  data[name] = contract.address;
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify(data, undefined, 2)
-  );
-
-  const HATTimelockControllerArtifact = artifacts.readArtifactSync(
-    "HATTimelockController"
-  );
-
-  fs.writeFileSync(
-    contractsDir + "/HATTimelockController.json",
-    JSON.stringify(HATTimelockControllerArtifact, null, 2)
-  );
 }
 
 if (require.main === module) {

@@ -1,13 +1,41 @@
-const ADDRESSES = require("./addresses.js");
+const ADDRESSES = require("./addresses.json");
+const fs = require("fs");
+const { getImplementationAddress } = require('@openzeppelin/upgrades-core');
+
 async function main(
-  rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
+  rewardsToken = ADDRESSES[network.name].hatToken,
   startBlock = null,
-  rewardPerEpoch,
+  rewardPerEpoch = [
+    web3.utils.toWei("44130"),
+    web3.utils.toWei("44130"),
+    web3.utils.toWei("88250"),
+    web3.utils.toWei("77880"),
+    web3.utils.toWei("68730"),
+    web3.utils.toWei("60650"),
+    web3.utils.toWei("53530"),
+    web3.utils.toWei("47240"),
+    web3.utils.toWei("41690"),
+    web3.utils.toWei("36790"),
+    web3.utils.toWei("32470"),
+    web3.utils.toWei("28650"),
+    web3.utils.toWei("25280"),
+    web3.utils.toWei("22310"),
+    web3.utils.toWei("19690"),
+    web3.utils.toWei("17380"),
+    web3.utils.toWei("15340"),
+    web3.utils.toWei("13530"),
+    web3.utils.toWei("11940"),
+    web3.utils.toWei("10540"),
+    web3.utils.toWei("9300"),
+    web3.utils.toWei("8210"),
+    web3.utils.toWei("7240"),
+    web3.utils.toWei("6390"),
+  ],
   epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
-  swapToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
-  whitelistedRouters = ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
-  tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3",
+  swapToken = ADDRESSES[network.name].hatToken,
+  whitelistedRouters = ADDRESSES[network.name].whitelistedRouters,
+  tokenLockFactory = ADDRESSES[network.name].tokenLockFactory,
   silent = false
 ) {
   // This is just a convenience check
@@ -48,7 +76,7 @@ async function main(
 
   const hatVaults = await upgrades.deployProxy(HATVaults, [
     rewardsToken,
-    deployerAddress,
+    governance,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
@@ -57,67 +85,27 @@ async function main(
 
   await hatVaults.deployed();
 
-  if (governance !== deployerAddress) {
-    await hatVaults.transferOwnership(governance);
-  }
-
   if (!silent) {
-    console.log("hatVaults address:", hatVaults.address);
+    const hatsVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address)
 
-    // We also save the contract's artifacts and address in the frontend directory
-    saveFrontendFiles(hatVaults, "HATVaults");
-    //verify
-    console.log(
-      "npx hardhat verify --network rinkeby",
-      hatVaults.address,
-      '"',
-      rewardsToken,
-      '"',
-      '"',
-      startBlock,
-      '"',
-      '"',
-      epochLength,
-      '"',
-      '"',
-      governance,
-      '"',
-      '"',
-      tokenLockFactory,
-      '"'
-    );
+    console.log("rewardController address:", rewardController.address);
+    console.log("hatVaults address:", hatVaults.address);
+    console.log("hatsVaultsImplementation address:", hatsVaultsImplementation);
+
+    if (network.name !== "hardhat") {
+      ADDRESSES[network.name]["rewardController"] = rewardController.address;
+      ADDRESSES[network.name]["hatVaults"] = hatVaults.address;
+      ADDRESSES[network.name]["hatVaultsImplementation"] = hatsVaultsImplementation;
+      ADDRESSES[network.name]["rewardControllerParams"] = [
+        startBlock,
+        epochLength,
+        rewardPerEpoch
+      ];
+      fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
+    }
   }
 
   return { hatVaults, rewardController };
-}
-
-function saveFrontendFiles(contract, name) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir, { recursive: true });
-  }
-
-  var data = JSON.parse(
-    fs.readFileSync(contractsDir + "/contract-address.json", {
-      encoding: "utf8",
-      flag: "r",
-    })
-  );
-  data[name] = contract.address;
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify(data, undefined, 2)
-  );
-
-  const HATVaultsArtifact = artifacts.readArtifactSync("HATVaults");
-
-  fs.writeFileSync(
-    contractsDir + "/HATVaults.json",
-    JSON.stringify(HATVaultsArtifact, null, 2)
-  );
 }
 
 if (require.main === module) {
