@@ -85,7 +85,7 @@ async function main(
 
   await hatVaults.deployed();
 
-  const hatVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address)
+  const hatVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address);
   if (!silent) {
 
     console.log("rewardController address:", rewardController.address);

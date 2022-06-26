@@ -75,7 +75,7 @@ async function main() {
       "8210000000000000000000",
       "7240000000000000000000",
       "6390000000000000000000",
-    ]
+    ];
   } else {
     rewardPerEpoch = config.rewardPerEpoch;
   }
