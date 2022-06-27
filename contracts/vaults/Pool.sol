@@ -21,6 +21,7 @@ contract Pool is Base {
     */
 
     function addPool(
+        uint256 _allocPoint,
         address _lpToken,
         address _committee,
         uint256 _maxBounty,
@@ -45,7 +46,6 @@ contract Pool is Base {
             
         validateSplit(_bountySplit);
 
-        uint256 startBlock = rewardController.startBlock();
         uint256 poolId = poolInfos.length;
 
         poolInfos.push(PoolInfo({
@@ -56,7 +56,8 @@ contract Pool is Base {
             rewardPerShare: 0,
             totalShares: 0,
             balance: 0,
-            withdrawalFee: 0
+            withdrawalFee: 0,
+            allocPoint: _allocPoint
         }));
 
         bountyInfos[poolId] = BountyInfo({
@@ -66,12 +67,20 @@ contract Pool is Base {
             vestingPeriods: _bountyVestingParams[1]
         });
 
+        if (_allocPoint != 0) {
+            uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint + _allocPoint;
+
+            updateTotalAllocPoint(totalAllocPoint);
+        }
+
         setPoolsLastProcessedTotalAllocPoint(poolId);
         committees[poolId] = _committee;
         poolDepositPause[poolId] = _isPaused;
         poolInitialized[poolId] = _isInitialized;
 
         emit AddPool(poolId,
+            _allocPoint,
             _lpToken,
             _committee,
             _descriptionHash,
@@ -92,16 +101,40 @@ contract Pool is Base {
     */
     function setPool(
         uint256 _pid,
+        uint256 _allocPoint,
         bool _visible,
         bool _depositPause,
         string memory _descriptionHash
     ) external onlyOwner {
         if (poolInfos.length <= _pid) revert PoolDoesNotExist();
 
+        uint256 poolAllocPoint = poolInfos[_pid].allocPoint;
+        if (_allocPoint != poolAllocPoint) {
+            updatePool(_pid);
+            uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolAllocPoint + _allocPoint;
+            updateTotalAllocPoint(totalAllocPoint);
+        }
+
+        poolInfos[_pid].allocPoint = _allocPoint;
         poolDepositPause[_pid] = _depositPause;
 
-        emit SetPool(_pid, _visible, _depositPause, _descriptionHash);
+        emit SetPool(_pid, _allocPoint, _visible, _depositPause, _descriptionHash);
     }
+
+    function updateTotalAllocPoint(uint256 _totalAllocPoint) internal {
+        if (globalPoolUpdates.length > 0 &&
+            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+            // already update in this block
+            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = _totalAllocPoint;
+        } else {
+            globalPoolUpdates.push(PoolUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: _totalAllocPoint
+            }));
+        }
+    }
+
     /**
     * @notice set the flag that the pool is initialized to true
     * ony calleable by the owner of the contract

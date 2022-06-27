@@ -10,7 +10,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "../tokenlock/TokenLockFactory.sol";
-import "../RewardController.sol";
 
 // Errors:
 // Only committee
@@ -149,6 +148,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 lastProcessedTotalAllocPoint;
         // fee to take from withdrawals to governance
         uint256 withdrawalFee;
+        uint256 allocPoint;
     }
 
     struct UserInfo {
@@ -218,9 +218,16 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 timestamp;
     }
 
+    struct PoolUpdate {
+        uint256 blockNumber;// update blocknumber
+        uint256 totalAllocPoint; //totalAllocPoint
+    }
+
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
+    uint256 public constant MULTIPLIERS_LENGTH = 24;
+
 
     // PARAMETERS FOR ALL VAULTS
     // time during which a claim can be challenged by the arbitrator
@@ -229,8 +236,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
-    // rewardController determines how many rewards each pool gets in the incentive program
-    RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
@@ -245,6 +250,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public rewardAvailable;
     mapping(address => bool) public whitelistedRouters;
     uint256 internal nonce;
+    // Block from which the vaults contract will start rewarding.
+    uint256 public startBlock;
+    uint256 public epochLength;
+    // Reward Multipliers
+    uint256[24] public rewardPerEpoch;
+    PoolUpdate[] public globalPoolUpdates;
 
     // PARAMETERS PER VAULT
     PoolInfo[] public poolInfos;
@@ -340,9 +351,9 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event CommitteeCheckedIn(uint256 indexed _pid);
     event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetRewardController(address indexed _newRewardController);
     event AddPool(
         uint256 indexed _pid,
+        uint256 _allocPoint,
         address indexed _lpToken,
         address _committee,
         string _descriptionHash,
@@ -353,6 +364,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event SetPool(
         uint256 indexed _pid,
+        uint256 _allocPoint,
         bool indexed _registered,
         bool _depositPause,
         string _descriptionHash
@@ -377,6 +389,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     );
     event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
 
     modifier onlyFeeSetter() {
         if (feeSetter != msg.sender) revert OnlyFeeSetter();
@@ -422,8 +435,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         pool.lastRewardBlock = block.number;
 
         if (totalShares != 0) {
-            uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
-            uint256 reward = rewardController.getPoolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
+            uint256 reward = getPoolReward(_pid, lastRewardBlock);
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
@@ -448,7 +460,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
-        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
+        uint globalPoolUpdatesLength = globalPoolUpdates.length;
 
         if (globalPoolUpdatesLength > 0) {
             poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
@@ -466,6 +478,55 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             _bountySplit.governanceHat +
             _bountySplit.hackerHatVested != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
+    }
+
+    /**
+    * @notice Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
+    * and sum up all rewards periods from pool.lastRewardBlock until current block number.
+    * @param _pid The pool id
+    * @param _fromBlock The block from which to start calculation
+    * @return reward
+    */
+    function getPoolReward(uint256 _pid, uint256 _fromBlock) public view returns(uint256 reward) {
+        uint256 globalPoolUpdatesLength = globalPoolUpdates.length;
+        if (globalPoolUpdatesLength == 0) {
+            return 0;
+        }
+        uint256 poolAllocPoint = poolInfos[_pid].allocPoint;
+        uint256 i = poolInfos[_pid].lastProcessedTotalAllocPoint;
+        for (; i < globalPoolUpdatesLength-1; i++) {
+            uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
+            reward =
+            reward + getRewardForBlocksRange(_fromBlock,
+                                            nextUpdateBlock,
+                                            poolAllocPoint,
+                                            globalPoolUpdates[i].totalAllocPoint);
+            _fromBlock = nextUpdateBlock;
+        }
+        return reward + getRewardForBlocksRange(_fromBlock,
+                                                block.number,
+                                                poolAllocPoint,
+                                                globalPoolUpdates[i].totalAllocPoint);
+    }
+
+    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
+    public
+    view
+    returns (uint256 reward) {
+        if (_totalAllocPoint > 0) {
+            uint256 result;
+            uint256 i = (_fromBlock - startBlock) / epochLength + 1;
+            for (; i <= MULTIPLIERS_LENGTH; i++) {
+                uint256 endBlock = epochLength * i + startBlock;
+                if (_toBlock <= endBlock) {
+                    break;
+                }
+                result += (endBlock - _fromBlock) * rewardPerEpoch[i-1];
+                _fromBlock = endBlock;
+            }
+            result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
+            reward = result * _allocPoint / _totalAllocPoint / 100;
+        }
     }
 
     /**

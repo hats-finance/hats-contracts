@@ -147,6 +147,15 @@ contract Params is Base {
         emit SetMaxBountyDelay(_delay);
     }
 
+    /**
+    * @notice Called by owner to set reward multipliers
+    * @param _rewardPerEpoch reward multipliers
+    */
+    function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
+        rewardPerEpoch = _rewardPerEpoch;
+        emit SetRewardPerEpoch(_rewardPerEpoch);
+    }
+
     function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
         whitelistedRouters[_router] = _isWhitelisted;
         emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
@@ -207,10 +216,5 @@ contract Params is Base {
         bountyInfos[_pid].maxBounty = pendingMaxBounty[_pid].maxBounty;
         delete pendingMaxBounty[_pid];
         emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
-    }
-
-    function setRewardController(RewardController _newRewardController) public onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(address(_newRewardController));
     }
 }

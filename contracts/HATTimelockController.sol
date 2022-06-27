@@ -26,7 +26,8 @@ contract HATTimelockController is TimelockController {
         hatVaults.approveClaim(_claimId, _bountyPercentage);
     }
 
-    function addPool(address _lpToken,
+    function addPool(uint256 _allocPoint,
+                    address _lpToken,
                     address _committee,
                     uint256 _maxBounty,
                     HATVaults.BountySplit memory _bountySplit,
@@ -37,6 +38,7 @@ contract HATTimelockController is TimelockController {
     external
     onlyRole(PROPOSER_ROLE) {
         hatVaults.addPool(
+            _allocPoint,
             _lpToken,
             _committee,
             _maxBounty,
@@ -49,21 +51,18 @@ contract HATTimelockController is TimelockController {
     }
 
     function setPool(uint256 _pid,
+                    uint256 _allocPoint,
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyRole(PROPOSER_ROLE) {
         hatVaults.setPool(
             _pid,
+            _allocPoint,
             _registered,
             _depositPause,
             _descriptionHash
         );
-    }
-
-    function setAllocPoint(uint256 _pid, uint256 _allocPoint)
-    external onlyRole(PROPOSER_ROLE) {
-        hatVaults.rewardController().setAllocPoint(_pid, _allocPoint);
     }
 
     function setCommittee(uint256 _pid, address _committee) external onlyRole(PROPOSER_ROLE) {

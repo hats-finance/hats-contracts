@@ -4,7 +4,6 @@ const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
-const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
@@ -95,9 +94,6 @@ const setup = async function(
   );
 
   hatVaults = await HATVaults.at(deployment.hatVaults.address);
-  rewardController = await RewardController.at(
-    deployment.rewardController.address
-  );
 
   await utils.setMinter(
     hatToken,
@@ -123,6 +119,7 @@ const setup = async function(
   // setting challengeClaim period to 0 will make running tests a bit easier
   await hatVaults.setChallengePeriod(challengePeriod);
   await hatVaults.addPool(
+    allocPoint,
     stakingToken.address,
     accounts[1],
     maxBounty,
@@ -131,10 +128,6 @@ const setup = async function(
     [86400, 10],
     false,
     true
-  );
-  await rewardController.setAllocPoint(
-    (await hatVaults.getNumberOfPools()) - 1,
-    allocPoint
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
   return {

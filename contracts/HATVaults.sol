@@ -34,8 +34,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     * be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
-    * @param _rewardController Address of the reward controller to be used to
-    * manage the reward distribution.
     */
     function initialize(
         address _rewardToken,
@@ -43,7 +41,9 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
         address _swapToken,
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory,
-        RewardController _rewardController
+        uint256 _startRewardingBlock,
+        uint256 _epochLength,
+        uint256[24] memory _rewardPerEpoch
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
@@ -64,9 +64,11 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        setRewardController(_rewardController);
         arbitrator = owner();
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;
+        startBlock = _startRewardingBlock;
+        epochLength = _epochLength;
+        rewardPerEpoch = _rewardPerEpoch;
     }
 }

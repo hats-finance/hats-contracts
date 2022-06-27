@@ -36,15 +36,6 @@ async function main(
   }
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
-  const RewardController = await ethers.getContractFactory("RewardController");
-  const rewardController = await RewardController.deploy(
-    governance,
-    startBlock,
-    epochLength,
-    rewardPerEpoch
-  );
-
-  await rewardController.deployed();
 
   const hatVaults = await upgrades.deployProxy(HATVaults, [
     rewardsToken,
@@ -52,7 +43,9 @@ async function main(
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
-    rewardController.address,
+    startBlock,
+    epochLength,
+    rewardPerEpoch
   ]);
 
   await hatVaults.deployed();
@@ -88,7 +81,7 @@ async function main(
     );
   }
 
-  return { hatVaults, rewardController };
+  return { hatVaults };
 }
 
 function saveFrontendFiles(contract, name) {
