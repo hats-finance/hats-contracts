@@ -91,19 +91,22 @@ contract Claim is Base {
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
-        if (!(msg.sender == arbitrator && claim.isChallenged) &&
-            (claim.createdAt + challengePeriod >= block.timestamp))
-        revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        if (claim.isChallenged) {
+            if (msg.sender != arbitrator) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        } else {
+            if (block.timestamp <= claim.createdAt + challengePeriod) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        }
 
         uint256 pid = claim.pid;
         address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
-        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         if (msg.sender == arbitrator) {
             claim.bountyPercentage = _bountyPercentage;
         }
+
+        ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
         poolInfos[pid].balance -=
             claimBounty.hacker +
@@ -154,7 +157,7 @@ contract Claim is Base {
 
     /**
     * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by Hats governance, or by anyone if the claim is over 5 weeks old.
+    * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
@@ -163,7 +166,7 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         if (!(msg.sender == arbitrator && claim.isChallenged) &&
             (claim.createdAt + challengeTimeOutPeriod > block.timestamp))
-            revert OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+            revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         delete activeClaims[pid];
         delete claims[_claimId];

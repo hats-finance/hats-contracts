@@ -28,8 +28,8 @@ error BountyPercentageHigherThanMaxBounty();
 error WithdrawRequestPendingPeriodTooLong();
 // Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
-// Only callable by governance or after challenge timeout period
-error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+// Only callable by arbitrator or after challenge timeout period
+error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
 // Amount to reward is too big
@@ -88,6 +88,8 @@ error PoolWithdrawalFeeTooBig();
 error TokenApproveResetFailed();
 // Pool must not be initialized
 error PoolMustNotBeInitialized();
+// Pool must be initialized
+error PoolMustBeInitialized();
 error InvalidPoolRange();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();

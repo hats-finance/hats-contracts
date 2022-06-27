@@ -358,11 +358,11 @@ contract("HatVaults", (accounts) => {
     await hatVaults.challengeClaim(claimId);
     try {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
-      assert(false, "only governance can dismiss before delay");
+      assert(false, "only arbitrator can dismiss before delay");
     } catch (ex) {
       assertVMException(
         ex,
-        "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
       );
     }
     await utils.increaseTime(1);
@@ -2414,6 +2414,40 @@ contract("HatVaults", (accounts) => {
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
+    }
+  });
+
+  it("cannot deposit to pool before initialized", async () => {
+    await setup(accounts);
+    var staker = accounts[4];
+    await hatToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("1"));
+    await hatToken.mint(staker, web3.utils.toWei("1"));
+    await hatVaults.setPoolInitialized(0);
+
+    await hatVaults.addPool(
+      stakingToken.address,
+      accounts[1],
+      8000,
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10],
+      false,
+      false
+    );
+    await rewardController.setAllocPoint(
+      (await hatVaults.getNumberOfPools()) - 1,
+      100
+    );
+    await hatVaults.committeeCheckIn(1, { from: accounts[1] });
+
+    try {
+      await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
+      assert(false, "pool must be initialized");
+    } catch (ex) {
+      assertVMException(ex, "PoolMustBeInitialized");
     }
   });
 
