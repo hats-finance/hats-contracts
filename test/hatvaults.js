@@ -2428,6 +2428,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.setPoolInitialized(0);
 
     await hatVaults.addPool(
+      100,
       stakingToken.address,
       accounts[1],
       8000,
@@ -2437,10 +2438,7 @@ contract("HatVaults", (accounts) => {
       false,
       false
     );
-    await rewardController.setAllocPoint(
-      (await hatVaults.getNumberOfPools()) - 1,
-      100
-    );
+
     await hatVaults.committeeCheckIn(1, { from: accounts[1] });
 
     try {
