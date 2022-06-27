@@ -4055,6 +4055,32 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("set reward controller", async () => {
+    await setup(accounts);
+    try {
+      await hatVaults.setRewardController(accounts[1], {
+        from: accounts[1],
+      });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    assert.equal(
+      await hatVaults.rewardController(),
+      rewardController.address
+    );
+    var tx = await hatVaults.setRewardController(accounts[1], {
+      from: accounts[0],
+    });
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[1]);
+    assert.equal(
+      await hatVaults.rewardController(),
+      accounts[1]
+    );
+  });
+
   it("withdraw+ deposit + addition ", async () => {
     await setup(accounts);
     var staker = accounts[1];
