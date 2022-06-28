@@ -1408,6 +1408,16 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("getRewardForBlocksRange - total allocation points 0 retunrs 0", async () => {
+    await setup(accounts, 0);
+    assert.equal(
+      (
+        await hatVaults.getRewardForBlocksRange(0, 0, 0, 0)
+      ).toNumber(),
+      0
+    );
+  });
+
   it("setRewardPerEpoch", async () => {
     var rewardPerEpochRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 10000) | 0).toString())
