@@ -59,23 +59,6 @@ contract Deposit is Base {
     }
 
     /**
-     * @notice rewardDepositors - add pool tokens to reward depositors in the pool's native token
-     * The funds will be given to depositors pro rata upon withdraw
-     * The sender of the transaction must have approved the spend before calling this function
-     * @param _pid pool id
-     * @param _amount amount of pool's native token to add
-    */
-    function rewardDepositors(uint256 _pid, uint256 _amount) external nonReentrant {        
-        IERC20Upgradeable lpToken = poolInfos[_pid].lpToken;
-        uint256 balanceBefore = lpToken.balanceOf(address(this));
-        lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 lpTokenReceived = lpToken.balanceOf(address(this)) - balanceBefore;
-
-        poolInfos[_pid].balance += lpTokenReceived;
-
-        emit RewardDepositors(_pid, _amount, lpTokenReceived);
-    }
-    /**
      * @notice add reward tokens to the hatVaults contrac, to be distributed as rewards
      * The sender of the transaction must have approved the spend before calling this function
      * @param _amount amount of rewardToken to add

@@ -33,8 +33,6 @@ error WithdrawRequestEnabledPeriodTooShort();
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
-// Amount to reward is too big
-error AmountToRewardTooBig();
 // Withdraw period must be >= 1 hour
 error WithdrawPeriodTooShort();
 // Safety period must be <= 6 hours
@@ -309,10 +307,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 transferredAmount
     );
     event ClaimReward(uint256 indexed _pid);
-    event RewardDepositors(uint256 indexed _pid,
-        uint256 indexed _amount,
-        uint256 indexed _transferredAmount
-    );
     event DepositReward(uint256 indexed _amount,
         uint256 indexed _transferredAmount,
         address indexed _rewardToken
