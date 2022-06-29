@@ -13,6 +13,8 @@ contract Deposit is Base {
     * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
     **/
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
+        if (!poolInfos[_pid].committeeCheckedIn)
+            revert CommitteeNotCheckedInYet();
         if (poolDepositPause[_pid]) revert DepositPaused();
         if (!poolInitialized[_pid]) revert PoolMustBeInitialized();
         if (_amount < MINIMUM_DEPOSIT) revert AmountLessThanMinDeposit();
@@ -21,7 +23,13 @@ contract Deposit is Base {
         withdrawEnableStartTime[_pid][msg.sender] = 0;
         PoolInfo storage pool = poolInfos[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        _claimReward(_pid, user);
+        updatePool(_pid);
+        if (user.shares > 0) {
+            uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
+            if (pending > 0) {
+                safeTransferReward(msg.sender, pending, _pid);
+            }
+        }
         uint256 lpSupply = pool.balance;
         uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
 
@@ -51,9 +59,17 @@ contract Deposit is Base {
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {
-        UserInfo memory user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
 
-        _claimReward(_pid, user);
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        uint256 rewardPerShare = poolInfos[_pid].rewardPerShare;
+        if (user.shares > 0) {
+            uint256 pending = user.shares * rewardPerShare / 1e12 - user.rewardDebt;
+            if (pending > 0) {
+                user.rewardDebt = user.shares * rewardPerShare / 1e12;
+                safeTransferReward(msg.sender, pending, _pid);
+            }
+        }
 
         emit ClaimReward(_pid);
     }
@@ -89,18 +105,5 @@ contract Deposit is Base {
         rewardAvailable += rewardTokenReceived;
 
         emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
-    }
-
-    function _claimReward(uint256 _pid, UserInfo memory _user) internal {
-        if (!poolInfos[_pid].committeeCheckedIn)
-            revert CommitteeNotCheckedInYet();
-        updatePool(_pid);
-        // if the user already has funds in the pool, give the previous reward
-        if (_user.shares > 0) {
-            uint256 pending = _user.shares * poolInfos[_pid].rewardPerShare / 1e12 - _user.rewardDebt;
-            if (pending > 0) {
-                safeTransferReward(msg.sender, pending, _pid);
-            }
-        }
     }
 }
