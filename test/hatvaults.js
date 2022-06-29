@@ -588,7 +588,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.updatePool(0);
   });
 
-  it("deposit less than 1e6", async () => {
+  it("deposit cannot be 0", async () => {
     await setup(accounts);
     var staker = accounts[1];
 
@@ -602,8 +602,12 @@ contract("HatVaults", (accounts) => {
       await hatToken.balanceOf(hatVaults.address),
       web3.utils.toWei(hatVaultsExpectedHatsBalance.toString())
     );
-    await hatVaults.deposit(0, "1000000", { from: staker });
-    assert.equal(await stakingToken.balanceOf(hatVaults.address), "1000000");
+    try {
+      await hatVaults.deposit(0, 0, { from: staker });
+      assert(false, "cannot deposit 0");
+    } catch (ex) {
+      assertVMException(ex, "AmountToDepositIsZero");
+    }
   });
 
   it("withdrawn", async () => {

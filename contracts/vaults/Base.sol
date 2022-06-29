@@ -63,8 +63,8 @@ error AmountToSwapIsZero();
 error PendingWithdrawRequestExists();
 // Deposit paused
 error DepositPaused();
-// Amount less than minimum for 1 share
-error AmountLessThanMinDeposit();
+// Amount to deposit is zero
+error AmountToDepositIsZero();
 // Pool balance is zero
 error PoolBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`

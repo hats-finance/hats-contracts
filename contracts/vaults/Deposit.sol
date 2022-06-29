@@ -27,6 +27,9 @@ contract Deposit is Base {
         pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 transferredAmount = pool.lpToken.balanceOf(address(this)) - balanceBefore;
+
+        if (transferredAmount == 0) revert AmountToDepositIsZero();
+
         pool.balance += transferredAmount;
 
         // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
@@ -38,7 +41,6 @@ contract Deposit is Base {
             userShares = pool.totalShares * transferredAmount / lpSupply;
         }
 
-        if (userShares == 0) revert AmountLessThanMinDeposit();
         user.shares += userShares;
         pool.totalShares += userShares;
         user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
