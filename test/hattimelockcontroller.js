@@ -523,4 +523,140 @@ contract("HatTimelockController", (accounts) => {
     await hatVaults.setCommittee(1, accounts[2], { from: accounts[1] });
     await hatVaults.setCommittee(1, accounts[1], { from: accounts[2] });
   });
+
+  it("set shares", async () => {
+    await setup(accounts);
+    try {
+      await hatTimelockController.setShares(1, 0, 0, [], [], []);
+      assert(false, "no pool exist");
+    } catch (ex) {
+      assertVMException(ex, "PoolDoesNotExist");
+    }
+
+    await hatTimelockController.addPool(
+      stakingToken.address,
+      accounts[1],
+      8000,
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10],
+      false,
+      false
+    );
+    await hatTimelockController.setAllocPoint(
+      (await hatVaults.getNumberOfPools()) - 1,
+      100
+    );
+
+    try {
+      await hatTimelockController.setShares(1, 100, 100, [accounts[0]], [1], [1, 1]);
+      assert(false, "arrays lengths must match");
+    } catch (ex) {
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
+    }
+
+    try {
+      await hatTimelockController.setShares(1, 100, 100, [accounts[0]], [1, 1], [1]);
+      assert(false, "arrays lengths must match");
+    } catch (ex) {
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
+    }
+
+    try {
+      await hatTimelockController.setShares(
+        1,
+        100,
+        100,
+        [accounts[0], accounts[1]],
+        [1],
+        [1]
+      );
+      assert(false, "arrays lengths must match");
+    } catch (ex) {
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
+    }
+
+    try {
+      await hatTimelockController.setShares(
+        1,
+        10,
+        100,
+        [accounts[0], accounts[1]],
+        [1, 2],
+        [1, 2],
+        { from: accounts[1] }
+      );
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await hatVaults.setShares(
+        1,
+        10,
+        100,
+        [accounts[0], accounts[1]],
+        [1, 2],
+        [1, 2]
+      );
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await hatTimelockController.setShares(
+      1,
+      10,
+      100,
+      [accounts[0], accounts[1]],
+      [1, 2],
+      [1, 2]
+    );
+    assert.equal(
+      (await hatVaults.poolInfos(1)).rewardPerShare.toString(),
+      "10"
+    );
+    assert.equal((await hatVaults.poolInfos(1)).balance.toString(), "100");
+    assert.equal((await hatVaults.poolInfos(1)).totalShares.toString(), "3");
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[0])).shares.toString(),
+      "1"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[0])).rewardDebt.toString(),
+      "1"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[1])).shares.toString(),
+      "2"
+    );
+    assert.equal(
+      (await hatVaults.userInfo(1, accounts[1])).rewardDebt.toString(),
+      "2"
+    );
+
+    await hatTimelockController.addPool(
+      stakingToken.address,
+      accounts[1],
+      8000,
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10],
+      false,
+      true
+    );
+
+    await hatTimelockController.setAllocPoint(
+      (await hatVaults.getNumberOfPools()) - 1,
+      100
+    );
+
+    try {
+      await hatTimelockController.setShares(2, 0, 0, [], [], []);
+      assert(false, "pool already initialized");
+    } catch (ex) {
+      assertVMException(ex, "PoolMustNotBeInitialized");
+    }
+  });
 });

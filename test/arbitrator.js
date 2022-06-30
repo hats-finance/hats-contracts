@@ -58,6 +58,7 @@ contract("HatVaults Arbitrator", (accounts) => {
     await advanceToSafetyPeriod(hatVaults);
 
     const staker = accounts[1];
+    await hatVaults.setArbitrator(accounts[3]);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
     await stakingToken.mint(staker, web3.utils.toWei("2"));
@@ -68,6 +69,17 @@ contract("HatVaults Arbitrator", (accounts) => {
     await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: accounts[2] }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: accounts[3] }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
+
     // go and pass the challenge period
     await utils.increaseTime(2000);
 
@@ -136,6 +148,13 @@ contract("HatVaults Arbitrator", (accounts) => {
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
+    // go and pass the challenge period
+    await utils.increaseTime(2000);
+
+    await assertFunctionRaisesException(
+      hatVaults.approveClaim(claimId, 8000, { from: owner }),
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+    );
     assert.equal((await hatVaults.claims(claimId)).bountyPercentage, 8000);
     var stakingTokenBalanceBefore = await stakingToken.balanceOf(hatVaults.address);
     var tx = await hatVaults.approveClaim(claimId, 6000, { from: arbitrator });
