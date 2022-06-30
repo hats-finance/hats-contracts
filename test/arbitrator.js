@@ -66,7 +66,6 @@ contract("HatVaults Arbitrator", (accounts) => {
       from: staker,
     });
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
 
@@ -108,7 +107,6 @@ contract("HatVaults Arbitrator", (accounts) => {
       from: staker,
     });
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
 

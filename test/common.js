@@ -107,10 +107,10 @@ const setup = async function(
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
   await hatToken.approve(
-    hatVaults.address,
+    rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  var tx = await hatVaults.depositReward(
+  var tx = await rewardController.depositReward(
     web3.utils.toWei(rewardInVaults.toString())
   );
   assert.equal(tx.logs[0].event, "DepositReward");
@@ -123,6 +123,7 @@ const setup = async function(
   // setting challengeClaim period to 0 will make running tests a bit easier
   await hatVaults.setChallengePeriod(challengePeriod);
   await hatVaults.addPool(
+    allocPoint,
     stakingToken.address,
     accounts[1],
     maxBounty,
@@ -131,10 +132,6 @@ const setup = async function(
     [86400, 10],
     false,
     true
-  );
-  await rewardController.setAllocPoint(
-    (await hatVaults.getNumberOfPools()) - 1,
-    allocPoint
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
   return {

@@ -21,6 +21,7 @@ contract Pool is Base {
     */
 
     function addPool(
+        uint256 _allocPoint,
         address _lpToken,
         address _committee,
         uint256 _maxBounty,
@@ -45,15 +46,11 @@ contract Pool is Base {
             
         validateSplit(_bountySplit);
 
-        uint256 startBlock = rewardController.startBlock();
         uint256 poolId = poolInfos.length;
 
         poolInfos.push(PoolInfo({
             committeeCheckedIn: false,
             lpToken: IERC20Upgradeable(_lpToken),
-            lastRewardBlock: block.number > startBlock ? block.number : startBlock,
-            lastProcessedTotalAllocPoint: 0,
-            rewardPerShare: 0,
             totalShares: 0,
             balance: 0,
             withdrawalFee: 0
@@ -66,7 +63,7 @@ contract Pool is Base {
             vestingPeriods: _bountyVestingParams[1]
         });
 
-        setPoolsLastProcessedTotalAllocPoint(poolId);
+        rewardController.addPool(_allocPoint);
         committees[poolId] = _committee;
         poolDepositPause[poolId] = _isPaused;
         poolInitialized[poolId] = _isInitialized;
@@ -134,33 +131,13 @@ contract Pool is Base {
             revert SetSharesArraysMustHaveSameLength();
 
         PoolInfo storage pool = poolInfos[_pid];
-
-        pool.rewardPerShare = _rewardPerShare;
         pool.balance = _balance;
 
         for (uint256 i = 0; i < _accounts.length; i++) {
-            userInfo[_pid][_accounts[i]] = UserInfo({
-                shares: _shares[i],
-                rewardDebt: _rewardDebts[i]
-            });
+            userShares[_pid][_accounts[i]] = _shares[i];
             pool.totalShares += _shares[i];
         }
-    }
 
-    /**
-    * @notice massUpdatePools - Update reward variables for all pools
-    * Be careful of gas spending!
-    * @param _fromPid update pools range from this pool id
-    * @param _toPid update pools range to this pool id
-    */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        if (_toPid > poolInfos.length || _fromPid > _toPid)
-            revert InvalidPoolRange();
-
-        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
-            updatePool(pid);
-        }
-
-        emit MassUpdatePools(_fromPid, _toPid);
+        rewardController.setShares(_pid, _rewardPerShare, _accounts, _shares, _rewardDebts);
     }
 }

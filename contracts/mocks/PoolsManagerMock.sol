@@ -8,7 +8,6 @@ import "../HATVaults.sol";
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
-                    RewardController _rewardController,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
@@ -18,7 +17,8 @@ contract PoolsManagerMock {
                     uint256[2] memory _bountyVestingParams) external {
 
         for (uint256 i=0; i < _lpTokens.length; i++) {
-            _hatVaults.addPool(_lpTokens[i],
+            _hatVaults.addPool(_allocPoint,
+                                _lpTokens[i],
                                 _committee,
                                 _maxBounty,
                                 _bountySplit,
@@ -26,7 +26,6 @@ contract PoolsManagerMock {
                                 _bountyVestingParams,
                                 false,
                                 true);
-            _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
     }
 
@@ -47,12 +46,12 @@ contract PoolsManagerMock {
         }
     }
 
-    function updatePoolsTwice(HATVaults target, uint256 _fromPid, uint256 _toPid) external {
+    function updatePoolsTwice(RewardController target, uint256 _fromPid, uint256 _toPid) external {
         target.massUpdatePools(_fromPid, _toPid);
         target.massUpdatePools(_fromPid, _toPid);
     }
 
-    function claimRewardTwice(HATVaults target, uint256 _pid) external {
+    function claimRewardTwice(RewardController target, uint256 _pid) external {
         target.claimReward(_pid);
         target.claimReward(_pid);
     }
@@ -77,7 +76,7 @@ contract PoolsManagerMock {
         }
     }
 
-    function claimDifferentPids(HATVaults _target, uint256[] memory _pids) external {
+    function claimDifferentPids(RewardController _target, uint256[] memory _pids) external {
         uint256  i;
         for (i = 0; i < _pids.length; i++) {
             _target.claimReward(_pids[i]);

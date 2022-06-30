@@ -23,7 +23,6 @@ import "./vaults/Withdraw.sol";
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @notice initialize -
-    * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
     * Some of the contracts functions are limited only to governance:
     * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
@@ -38,7 +37,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     * manage the reward distribution.
     */
     function initialize(
-        address _rewardToken,
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
@@ -47,7 +45,6 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     ) external initializer {
         __ReentrancyGuard_init();
         _transferOwnership(_hatGovernance);
-        rewardToken = IERC20Upgradeable(_rewardToken);
         swapToken = ERC20BurnableUpgradeable(_swapToken);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
@@ -64,7 +61,7 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        setRewardController(_rewardController);
+        rewardController = _rewardController;
         arbitrator = owner();
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;
