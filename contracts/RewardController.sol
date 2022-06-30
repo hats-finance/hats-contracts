@@ -235,6 +235,7 @@ contract RewardController is Ownable {
     }
 
     function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
+        updatePool(_pid);
         _setAllocPoint(_pid, _allocPoint);
     }
 
