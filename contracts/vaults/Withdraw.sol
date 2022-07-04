@@ -13,7 +13,7 @@ contract Withdraw is Base {
     * had also ended.
     * @param _pid The pool ID
     **/
-    function withdrawRequest(uint256 _pid) external {
+    function withdrawRequest(uint256 _pid) external nonReentrant {
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawwithdrawRequest
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
