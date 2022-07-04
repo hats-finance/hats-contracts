@@ -111,6 +111,7 @@ error OnlyArbitrator();
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 // Bounty split must include hacker payout
 error BountySplitMustIncludeHackerPayout();
+error ChallengePeriodEnded();
 
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {

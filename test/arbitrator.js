@@ -92,6 +92,73 @@ contract("HatVaults Arbitrator", (accounts) => {
     assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
   });
 
+  it("Aribtrator can only change bounty if claim is challenged", async () => {
+    const { hatVaults, stakingToken } = await setup(accounts);
+    // set challenge period to 1000
+    hatVaults.setChallengePeriod(1000);
+    await advanceToSafetyPeriod(hatVaults);
+
+    const staker = accounts[1];
+    await hatVaults.setArbitrator(accounts[3]);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await hatVaults.updatePool(0);
+
+    const claimId = await submitClaim(hatVaults, { accounts });
+
+    // go and pass the challenge period
+    await utils.increaseTime(2000);
+
+    // challenge period is over
+    // anyone can now approve the claim, accepting the claim with the same amount is fine
+    const tx = await hatVaults.approveClaim(claimId, 1234, {
+      from: accounts[3],
+    });
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
+  });
+
+  it("Aribtrator cannot challenge after challenge period", async () => {
+    const { hatVaults, stakingToken } = await setup(accounts);
+    // set challenge period to 1000
+    hatVaults.setChallengePeriod(1000);
+    await advanceToSafetyPeriod(hatVaults);
+
+    const staker = accounts[1];
+    await hatVaults.setArbitrator(accounts[3]);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
+    await hatVaults.updatePool(0);
+
+    const claimId = await submitClaim(hatVaults, { accounts });
+
+    // go and pass the challenge period
+    await utils.increaseTime(2000);
+
+    await assertFunctionRaisesException(
+      hatVaults.challengeClaim(claimId, { from: accounts[3] }),
+      "ChallengePeriodEnded"
+    );
+
+    // challenge period is over
+    // anyone can now approve the claim, accepting the claim with the same amount is fine
+    const tx = await hatVaults.approveClaim(claimId, 1234, {
+      from: accounts[3],
+    });
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
+  });
+
   it("challenge - approve Claim ", async () => {
     const { hatVaults, stakingToken } = await setup(accounts);
     // set challenge period to 1000
