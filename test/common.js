@@ -106,16 +106,8 @@ const setup = async function(
   );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await hatToken.approve(
+  await hatToken.transfer(
     rewardController.address,
-    web3.utils.toWei(rewardInVaults.toString())
-  );
-  var tx = await rewardController.depositReward(
-    web3.utils.toWei(rewardInVaults.toString())
-  );
-  assert.equal(tx.logs[0].event, "DepositReward");
-  assert.equal(
-    tx.logs[0].args._amount,
     web3.utils.toWei(rewardInVaults.toString())
   );
   hatVaultsExpectedHatsBalance = rewardInVaults;

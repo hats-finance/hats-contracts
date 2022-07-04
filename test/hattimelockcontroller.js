@@ -86,11 +86,10 @@ const setup = async function(
   );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await hatToken.approve(
+  await hatToken.transfer(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  await rewardController.depositReward(web3.utils.toWei(rewardInVaults.toString()));
   await hatTimelockController.addPool(
     stakingToken.address,
     accounts[1],

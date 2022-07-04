@@ -42,8 +42,6 @@ contract RewardController is IRewardController, Ownable {
     PoolUpdate[] public globalPoolUpdates;
     mapping(uint256 => PoolInfo) public poolInfo;
     mapping(uint256 => mapping(address => uint256)) public rewardDebt;
-    // rewardAvaivalabe is the amount of rewardToken's available to distribute as rewards
-    uint256 public rewardAvailable;
     HATVaults public hatVaults;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
@@ -54,10 +52,6 @@ contract RewardController is IRewardController, Ownable {
         address rewardToken
     );
     event ClaimReward(uint256 indexed _pid);
-    event DepositReward(uint256 indexed _amount,
-        uint256 indexed _transferredAmount,
-        address indexed _rewardToken
-    );
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     modifier onlyVaults() {
@@ -121,10 +115,9 @@ contract RewardController is IRewardController, Ownable {
     * @param _pid The pool id
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (rewardAvailable < _amount)
+        if (rewardToken.balanceOf(address(this)) < _amount)
             revert NotEnoughRewardsToTransferToUser();
             
-        rewardAvailable -= _amount;
         rewardToken.safeTransfer(_to, _amount);
 
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
@@ -226,20 +219,6 @@ contract RewardController is IRewardController, Ownable {
         _updateRewardPool(_pid, msg.sender, 0, true, true);
 
         emit ClaimReward(_pid);
-    }
-
-    /**
-     * @notice add reward tokens to the hatVaults contrac, to be distributed as rewards
-     * The sender of the transaction must have approved the spend before calling this function
-     * @param _amount amount of rewardToken to add
-    */
-    function depositReward(uint256 _amount) external {
-        uint256 balanceBefore = rewardToken.balanceOf(address(this));
-        rewardToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
-        rewardAvailable += rewardTokenReceived;
-
-        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
 
     /**
