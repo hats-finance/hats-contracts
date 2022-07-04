@@ -3,12 +3,12 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/TokenLockFactory.sol";
 import "../interfaces/IRewardController.sol";
 
@@ -110,10 +110,10 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 error BountySplitMustIncludeHackerPayout();
 
 
-contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is Ownable, ReentrancyGuard {
     // Parameters that apply to all the vaults
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20Burnable;
     
     struct GeneralParameters {
         uint256 hatVestingDuration;
@@ -135,7 +135,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of each pool.
     struct PoolInfo {
         bool committeeCheckedIn;
-        IERC20Upgradeable lpToken;
+        IERC20 lpToken;
         // total amount of LP tokens in pool
         uint256 balance;
         uint256 totalShares;
@@ -214,7 +214,7 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     address public arbitrator;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20BurnableUpgradeable public swapToken;
+    ERC20Burnable public swapToken;
     mapping(address => bool) public whitelistedRouters;
     uint256 internal nonce;
 
@@ -376,11 +376,4 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             _bountySplit.hackerHatVested != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
     }
-
-    /**
-     * @notice This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[50] private __gap;
 }

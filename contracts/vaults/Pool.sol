@@ -50,7 +50,7 @@ contract Pool is Base {
 
         poolInfos.push(PoolInfo({
             committeeCheckedIn: false,
-            lpToken: IERC20Upgradeable(_lpToken),
+            lpToken: IERC20(_lpToken),
             totalShares: 0,
             balance: 0,
             withdrawalFee: 0,
@@ -115,7 +115,6 @@ contract Pool is Base {
     * @notice set the shares of users in a pool
     * only calleable by the owner, and only when a pool is not initialized
     * This function is used for migrating older pool data to this new contract
-    * (and this function can be removed in the next upgrade, because the current version is upgradeable)
     */
     function setShares(
         uint256 _pid,

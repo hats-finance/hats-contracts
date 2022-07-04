@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Withdraw is Base {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
     * @notice Submit a request to withdraw funds from pool # `_pid`.
@@ -108,7 +108,7 @@ contract Withdraw is Base {
         withdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 
-    function safeWithdrawPoolToken(IERC20Upgradeable _lpToken, uint256 _totalAmount, uint256 _fee)
+    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee)
         internal
     {
         if (_fee > 0) {

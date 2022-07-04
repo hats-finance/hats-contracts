@@ -3,13 +3,13 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./HATVaults.sol";
 
-contract RewardController is IRewardController, Ownable {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+contract RewardController is IRewardController, OwnableUpgradeable {
+    using SafeERC20 for IERC20;
 
     // Not enough rewards to transfer to user
     error OnlyHATVaults();
@@ -36,7 +36,7 @@ contract RewardController is IRewardController, Ownable {
     uint256 public immutable startBlock;
     uint256 public immutable epochLength;
     // the ERC20 contract in which rewards are distributed
-    IERC20Upgradeable public immutable rewardToken;
+    IERC20 public immutable rewardToken;
     // Reward Multipliers
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
@@ -68,7 +68,7 @@ contract RewardController is IRewardController, Ownable {
 
     // solhint-disable-next-line func-visibility
     ) {
-        rewardToken = IERC20Upgradeable(_rewardToken);
+        rewardToken = IERC20(_rewardToken);
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         rewardPerEpoch = _rewardPerEpoch;
@@ -150,7 +150,6 @@ contract RewardController is IRewardController, Ownable {
     * @notice set the shares of users in a pool
     * only calleable by the owner, and only when a pool is not initialized
     * This function is used for migrating older pool data to this new contract
-    * (and this function can be removed in the next upgrade, because the current version is upgradeable)
     */
     function setShares(
         uint256 _pid,

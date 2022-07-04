@@ -37,22 +37,22 @@ async function main(
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
   const RewardController = await ethers.getContractFactory("RewardController");
-  const rewardController = await RewardController.deploy(
+  const rewardController = await upgrades.deployProxy(RewardController, [
     rewardsToken,
     deployerAddress,
     startBlock,
     epochLength,
     rewardPerEpoch
-  );
+  ]);
 
   await rewardController.deployed();
 
-  const hatVaults = await upgrades.deployProxy(HATVaults, [
+  const hatVaults = await HATVaults.deploy(
     deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
-  ]);
+  );
 
   await hatVaults.deployed();
 
