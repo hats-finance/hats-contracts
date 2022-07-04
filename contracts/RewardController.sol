@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./HATVaults.sol";
 
-contract RewardController is Ownable {
+contract RewardController is IRewardController, Ownable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Not enough rewards to transfer to user
@@ -326,7 +326,7 @@ contract RewardController is Ownable {
     }
 
     function getTotalShares(uint256 _pid) public view returns (uint256 totalShares) {
-        ( , , , totalShares, ) = hatVaults.poolInfos(_pid);
+        ( , , , totalShares, , ) = hatVaults.poolInfos(_pid);
     }
 
     function getShares(uint256 _pid, address _user) public view returns (uint256) {

@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "../tokenlock/TokenLockFactory.sol";
-import "../RewardController.sol";
+import "../interfaces/IRewardController.sol";
 
 // Errors:
 // Only committee
@@ -143,6 +143,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 totalShares;
         // fee to take from withdrawals to governance
         uint256 withdrawalFee;
+        
+        IRewardController rewardController;
     }
 
     // Info of each pool's bounty policy.
@@ -208,7 +210,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
     // rewardController determines how many rewards each pool gets in the incentive program
-    RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
@@ -299,11 +300,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event CommitteeCheckedIn(uint256 indexed _pid);
     event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetRewardController(address indexed _newRewardController);
+    event SetRewardController(uint256 indexed _pid, IRewardController indexed _newRewardController);
     event AddPool(
         uint256 indexed _pid,
         address indexed _lpToken,
         address _committee,
+        IRewardController _rewardController,
         string _descriptionHash,
         uint256 _maxBounty,
         BountySplit _bountySplit,

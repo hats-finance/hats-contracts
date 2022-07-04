@@ -23,6 +23,7 @@ contract Pool is Base {
     function addPool(
         address _lpToken,
         address _committee,
+        IRewardController _rewardController,
         uint256 _maxBounty,
         BountySplit memory _bountySplit,
         string memory _descriptionHash,
@@ -52,7 +53,8 @@ contract Pool is Base {
             lpToken: IERC20Upgradeable(_lpToken),
             totalShares: 0,
             balance: 0,
-            withdrawalFee: 0
+            withdrawalFee: 0,
+            rewardController: _rewardController
         }));
 
         bountyInfos[poolId] = BountyInfo({
@@ -69,6 +71,7 @@ contract Pool is Base {
         emit AddPool(poolId,
             _lpToken,
             _committee,
+            _rewardController,
             _descriptionHash,
             _maxBounty,
             _bountySplit,
@@ -136,6 +139,6 @@ contract Pool is Base {
             pool.totalShares += _shares[i];
         }
 
-        rewardController.setShares(_pid, _rewardPerShare, _accounts, _rewardDebts);
+        pool.rewardController.setShares(_pid, _rewardPerShare, _accounts, _rewardDebts);
     }
 }

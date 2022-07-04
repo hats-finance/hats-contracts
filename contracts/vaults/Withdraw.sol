@@ -42,7 +42,7 @@ contract Withdraw is Base {
 
         if (userShares[_pid][msg.sender] < _shares) revert NotEnoughUserBalance();
 
-        rewardController.updateRewardPool(_pid, msg.sender, _shares, false, true);
+        pool.rewardController.updateRewardPool(_pid, msg.sender, _shares, false, true);
 
         if (_shares > 0) {
             userShares[_pid][msg.sender] -= _shares;
@@ -71,7 +71,7 @@ contract Withdraw is Base {
         uint256 currentUserShares = userShares[_pid][msg.sender];
         if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
 
-        rewardController.updateRewardPool(_pid, msg.sender, currentUserShares, false, false);
+        pool.rewardController.updateRewardPool(_pid, msg.sender, currentUserShares, false, false);
 
         uint256 factoredBalance = (currentUserShares * pool.balance) / pool.totalShares;
         uint256 fee = (factoredBalance * pool.withdrawalFee) / HUNDRED_PERCENT;

@@ -94,6 +94,7 @@ const setup = async function(
   await hatTimelockController.addPool(
     stakingToken.address,
     accounts[1],
+    rewardController.address,
     maxBounty,
     bountySplit,
     "_descriptionHash",
@@ -176,6 +177,7 @@ contract("HatTimelockController", (accounts) => {
       await hatVaults.addPool(
         hatToken.address,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -192,6 +194,7 @@ contract("HatTimelockController", (accounts) => {
       await hatTimelockController.addPool(
         hatToken.address,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -229,6 +232,7 @@ contract("HatTimelockController", (accounts) => {
     await hatTimelockController.addPool(
       hatToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -485,6 +489,7 @@ contract("HatTimelockController", (accounts) => {
     await hatTimelockController.addPool(
       stakingToken2.address,
       accounts[3],
+      rewardController.address,
       maxBounty,
       bountySplit,
       "_descriptionHash",
@@ -537,6 +542,7 @@ contract("HatTimelockController", (accounts) => {
     await hatTimelockController.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",
@@ -641,6 +647,7 @@ contract("HatTimelockController", (accounts) => {
     await hatTimelockController.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",

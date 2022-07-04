@@ -92,6 +92,7 @@ const setup = async function(
   await hatVaults.addPool(
     stakingToken.address,
     accounts[1],
+    rewardController.address,
     maxBounty,
     bountySplit,
     "_descriptionHash",
@@ -307,18 +308,18 @@ contract("HatVaults", (accounts) => {
 
   it("Set reward controller", async () => {
     await setup(accounts);
-    assert.equal(await hatVaults.rewardController(), rewardController.address);
+    assert.equal((await hatVaults.poolInfos(0)).rewardController, rewardController.address);
 
     try {
-      await hatVaults.setRewardController(accounts[2], { from: accounts[1] });
+      await hatVaults.setRewardController(0, accounts[2], { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await hatVaults.setRewardController(accounts[2]);
+    await hatVaults.setRewardController(0, accounts[2]);
 
-    assert.equal(await hatVaults.rewardController(), accounts[2]);
+    assert.equal((await hatVaults.poolInfos(0)).rewardController, accounts[2]);
   });
 
   it("setCommittee", async () => {
@@ -352,6 +353,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[3],
+      rewardController.address,
       maxBounty,
       bountySplit,
       "_descriptionHash",
@@ -2674,6 +2676,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       hatToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -2801,6 +2804,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",
@@ -2852,6 +2856,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",
@@ -2942,6 +2947,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",
@@ -3335,6 +3341,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [8000, 1000, 100, 150, 350, 400],
       "_descriptionHash",
@@ -3928,6 +3935,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -3976,6 +3984,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[0],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -4027,6 +4036,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         stakingToken2.address,
         utils.NULL_ADDRESS,
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -4043,6 +4053,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         utils.NULL_ADDRESS,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -4059,6 +4070,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         stakingToken2.address,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -4075,6 +4087,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         stakingToken2.address,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -4091,6 +4104,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         stakingToken2.address,
         accounts[1],
+        rewardController.address,
         8000,
         [0, 0, 500, 0, 9000, 500],
         "_descriptionHash",
@@ -4107,6 +4121,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.addPool(
         stakingToken2.address,
         accounts[1],
+        rewardController.address,
         8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
@@ -4121,6 +4136,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -4363,6 +4379,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
@@ -4449,6 +4466,7 @@ contract("HatVaults", (accounts) => {
     await hatVaults.addPool(
       hatToken.address,
       accounts[1],
+      rewardController.address,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",

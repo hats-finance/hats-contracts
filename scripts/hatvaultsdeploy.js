@@ -52,7 +52,6 @@ async function main(
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
-    rewardController.address,
   ]);
 
   await hatVaults.deployed();

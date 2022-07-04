@@ -125,6 +125,7 @@ const setup = async function(
   await hatVaults.addPool(
     stakingToken.address,
     accounts[1],
+    rewardController.address,
     maxBounty,
     bountySplit,
     "_descriptionHash",
