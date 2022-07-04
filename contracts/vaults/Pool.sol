@@ -21,7 +21,6 @@ contract Pool is Base {
     */
 
     function addPool(
-        uint256 _allocPoint,
         address _lpToken,
         address _committee,
         uint256 _maxBounty,
@@ -63,7 +62,6 @@ contract Pool is Base {
             vestingPeriods: _bountyVestingParams[1]
         });
 
-        rewardController.addPool(_allocPoint);
         committees[poolId] = _committee;
         poolDepositPause[poolId] = _isPaused;
         poolInitialized[poolId] = _isInitialized;
@@ -138,6 +136,6 @@ contract Pool is Base {
             pool.totalShares += _shares[i];
         }
 
-        rewardController.setShares(_pid, _rewardPerShare, _accounts, _shares, _rewardDebts);
+        rewardController.setShares(_pid, _rewardPerShare, _accounts, _rewardDebts);
     }
 }

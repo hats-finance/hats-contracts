@@ -39,10 +39,10 @@ contract Deposit is Base {
             addedUserShares = pool.totalShares * transferredAmount / lpSupply;
         }
 
+        rewardController.updateRewardPool(_pid, msg.sender, addedUserShares, true, true);
+
         userShares[_pid][msg.sender] += addedUserShares;
         pool.totalShares += addedUserShares;
-
-        rewardController.updateRewardPool(_pid, msg.sender, userShares[_pid][msg.sender], pool.totalShares, true);
 
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
     }

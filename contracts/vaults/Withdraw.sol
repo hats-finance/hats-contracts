@@ -42,6 +42,8 @@ contract Withdraw is Base {
 
         if (userShares[_pid][msg.sender] < _shares) revert NotEnoughUserBalance();
 
+        rewardController.updateRewardPool(_pid, msg.sender, _shares, false, true);
+
         if (_shares > 0) {
             userShares[_pid][msg.sender] -= _shares;
             uint256 amountToWithdraw = (_shares * pool.balance) / pool.totalShares;
@@ -50,8 +52,6 @@ contract Withdraw is Base {
             pool.totalShares -= _shares;
             safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
-
-        rewardController.updateRewardPool(_pid, msg.sender, userShares[_pid][msg.sender], pool.totalShares, true);
 
         emit Withdraw(msg.sender, _pid, _shares);
     }
@@ -70,6 +70,9 @@ contract Withdraw is Base {
         PoolInfo storage pool = poolInfos[_pid];
         uint256 currentUserShares = userShares[_pid][msg.sender];
         if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
+
+        rewardController.updateRewardPool(_pid, msg.sender, currentUserShares, false, false);
+
         uint256 factoredBalance = (currentUserShares * pool.balance) / pool.totalShares;
         uint256 fee = (factoredBalance * pool.withdrawalFee) / HUNDRED_PERCENT;
 
@@ -78,8 +81,6 @@ contract Withdraw is Base {
         userShares[_pid][msg.sender] = 0;
         
         safeWithdrawPoolToken(pool.lpToken, factoredBalance, fee);
-
-        rewardController.updateRewardPool(_pid, msg.sender, 0, pool.totalShares, false);
 
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
     }

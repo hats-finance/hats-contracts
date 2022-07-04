@@ -6,7 +6,7 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./HATTimelockController.sol";
+import "./HATVaults.sol";
 
 contract RewardController is Ownable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -23,23 +23,6 @@ contract RewardController is Ownable {
         uint256 lastProcessedTotalAllocPoint;
         uint256 lastRewardBlock;
         uint256 allocPoint;
-        uint256 totalShares;
-    }
-
-    struct UserInfo {
-        uint256 shares;     // The user share of the pool based on the shares of lpToken the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
-        //
-        // We do some fancy math here. Basically, any point in time, the amount of HATs
-        // entitled to a user but is pending to be distributed is:
-        //
-        //   pending reward = (user.shares * pool.rewardPerShare) - user.rewardDebt
-        //
-        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `rewardPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `shares` gets updated.
-        //   4. User's `rewardDebt` gets updated.
     }
 
     struct PoolUpdate {
@@ -57,11 +40,11 @@ contract RewardController is Ownable {
     // Reward Multipliers
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
-    PoolInfo[] public poolInfos;
-    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    mapping(uint256 => PoolInfo) public poolInfo;
+    mapping(uint256 => mapping(address => uint256)) public rewardDebt;
     // rewardAvaivalabe is the amount of rewardToken's available to distribute as rewards
     uint256 public rewardAvailable;
-    address public hatVaults;
+    HATVaults public hatVaults;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
     event SafeTransferReward(
@@ -78,7 +61,7 @@ contract RewardController is Ownable {
     event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
 
     modifier onlyVaults() {
-        if (hatVaults != msg.sender) revert OnlyHATVaults();
+        if (address(hatVaults) != msg.sender) revert OnlyHATVaults();
         _;
     }
 
@@ -98,14 +81,18 @@ contract RewardController is Ownable {
         _transferOwnership(_hatGovernance);
     }
 
-    function setHATVaults(address _hatVaults) external onlyOwner {
-        if (hatVaults != address(0)) revert OnlySetHATVaultsOnce();
+    function setHATVaults(HATVaults _hatVaults) external onlyOwner {
+        if (address(hatVaults) != address(0)) revert OnlySetHATVaultsOnce();
         hatVaults = _hatVaults;
     }
 
-    function _setAllocPoint(uint256 _pid, uint256 _allocPoint) internal {
+    function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
+        if (poolInfo[_pid].lastRewardBlock == 0) {
+            poolInfo[_pid].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        }
+        updatePool(_pid);
         uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolInfos[_pid].allocPoint + _allocPoint;
+        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
         if (globalPoolUpdates.length > 0 &&
             globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
             // already update in this block
@@ -117,13 +104,13 @@ contract RewardController is Ownable {
             }));
         }
 
-        poolInfos[_pid].allocPoint = _allocPoint;
+        poolInfo[_pid].allocPoint = _allocPoint;
     }
 
     function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
         uint globalPoolUpdatesLength = globalPoolUpdates.length;
 
-        poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
+        poolInfo[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
     }
 
     /**
@@ -148,7 +135,7 @@ contract RewardController is Ownable {
     * @param _pid The pool id
     */
     function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
         uint256 lastRewardBlock = pool.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
             return;
@@ -156,47 +143,14 @@ contract RewardController is Ownable {
 
         pool.lastRewardBlock = block.number;
 
-        if (pool.totalShares != 0) {
+        uint256 totalShares = getTotalShares(_pid);
+
+        if (totalShares != 0) {
             uint256 reward = getPoolReward(_pid, lastRewardBlock);
-            pool.rewardPerShare += (reward * 1e12 / pool.totalShares);
+            pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
         setPoolsLastProcessedTotalAllocPoint(_pid);
-    }
-
-    function updateRewardPool(
-        uint256 _pid,
-        address _user,
-        uint256 _userShares,
-        uint256 _totalShares,
-        bool _claimReward
-    ) external onlyVaults {
-        PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-        updatePool(_pid);
-        if (user.shares > 0 && _claimReward) {
-            uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-            if (pending > 0) {
-                safeTransferReward(_user, pending, _pid);
-            }
-        }
-
-        pool.totalShares = _totalShares;
-        user.shares = _userShares;
-        user.rewardDebt = _userShares * pool.rewardPerShare / 1e12;
-    }
-
-    function addPool(uint256 _allocPoint) external onlyVaults {
-        uint256 poolId = poolInfos.length;
-        poolInfos.push(PoolInfo({
-            lastRewardBlock: block.number > startBlock ? block.number : startBlock,
-            lastProcessedTotalAllocPoint: 0,
-            rewardPerShare: 0,
-            totalShares: 0,
-            allocPoint: 0
-        }));
-        _setAllocPoint(poolId, _allocPoint);
-        setPoolsLastProcessedTotalAllocPoint(poolId);
     }
 
     /**
@@ -209,19 +163,14 @@ contract RewardController is Ownable {
         uint256 _pid,
         uint256 _rewardPerShare,
         address[] memory _accounts,
-        uint256[] memory _shares,
         uint256[] memory _rewardDebts)
     external onlyVaults {
-        PoolInfo storage pool = poolInfos[_pid];
+        PoolInfo storage pool = poolInfo[_pid];
 
         pool.rewardPerShare = _rewardPerShare;
 
         for (uint256 i = 0; i < _accounts.length; i++) {
-            userInfo[_pid][_accounts[i]] = UserInfo({
-                shares: _shares[i],
-                rewardDebt: _rewardDebts[i]
-            });
-            pool.totalShares += _shares[i];
+            rewardDebt[_pid][_accounts[i]] = _rewardDebts[i];
         }
     }
 
@@ -234,9 +183,39 @@ contract RewardController is Ownable {
         emit SetRewardPerEpoch(_rewardPerEpoch);
     }
 
-    function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
+    function _updateRewardPool(
+        uint256 _pid,
+        address _user,
+        uint256 _sharesChange,
+        bool _isDeposit,
+        bool _claimReward
+    ) internal {
         updatePool(_pid);
-        _setAllocPoint(_pid, _allocPoint);
+
+        uint256 userShares = getShares(_pid, _user);
+        uint256 rewardPerShare = poolInfo[_pid].rewardPerShare;
+        uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_pid][_user];
+        if (_sharesChange != 0) {
+            if (_isDeposit) {
+                userShares += _sharesChange;
+            } else {
+                userShares -= _sharesChange;
+            }
+        }
+        rewardDebt[_pid][_user] = userShares * rewardPerShare / 1e12;
+        if (pending > 0 && _claimReward) {
+            safeTransferReward(_user, pending, _pid);
+        }
+    }
+
+    function updateRewardPool(
+        uint256 _pid,
+        address _user,
+        uint256 _sharesChange,
+        bool _isDeposit,
+        bool _claimReward
+    ) external onlyVaults {
+        _updateRewardPool(_pid, _user, _sharesChange, _isDeposit, _claimReward);
     }
 
     /**
@@ -244,17 +223,7 @@ contract RewardController is Ownable {
      * @param _pid The pool id
      */
     function claimReward(uint256 _pid) external {
-        updatePool(_pid);
-
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 rewardPerShare = poolInfos[_pid].rewardPerShare;
-        if (user.shares > 0) {
-            uint256 pending = user.shares * rewardPerShare / 1e12 - user.rewardDebt;
-            if (pending > 0) {
-                user.rewardDebt = user.shares * rewardPerShare / 1e12;
-                safeTransferReward(msg.sender, pending, _pid);
-            }
-        }
+        _updateRewardPool(_pid, msg.sender, 0, true, true);
 
         emit ClaimReward(_pid);
     }
@@ -280,10 +249,13 @@ contract RewardController is Ownable {
     * @param _toPid update pools range to this pool id
     */
     function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        if (_toPid > poolInfos.length || _fromPid > _toPid)
+        if (_fromPid > _toPid)
             revert InvalidPoolRange();
 
         for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
+            if (poolInfo[pid].lastRewardBlock == 0) {
+                revert InvalidPoolRange();
+            }
             updatePool(pid);
         }
 
@@ -298,8 +270,8 @@ contract RewardController is Ownable {
     * @return reward
     */
     function getPoolReward(uint256 _pid, uint256 _fromBlock) public view returns(uint256 reward) {
-        uint256 poolAllocPoint = poolInfos[_pid].allocPoint;
-        uint256 i = poolInfos[_pid].lastProcessedTotalAllocPoint;
+        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
+        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
         for (; i < globalPoolUpdates.length-1; i++) {
             uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
             reward =
@@ -341,16 +313,24 @@ contract RewardController is Ownable {
      * @param _user the account for which the reward is calculated
     */
     function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo memory pool = poolInfos[_pid];
-        UserInfo memory user = userInfo[_pid][_user];
+        PoolInfo memory pool = poolInfo[_pid];
         uint256 rewardPerShare = pool.rewardPerShare;
+        uint256 totalShares = getTotalShares(_pid);
 
-        if (block.number > pool.lastRewardBlock && pool.totalShares > 0) {
+        if (block.number > pool.lastRewardBlock && totalShares > 0) {
             uint256 reward = getPoolReward(_pid, pool.lastRewardBlock);
-            rewardPerShare += (reward * 1e12 / pool.totalShares);
+            rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        return user.shares * rewardPerShare / 1e12 - user.rewardDebt;
+        return getShares(_pid, _user) * rewardPerShare / 1e12 - rewardDebt[_pid][_user];
+    }
+
+    function getTotalShares(uint256 _pid) public view returns (uint256 totalShares) {
+        ( , , , totalShares, ) = hatVaults.poolInfos(_pid);
+    }
+
+    function getShares(uint256 _pid, address _user) public view returns (uint256) {
+        return hatVaults.userShares(_pid, _user);
     }
 
     function getGlobalPoolUpdatesLength() external view returns (uint256) {

@@ -123,7 +123,6 @@ const setup = async function(
   // setting challengeClaim period to 0 will make running tests a bit easier
   await hatVaults.setChallengePeriod(challengePeriod);
   await hatVaults.addPool(
-    allocPoint,
     stakingToken.address,
     accounts[1],
     maxBounty,
@@ -132,6 +131,10 @@ const setup = async function(
     [86400, 10],
     false,
     true
+  );
+  await rewardController.setAllocPoint(
+    (await hatVaults.getNumberOfPools()) - 1,
+    allocPoint
   );
   await hatVaults.committeeCheckIn(0, { from: accounts[1] });
   return {
