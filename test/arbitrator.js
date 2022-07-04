@@ -123,10 +123,11 @@ contract("HatVaults Arbitrator", (accounts) => {
     assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
   });
 
-  it("Aribtrator cannot challenge after challenge period", async () => {
+  it("Aribtrator cannot challenge after challenge timeout period", async () => {
     const { hatVaults, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaults.setChallengePeriod(1000);
+    hatVaults.setChallengeTimeOutPeriod(2000);
     await advanceToSafetyPeriod(hatVaults);
 
     const staker = accounts[1];

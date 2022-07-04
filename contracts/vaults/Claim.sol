@@ -78,7 +78,7 @@ contract Claim is Base {
         Claim storage claim = claims[_claimId];
         if (claim.beneficiary == address(0))
             revert NoActiveClaimExists();
-        if (block.timestamp > claim.createdAt + challengePeriod)
+        if (block.timestamp > claim.createdAt + challengeTimeOutPeriod)
             revert ChallengePeriodEnded();
         claim.isChallenged = true;
     }
