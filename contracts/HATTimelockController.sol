@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaults.sol";
 
 contract HATTimelockController is TimelockController {
-    HATVaults public hatVaults;
+    HATVaults public immutable hatVaults;
 
     constructor(
         HATVaults _hatVaults,

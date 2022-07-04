@@ -10,14 +10,13 @@ contract Deposit is Base {
     * @notice Deposit tokens to pool
     * Caller must have set an allowance first
     * @param _pid The pool id
-    * @param _amount Amount of pool's token to deposit. Must be at least `MINIMUM_DEPOSIT`
+    * @param _amount Amount of pool's token to deposit.
     **/
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         if (!poolInfos[_pid].committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
         if (poolDepositPause[_pid]) revert DepositPaused();
         if (!poolInitialized[_pid]) revert PoolMustBeInitialized();
-        if (_amount < MINIMUM_DEPOSIT) revert AmountLessThanMinDeposit();
         
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
@@ -28,6 +27,9 @@ contract Deposit is Base {
         pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 transferredAmount = pool.lpToken.balanceOf(address(this)) - balanceBefore;
+
+        if (transferredAmount == 0) revert AmountToDepositIsZero();
+
         pool.balance += transferredAmount;
 
         // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit

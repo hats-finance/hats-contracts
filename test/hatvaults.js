@@ -644,7 +644,7 @@ contract("HatVaults", (accounts) => {
     await rewardController.updatePool(0);
   });
 
-  it("deposit less than 1e6", async () => {
+  it("deposit cannot be 0", async () => {
     await setup(accounts);
     var staker = accounts[1];
 
@@ -658,15 +658,12 @@ contract("HatVaults", (accounts) => {
       await hatToken.balanceOf(rewardController.address),
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
-
     try {
-      await hatVaults.deposit(0, "999999", { from: staker });
-      assert(false, "cannot deposit less than 1e6");
+      await hatVaults.deposit(0, 0, { from: staker });
+      assert(false, "cannot deposit 0");
     } catch (ex) {
-      assertVMException(ex, "AmountLessThanMinDeposit");
+      assertVMException(ex, "AmountToDepositIsZero");
     }
-    await hatVaults.deposit(0, "1000000", { from: staker });
-    assert.equal(await stakingToken.balanceOf(hatVaults.address), "1000000");
   });
 
   it("withdrawn", async () => {
@@ -691,12 +688,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "DepositPaused");
     }
     await hatVaults.setPool(0, true, false, "_descriptionHash");
-    try {
-      await hatVaults.deposit(0, "999999", { from: staker });
-      assert(false, "cannot deposit less than 1e6");
-    } catch (ex) {
-      assertVMException(ex, "AmountLessThanMinDeposit");
-    }
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
@@ -1154,12 +1145,6 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
     });
-    try {
-      await hatVaults.deposit(0, 1000, { from: staker });
-      assert(false, "do not have enough tokens to stake");
-    } catch (ex) {
-      assertVMException(ex, "AmountLessThanMinDeposit");
-    }
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(
