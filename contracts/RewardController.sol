@@ -4,12 +4,12 @@
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./HATVaults.sol";
 
 contract RewardController is IRewardController, OwnableUpgradeable {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Not enough rewards to transfer to user
     error OnlyHATVaults();
@@ -33,10 +33,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     uint256 public constant MULTIPLIERS_LENGTH = 24;
 
     // Block from which the vaults contract will start rewarding.
-    uint256 public immutable startBlock;
-    uint256 public immutable epochLength;
+    uint256 public startBlock;
+    uint256 public epochLength;
     // the ERC20 contract in which rewards are distributed
-    IERC20 public immutable rewardToken;
+    IERC20Upgradeable public rewardToken;
     // Reward Multipliers
     uint256[24] public rewardPerEpoch;
     PoolUpdate[] public globalPoolUpdates;
@@ -59,16 +59,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         _;
     }
 
-    constructor(
+    function initialize(
         address _rewardToken,
         address _hatGovernance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _rewardPerEpoch
-
-    // solhint-disable-next-line func-visibility
-    ) {
-        rewardToken = IERC20(_rewardToken);
+    ) external initializer {
+        rewardToken = IERC20Upgradeable(_rewardToken);
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         rewardPerEpoch = _rewardPerEpoch;
