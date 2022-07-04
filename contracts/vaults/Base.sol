@@ -33,8 +33,6 @@ error WithdrawRequestEnabledPeriodTooShort();
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
-// Amount to reward is too big
-error AmountToRewardTooBig();
 // Withdraw period must be >= 1 hour
 error WithdrawPeriodTooShort();
 // Safety period must be <= 6 hours
@@ -65,8 +63,8 @@ error AmountToSwapIsZero();
 error PendingWithdrawRequestExists();
 // Deposit paused
 error DepositPaused();
-// Amount less than 1e6
-error AmountLessThanMinDeposit();
+// Amount to deposit is zero
+error AmountToDepositIsZero();
 // Pool balance is zero
 error PoolBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
@@ -222,7 +220,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // PARAMETERS FOR ALL VAULTS
     // time during which a claim can be challenged by the arbitrator
@@ -310,10 +307,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 transferredAmount
     );
     event ClaimReward(uint256 indexed _pid);
-    event RewardDepositors(uint256 indexed _pid,
-        uint256 indexed _amount,
-        uint256 indexed _transferredAmount
-    );
     event DepositReward(uint256 indexed _amount,
         uint256 indexed _transferredAmount,
         address indexed _rewardToken
