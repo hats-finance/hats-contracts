@@ -10,7 +10,6 @@ const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
-const { upgradeHatVaults } = require("../scripts/hatvaultsupgrade.js");
 const {
   assertVMException,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
