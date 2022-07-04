@@ -8,13 +8,116 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "../tokenlock/ITokenLockFactory.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "../tokenlock/TokenLockFactory.sol";
 import "../RewardController.sol";
+
+// Errors:
+// Only committee
+error OnlyCommittee();
+// Active claim exists
+error ActiveClaimExists();
+// Safety period
+error SafetyPeriod();
+// Beneficiary is zero
+error BeneficiaryIsZero();
+// Not safety period
+error NotSafetyPeriod();
+// Bounty percentage is higher than the max bounty
+error BountyPercentageHigherThanMaxBounty();
+// Withdraw request pending period must be <= 3 months
+error WithdrawRequestPendingPeriodTooLong();
+// Withdraw request enabled period must be >= 6 hour
+error WithdrawRequestEnabledPeriodTooShort();
+// Only callable by governance or after challenge timeout period
+error OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod();
+// No active claim exists
+error NoActiveClaimExists();
+// Amount to reward is too big
+error AmountToRewardTooBig();
+// Withdraw period must be >= 1 hour
+error WithdrawPeriodTooShort();
+// Safety period must be <= 6 hours
+error SafetyPeriodTooLong();
+// Not enough fee paid
+error NotEnoughFeePaid();
+// Vesting duration is too long
+error VestingDurationTooLong();
+// Vesting periods cannot be zero
+error VestingPeriodsCannotBeZero();
+// Vesting duration smaller than periods
+error VestingDurationSmallerThanPeriods();
+// Delay is too short
+error DelayTooShort();
+// No pending max bounty
+error NoPendingMaxBounty();
+// Delay period for setting max bounty had not passed
+error DelayPeriodForSettingMaxBountyHadNotPassed();
+// Committee is zero
+error CommitteeIsZero();
+// Committee already checked in
+error CommitteeAlreadyCheckedIn();
+// Pool does not exist
+error PoolDoesNotExist();
+// Amount to swap is zero
+error AmountToSwapIsZero();
+// Pending withdraw request exists
+error PendingWithdrawRequestExists();
+// Deposit paused
+error DepositPaused();
+// Amount less than 1e6
+error AmountLessThanMinDeposit();
+// Pool balance is zero
+error PoolBalanceIsZero();
+// Total bounty split % should be `HUNDRED_PERCENT`
+error TotalSplitPercentageShouldBeHundredPercent();
+// Withdraw request is invalid
+error InvalidWithdrawRequest();
+// Token approve failed
+error TokenApproveFailed();
+// Wrong amount received
+error AmountSwappedLessThanMinimum();
+// Max bounty cannot be more than `HUNDRED_PERCENT`
+error MaxBountyCannotBeMoreThanHundredPercent();
+// LP token is zero
+error LPTokenIsZero();
+// Only fee setter
+error OnlyFeeSetter();
+// Fee must be less than or equal to 2%
+error PoolWithdrawalFeeTooBig();
+// Token approve reset failed
+error TokenApproveResetFailed();
+// Pool must not be initialized
+error PoolMustNotBeInitialized();
+error InvalidPoolRange();
+// Set shares arrays must have same length
+error SetSharesArraysMustHaveSameLength();
+// Committee not checked in yet
+error CommitteeNotCheckedInYet();
+// Not enough user balance
+error NotEnoughUserBalance();
+// User shares must be greater than 0
+error UserSharesMustBeGreaterThanZero();
+// Swap was not successful
+error SwapFailed();
+// Routing contract must be whitelisted
+error RoutingContractNotWhitelisted();
+// Not enough rewards to transfer to user
+error NotEnoughRewardsToTransferToUser();
+// Only arbitrator
+error OnlyArbitrator();
+// Claim can only be approved if challenge period is over, or if the
+// caller is the arbitrator
+error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+// Bounty split must include hacker payout
+error BountySplitMustIncludeHackerPayout();
+
 
 contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Parameters that apply to all the vaults
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
+    
     struct GeneralParameters {
         uint256 hatVestingDuration;
         uint256 hatVestingPeriods;
@@ -119,28 +222,33 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
     uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
-    //PARAMETERS FOR ALL VAULTS
-    uint256 public challengePeriod; // time during which a claim can be challenged by the arbitrator
-    uint256 public challengeTimeOutPeriod; // time after which a challenged claim is automatically dismissed
+    // PARAMETERS FOR ALL VAULTS
+    // time during which a claim can be challenged by the arbitrator
+    uint256 public challengePeriod;
+    // time after which a challenged claim is automatically dismissed
+    uint256 public challengeTimeOutPeriod;
+    // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
+    // rewardController determines how many rewards each pool gets in the incentive program
     RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
+    // feeSetter sets the withdrawal fee
     address public feeSetter;
-
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
-
     // the ERC20 contract in which rewards are distributed
-    IERC20 public rewardToken;
+    IERC20Upgradeable public rewardToken;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20Burnable public swapToken;
+    ERC20BurnableUpgradeable public swapToken;
+    // rewardAvaivalabe is the amount of rewardToken's available to distribute as rewards
     uint256 public rewardAvailable;
     mapping(address => bool) public whitelistedRouters;
     uint256 internal nonce;
 
-    //PARAMETERS PER VAULT
-    // Info of each pool.
+    // PARAMETERS PER VAULT
     PoolInfo[] public poolInfos;
+    // Info of each pool.
     // poolId -> committee address
     mapping(uint256 => address) public committees;
     // Info of each user that stakes LP tokens. poolId => user address => info
@@ -151,13 +259,15 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
     // poolId -> claimId
     mapping(uint256 => uint256) public activeClaims;
+    // poolId -> isPoolInitialized
     mapping(uint256 => bool) public poolInitialized;
+    // poolID -> isPoolPausedForDeposit
     mapping(uint256 => bool) public poolDepositPause;
-    // poolId -> (address -> requestTime)
     // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
+    // poolId -> (address -> requestTime)
     mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
 
-    //PARAMETERS PER CLAIM
+    // PARAMETERS PER CLAIM
     // claimId -> Claim
     mapping(uint256 => Claim) public claims;
     // poolId -> amount
@@ -269,37 +379,36 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     modifier onlyFeeSetter() {
-        require(feeSetter == msg.sender, "HVE35");
+        if (feeSetter != msg.sender) revert OnlyFeeSetter();
         _;
     }
 
     modifier onlyCommittee(uint256 _pid) {
-        require(committees[_pid] == msg.sender, "HVE01");
+        if (committees[_pid] != msg.sender) revert OnlyCommittee();
         _;
     }
 
     modifier onlyArbitrator() {
-        require(arbitrator == msg.sender, "HVE47");
+        if (arbitrator != msg.sender) revert OnlyArbitrator();
         _;
     }
 
     modifier noSafetyPeriod() {
         //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp %
-        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-            generalParameters.withdrawPeriod,
-            "HVE03");
+        if (block.timestamp %
+        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
+            generalParameters.withdrawPeriod) revert SafetyPeriod();
         _;
     }
 
     modifier noActiveClaims(uint256 _pid) {
-        require(activeClaims[_pid] == 0, "HVE02");
+        if (activeClaims[_pid] != 0) revert ActiveClaimExists();
         _;
     }
 
     /**
-    * @dev Update the pool's rewardPerShare, not more then once per block
+    * @notice Update the pool's rewardPerShare, not more then once per block
     * @param _pid The pool id
     */
     function updatePool(uint256 _pid) public {
@@ -309,59 +418,58 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             return;
         }
         uint256 totalShares = pool.totalShares;
+
+        pool.lastRewardBlock = block.number;
+
         if (totalShares != 0) {
             uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
             uint256 reward = rewardController.getPoolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
-        pool.lastRewardBlock = block.number;
+
         setPoolsLastProcessedTotalAllocPoint(_pid);
     }
 
-    function getDefaultBountySplit() public pure returns (BountySplit memory) {
-        return BountySplit({
-            hackerVested: 6000,
-            hacker: 2000,
-            committee: 500,
-            swapAndBurn: 0,
-            governanceHat: 1000,
-            hackerHatVested: 500
-        });
-    }
-
     /**
-    * @dev Safe HAT transfer function, transfer rewards from the contract only if there are enough
+    * @notice Safe HAT transfer function, transfer rewards from the contract only if there are enough
     * rewards available.
     * @param _to The address to transfer the reward to
     * @param _amount The amount of rewards to transfer
     * @param _pid The pool id
    */
     function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        require(rewardAvailable >= _amount, "HVE46");
+        if (rewardAvailable < _amount)
+            revert NotEnoughRewardsToTransferToUser();
+            
         rewardAvailable -= _amount;
-        rewardToken.transfer(_to, _amount);
+        rewardToken.safeTransfer(_to, _amount);
+
         emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
     }
 
     function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
         uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
+
         if (globalPoolUpdatesLength > 0) {
             poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
         }
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
-        require(_bountySplit.hackerVested
-            + _bountySplit.hacker
-            + _bountySplit.committee
-            + _bountySplit.swapAndBurn
-            + _bountySplit.governanceHat
-            + _bountySplit.hackerHatVested == HUNDRED_PERCENT,
-        "HVE29");
+        if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
+            revert BountySplitMustIncludeHackerPayout();
+
+        if (_bountySplit.hackerVested +
+            _bountySplit.hacker +
+            _bountySplit.committee +
+            _bountySplit.swapAndBurn +
+            _bountySplit.governanceHat +
+            _bountySplit.hackerHatVested != HUNDRED_PERCENT)
+            revert TotalSplitPercentageShouldBeHundredPercent();
     }
 
     /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
+     * @notice This empty reserved space is put in place to allow future versions to add new
      * variables without shifting down storage in the inheritance chain.
      * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */

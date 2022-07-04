@@ -39,7 +39,7 @@ contract RewardController is Ownable {
     }
 
     /**
-     * @dev Called by owner to set reward multipliers
+     * @notice Called by owner to set reward multipliers
      * @param _rewardPerEpoch reward multipliers
     */
     function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
@@ -67,7 +67,7 @@ contract RewardController is Ownable {
 
 
     /**
-    * @dev Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
+    * @notice Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
     * and sum up all rewards periods from pool.lastRewardBlock until current block number.
     * @param _pid The pool id
     * @param _fromBlock The block from which to start calculation

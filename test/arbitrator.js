@@ -7,7 +7,7 @@ const {
   assertFunctionRaisesException,
 } = require("./common.js");
 
-contract("HatVaults", (accounts) => {
+contract("HatVaults Arbitrator", (accounts) => {
   it("Set arbitrator", async () => {
     const { hatVaults } = await setup(accounts);
     await assertFunctionRaisesException(
@@ -99,25 +99,31 @@ contract("HatVaults", (accounts) => {
 
     const claimId = await submitClaim(hatVaults, { accounts });
 
+    // challengeClaim will fail if passing an non-existent claimID
+    assertFunctionRaisesException(
+      hatVaults.challengeClaim("1234", { from: accounts[2] }),
+      "HVE10"
+    );
+
     // only arbitrator can challenge the claim
     assertFunctionRaisesException(
       hatVaults.challengeClaim(claimId, { from: accounts[2] }),
-      "HVE47"
+      "OnlyArbitrator"
     );
     assertFunctionRaisesException(
       hatVaults.challengeClaim(claimId, { from: owner }),
-      "HVE47"
+      "OnlyArbitrator"
     );
     await hatVaults.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 8000, { from: staker }),
-      "HVE48"
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await assertFunctionRaisesException(
       hatVaults.approveClaim(claimId, 8000, { from: owner }),
-      "HVE48"
+      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await hatVaults.approveClaim(claimId, 8000, { from: arbitrator });
@@ -137,12 +143,12 @@ contract("HatVaults", (accounts) => {
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: accounts[2] }),
-      "HVE09"
+      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
     );
 
     await assertFunctionRaisesException(
       hatVaults.dismissClaim(claimId, { from: owner }),
-      "HVE09"
+      "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
     );
     await hatVaults.dismissClaim(claimId, { from: arbitrator });
   });

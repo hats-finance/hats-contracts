@@ -44,12 +44,14 @@ function assertVMException(error, expectedError = "") {
     condition,
     "Expected a VM Exception, got this instead:" + error.message
   );
+  let expectedErrorMessage = "VM Exception while processing transaction: reverted with custom error '" +
+      expectedError + "()'";
+  let expectedReasonString = "VM Exception while processing transaction: reverted with reason string '" +
+      expectedError + "'";
   if (expectedError) {
     assert(
-      error.message ===
-        "VM Exception while processing transaction: reverted with reason string '" +
-          expectedError +
-          "'",
+      error.message === expectedErrorMessage ||
+        error.message === expectedReasonString,
       "Expected error to be: " +
         expectedError +
         ", got this instead:" +
@@ -62,7 +64,7 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [0, 0, 0, 0, 0, 0],
+  bountySplit = [6000, 2000, 500, 0, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -176,7 +178,7 @@ async function submitClaim(hatVaults, { accounts, bountyPercentage = 8000 }) {
 async function assertFunctionRaisesException(functionCall, exceptionString) {
   try {
     await functionCall;
-    assert(false, "function call passed but was expeced to fail");
+    assert(false, "function call passed but was expected to fail");
   } catch (ex) {
     assertVMException(ex, exceptionString);
   }

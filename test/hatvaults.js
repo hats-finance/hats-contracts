@@ -31,7 +31,7 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [0, 0, 0, 0, 0, 0],
+  bountySplit = [6000, 2000, 500, 0, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -269,7 +269,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "cannot set zero address committee");
     } catch (ex) {
-      assertVMException(ex, "HVE21");
+      assertVMException(ex, "CommitteeIsZero");
     }
 
     await hatVaults.setCommittee(0, accounts[2], { from: accounts[1] });
@@ -280,12 +280,12 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setCommittee(0, accounts[2], { from: accounts[1] });
       assert(false, "cannot set committee from non committee account");
     } catch (ex) {
-      assertVMException(ex, "HVE01");
+      assertVMException(ex, "OnlyCommittee");
     }
 
     //set other pool with different committee
     let maxBounty = 8000;
-    let bountySplit = [0, 0, 0, 0, 0, 0];
+    let bountySplit = [6000, 2000, 500, 0, 1000, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     await hatVaults.addPool(
       stakingToken2.address,
@@ -315,14 +315,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.deposit(1, web3.utils.toWei("1"), { from: staker });
       assert(false, "cannot deposit before committee check in");
     } catch (ex) {
-      assertVMException(ex, "HVE40");
+      assertVMException(ex, "CommitteeNotCheckedInYet");
     }
 
     try {
       await hatVaults.committeeCheckIn(1, { from: accounts[0] });
       assert(false, "only committee can check in");
     } catch (ex) {
-      assertVMException(ex, "HVE01");
+      assertVMException(ex, "OnlyCommittee");
     }
     let tx = await hatVaults.committeeCheckIn(1, { from: accounts[1] });
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
@@ -339,7 +339,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setCommittee(1, accounts[2]);
       assert(false, "committee already checked in");
     } catch (ex) {
-      assertVMException(ex, "HVE22");
+      assertVMException(ex, "CommitteeAlreadyCheckedIn");
     }
     await hatVaults.setCommittee(1, accounts[2], { from: accounts[1] });
     await hatVaults.setCommittee(1, accounts[1], { from: accounts[2] });
@@ -370,7 +370,10 @@ contract("HatVaults", (accounts) => {
       await hatVaults.dismissClaim(claimId, { from: accounts[1] });
       assert(false, "only governance can dismiss before delay");
     } catch (ex) {
-      assertVMException(ex, "HVE09");
+      assertVMException(
+        ex,
+        "OnlyCallableByGovernanceOrAfterChallengeTimeOutPeriod"
+      );
     }
     await utils.increaseTime(1);
     await utils.increaseTime(5 * 7 * 24 * 60 * 60);
@@ -384,21 +387,21 @@ contract("HatVaults", (accounts) => {
       await setup(accounts, 0, 9000, [9000, 0, 200, 0, 100, 800]);
       assert(false, "cannot init with rewardSplit > 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE29");
+      assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
 
     try {
       await setup(accounts, 0, 9000, [8000, 0, 100, 0, 100, 700]);
       assert(false, "cannot init with rewardSplit < 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE29");
+      assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
 
     try {
       await setup(accounts, 0, 11000, [8000, 0, 100, 0, 100, 800]);
       assert(false, "cannot init with max bounty > 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE33");
+      assertVMException(ex, "MaxBountyCannotBeMoreThanHundredPercent");
     }
 
     await setup(accounts, 0, 9000, [8000, 1000, 100, 100, 100, 700]);
@@ -433,19 +436,19 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setPendingMaxBounty(0, 11000, { from: accounts[1] });
       assert(false, "max bounty can't be more than 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE33");
+      assertVMException(ex, "MaxBountyCannotBeMoreThanHundredPercent");
     }
     try {
       await hatVaults.setPendingMaxBounty(0, 10000, { from: accounts[2] });
       assert(false, "only committee");
     } catch (ex) {
-      assertVMException(ex, "HVE01");
+      assertVMException(ex, "OnlyCommittee");
     }
     try {
       await hatVaults.setMaxBounty(0, { from: accounts[1] });
       assert(false, "no pending");
     } catch (ex) {
-      assertVMException(ex, "HVE19");
+      assertVMException(ex, "NoPendingMaxBounty");
     }
 
     // bountylevel can be 10000 without throwing an error
@@ -457,7 +460,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setPendingMaxBounty(0, 10001, { from: accounts[1] });
       assert(false, "bounty level should be less than or equal to 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE33");
+      assertVMException(ex, "MaxBountyCannotBeMoreThanHundredPercent");
     }
     let tx = await hatVaults.setPendingMaxBounty(0, 10000, {
       from: accounts[1],
@@ -471,14 +474,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setMaxBounty(0, { from: accounts[1] });
       assert(false, "no delay yet");
     } catch (ex) {
-      assertVMException(ex, "HVE20");
+      assertVMException(ex, "DelayPeriodForSettingMaxBountyHadNotPassed");
     }
     await utils.increaseTime(3600 * 24 * 2);
     try {
       await hatVaults.setMaxBounty(0, { from: accounts[0] });
       assert(false, "onlyCommittee");
     } catch (ex) {
-      assertVMException(ex, "HVE01");
+      assertVMException(ex, "OnlyCommittee");
     }
     tx = await hatVaults.setMaxBounty(0, { from: accounts[1] });
     assert.equal(tx.logs[0].event, "SetMaxBounty");
@@ -491,7 +494,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setBountySplit(0, [7000, 0, 1000, 1100, 0, 901]);
       assert(false, "cannot init with bountySplit > 10000");
     } catch (ex) {
-      assertVMException(ex, "HVE29");
+      assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
     await hatVaults.setBountySplit(0, [6000, 0, 1000, 2200, 0, 800]);
     assert.equal(
@@ -535,13 +538,13 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setPendingMaxBounty(0, 8000, { from: accounts[1] });
       assert(false, "there is already pending approval");
     } catch (ex) {
-      assertVMException(ex, "HVE02");
+      assertVMException(ex, "ActiveClaimExists");
     }
     try {
       await hatVaults.setBountySplit(0, [6000, 0, 1000, 1100, 1, 800]);
       assert(false, "cannot set split while there is pending approval");
     } catch (ex) {
-      assertVMException(ex, "HVE02");
+      assertVMException(ex, "ActiveClaimExists");
     }
     tx = await hatVaults.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
@@ -550,7 +553,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setBountySplit(0, [6000, 0, 1000, 1100, 1, 800]);
       assert(false, "cannot set split while in safety period");
     } catch (ex) {
-      assertVMException(ex, "HVE03");
+      assertVMException(ex, "SafetyPeriod");
     }
     await advanceToNoneSaftyPeriod();
 
@@ -602,7 +605,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.deposit(0, "999999", { from: staker });
       assert(false, "cannot deposit less than 1e6");
     } catch (ex) {
-      assertVMException(ex, "HVE27");
+      assertVMException(ex, "AmountLessThanMinDeposit");
     }
     await hatVaults.deposit(0, "1000000", { from: staker });
     assert.equal(await stakingToken.balanceOf(hatVaults.address), "1000000");
@@ -627,14 +630,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
       assert(false, "cannot deposit to paused pool");
     } catch (ex) {
-      assertVMException(ex, "HVE26");
+      assertVMException(ex, "DepositPaused");
     }
     await hatVaults.setPool(0, true, false, "_descriptionHash");
     try {
       await hatVaults.deposit(0, "999999", { from: staker });
       assert(false, "cannot deposit less than 1e6");
     } catch (ex) {
-      assertVMException(ex, "HVE27");
+      assertVMException(ex, "AmountLessThanMinDeposit");
     }
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
@@ -654,7 +657,7 @@ contract("HatVaults", (accounts) => {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
     } catch (ex) {
-      assertVMException(ex, "HVE02");
+      assertVMException(ex, "ActiveClaimExists");
     }
 
     await hatVaults.challengeClaim(claimId);
@@ -709,14 +712,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setWithdrawSafetyPeriod(60 * 60 - 1, 60 * 30);
       assert(false, "withdraw period must be >= 1 hour");
     } catch (ex) {
-      assertVMException(ex, "HVE12");
+      assertVMException(ex, "WithdrawPeriodTooShort");
     }
 
     try {
       await hatVaults.setWithdrawSafetyPeriod(60 * 60, 60 * 60 * 6 + 1);
       assert(false, "safety period must be <= 6 hours");
     } catch (ex) {
-      assertVMException(ex, "HVE13");
+      assertVMException(ex, "SafetyPeriodTooLong");
     }
 
     var tx = await hatVaults.setWithdrawSafetyPeriod(60 * 60, 60 * 30);
@@ -761,7 +764,7 @@ contract("HatVaults", (accounts) => {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
     } catch (ex) {
-      assertVMException(ex, "HVE02");
+      assertVMException(ex, "ActiveClaimExists");
     }
 
     await hatVaults.challengeClaim(claimId);
@@ -818,14 +821,14 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "pending period must be <= 90 days");
     } catch (ex) {
-      assertVMException(ex, "HVE07");
+      assertVMException(ex, "WithdrawRequestPendingPeriodTooLong");
     }
 
     try {
       await hatVaults.setWithdrawRequestParams(1, 6 * 60 * 60 - 1);
       assert(false, "enable period must be >= 6 hour");
     } catch (ex) {
-      assertVMException(ex, "HVE08");
+      assertVMException(ex, "WithdrawRequestEnabledPeriodTooShort");
     }
 
     try {
@@ -876,7 +879,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
       assert(false, "deposit cancel withdrawRequest");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
   });
 
@@ -901,14 +904,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdraw(0, web3.utils.toWei("1"), { from: staker });
       assert(false, "cannot withdraw without request");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
 
     try {
       await hatVaults.emergencyWithdraw(0, { from: staker });
       assert(false, "cannot emergencyWithdraw without request");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
     await hatVaults.withdrawRequest(0, { from: staker });
     assert.equal(
@@ -920,21 +923,21 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdraw(0, web3.utils.toWei("1"), { from: staker });
       assert(false, "request is pending");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
 
     try {
       await hatVaults.emergencyWithdraw(0, { from: staker });
       assert(false, "request is pending");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
     await utils.increaseTime(7 * 24 * 3600);
     try {
       await hatVaults.withdrawRequest(0, { from: staker });
       assert(false, "there is already pending request");
     } catch (ex) {
-      assertVMException(ex, "HVE25");
+      assertVMException(ex, "PendingWithdrawRequestExists");
     }
 
     await hatVaults.withdraw(0, web3.utils.toWei("0.5"), { from: staker });
@@ -943,7 +946,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.emergencyWithdraw(0, { from: staker });
       assert(false, "no pending request");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
     await hatVaults.withdrawRequest(0, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
@@ -955,14 +958,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdrawRequest(0, { from: staker });
       assert(false, "there is already pending request");
     } catch (ex) {
-      assertVMException(ex, "HVE25");
+      assertVMException(ex, "PendingWithdrawRequestExists");
     }
     await utils.increaseTime(7 * 24 * 3600);
     try {
       await hatVaults.withdrawRequest(0, { from: staker });
       assert(false, "there is already pending request");
     } catch (ex) {
-      assertVMException(ex, "HVE25");
+      assertVMException(ex, "PendingWithdrawRequestExists");
     }
     await utils.increaseTime(7 * 24 * 3600);
     //request is now expired so can request again.
@@ -997,7 +1000,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setPoolWithdrawalFee(0, 100);
       assert(false, "only fee setter");
     } catch (ex) {
-      assertVMException(ex, "HVE35");
+      assertVMException(ex, "OnlyFeeSetter");
     }
 
     try {
@@ -1006,7 +1009,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "fee must be lower than or equal to 2%");
     } catch (ex) {
-      assertVMException(ex, "HVE36");
+      assertVMException(ex, "PoolWithdrawalFeeTooBig");
     }
 
     tx = await hatVaults.setPoolWithdrawalFee(0, 200, {
@@ -1097,7 +1100,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.deposit(0, 1000, { from: staker });
       assert(false, "do not have enough tokens to stake");
     } catch (ex) {
-      assertVMException(ex, "HVE27");
+      assertVMException(ex, "AmountLessThanMinDeposit");
     }
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
@@ -1178,7 +1181,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.calcClaimBounty(0, 8001);
       assert(false, "reward percentage is too high");
     } catch (ex) {
-      assertVMException(ex, "HVE06");
+      assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
     }
     var tx = await hatVaults.claimReward(0, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");
@@ -1204,7 +1207,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
     var staker = accounts[1];
@@ -1280,7 +1283,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000,
       0,
       100,
@@ -1649,7 +1652,7 @@ contract("HatVaults", (accounts) => {
       await unSafeEmergencyWithdraw(0, staker);
       assert(false, "cannot emergency withdraw");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
 
     await safeEmergencyWithdraw(0, staker);
@@ -1665,7 +1668,7 @@ contract("HatVaults", (accounts) => {
       await safeEmergencyWithdraw(0, staker);
       assert(false, "Can emergency withdraw only once");
     } catch (ex) {
-      assertVMException(ex, "HVE42");
+      assertVMException(ex, "UserSharesMustBeGreaterThanZero");
     }
     assert.equal(
       await hatToken.balanceOf(hatVaults.address),
@@ -1677,7 +1680,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.withdraw(0, 1, { from: staker });
       assert(false, "cannot withdraw after emergency withdraw");
     } catch (ex) {
-      assertVMException(ex, "HVE41");
+      assertVMException(ex, "NotEnoughUserBalance");
     }
   });
 
@@ -1686,7 +1689,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -1715,7 +1718,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.approveClaim(claimId, 8000);
       assert(false, "lpbalance is zero");
     } catch (ex) {
-      assertVMException(ex, "HVE28");
+      assertVMException(ex, "PoolBalanceIsZero");
     }
     await hatVaults.challengeClaim(claimId);
     tx = await hatVaults.dismissClaim(claimId);
@@ -1739,7 +1742,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "none safety period");
     } catch (ex) {
-      assertVMException(ex, "HVE05");
+      assertVMException(ex, "NotSafetyPeriod");
     }
     await advanceToSafetyPeriod();
     try {
@@ -1748,7 +1751,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "percentage requested too high");
     } catch (ex) {
-      assertVMException(ex, "HVE06");
+      assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
     }
 
     try {
@@ -1763,7 +1766,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "beneficiary is zero");
     } catch (ex) {
-      assertVMException(ex, "HVE04");
+      assertVMException(ex, "BeneficiaryIsZero");
     }
 
     try {
@@ -1772,21 +1775,21 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "only committee");
     } catch (ex) {
-      assertVMException(ex, "HVE01");
+      assertVMException(ex, "OnlyCommittee");
     }
 
     try {
       await hatVaults.approveClaim(0, 8000);
       assert(false, "there is no pending approval");
     } catch (ex) {
-      assertVMException(ex, "HVE10");
+      assertVMException(ex, "NoActiveClaimExists");
     }
 
     try {
       await hatVaults.dismissClaim(0);
       assert(false, "there is no pending approval");
     } catch (ex) {
-      assertVMException(ex, "HVE10");
+      assertVMException(ex, "NoActiveClaimExists");
     }
 
     tx = await hatVaults.submitClaim(0, accounts[2], 8000, "description hash", {
@@ -1799,7 +1802,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "there is already pending approval");
     } catch (ex) {
-      assertVMException(ex, "HVE02");
+      assertVMException(ex, "ActiveClaimExists");
     }
     assert.equal(tx.logs[0].event, "SubmitClaim");
     assert.equal(tx.logs[0].args._pid, 0);
@@ -1851,7 +1854,7 @@ contract("HatVaults", (accounts) => {
   }).timeout(40000);
 
   it("approve+ stake simple check rewards", async () => {
-    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10000);
     var staker = accounts[4];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
       from: staker,
@@ -1895,7 +1898,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("emergencyWithdraw after approve and check reward", async () => {
-    await setup(accounts, 0, 8000, [0, 0, 0, 0, 0, 0], 10000);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10000);
     var staker = accounts[1];
     var staker2 = accounts[3];
     await stakingToken.approve(hatVaults.address, web3.utils.toWei("2"), {
@@ -1938,7 +1941,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -2077,7 +2080,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.massUpdatePools(0, 2);
       assert(false, "massUpdatePools not in range");
     } catch (ex) {
-      assertVMException(ex, "HVE38");
+      assertVMException(ex, "InvalidPoolRange");
     }
     await hatVaults.massUpdatePools(0, 1);
 
@@ -2132,7 +2135,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
     await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
@@ -2151,7 +2154,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "approve disabled");
     } catch (ex) {
-      assertVMException(ex, "HVE31");
+      assertVMException(ex, "TokenApproveFailed");
     }
     await stakingToken.approveDisable(false);
     await stakingToken.approveZeroDisable(true);
@@ -2159,7 +2162,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "approve to 0 disabled");
     } catch (ex) {
-      assertVMException(ex, "HVE37");
+      assertVMException(ex, "TokenApproveResetFailed");
     }
     await stakingToken.approveZeroDisable(false);
     amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
@@ -2225,7 +2228,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
   });
 
@@ -2316,7 +2319,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -2359,7 +2362,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
     await advanceToSafetyPeriod();
     let tx = await hatVaults.submitClaim(
@@ -2423,7 +2426,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.swapBurnSend(0, accounts[2], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
   });
 
@@ -2433,14 +2436,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setShares(1, 0, 0, [], [], []);
       assert(false, "no pool exist");
     } catch (ex) {
-      assertVMException(ex, "HVE23");
+      assertVMException(ex, "PoolDoesNotExist");
     }
 
     try {
       await hatVaults.setPoolInitialized(1);
       assert(false, "no pool exist");
     } catch (ex) {
-      assertVMException(ex, "HVE23");
+      assertVMException(ex, "PoolDoesNotExist");
     }
 
     await hatVaults.setPoolInitialized(0);
@@ -2449,7 +2452,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setShares(0, 0, 0, [], [], []);
       assert(false, "pool already initialized");
     } catch (ex) {
-      assertVMException(ex, "HVE38");
+      assertVMException(ex, "PoolMustNotBeInitialized");
     }
 
     await hatVaults.addPool(
@@ -2471,14 +2474,14 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setShares(1, 100, 100, [accounts[0]], [1], [1, 1]);
       assert(false, "arrays lengths must match");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
     }
 
     try {
       await hatVaults.setShares(1, 100, 100, [accounts[0]], [1, 1], [1]);
       assert(false, "arrays lengths must match");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
     }
 
     try {
@@ -2492,7 +2495,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "arrays lengths must match");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
     }
 
     await hatVaults.setShares(
@@ -2546,7 +2549,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setShares(2, 0, 0, [], [], []);
       assert(false, "pool already initialized");
     } catch (ex) {
-      assertVMException(ex, "HVE38");
+      assertVMException(ex, "PoolMustNotBeInitialized");
     }
   });
 
@@ -2556,7 +2559,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setPool(1, true, false, "_descriptionHash");
       assert(false, "no pool exist");
     } catch (ex) {
-      assertVMException(ex, "HVE23");
+      assertVMException(ex, "PoolDoesNotExist");
     }
     await hatVaults.setPool(0, true, false, "_descriptionHash");
     await rewardController.setAllocPoint(0, 200);
@@ -2754,7 +2757,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "can only use whitelisted routers");
     } catch (ex) {
-      assertVMException(ex, "HVE44");
+      assertVMException(ex, "RoutingContractNotWhitelisted");
     }
 
     try {
@@ -2780,7 +2783,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "can only use whitelisted routers");
     } catch (ex) {
-      assertVMException(ex, "HVE44");
+      assertVMException(ex, "RoutingContractNotWhitelisted");
     }
 
     tx = await hatVaults.setRouterWhitelistStatus(router.address, true, {
@@ -2896,7 +2899,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "can claim only once, nothing to redeem or burn");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
 
     try {
@@ -2912,7 +2915,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "can claim only once, nothing to redeem or burn");
     } catch (ex) {
-      assertVMException(ex, "HVE24");
+      assertVMException(ex, "AmountToSwapIsZero");
     }
   });
 
@@ -3154,7 +3157,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "router return less than minimum");
     } catch (ex) {
-      assertVMException(ex, "HVE32");
+      assertVMException(ex, "AmountSwappedLessThanMinimum");
     }
   });
 
@@ -3208,7 +3211,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "swap should not be successful");
     } catch (ex) {
-      assertVMException(ex, "HVE43");
+      assertVMException(ex, "SwapFailed");
     }
   });
 
@@ -3234,7 +3237,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "fee is not enough");
     } catch (ex) {
-      assertVMException(ex, "HVE14");
+      assertVMException(ex, "NotEnoughFeePaid");
     }
     tx = await hatVaults.logClaim(someHash, {
       from: accounts[3],
@@ -3414,19 +3417,19 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setVestingParams(0, 21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
-      assertVMException(ex, "HVE16");
+      assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     try {
       await hatVaults.setVestingParams(0, 120 * 24 * 3600, 7);
       assert(false, "duration should be less than 120 days");
     } catch (ex) {
-      assertVMException(ex, "HVE15");
+      assertVMException(ex, "VestingDurationTooLong");
     }
     try {
       await hatVaults.setVestingParams(0, 6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
-      assertVMException(ex, "HVE17");
+      assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
     var tx = await hatVaults.setVestingParams(0, 21000, 7);
     assert.equal(tx.logs[0].event, "SetVestingParams");
@@ -3455,19 +3458,19 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setHatVestingParams(21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
-      assertVMException(ex, "HVE16");
+      assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     try {
       await hatVaults.setHatVestingParams(180 * 24 * 3600, 7);
       assert(false, "duration should be less than 180 days");
     } catch (ex) {
-      assertVMException(ex, "HVE15");
+      assertVMException(ex, "VestingDurationTooLong");
     }
     try {
       await hatVaults.setHatVestingParams(6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
-      assertVMException(ex, "HVE17");
+      assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
     var tx = await hatVaults.setHatVestingParams(21000, 7);
     assert.equal(tx.logs[0].event, "SetHatVestingParams");
@@ -3496,7 +3499,7 @@ contract("HatVaults", (accounts) => {
       await unSafeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
-      assertVMException(ex, "HVE30");
+      assertVMException(ex, "InvalidWithdrawRequest");
     }
   });
 
@@ -3515,7 +3518,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3550,7 +3553,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.massUpdatePools(2, 1);
       assert(false, "invalid mass update pools range");
     } catch (ex) {
-      assertVMException(ex, "HVE39");
+      assertVMException(ex, "InvalidPoolRange");
     }
   });
 
@@ -3562,7 +3565,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[0],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3598,7 +3601,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -3613,7 +3616,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         utils.NULL_ADDRESS,
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -3621,7 +3624,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "committee cannot be zero");
     } catch (ex) {
-      assertVMException(ex, "HVE21");
+      assertVMException(ex, "CommitteeIsZero");
     }
 
     try {
@@ -3629,7 +3632,7 @@ contract("HatVaults", (accounts) => {
         utils.NULL_ADDRESS,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 10],
         false,
@@ -3637,7 +3640,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "lp token cannot be zero");
     } catch (ex) {
-      assertVMException(ex, "HVE34");
+      assertVMException(ex, "LPTokenIsZero");
     }
 
     try {
@@ -3645,7 +3648,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [10, 86400],
         false,
@@ -3653,7 +3656,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "vesting duration smaller than period");
     } catch (ex) {
-      assertVMException(ex, "HVE17");
+      assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
 
     try {
@@ -3661,7 +3664,7 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [121 * 24 * 3600, 10],
         false,
@@ -3669,7 +3672,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "vesting duration is too long");
     } catch (ex) {
-      assertVMException(ex, "HVE15");
+      assertVMException(ex, "VestingDurationTooLong");
     }
 
     try {
@@ -3677,7 +3680,23 @@ contract("HatVaults", (accounts) => {
         stakingToken2.address,
         accounts[1],
         8000,
-        [0, 0, 0, 0, 0, 0],
+        [0, 0, 500, 0, 9000, 500],
+        "_descriptionHash",
+        [86400, 10],
+        false,
+        true
+      );
+      assert(false, "bounty payout to hacker is zero");
+    } catch (ex) {
+      assertVMException(ex, "BountySplitMustIncludeHackerPayout");
+    }
+
+    try {
+      await hatVaults.addPool(
+        stakingToken2.address,
+        accounts[1],
+        8000,
+        [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 0],
         false,
@@ -3685,13 +3704,13 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "vesting period cannot be zero");
     } catch (ex) {
-      assertVMException(ex, "HVE16");
+      assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     await hatVaults.addPool(
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3815,7 +3834,7 @@ contract("HatVaults", (accounts) => {
       [stakingToken2.address, stakingToken3.address],
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10]
     );
@@ -3846,7 +3865,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10,
       0,
       100,
@@ -3901,7 +3920,7 @@ contract("HatVaults", (accounts) => {
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       10000
     );
 
@@ -3923,7 +3942,7 @@ contract("HatVaults", (accounts) => {
       stakingToken2.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -3983,7 +4002,7 @@ contract("HatVaults", (accounts) => {
       await hatVaults.setMaxBountyDelay(100, { from: accounts[0] });
       assert(false, "too small");
     } catch (ex) {
-      assertVMException(ex, "HVE18");
+      assertVMException(ex, "DelayTooShort");
     }
     assert.equal(
       (await hatVaults.generalParameters()).setMaxBountyDelay,
@@ -4031,7 +4050,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "no depositors  yet");
     } catch (ex) {
-      assertVMException(ex, "HVE11");
+      assertVMException(ex, "AmountToRewardTooBig");
     }
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
     await hatVaults.deposit(0, web3.utils.toWei("2"), { from: staker2 });
@@ -4053,7 +4072,7 @@ contract("HatVaults", (accounts) => {
       });
       assert(false, "amount to reward is too big");
     } catch (ex) {
-      assertVMException(ex, "HVE11");
+      assertVMException(ex, "AmountToRewardTooBig");
     }
 
     var tx = await hatVaults.rewardDepositors(0, web3.utils.toWei("3"), {
@@ -4085,7 +4104,7 @@ contract("HatVaults", (accounts) => {
       hatToken.address,
       accounts[1],
       8000,
-      [0, 0, 0, 0, 0, 0],
+      [6000, 2000, 500, 0, 1000, 500],
       "_descriptionHash",
       [86400, 10],
       false,
@@ -4176,74 +4195,7 @@ contract("HatVaults", (accounts) => {
       await safeWithdraw(0, web3.utils.toWei("1"), staker);
       assert(false, "can't withdraw when there are not enough rewards");
     } catch (ex) {
-      assertVMException(ex, "HVE46");
-    }
-  });
-
-  it("swapBurnSend to fail if not enough reward tokens", async () => {
-    await setup(
-      accounts,
-      (await web3.eth.getBlock("latest")).number,
-      8000,
-      [8000, 900, 100, 250, 350, 400],
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      0.001
-    );
-
-    var staker = accounts[4];
-    await stakingToken.approve(hatVaults.address, web3.utils.toWei("1"), {
-      from: staker,
-    });
-    await stakingToken.mint(staker, web3.utils.toWei("1"));
-    await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await advanceToSafetyPeriod();
-    let tx = await hatVaults.submitClaim(
-      0,
-      accounts[2],
-      2000,
-      "description hash",
-      {
-        from: accounts[1],
-      }
-    );
-    let claimId = tx.logs[0].args._claimId;
-    await hatVaults.approveClaim(claimId, 2000);
-
-    let path = ethers.utils.solidityPack(
-      ["address", "uint24", "address", "uint24", "address"],
-      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
-    );
-    let amountToSwapAndBurn = await hatVaults.swapAndBurns(0);
-    let amountForHackersHatRewards = await hatVaults.hackersHatRewards(
-      accounts[2],
-      0
-    );
-    let amount = amountToSwapAndBurn
-      .add(amountForHackersHatRewards)
-      .add(await hatVaults.governanceHatRewards(0));
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [
-      [path, hatVaults.address, 0, amount.toString(), 0],
-    ]);
-
-    let amountOutMinimum = amount; //exchange rate 1:1 for testing perposes
-    let hatsAvailable = await hatToken.balanceOf(hatVaults.address);
-    assert.isTrue(
-      parseInt(hatsAvailable.toString()) < parseInt(amount.toString())
-    );
-    try {
-      await hatVaults.swapBurnSend(
-        0,
-        accounts[2],
-        amountOutMinimum,
-        router.address,
-        payload
-      );
-      assert(false, "can't swapBurnSend when there are not enough rewards");
-    } catch (ex) {
-      assertVMException(ex, "HVE45");
+      assertVMException(ex, "NotEnoughRewardsToTransferToUser");
     }
   });
 });
