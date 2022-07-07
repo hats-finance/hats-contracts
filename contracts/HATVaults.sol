@@ -34,15 +34,14 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
     */
-    function initialize(
+    constructor(
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
-    ) external initializer {
-        __ReentrancyGuard_init();
+    ) {
         _transferOwnership(_hatGovernance);
-        swapToken = ERC20BurnableUpgradeable(_swapToken);
+        swapToken = ERC20Burnable(_swapToken);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -58,7 +57,7 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        arbitrator = owner();
+        arbitrator = _hatGovernance;
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;
     }

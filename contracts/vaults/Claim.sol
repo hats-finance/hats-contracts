@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Claim is Base {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
     * @notice emit an event that includes the given _descriptionHash
@@ -104,7 +104,7 @@ contract Claim is Base {
         uint256 pid = claim.pid;
         address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
-        IERC20Upgradeable lpToken = poolInfos[pid].lpToken;
+        IERC20 lpToken = poolInfos[pid].lpToken;
 
         ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 

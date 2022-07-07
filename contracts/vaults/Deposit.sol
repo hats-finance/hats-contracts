@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Deposit is Base {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
     * @notice Deposit tokens to pool

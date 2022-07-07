@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Swap is Base {
-    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
+    using SafeERC20 for ERC20Burnable;
 
     /**
     * @notice Swap pool's token to swapToken.
@@ -64,7 +64,7 @@ contract Swap is Base {
     }
 
     function swapTokenForHAT(uint256 _amount,
-        IERC20Upgradeable _token,
+        IERC20 _token,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload)
