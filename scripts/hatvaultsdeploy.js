@@ -38,7 +38,8 @@ async function main(
   const HATVaults = await ethers.getContractFactory("HATVaults");
   const RewardController = await ethers.getContractFactory("RewardController");
   const rewardController = await RewardController.deploy(
-    governance,
+    rewardsToken,
+    deployerAddress,
     startBlock,
     epochLength,
     rewardPerEpoch
@@ -47,17 +48,18 @@ async function main(
   await rewardController.deployed();
 
   const hatVaults = await upgrades.deployProxy(HATVaults, [
-    rewardsToken,
     deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
-    rewardController.address,
   ]);
 
   await hatVaults.deployed();
 
+  await rewardController.setHATVaults(hatVaults.address);
+
   if (governance !== deployerAddress) {
+    await rewardController.transferOwnership(governance);
     await hatVaults.transferOwnership(governance);
   }
 
@@ -66,26 +68,6 @@ async function main(
 
     // We also save the contract's artifacts and address in the frontend directory
     saveFrontendFiles(hatVaults, "HATVaults");
-    //verify
-    console.log(
-      "npx hardhat verify --network rinkeby",
-      hatVaults.address,
-      '"',
-      rewardsToken,
-      '"',
-      '"',
-      startBlock,
-      '"',
-      '"',
-      epochLength,
-      '"',
-      '"',
-      governance,
-      '"',
-      '"',
-      tokenLockFactory,
-      '"'
-    );
   }
 
   return { hatVaults, rewardController };

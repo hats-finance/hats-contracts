@@ -21,14 +21,6 @@ contract Deposit is Base {
         //clear withdraw request
         withdrawEnableStartTime[_pid][msg.sender] = 0;
         PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        if (user.shares > 0) {
-            uint256 pending = user.shares * pool.rewardPerShare / 1e12 - user.rewardDebt;
-            if (pending > 0) {
-                safeTransferReward(msg.sender, pending, _pid);
-            }
-        }
         uint256 lpSupply = pool.balance;
         uint256 balanceBefore = pool.lpToken.balanceOf(address(this));
 
@@ -42,51 +34,18 @@ contract Deposit is Base {
 
         // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
         // out of the pool's total supply, relative to the previous total shares in the pool
-        uint256 userShares;
+        uint256 addedUserShares;
         if (pool.totalShares == 0) {
-            userShares = transferredAmount;
+            addedUserShares = transferredAmount;
         } else {
-            userShares = pool.totalShares * transferredAmount / lpSupply;
+            addedUserShares = pool.totalShares * transferredAmount / lpSupply;
         }
 
-        user.shares += userShares;
-        pool.totalShares += userShares;
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
+        pool.rewardController.updateRewardPool(_pid, msg.sender, addedUserShares, true, true);
+
+        userShares[_pid][msg.sender] += addedUserShares;
+        pool.totalShares += addedUserShares;
 
         emit Deposit(msg.sender, _pid, _amount, transferredAmount);
-    }
-
-     /**
-      * @notice Transfer to the sender their pending share of rewards.
-      * @param _pid The pool id
-     */
-     function claimReward(uint256 _pid) external nonReentrant {
-        updatePool(_pid);
-
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 rewardPerShare = poolInfos[_pid].rewardPerShare;
-        if (user.shares > 0) {
-            uint256 pending = user.shares * rewardPerShare / 1e12 - user.rewardDebt;
-            if (pending > 0) {
-                user.rewardDebt = user.shares * rewardPerShare / 1e12;
-                safeTransferReward(msg.sender, pending, _pid);
-            }
-        }
-
-        emit ClaimReward(_pid);
-    }
-
-    /**
-     * @notice add reward tokens to the hatVaults contrac, to be distributed as rewards
-     * The sender of the transaction must have approved the spend before calling this function
-     * @param _amount amount of rewardToken to add
-    */
-    function depositReward(uint256 _amount) external nonReentrant {
-        uint256 balanceBefore = rewardToken.balanceOf(address(this));
-        rewardToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 rewardTokenReceived = rewardToken.balanceOf(address(this)) - balanceBefore;
-        rewardAvailable += rewardTokenReceived;
-
-        emit DepositReward(_amount, rewardTokenReceived, address(rewardToken));
     }
 }

@@ -39,19 +39,13 @@ contract Withdraw is Base {
     function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
         PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
 
-        if (user.shares < _shares) revert NotEnoughUserBalance();
+        if (userShares[_pid][msg.sender] < _shares) revert NotEnoughUserBalance();
 
-        updatePool(_pid);
-
-        uint256 pending = ((user.shares * pool.rewardPerShare) / 1e12) - user.rewardDebt;
-        if (pending > 0) {
-            safeTransferReward(msg.sender, pending, _pid);
-        }
+        pool.rewardController.updateRewardPool(_pid, msg.sender, _shares, false, true);
 
         if (_shares > 0) {
-            user.shares -= _shares;
+            userShares[_pid][msg.sender] -= _shares;
             uint256 amountToWithdraw = (_shares * pool.balance) / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
             pool.balance -= amountToWithdraw;
@@ -59,7 +53,6 @@ contract Withdraw is Base {
             safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
 
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
         emit Withdraw(msg.sender, _pid, _shares);
     }
 
@@ -75,16 +68,18 @@ contract Withdraw is Base {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
 
         PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        if (user.shares == 0) revert UserSharesMustBeGreaterThanZero();
-        uint256 factoredBalance = (user.shares * pool.balance) / pool.totalShares;
+        uint256 currentUserShares = userShares[_pid][msg.sender];
+        if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
+
+        pool.rewardController.updateRewardPool(_pid, msg.sender, currentUserShares, false, false);
+
+        uint256 factoredBalance = (currentUserShares * pool.balance) / pool.totalShares;
         uint256 fee = (factoredBalance * pool.withdrawalFee) / HUNDRED_PERCENT;
 
-        pool.totalShares -= user.shares;
+        pool.totalShares -= currentUserShares;
         pool.balance -= factoredBalance;
-        user.shares = 0;
-        user.rewardDebt = 0;
-
+        userShares[_pid][msg.sender] = 0;
+        
         safeWithdrawPoolToken(pool.lpToken, factoredBalance, fee);
 
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);

@@ -209,8 +209,8 @@ contract Params is Base {
         emit SetMaxBounty(_pid, bountyInfos[_pid].maxBounty);
     }
 
-    function setRewardController(RewardController _newRewardController) public onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(address(_newRewardController));
+    function setRewardController(uint256 _pid, IRewardController _newRewardController) public onlyOwner {
+        poolInfos[_pid].rewardController = _newRewardController;
+        emit SetRewardController(_pid, _newRewardController);
     }
 }
