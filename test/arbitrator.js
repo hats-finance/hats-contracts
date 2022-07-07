@@ -91,7 +91,7 @@ contract("HatVaults Arbitrator", (accounts) => {
     assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
   });
 
-  it("Aribtrator can only change bounty if claim is challenged", async () => {
+  it("Arbitrator can only change bounty if claim is challenged", async () => {
     const { hatVaults, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaults.setChallengePeriod(1000);
@@ -106,7 +106,6 @@ contract("HatVaults Arbitrator", (accounts) => {
       from: staker,
     });
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
 
@@ -122,7 +121,7 @@ contract("HatVaults Arbitrator", (accounts) => {
     assert.equal(tx.logs[1].args._bountyPercentage.toString(), "8000");
   });
 
-  it("Aribtrator cannot challenge after challenge timeout period", async () => {
+  it("Arbitrator cannot challenge after challenge timeout period", async () => {
     const { hatVaults, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaults.setChallengePeriod(1000);
@@ -138,7 +137,6 @@ contract("HatVaults Arbitrator", (accounts) => {
       from: staker,
     });
     await hatVaults.deposit(0, web3.utils.toWei("1"), { from: staker });
-    await hatVaults.updatePool(0);
 
     const claimId = await submitClaim(hatVaults, { accounts });
 
