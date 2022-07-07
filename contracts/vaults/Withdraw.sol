@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "./Base.sol";
 
 contract Withdraw is Base {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
     * @notice Submit a request to withdraw funds from pool # `_pid`.
@@ -13,7 +13,7 @@ contract Withdraw is Base {
     * had also ended.
     * @param _pid The pool ID
     **/
-    function withdrawRequest(uint256 _pid) external {
+    function withdrawRequest(uint256 _pid) external nonReentrant {
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawwithdrawRequest
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
@@ -39,28 +39,19 @@ contract Withdraw is Base {
     function withdraw(uint256 _pid, uint256 _shares) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
         PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
 
-        if (user.shares < _shares) revert NotEnoughUserBalance();
+        if (userShares[_pid][msg.sender] < _shares) revert NotEnoughUserBalance();
 
-        updatePool(_pid);
-
-        uint256 pending = ((user.shares * pool.rewardPerShare) / 1e12) - user.rewardDebt;
-
-        if (pending > 0) {
-            safeTransferReward(msg.sender, pending, _pid);
-        }
+        pool.rewardController.updateRewardPool(_pid, msg.sender, _shares, false, true);
 
         if (_shares > 0) {
-            user.shares -= _shares;
+            userShares[_pid][msg.sender] -= _shares;
             uint256 amountToWithdraw = (_shares * pool.balance) / pool.totalShares;
             uint256 fee = amountToWithdraw * pool.withdrawalFee / HUNDRED_PERCENT;
             pool.balance -= amountToWithdraw;
             pool.totalShares -= _shares;
             safeWithdrawPoolToken(pool.lpToken, amountToWithdraw, fee);
         }
-
-        user.rewardDebt = user.shares * pool.rewardPerShare / 1e12;
 
         emit Withdraw(msg.sender, _pid, _shares);
     }
@@ -73,20 +64,22 @@ contract Withdraw is Base {
     * had finished.
     * @param _pid The pool id
     **/
-    function emergencyWithdraw(uint256 _pid) external {
+    function emergencyWithdraw(uint256 _pid) external nonReentrant {
         checkWithdrawAndResetWithdrawEnableStartTime(_pid);
 
         PoolInfo storage pool = poolInfos[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        if (user.shares == 0) revert UserSharesMustBeGreaterThanZero();
-        uint256 factoredBalance = (user.shares * pool.balance) / pool.totalShares;
+        uint256 currentUserShares = userShares[_pid][msg.sender];
+        if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
+
+        pool.rewardController.updateRewardPool(_pid, msg.sender, currentUserShares, false, false);
+
+        uint256 factoredBalance = (currentUserShares * pool.balance) / pool.totalShares;
         uint256 fee = (factoredBalance * pool.withdrawalFee) / HUNDRED_PERCENT;
 
-        pool.totalShares -= user.shares;
+        pool.totalShares -= currentUserShares;
         pool.balance -= factoredBalance;
-        user.shares = 0;
-        user.rewardDebt = 0;
-
+        userShares[_pid][msg.sender] = 0;
+        
         safeWithdrawPoolToken(pool.lpToken, factoredBalance, fee);
 
         emit EmergencyWithdraw(msg.sender, _pid, factoredBalance);
@@ -115,7 +108,7 @@ contract Withdraw is Base {
         withdrawEnableStartTime[_pid][msg.sender] = 0;
     }
 
-    function safeWithdrawPoolToken(IERC20Upgradeable _lpToken, uint256 _totalAmount, uint256 _fee)
+    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee)
         internal
     {
         if (_fee > 0) {

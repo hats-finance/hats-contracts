@@ -3,14 +3,14 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/TokenLockFactory.sol";
-import "../RewardController.sol";
+import "../interfaces/IRewardController.sol";
 
 // Errors:
 // Only committee
@@ -33,8 +33,6 @@ error WithdrawRequestEnabledPeriodTooShort();
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
-// Amount to reward is too big
-error AmountToRewardTooBig();
 // Withdraw period must be >= 1 hour
 error WithdrawPeriodTooShort();
 // Safety period must be <= 6 hours
@@ -65,8 +63,8 @@ error AmountToSwapIsZero();
 error PendingWithdrawRequestExists();
 // Deposit paused
 error DepositPaused();
-// Amount less than 1e6
-error AmountLessThanMinDeposit();
+// Amount to deposit is zero
+error AmountToDepositIsZero();
 // Pool balance is zero
 error PoolBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
@@ -91,7 +89,6 @@ error TokenApproveResetFailed();
 error PoolMustNotBeInitialized();
 // Pool must be initialized
 error PoolMustBeInitialized();
-error InvalidPoolRange();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
 // Committee not checked in yet
@@ -104,8 +101,6 @@ error UserSharesMustBeGreaterThanZero();
 error SwapFailed();
 // Routing contract must be whitelisted
 error RoutingContractNotWhitelisted();
-// Not enough rewards to transfer to user
-error NotEnoughRewardsToTransferToUser();
 // Only arbitrator
 error OnlyArbitrator();
 // Claim can only be approved if challenge period is over, or if the
@@ -113,12 +108,13 @@ error OnlyArbitrator();
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 // Bounty split must include hacker payout
 error BountySplitMustIncludeHackerPayout();
+error ChallengePeriodEnded();
 
 
-contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is Ownable, ReentrancyGuard {
     // Parameters that apply to all the vaults
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeERC20Upgradeable for ERC20BurnableUpgradeable;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20Burnable;
     
     struct GeneralParameters {
         uint256 hatVestingDuration;
@@ -140,33 +136,14 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of each pool.
     struct PoolInfo {
         bool committeeCheckedIn;
-        IERC20Upgradeable lpToken;
+        IERC20 lpToken;
         // total amount of LP tokens in pool
         uint256 balance;
         uint256 totalShares;
-        uint256 rewardPerShare;
-        uint256 lastRewardBlock;
-        // index of last PoolUpdate in globalPoolUpdates (number of times we have updated the
-        // total allocation points - 1)
-        uint256 lastProcessedTotalAllocPoint;
         // fee to take from withdrawals to governance
         uint256 withdrawalFee;
-    }
-
-    struct UserInfo {
-        uint256 shares;     // The user share of the pool based on the shares of lpToken the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
-        //
-        // We do some fancy math here. Basically, any point in time, the amount of HATs
-        // entitled to a user but is pending to be distributed is:
-        //
-        //   pending reward = (user.shares * pool.rewardPerShare) - user.rewardDebt
-        //
-        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `rewardPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `shares` gets updated.
-        //   4. User's `rewardDebt` gets updated.
+        
+        IRewardController rewardController;
     }
 
     // Info of each pool's bounty policy.
@@ -222,7 +199,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
-    uint256 public constant MINIMUM_DEPOSIT = 1e6;
 
     // PARAMETERS FOR ALL VAULTS
     // time during which a claim can be challenged by the arbitrator
@@ -232,19 +208,14 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
     // rewardController determines how many rewards each pool gets in the incentive program
-    RewardController public rewardController;
     ITokenLockFactory public tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
-    // the ERC20 contract in which rewards are distributed
-    IERC20Upgradeable public rewardToken;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20BurnableUpgradeable public swapToken;
-    // rewardAvaivalabe is the amount of rewardToken's available to distribute as rewards
-    uint256 public rewardAvailable;
+    ERC20Burnable public swapToken;
     mapping(address => bool) public whitelistedRouters;
     uint256 internal nonce;
 
@@ -253,8 +224,8 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Info of each pool.
     // poolId -> committee address
     mapping(uint256 => address) public committees;
-    // Info of each user that stakes LP tokens. poolId => user address => info
-    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    // Info of each user that stakes LP tokens. poolId => user address => shares
+    mapping(uint256 => mapping(address => uint256)) public userShares;
     // poolId -> BountyInfo
     mapping(uint256 => BountyInfo) public bountyInfos;
     // poolId -> PendingMaxBounty
@@ -279,12 +250,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // poolId -> amount
     mapping(uint256 => uint256) public governanceHatRewards;
 
-    event SafeTransferReward(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address rewardToken
-    );
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         uint256 indexed _pid,
@@ -308,15 +273,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 indexed pid,
         uint256 amount,
         uint256 transferredAmount
-    );
-    event ClaimReward(uint256 indexed _pid);
-    event RewardDepositors(uint256 indexed _pid,
-        uint256 indexed _amount,
-        uint256 indexed _transferredAmount
-    );
-    event DepositReward(uint256 indexed _amount,
-        uint256 indexed _transferredAmount,
-        address indexed _rewardToken
     );
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetCommittee(uint256 indexed _pid, address indexed _committee);
@@ -342,11 +298,12 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event CommitteeCheckedIn(uint256 indexed _pid);
     event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetRewardController(address indexed _newRewardController);
+    event SetRewardController(uint256 indexed _pid, IRewardController indexed _newRewardController);
     event AddPool(
         uint256 indexed _pid,
         address indexed _lpToken,
         address _committee,
+        IRewardController _rewardController,
         string _descriptionHash,
         uint256 _maxBounty,
         BountySplit _bountySplit,
@@ -359,7 +316,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         bool _depositPause,
         string _descriptionHash
     );
-    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
     event SwapAndBurn(
         uint256 indexed _pid,
         uint256 indexed _amountSwapped,
@@ -409,54 +365,6 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
-    /**
-    * @notice Update the pool's rewardPerShare, not more then once per block
-    * @param _pid The pool id
-    */
-    function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfos[_pid];
-        uint256 lastRewardBlock = pool.lastRewardBlock;
-        if (block.number <= lastRewardBlock) {
-            return;
-        }
-        uint256 totalShares = pool.totalShares;
-
-        pool.lastRewardBlock = block.number;
-
-        if (totalShares != 0) {
-            uint256 lastProcessedAllocPoint = pool.lastProcessedTotalAllocPoint;
-            uint256 reward = rewardController.getPoolReward(_pid, lastRewardBlock, lastProcessedAllocPoint);
-            pool.rewardPerShare += (reward * 1e12 / totalShares);
-        }
-
-        setPoolsLastProcessedTotalAllocPoint(_pid);
-    }
-
-    /**
-    * @notice Safe HAT transfer function, transfer rewards from the contract only if there are enough
-    * rewards available.
-    * @param _to The address to transfer the reward to
-    * @param _amount The amount of rewards to transfer
-    * @param _pid The pool id
-   */
-    function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
-        if (rewardAvailable < _amount)
-            revert NotEnoughRewardsToTransferToUser();
-            
-        rewardAvailable -= _amount;
-        rewardToken.safeTransfer(_to, _amount);
-
-        emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
-    }
-
-    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
-        uint globalPoolUpdatesLength = rewardController.getGlobalPoolUpdatesLength();
-
-        if (globalPoolUpdatesLength > 0) {
-            poolInfos[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
-        }
-    }
-
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
             revert BountySplitMustIncludeHackerPayout();
@@ -469,11 +377,4 @@ contract Base is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             _bountySplit.hackerHatVested != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
     }
-
-    /**
-     * @notice This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[50] private __gap;
 }

@@ -23,7 +23,6 @@ import "./vaults/Withdraw.sol";
 contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     /**
     * @notice initialize -
-    * @param _rewardToken The reward token address
     * @param _hatGovernance The governance address.
     * Some of the contracts functions are limited only to governance:
     * addPool, setPool, dismissClaim, approveClaim, setHatVestingParams,
@@ -34,21 +33,15 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
     * be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     *        to create a vesting contract for the approved claim reporter.
-    * @param _rewardController Address of the reward controller to be used to
-    * manage the reward distribution.
     */
-    function initialize(
-        address _rewardToken,
+    constructor(
         address _hatGovernance,
         address _swapToken,
         address[] memory _whitelistedRouters,
-        ITokenLockFactory _tokenLockFactory,
-        RewardController _rewardController
-    ) external initializer {
-        __ReentrancyGuard_init();
+        ITokenLockFactory _tokenLockFactory
+    ) {
         _transferOwnership(_hatGovernance);
-        rewardToken = IERC20Upgradeable(_rewardToken);
-        swapToken = ERC20BurnableUpgradeable(_swapToken);
+        swapToken = ERC20Burnable(_swapToken);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -64,8 +57,7 @@ contract HATVaults is Claim, Deposit, Params, Pool, Swap, Getters, Withdraw {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        rewardController = _rewardController;
-        arbitrator = owner();
+        arbitrator = _hatGovernance;
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;
     }

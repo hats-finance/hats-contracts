@@ -2,13 +2,14 @@
 pragma solidity 0.8.14;
 
 import "../HATVaults.sol";
+import "../RewardController.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
 contract PoolsManagerMock {
 
     function addPools(HATVaults _hatVaults,
-                    RewardController _rewardController,
+                    IRewardController _rewardController,
                     uint256 _allocPoint,
                     address[] memory _lpTokens,
                     address _committee,
@@ -20,18 +21,20 @@ contract PoolsManagerMock {
         for (uint256 i=0; i < _lpTokens.length; i++) {
             _hatVaults.addPool(_lpTokens[i],
                                 _committee,
+                                _rewardController,
                                 _maxBounty,
                                 _bountySplit,
                                 _descriptionHash,
                                 _bountyVestingParams,
                                 false,
                                 true);
-            _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
         }
+
+        _rewardController.setAllocPoint(_hatVaults.getNumberOfPools() - 1, _allocPoint);
     }
 
     function setPools(HATVaults _hatVaults,
-                    RewardController _rewardController,
+                    IRewardController _rewardController,
                     uint256[] memory _pids,
                     uint256 _allocPoint,
                     bool _registered,
@@ -47,9 +50,19 @@ contract PoolsManagerMock {
         }
     }
 
-    function updatePoolsTwice(HATVaults target, uint256 _fromPid, uint256 _toPid) external {
+    function updatePoolsTwice(RewardController target, uint256 _fromPid, uint256 _toPid) external {
         target.massUpdatePools(_fromPid, _toPid);
         target.massUpdatePools(_fromPid, _toPid);
+    }
+
+    function claimRewardTwice(RewardController target, uint256 _pid) external {
+        target.claimReward(_pid);
+        target.claimReward(_pid);
+    }
+
+    function deposit(HATVaults _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
+        _lpToken.approve(address(_target), _amount);
+        _target.deposit(_pid, _amount);
     }
 
     function depositTwice(HATVaults _target, IERC20 _lpToken, uint256 _pid, uint256 _amount) external {
@@ -67,7 +80,7 @@ contract PoolsManagerMock {
         }
     }
 
-    function claimDifferentPids(HATVaults _target, uint256[] memory _pids) external {
+    function claimDifferentPids(RewardController _target, uint256[] memory _pids) external {
         uint256  i;
         for (i = 0; i < _pids.length; i++) {
             _target.claimReward(_pids[i]);
