@@ -65,25 +65,31 @@ async function main(
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
   const RewardController = await ethers.getContractFactory("RewardController");
-  const rewardController = await RewardController.deploy(
-    governance,
+  const rewardController = await upgrades.deployProxy(RewardController, [
+    rewardsToken,
+    deployerAddress,
     startBlock,
     epochLength,
     rewardPerEpoch
-  );
+  ]);
 
   await rewardController.deployed();
 
-  const hatVaults = await upgrades.deployProxy(HATVaults, [
-    rewardsToken,
-    governance,
+  const hatVaults = await HATVaults.deploy(
+    deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
-    rewardController.address,
-  ]);
+  );
 
   await hatVaults.deployed();
+
+  await rewardController.setHATVaults(hatVaults.address);
+
+  if (governance !== deployerAddress) {
+    await rewardController.transferOwnership(governance);
+    await hatVaults.transferOwnership(governance);
+  }
 
   const hatVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address);
   if (!silent) {
