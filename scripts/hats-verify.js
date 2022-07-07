@@ -10,6 +10,9 @@ async function main(config) {
     config = CONFIG[network.name];
   }
 
+  const [deployer] = await ethers.getSigners();
+  const deployerAddress = await deployer.getAddress();
+
   //constructor params for mainnet
   const governance = config.governance;
   var hatGovernanceDelay;
@@ -38,12 +41,14 @@ async function main(config) {
     config.hatTokenLock,
   ]);
 
-  await verifyContract(config.rewardController, [
-    governance,
-    ...config.rewardControllerParams
+  await verifyContract(config.hatVaults, [
+    deployerAddress,
+    config.hatToken,
+    config.whitelistedRouters,
+    config.tokenLockFactory,
   ]);
 
-  await verifyContract(config.hatVaultsImplementation, []);
+  await verifyContract(config.rewardControllerImplementation, []);
 
   await verifyContract(config.timelock, [
     hatVaultsAddress,

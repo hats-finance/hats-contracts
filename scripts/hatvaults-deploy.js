@@ -65,6 +65,7 @@ async function main(
 
   const HATVaults = await ethers.getContractFactory("HATVaults");
   const RewardController = await ethers.getContractFactory("RewardController");
+
   const rewardController = await upgrades.deployProxy(RewardController, [
     rewardsToken,
     deployerAddress,
@@ -91,22 +92,22 @@ async function main(
     await hatVaults.transferOwnership(governance);
   }
 
-  const hatVaultsImplementation = await getImplementationAddress(ethers.provider, hatVaults.address);
+  const rewardControllerImplementation = await getImplementationAddress(ethers.provider, rewardController.address);
   if (!silent) {
 
-    console.log("rewardController address:", rewardController.address);
     console.log("hatVaults address:", hatVaults.address);
-    console.log("hatVaultsImplementation address:", hatVaultsImplementation);
+    console.log("rewardController address:", rewardController.address);
+    console.log("rewardControllerImplementation address:", rewardControllerImplementation);
 
     if (network.name !== "hardhat") {
-      ADDRESSES[network.name]["rewardController"] = rewardController.address;
       ADDRESSES[network.name]["hatVaults"] = hatVaults.address;
-      ADDRESSES[network.name]["hatVaultsImplementation"] = hatVaultsImplementation;
+      ADDRESSES[network.name]["rewardController"] = rewardController.address;
+      ADDRESSES[network.name]["rewardControllerImplementation"] = rewardControllerImplementation;
       fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
     }
   }
 
-  return { hatVaults, rewardController, hatVaultsImplementation};
+  return { hatVaults, rewardController, rewardControllerImplementation};
 }
 
 if (require.main === module) {

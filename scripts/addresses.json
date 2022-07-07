@@ -41,10 +41,9 @@
     "hatToken": "0x81ce6022297Ab5e15ba295159aA4BDac6b84A76D",
     "hatTokenLock": "0xe0B8a9D761d8F3E05D2fFf2EA916E7abbb8D98f3",
     "tokenLockFactory": "0x28e7A5BDeBC3758Ea07Aa553f9B8f87Eff588101",
-    "rewardController": "0xbf436D3d1e947A2AD75FDC321Ce5dE442D406d3c",
-    "hatVaults": "0xbc69Ca2Bb6486Dd75F76F427a62b507414f945eB",
-    "hatVaultsImplementation": "0x4D22e37Eb4d71D1acc5f4889a65936D2a44A2f15",
-    "timelock": "0x0D15cc7dDB251554874db190e327978EAb80418f",
+    "rewardController": "0x792259ce36e2DcD444Ee9f3eb947915854181792",
+    "hatVaults": "0xb780Cc0Bd0B0fA2eC3593d922f5D5dcd336E71CA",
+    "timelock": "0x602A72d6f72E55864d02B36F1467619be67609A7",
     "rewardControllerParams": [
       {
         "type": "BigNumber",
@@ -80,7 +79,8 @@
     ],
     "whitelistedRouters": [
       "0xE592427A0AEce92De3Edee1F18E0157C05861564"
-    ]
+    ],
+    "rewardControllerImplementation": "0x539F9495EB1Fc8b0fc5785209F1B314a8B80eCB6"
   },
   "hardhat": {
     "governance": "0xd6eC2F1D35C4a21D3a25E95CC40D67b4D0af995E",

@@ -104,7 +104,7 @@ async function main() {
 
   let hatVaults = hatVaultsResult.hatVaults;
   let rewardController = hatVaultsResult.rewardController;
-  let hatVaultsImplementation = hatVaultsResult.hatVaultsImplementation;
+  let rewardControllerImplementation = hatVaultsResult.rewardControllerImplementation;
 
   console.log("Deploying timelock");
 
@@ -130,7 +130,7 @@ async function main() {
     tokenLockFactory,
     rewardController: rewardController.address,
     hatVaults: hatVaults.address,
-    hatVaultsImplementation,
+    rewardControllerImplementation,
     timelock: timelock.address,
     rewardControllerParams: [
       startBlock,
