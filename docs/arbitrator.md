@@ -13,14 +13,18 @@ The idea is that there is an `arbitrator` contract which implements a dispute m
 
 More precisely:
 
-1. The `committee` calls `submitClaim(poolId, beneficiary, bountyPercentage)`
+1. The `committee` calls `submitClaim(poolId, beneficiary, bountyPercentage)`. This will create a new `claimId`
 2. The `arbitrator` can call `challengeClaim(_claimId)` at any time
 3. If `challengePeriod` has passed and the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
 4. If the claim is challenged, `arbitrator` can either call `approveClaim(claimId, bountyPercentage)`  (and set a new bounty percentage) or can call `dismissClaim` to reject the claim alltogether
-5. If `challengeTimeOutPeriod` passed, anyone can call `dismissClaim` and dismiss the claim
+5. If the claim is challenged, and if `challengeTimeOutPeriod` passed, anyone can call `dismissClaim` and dismiss the claim
 
 During the time from submitting a claim to its resolution, the vault will be locked for withdrawals. 
 
+
+
+
+```
 
 
 

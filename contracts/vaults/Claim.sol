@@ -75,9 +75,12 @@ contract Claim is Base {
     */
 
     function challengeClaim(uint256 _claimId) external onlyArbitrator {
-        if (claims[_claimId].beneficiary == address(0))
+        Claim storage claim = claims[_claimId];
+        if (claim.beneficiary == address(0))
             revert NoActiveClaimExists();
-        claims[_claimId].isChallenged = true;
+        if (block.timestamp > claim.createdAt + challengeTimeOutPeriod)
+            revert ChallengePeriodEnded();
+        claim.isChallenged = true;
     }
 
     /**
@@ -93,6 +96,7 @@ contract Claim is Base {
         if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         if (claim.isChallenged) {
             if (msg.sender != arbitrator) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+            claim.bountyPercentage = _bountyPercentage;
         } else {
             if (block.timestamp <= claim.createdAt + challengePeriod) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
         }
@@ -101,10 +105,6 @@ contract Claim is Base {
         address tokenLock;
         BountyInfo storage bountyInfo = bountyInfos[pid];
         IERC20 lpToken = poolInfos[pid].lpToken;
-
-        if (msg.sender == arbitrator) {
-            claim.bountyPercentage = _bountyPercentage;
-        }
 
         ClaimBounty memory claimBounty = calcClaimBounty(pid, claim.bountyPercentage);
 
