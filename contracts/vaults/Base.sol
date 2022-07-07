@@ -109,6 +109,7 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 // Bounty split must include hacker payout
 error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
+error OnlyCallableIfChallenged();
 
 
 contract Base is Ownable, ReentrancyGuard {

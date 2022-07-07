@@ -259,6 +259,11 @@ contract("HatVaults Arbitrator", (accounts) => {
     await advanceToSafetyPeriod(hatVaults);
     const claimId = await submitClaim(hatVaults, { accounts });
 
+    await assertFunctionRaisesException(
+      hatVaults.dismissClaim(claimId, { from: arbitrator }),
+      "OnlyCallableIfChallenged"
+    );
+
     await hatVaults.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
