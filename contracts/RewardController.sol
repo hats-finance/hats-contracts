@@ -212,7 +212,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
      * @notice Transfer to the sender their pending share of rewards.
      * @param _pid The pool id
      */
-    function claimReward(uint256 _pid) external {
+    function claimReward(uint256 _pid) external nonReentrant {
         _updateRewardPool(_pid, msg.sender, 0, true, true);
 
         emit ClaimReward(_pid);
