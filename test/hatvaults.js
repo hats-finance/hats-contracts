@@ -2080,13 +2080,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "NoActiveClaimExists");
     }
 
-    try {
-      await hatVaults.dismissClaim(0);
-      assert(false, "there is no pending approval");
-    } catch (ex) {
-      assertVMException(ex, "NoActiveClaimExists");
-    }
-
     tx = await hatVaults.submitClaim(0, accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
