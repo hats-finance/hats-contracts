@@ -24,6 +24,7 @@ let hatVaultsFromUser1;
 let hatToken;
 let lpToken;
 let router;
+let rewardController;
 const REWARD_PER_BLOCK = "10";
 const REAL_REWARD_PER_BLOCK = "0.0161856448";
 let tokenLockFactory;
@@ -33,10 +34,14 @@ let signers;
 let governance;
 let committee;
 let user1;
+let user2;
 const oneEth = ethers.utils.parseEther("1");
 const zeroEth = ethers.utils.parseEther("0");
 const pid = 0;
-
+const rewardPerEpoch = [4413, 4413, 8825, 7788, 6873, 6065,
+    5353, 4724, 4169, 3679, 3247, 2865,
+    2528, 2231, 1969, 1738, 1534, 1353,
+    1194, 1054, 930, 821, 724, 639, 0];
 
 async function deployContract(contractName, args = []) {
     const contractFactory = await ethers.getContractFactory(contractName);
@@ -46,8 +51,8 @@ async function deployContract(contractName, args = []) {
 }
 
 const setup = async function (
-    reward_per_block = REWARD_PER_BLOCK,
-    startBlock = 0,
+    rewardPerEpoch = REWARD_PER_BLOCK,
+    startRewardingBlock = 0,
     bountyLevels = [],
     bountySplit = [0, 0, 0, 0, 0, 0],
     halvingAfterBlock = 10,
@@ -60,7 +65,7 @@ const setup = async function (
     governance = signers[0];
     committee = signers[1];
     user1 = signers[2];
-
+    user2 = signers[3];
     hatToken = await deployContract("HATTokenMock", [governance.address, utils.TIME_LOCK_DELAY]);
     lpToken = await deployContract("ERC20Mock", ["Staking", "STK"]);
 
@@ -71,16 +76,19 @@ const setup = async function (
     router = await deployContract("UniSwapV3RouterMock", [routerReturnType, wethAddress]);
     const tokenLock = await deployContract("HATTokenLock");
     tokenLockFactory = await deployContract("TokenLockFactory", [tokenLock.address]);
+    rewardController = await deployContract("RewardController", 
+    [governance.address, 0, rewardPerEpoch,
+    ]);
 
-    hatVaults = await deployContract("HATVaults",
-        [hatToken.address,
-            ethers.utils.parseEther(reward_per_block),
-            startBlock,
-            halvingAfterBlock,
-            governance.address,
-            [router.address],
-            tokenLockFactory.address]
-    );
+    hatVaults = await deployContract("HATVaults");
+    await hatVaults.initialize(
+        hatToken.address,
+        governance.address,
+        hatToken.address,
+        [router.address],
+        tokenLockFactory,
+        rewardController);
+
 
     hatVaultsFromUser1 = hatVaults.connect(user1);
     hatVaultsFromCommittee = hatVaults.connect(committee);
