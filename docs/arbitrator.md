@@ -7,7 +7,7 @@ The idea is that there is an `arbitrator` contract which implements a dispute m
 1. The `committee` of a vault submits a claim 
 2. A challenge period starts in which anyone can challenge the claim
 3. If nobody challenges the claim during the challenge period, the claim is paid out as set by the committee
-4. If the claim is challenged, then the `aribtrator` can either dismiss the claim, or approve the claim but with a different amount
+4. If the claim is challenged, then the `arbitrator` can either dismiss the claim, or approve the claim but with a different amount
 5. If the arbitrator does not approve or dismiss a challenged claim, then after a dispute period, the claim is dismissed
 
 
