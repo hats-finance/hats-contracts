@@ -163,11 +163,10 @@ contract Claim is Base {
     function dismissClaim(uint256 _claimId) external {
         Claim storage claim = claims[_claimId];
         uint256 pid = claim.pid;
+        if (!claim.isChallenged) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
-        if (!(msg.sender == arbitrator && claim.isChallenged) &&
-            (claim.createdAt + challengeTimeOutPeriod > block.timestamp))
+        if (block.timestamp < claim.createdAt + challengeTimeOutPeriod && msg.sender != arbitrator)
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
-        if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
         delete activeClaims[pid];
         delete claims[_claimId];
         emit DismissClaim(pid, _claimId);
