@@ -133,7 +133,7 @@ async function main() {
     rewardControllerImplementation,
     timelock: timelock.address,
     rewardControllerParams: [
-      startBlock,
+      startBlock.toString(),
       epochLength,
       rewardPerEpoch
     ],
