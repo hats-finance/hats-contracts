@@ -2,7 +2,9 @@
 
 In Hats v2, we created a generic arbitration procedure in case some party does not agree with the size of the bounty assigned by the Committee.
 
-The idea is that there is an `arbitrator` contract which implements a dispute mechanism. User can start a dispute via the `arbitrator` contracts, which will pause the vault until the `arbitrator` resolves the dispute. The HATVaults contract only implements some time-out checks in case the arbitrator does not resolve the dispute in time.
+Claims can be disputed via an `arbitrator` contract which implements a dispute mechanism. User can start a dispute, which will pause the vault until the `arbitrator` resolves the dispute. 
+
+The HATVaults contract only implements some time-out checks in case the arbitrator does not resolve the dispute in time.
 
 1. The `committee` of a vault submits a claim 
 2. A challenge period starts in which anyone can challenge the claim
@@ -23,8 +25,16 @@ During the time from submitting a claim to its resolution, the vault will be loc
 
 
 
+# Deployment
 
-```
+## Stage 1: arbitrator is HATs governance
+
+
+## Stage 2: arbitrator is a custom contract controlled by HATs governance
+
+
+## Stage 3: arbitrator is an (interface to) a decentralized system, such as Kleros, Aragon Court, UMA, ...
+
 
 
 
