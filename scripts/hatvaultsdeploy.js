@@ -35,7 +35,10 @@ async function main(
     console.log("Account balance:", (await deployer.getBalance()).toString());
   }
 
-  const HATVaults = await ethers.getContractFactory("HATVaults");
+  const HATVault = await ethers.getContractFactory("HATVault");
+  const hatVaultImplementation = await HATVault.deploy();
+  await hatVaultImplementation.deployed();
+  const HATVaultsRegistry = await ethers.getContractFactory("HATVaultsRegistry");
   const RewardController = await ethers.getContractFactory("RewardController");
   const rewardController = await upgrades.deployProxy(RewardController, [
     rewardsToken,
@@ -47,59 +50,28 @@ async function main(
 
   await rewardController.deployed();
 
-  const hatVaults = await HATVaults.deploy(
+  const hatVaultsRegistry = await HATVaultsRegistry.deploy(
+    hatVaultImplementation.address,
     deployerAddress,
     swapToken,
     whitelistedRouters,
     tokenLockFactory,
   );
 
-  await hatVaults.deployed();
+  await hatVaultsRegistry.deployed();
 
-  await rewardController.setHATVaults(hatVaults.address);
+  await rewardController.setHATVaultsRegistry(hatVaultsRegistry.address);
 
   if (governance !== deployerAddress) {
     await rewardController.transferOwnership(governance);
-    await hatVaults.transferOwnership(governance);
+    await hatVaultsRegistry.transferOwnership(governance);
   }
 
   if (!silent) {
-    console.log("hatVaults address:", hatVaults.address);
-
-    // We also save the contract's artifacts and address in the frontend directory
-    saveFrontendFiles(hatVaults, "HATVaults");
+    console.log("hatVaults address:", hatVaultsRegistry.address);
   }
 
-  return { hatVaults, rewardController };
-}
-
-function saveFrontendFiles(contract, name) {
-  const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir, { recursive: true });
-  }
-
-  var data = JSON.parse(
-    fs.readFileSync(contractsDir + "/contract-address.json", {
-      encoding: "utf8",
-      flag: "r",
-    })
-  );
-  data[name] = contract.address;
-
-  fs.writeFileSync(
-    contractsDir + "/contract-address.json",
-    JSON.stringify(data, undefined, 2)
-  );
-
-  const HATVaultsArtifact = artifacts.readArtifactSync("HATVaults");
-
-  fs.writeFileSync(
-    contractsDir + "/HATVaults.json",
-    JSON.stringify(HATVaultsArtifact, null, 2)
-  );
+  return { hatVaultsRegistry, rewardController, hatVaultImplementation };
 }
 
 if (require.main === module) {
