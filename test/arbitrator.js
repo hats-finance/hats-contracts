@@ -52,7 +52,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   });
 
   it("No challenge - approve claim", async () => {
-    const { hatVaults, vault, stakingToken } = await setup(accounts);
+    const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaultsRegistry.setChallengePeriod(1000);
     await advanceToSafetyPeriod(hatVaultsRegistry);

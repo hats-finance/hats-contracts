@@ -2391,7 +2391,7 @@ contract("HatVaults", (accounts) => {
     //   assertVMException(ex, "InvalidPoolRange");
     // }
     // await rewardController.massUpdatePools(0, 1);
-    await rewardController.updatePool(vault.address)
+    await rewardController.updatePool(vault.address);
 
     let expectedReward = await rewardController.getPendingReward(vault.address, staker);
     tx = await safeWithdraw(vault, web3.utils.toWei("1"), staker);
