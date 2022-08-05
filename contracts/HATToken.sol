@@ -4,8 +4,27 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract HATToken is IERC20 {
+error HAT__NotGovernance();
+error HAT__NotGovernancePending();
+error HAT__CannotConfirmGovernanceAtThisTime();
+error HAT__onlyGovernanceCanConfirmMinter();
+error HAT__noPendingMinterWasSet();
+error HATToken__cannotConfirmAtThisTime();
+error HATToken__amountGreaterThanLimitation();
+error HAT__increaseAllowanceToTheZeroAddress();
+error HAT__decreaseAllowanceToTheZeroAddress();
+error HAT__permit_Unauthorized();
+error HAT__permit_SignatureExpired();
+error HAT__DelegateBySig_SignatureExpired();
+error HAT__DelegateBySig_invalidNonce();
+error HAT__getPriorVotes_notYetDetermined();
+error HAT__mint_cannotTransferToTheZeroAddress();
+error ERC20Capped_CAP_exceeded();
+error HAT__burn_cannotBurnToTheZeroAddress();
+error HAT___transferTokens_cannotTransferFomTheZeroAddress();
+error HAT___transferTokens_cannotTransferToTheZeroAddress();
 
+contract HATToken is IERC20 {
     struct PendingMinter {
         uint256 seedAmount;
         uint256 setMinterPendingAt;
@@ -40,54 +59,73 @@ contract HATToken is IERC20 {
 
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
-    mapping (address => uint256) public minters;
+    mapping(address => uint256) public minters;
 
     /// @notice Address which may mint new tokens
     /// minter -> minting seedAmount
-    mapping (address => PendingMinter) public pendingMinters;
+    mapping(address => PendingMinter) public pendingMinters;
 
     // @notice Allowance amounts on behalf of others
-    mapping (address => mapping (address => uint96)) internal allowances;
+    mapping(address => mapping(address => uint96)) internal allowances;
 
     // @notice Official record of token balances for each account
-    mapping (address => uint96) internal balances;
+    mapping(address => uint96) internal balances;
 
     /// @notice A record of each accounts delegate
-    mapping (address => address) public delegates;
+    mapping(address => address) public delegates;
 
     /// @notice A record of votes checkpoints for each account, by index
-    mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
+    mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;
 
     /// @notice The number of checkpoints for each account
-    mapping (address => uint32) public numCheckpoints;
+    mapping(address => uint32) public numCheckpoints;
 
     /// @notice A record of states for signing / validating signatures
-    mapping (address => uint) public nonces;
+    mapping(address => uint) public nonces;
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH =
-    keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
+        keccak256(
+            "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
+        );
 
     /// @notice The EIP-712 typehash for the delegation struct used by the contract
     bytes32 public constant DELEGATION_TYPEHASH =
-    keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+        keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
     /// @notice The EIP-712 typehash for the permit struct used by the contract
     bytes32 public constant PERMIT_TYPEHASH =
-    keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
 
     /// @notice An event thats emitted when a new minter address is pending
     event MinterPending(address indexed minter, uint256 seedAmount, uint256 at);
     /// @notice An event thats emitted when the minter address is changed
     event MinterChanged(address indexed minter, uint256 seedAmount);
     /// @notice An event thats emitted when a new governance address is pending
-    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 at);
+    event GovernancePending(
+        address indexed oldGovernance,
+        address indexed newGovernance,
+        uint256 at
+    );
     /// @notice An event thats emitted when a new governance address is set
-    event GovernanceChanged(address indexed oldGovernance, address indexed newGovernance);
+    event GovernanceChanged(
+        address indexed oldGovernance,
+        address indexed newGovernance
+    );
     /// @notice An event thats emitted when an account changes its delegate
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateChanged(
+        address indexed delegator,
+        address indexed fromDelegate,
+        address indexed toDelegate
+    );
     /// @notice An event thats emitted when a delegate account's vote balance changes
-    event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+    event DelegateVotesChanged(
+        address indexed delegate,
+        uint previousBalance,
+        uint newBalance
+    );
 
     /**
      * @notice Construct a new HAT token
@@ -99,8 +137,12 @@ contract HATToken is IERC20 {
     }
 
     function setPendingGovernance(address _governance) external {
-        require(msg.sender == governance, "HAT:!governance");
-        require(_governance != address(0), "HAT:!_governance");
+        if (msg.sender != governance) {
+            revert HAT__NotGovernance();
+        }
+        if (_governance == address(0)) {
+            revert HAT__NotGovernance();
+        }
         governancePending = _governance;
         // solhint-disable-next-line not-rely-on-time
         setGovernancePendingAt = block.timestamp;
@@ -108,30 +150,49 @@ contract HATToken is IERC20 {
     }
 
     function confirmGovernance() external {
-        require(msg.sender == governance, "HAT:!governance");
-        require(setGovernancePendingAt > 0, "HAT:!governancePending");
+        if (msg.sender != governance) {
+            revert HAT__NotGovernance();
+        }
+        if (setGovernancePendingAt =< 0) {
+            revert HAT__NotGovernancePending();
+        }
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - setGovernancePendingAt > timeLockDelay,
-        "HAT: cannot confirm governance at this time");
+        if (block.timestamp - setGovernancePendingAt <= timeLockDelay) {
+            revert HAT__CannotConfirmGovernanceAtThisTime();
+        }
         emit GovernanceChanged(governance, governancePending);
         governance = governancePending;
         setGovernancePendingAt = 0;
     }
 
     function setPendingMinter(address _minter, uint256 _cap) external {
-        require(msg.sender == governance, "HAT::!governance");
+        if (msg.sender != governance) {
+            revert HAT__NotGovernance();
+        }
         pendingMinters[_minter].seedAmount = _cap;
         // solhint-disable-next-line not-rely-on-time
         pendingMinters[_minter].setMinterPendingAt = block.timestamp;
-        emit MinterPending(_minter, _cap, pendingMinters[_minter].setMinterPendingAt);
+        emit MinterPending(
+            _minter,
+            _cap,
+            pendingMinters[_minter].setMinterPendingAt
+        );
     }
 
     function confirmMinter(address _minter) external {
-        require(msg.sender == governance, "HAT::mint: only the governance can confirm minter");
-        require(pendingMinters[_minter].setMinterPendingAt > 0, "HAT:: no pending minter was set");
+        if (msg.sender != governance) {
+            revert HAT__onlyGovernanceCanConfirmMinter();
+        }
+        if (pendingMinters[_minter].setMinterPendingAt <= 0) {
+            revert HAT__noPendingMinterWasSet();
+        }
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp - pendingMinters[_minter].setMinterPendingAt > timeLockDelay,
-        "HATToken: cannot confirm at this time");
+        if (
+            block.timestamp - pendingMinters[_minter].setMinterPendingAt <=
+            timeLockDelay
+        ) {
+            revert HATToken__cannotConfirmAtThisTime();
+        }
         minters[_minter] = pendingMinters[_minter].seedAmount;
         pendingMinters[_minter].setMinterPendingAt = 0;
         emit MinterChanged(_minter, pendingMinters[_minter].seedAmount);
@@ -142,7 +203,9 @@ contract HATToken is IERC20 {
     }
 
     function mint(address _account, uint _amount) external {
-        require(minters[msg.sender] >= _amount, "HATToken: amount greater than limitation");
+        if (minters[msg.sender] < _amount) {
+            revert HATToken__amountGreaterThanLimitation();
+        }
         minters[msg.sender] = SafeMath.sub(minters[msg.sender], _amount);
         _mint(_account, _amount);
     }
@@ -153,7 +216,12 @@ contract HATToken is IERC20 {
      * @param spender The address of the account spending the funds
      * @return The number of tokens approved
      */
-    function allowance(address account, address spender) external override view returns (uint) {
+    function allowance(address account, address spender)
+        external
+        view
+        override
+        returns (uint)
+    {
         return allowances[account][spender];
     }
 
@@ -165,7 +233,11 @@ contract HATToken is IERC20 {
      * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint rawAmount) external override returns (bool) {
+    function approve(address spender, uint rawAmount)
+        external
+        override
+        returns (bool)
+    {
         uint96 amount;
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
@@ -191,11 +263,23 @@ contract HATToken is IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint addedValue) external virtual returns (bool) {
-        require(spender != address(0), "HAT: increaseAllowance to the zero address");
-        uint96 valueToAdd = safe96(addedValue, "HAT::increaseAllowance: addedValue exceeds 96 bits");
-        allowances[msg.sender][spender] =
-        add96(allowances[msg.sender][spender], valueToAdd, "HAT::increaseAllowance: overflows");
+    function increaseAllowance(address spender, uint addedValue)
+        external
+        virtual
+        returns (bool)
+    {
+        if (spender == address(0)) {
+            revert HAT__increaseAllowanceToTheZeroAddress();
+        }
+        uint96 valueToAdd = safe96(
+            addedValue,
+            "HAT::increaseAllowance: addedValue exceeds 96 bits"
+        );
+        allowances[msg.sender][spender] = add96(
+            allowances[msg.sender][spender],
+            valueToAdd,
+            "HAT::increaseAllowance: overflows"
+        );
         emit Approval(msg.sender, spender, allowances[msg.sender][spender]);
         return true;
     }
@@ -214,11 +298,23 @@ contract HATToken is IERC20 {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint subtractedValue) external virtual returns (bool) {
-        require(spender != address(0), "HAT: decreaseAllowance to the zero address");
-        uint96 valueTosubtract = safe96(subtractedValue, "HAT::decreaseAllowance: subtractedValue exceeds 96 bits");
-        allowances[msg.sender][spender] = sub96(allowances[msg.sender][spender], valueTosubtract,
-        "HAT::decreaseAllowance: spender allowance is less than subtractedValue");
+    function decreaseAllowance(address spender, uint subtractedValue)
+        external
+        virtual
+        returns (bool)
+    {
+        if (spender == address(0)) {
+            revert HAT__decreaseAllowanceToTheZeroAddress();
+        }
+        uint96 valueTosubtract = safe96(
+            subtractedValue,
+            "HAT::decreaseAllowance: subtractedValue exceeds 96 bits"
+        );
+        allowances[msg.sender][spender] = sub96(
+            allowances[msg.sender][spender],
+            valueTosubtract,
+            "HAT::decreaseAllowance: spender allowance is less than subtractedValue"
+        );
         emit Approval(msg.sender, spender, allowances[msg.sender][spender]);
         return true;
     }
@@ -233,7 +329,15 @@ contract HATToken is IERC20 {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function permit(address owner, address spender, uint rawAmount, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+    function permit(
+        address owner,
+        address spender,
+        uint rawAmount,
+        uint deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
         uint96 amount;
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
@@ -241,14 +345,36 @@ contract HATToken is IERC20 {
             amount = safe96(rawAmount, "HAT::permit: amount exceeds 96 bits");
         }
 
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                DOMAIN_TYPEHASH,
+                keccak256(bytes(name)),
+                getChainId(),
+                address(this)
+            )
+        );
+        bytes32 structHash = keccak256(
+            abi.encode(
+                PERMIT_TYPEHASH,
+                owner,
+                spender,
+                rawAmount,
+                nonces[owner]++,
+                deadline
+            )
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
         address signatory = ecrecover(digest, v, r, s);
         assert(signatory != address(0));
-        require(signatory == owner, "HAT::permit: unauthorized");
+        if (signatory != owner) {
+            revert HAT__permit_Unauthorized();
+        }
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp <= deadline, "HAT::permit: signature expired");
+        if (block.timestamp > deadline) {
+            revert HAT__permit_SignatureExpired();
+        }
 
         allowances[owner][spender] = amount;
 
@@ -270,8 +396,15 @@ contract HATToken is IERC20 {
      * @param rawAmount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint rawAmount) external override returns (bool) {
-        uint96 amount = safe96(rawAmount, "HAT::transfer: amount exceeds 96 bits");
+    function transfer(address dst, uint rawAmount)
+        external
+        override
+        returns (bool)
+    {
+        uint96 amount = safe96(
+            rawAmount,
+            "HAT::transfer: amount exceeds 96 bits"
+        );
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -283,14 +416,24 @@ contract HATToken is IERC20 {
      * @param rawAmount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint rawAmount) external override returns (bool) {
+    function transferFrom(
+        address src,
+        address dst,
+        uint rawAmount
+    ) external override returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, "HAT::approve: amount exceeds 96 bits");
+        uint96 amount = safe96(
+            rawAmount,
+            "HAT::approve: amount exceeds 96 bits"
+        );
 
         if (spender != src && spenderAllowance != type(uint96).max) {
-            uint96 newAllowance = sub96(spenderAllowance, amount,
-            "HAT::transferFrom: transfer amount exceeds spender allowance");
+            uint96 newAllowance = sub96(
+                spenderAllowance,
+                amount,
+                "HAT::transferFrom: transfer amount exceeds spender allowance"
+            );
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -317,15 +460,37 @@ contract HATToken is IERC20 {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+    function delegateBySig(
+        address delegatee,
+        uint nonce,
+        uint expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                DOMAIN_TYPEHASH,
+                keccak256(bytes(name)),
+                getChainId(),
+                address(this)
+            )
+        );
+        bytes32 structHash = keccak256(
+            abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry)
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
         address signatory = ecrecover(digest, v, r, s);
         assert(signatory != address(0));
-        require(nonce == nonces[signatory]++, "HAT::delegateBySig: invalid nonce");
+        if (nonce != nonces[signatory]++) {
+            revert HAT__DelegateBySig_invalidNonce();
+        }
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp <= expiry, "HAT::delegateBySig: signature expired");
+        if (block.timestamp > expiry) {
+            revert HAT__DelegateBySig_SignatureExpired();
+        }
         return _delegate(signatory, delegatee);
     }
 
@@ -336,7 +501,8 @@ contract HATToken is IERC20 {
      */
     function getCurrentVotes(address account) external view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
-        return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
+        return
+            nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
     /**
@@ -346,8 +512,14 @@ contract HATToken is IERC20 {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96) {
-        require(blockNumber < block.number, "HAT::getPriorVotes: not yet determined");
+    function getPriorVotes(address account, uint blockNumber)
+        external
+        view
+        returns (uint96)
+    {
+        if (blockNumber >= block.number) {
+            revert HAT__getPriorVotes_notYetDetermined();
+        }
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -386,15 +558,26 @@ contract HATToken is IERC20 {
      * @param rawAmount The number of tokens to be minted
      */
     function _mint(address dst, uint rawAmount) internal {
-        require(dst != address(0), "HAT::mint: cannot transfer to the zero address");
-        require(SafeMath.add(totalSupply, rawAmount) <= CAP, "ERC20Capped: CAP exceeded");
+        if (dst == address(0)) {
+            revert HAT__mint_cannotTransferToTheZeroAddress();
+        }
+        if (SafeMath.add(totalSupply, rawAmount) > CAP) {
+            revert ERC20Capped_CAP_exceeded();
+        }
 
         // mint the amount
         uint96 amount = safe96(rawAmount, "HAT::mint: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.add(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
+        totalSupply = safe96(
+            SafeMath.add(totalSupply, amount),
+            "HAT::mint: totalSupply exceeds 96 bits"
+        );
 
         // transfer the amount to the recipient
-        balances[dst] = add96(balances[dst], amount, "HAT::mint: transfer amount overflows");
+        balances[dst] = add96(
+            balances[dst],
+            amount,
+            "HAT::mint: transfer amount overflows"
+        );
         emit Transfer(address(0), dst, amount);
 
         // move delegates
@@ -407,14 +590,23 @@ contract HATToken is IERC20 {
      * @param rawAmount The number of tokens to be burned
      */
     function _burn(address src, uint rawAmount) internal {
-        require(src != address(0), "HAT::burn: cannot burn to the zero address");
+        if (src == address(0)) {
+            revert HAT__burn_cannotBurnToTheZeroAddress();
+        }
 
         // burn the amount
         uint96 amount = safe96(rawAmount, "HAT::burn: amount exceeds 96 bits");
-        totalSupply = safe96(SafeMath.sub(totalSupply, amount), "HAT::mint: totalSupply exceeds 96 bits");
+        totalSupply = safe96(
+            SafeMath.sub(totalSupply, amount),
+            "HAT::mint: totalSupply exceeds 96 bits"
+        );
 
         // reduce the amount from src address
-        balances[src] = sub96(balances[src], amount, "HAT::burn: burn amount exceeds balance");
+        balances[src] = sub96(
+            balances[src],
+            amount,
+            "HAT::burn: burn amount exceeds balance"
+        );
         emit Transfer(src, address(0), amount);
 
         // move delegates
@@ -431,65 +623,127 @@ contract HATToken is IERC20 {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _transferTokens(address src, address dst, uint96 amount) internal {
-        require(src != address(0), "HAT::_transferTokens: cannot transfer from the zero address");
-        require(dst != address(0), "HAT::_transferTokens: cannot transfer to the zero address");
+    function _transferTokens(
+        address src,
+        address dst,
+        uint96 amount
+    ) internal {
+        if (src == address(0)) {
+            revert HAT___transferTokens_cannotTransferFomTheZeroAddress();
+        }
+        if (dst == address(0)) {
+            revert HAT___transferTokens_cannotTransferToTheZeroAddress();
+        }
 
-        balances[src] = sub96(balances[src], amount, "HAT::_transferTokens: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "HAT::_transferTokens: transfer amount overflows");
+        balances[src] = sub96(
+            balances[src],
+            amount,
+            "HAT::_transferTokens: transfer amount exceeds balance"
+        );
+        balances[dst] = add96(
+            balances[dst],
+            amount,
+            "HAT::_transferTokens: transfer amount overflows"
+        );
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
     }
 
-    function _moveDelegates(address srcRep, address dstRep, uint96 amount) internal {
+    function _moveDelegates(
+        address srcRep,
+        address dstRep,
+        uint96 amount
+    ) internal {
         if (srcRep != dstRep && amount > 0) {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
-                uint96 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint96 srcRepNew = sub96(srcRepOld, amount, "HAT::_moveVotes: vote amount underflows");
+                uint96 srcRepOld = srcRepNum > 0
+                    ? checkpoints[srcRep][srcRepNum - 1].votes
+                    : 0;
+                uint96 srcRepNew = sub96(
+                    srcRepOld,
+                    amount,
+                    "HAT::_moveVotes: vote amount underflows"
+                );
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
-                uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, "HAT::_moveVotes: vote amount overflows");
+                uint96 dstRepOld = dstRepNum > 0
+                    ? checkpoints[dstRep][dstRepNum - 1].votes
+                    : 0;
+                uint96 dstRepNew = add96(
+                    dstRepOld,
+                    amount,
+                    "HAT::_moveVotes: vote amount overflows"
+                );
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
     }
 
-    function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
-        uint32 blockNumber = safe32(block.number, "HAT::_writeCheckpoint: block number exceeds 32 bits");
+    function _writeCheckpoint(
+        address delegatee,
+        uint32 nCheckpoints,
+        uint96 oldVotes,
+        uint96 newVotes
+    ) internal {
+        uint32 blockNumber = safe32(
+            block.number,
+            "HAT::_writeCheckpoint: block number exceeds 32 bits"
+        );
 
-        if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
+        if (
+            nCheckpoints > 0 &&
+            checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber
+        ) {
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
         } else {
-            checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
+            checkpoints[delegatee][nCheckpoints] = Checkpoint(
+                blockNumber,
+                newVotes
+            );
             numCheckpoints[delegatee] = nCheckpoints + 1;
         }
 
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
+    function safe32(uint n, string memory errorMessage)
+        internal
+        pure
+        returns (uint32)
+    {
         require(n < 2**32, errorMessage);
         return uint32(n);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
+    function safe96(uint n, string memory errorMessage)
+        internal
+        pure
+        returns (uint96)
+    {
         require(n < 2**96, errorMessage);
         return uint96(n);
     }
 
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function add96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         uint96 c = a + b;
         assert(c >= a);
         return c;
     }
 
-    function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function sub96(
+        uint96 a,
+        uint96 b,
+        string memory errorMessage
+    ) internal pure returns (uint96) {
         require(b <= a, errorMessage);
         return a - b;
     }
@@ -497,7 +751,9 @@ contract HATToken is IERC20 {
     function getChainId() internal view returns (uint) {
         uint256 chainId;
         // solhint-disable-next-line no-inline-assembly
-        assembly { chainId := chainid() }
+        assembly {
+            chainId := chainid()
+        }
         return chainId;
     }
 }
