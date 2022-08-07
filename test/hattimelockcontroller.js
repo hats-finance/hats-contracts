@@ -167,10 +167,10 @@ contract("HatTimelockController", (accounts) => {
     );
   });
 
-  it("setPool", async () => {
+  it("Update vault info", async () => {
     await setup(accounts);
     try {
-      await hatTimelockController.setPool(vault.address, true, false, "_descriptionHash", {
+      await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash", {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -179,12 +179,12 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await vault.setPool(true, false, "_descriptionHash");
+      await vault.updateVaultInfo(true, false, "_descriptionHash");
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
-    await hatTimelockController.setPool(vault.address, true, false, "_descriptionHash");
+    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
     await hatTimelockController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
@@ -194,8 +194,8 @@ contract("HatTimelockController", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
-    await hatTimelockController.setPool(vault.address, true, false, "_descriptionHash");
-    await hatTimelockController.setPool(vault.address, true, false, "_descriptionHash");
+    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
+    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
     await hatTimelockController.setAllocPoint(vault.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);

@@ -31,7 +31,7 @@ contract PoolsManagerMock {
         }
     }
 
-    function setPools(HATVault[] memory _hatVaults,
+    function updateVaultsInfo(HATVault[] memory _hatVaults,
                     IRewardController _rewardController,
                     uint256 _allocPoint,
                     bool _registered,
@@ -39,7 +39,7 @@ contract PoolsManagerMock {
                     string memory _descriptionHash) external {
 
         for (uint256 i=0; i < _hatVaults.length; i++) {
-            _hatVaults[i].setPool(_registered,
+            _hatVaults[i].updateVaultInfo(_registered,
                             _depositPause,
                             _descriptionHash);
             _rewardController.setAllocPoint(address(_hatVaults[i]), _allocPoint);

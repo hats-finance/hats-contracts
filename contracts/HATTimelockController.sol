@@ -34,12 +34,12 @@ contract HATTimelockController is TimelockController {
         _vault.dismissClaim(_claimId);
     }
 
-    function setPool(HATVault _vault, 
+    function updateVaultInfo(HATVault _vault, 
                     bool _registered,
                     bool _depositPause,
                     string memory _descriptionHash)
     external onlyRole(PROPOSER_ROLE) {
-        _vault.setPool(
+        _vault.updateVaultInfo(
             _registered,
             _depositPause,
             _descriptionHash

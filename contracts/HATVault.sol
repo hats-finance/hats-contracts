@@ -209,7 +209,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
-    event SetPool(
+    event UpdateVaultInfo(
         bool indexed _registered,
         bool _depositPause,
         string _descriptionHash
@@ -670,14 +670,14 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     * This parameter can be used by the UI to include or exclude the pool
     * @param _descriptionHash the hash of the pool description.
     */
-    function setPool(
+    function updateVaultInfo(
         bool _visible,
         bool _depositPause,
         string memory _descriptionHash
     ) external onlyOwner {
         poolDepositPause = _depositPause;
 
-        emit SetPool(_visible, _depositPause, _descriptionHash);
+        emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
     }
 
     /* -------------------------------------------------------------------------------- */

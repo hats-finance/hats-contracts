@@ -690,19 +690,24 @@ contract("HatVaults", (accounts) => {
       await hatToken.balanceOf(rewardController.address),
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
-    await vault.setPool(true, true, "_descriptionHash");
+    let tx = await vault.updateVaultInfo(true, true, "_descriptionHash");
+    assert.equal(tx.logs[0].event, "UpdateVaultInfo");
+    assert.equal(tx.logs[0].args._registered, true);
+    assert.equal(tx.logs[0].args._depositPause, true);
+    assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
+
     try {
       await vault.deposit(web3.utils.toWei("1"), { from: staker });
       assert(false, "cannot deposit to paused pool");
     } catch (ex) {
       assertVMException(ex, "DepositPaused");
     }
-    await vault.setPool(true, false, "_descriptionHash");
+    await vault.updateVaultInfo(true, false, "_descriptionHash");
     await vault.deposit(web3.utils.toWei("1"), { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
 
-    let tx = await vault.submitClaim(
+    tx = await vault.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -2746,10 +2751,14 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("setPool", async () => {
+  it("Update vault info", async () => {
     await setup(accounts);
 
-    await vault.setPool(true, false, "_descriptionHash");
+    let tx = await vault.updateVaultInfo(true, false, "_descriptionHash");
+    assert.equal(tx.logs[0].event, "UpdateVaultInfo");
+    assert.equal(tx.logs[0].args._registered, true);
+    assert.equal(tx.logs[0].args._depositPause, false);
+    assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
     await rewardController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
@@ -2762,7 +2771,7 @@ contract("HatVaults", (accounts) => {
     await rewardController.setAllocPoint(vault.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
-    var tx = await rewardController.claimReward(vault.address, { from: staker });
+    tx = await rewardController.claimReward(vault.address, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");
     assert.equal(tx.logs[0].args._vault, vault.address);
     assert.equal(
@@ -3689,9 +3698,9 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    await newVault.setPool(true, false, "123");
+    await newVault.updateVaultInfo(true, false, "123");
     await rewardController.setAllocPoint(newVault.address, 200);
-    await newVault.setPool(true, false, "123");
+    await newVault.updateVaultInfo(true, false, "123");
     await rewardController.setAllocPoint(newVault.address, 0);
     await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
       from: staker,
@@ -3850,7 +3859,7 @@ contract("HatVaults", (accounts) => {
     await newVault.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), { from: staker });
 
-    await vault.setPool(true, false, "123");
+    await vault.updateVaultInfo(true, false, "123");
     await rewardController.setAllocPoint(vault.address, 200);
 
     await rewardController.updatePool(vault.address);
@@ -3906,7 +3915,7 @@ contract("HatVaults", (accounts) => {
     globalPoolUpdatesLength = await rewardController1.getGlobalPoolUpdatesLength();
     assert.equal(globalPoolUpdatesLength, 1); //2 got in the same block
     assert.equal(await hatVaultsRegistry1.getNumberOfVaults(), 2);
-    await poolManager.setPools(
+    await poolManager.updateVaultsInfo(
       [newVault1.address, newVault2.address],
       rewardController1.address,
       200,
@@ -4025,7 +4034,7 @@ contract("HatVaults", (accounts) => {
     //5
     await newVault.setCommittee(accounts[0], { from: accounts[1] });
     //5
-    await newVault.setPool(true, false, "123");
+    await newVault.updateVaultInfo(true, false, "123");
     await rewardController.setAllocPoint(newVault.address, 300);
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
