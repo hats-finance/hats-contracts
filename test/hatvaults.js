@@ -106,7 +106,7 @@ const setup = async function(
 
 contract("HatVaults", (accounts) => {
   //this function will increment 4 blocks in local testnet
-  async function safeRedeem(vault, amount, staker) {
+  async function safeRedeem(vault, amount, staker, redeemFrom=staker) {
     let withdrawPeriod = (
       await hatVaultsRegistry.generalParameters()
     ).withdrawPeriod.toNumber();
@@ -117,6 +117,9 @@ contract("HatVaults", (accounts) => {
     //increase time for the case there is already pending request ..so make sure start a new one..
     await utils.increaseTime(7 * 24 * 3600);
     await vault.withdrawRequest({ from: staker });
+    if (redeemFrom != staker) {
+      await vault.withdrawRequest({ from: redeemFrom });
+    }
     //increase time for pending period
     await utils.increaseTime(7 * 24 * 3600);
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
@@ -127,10 +130,10 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.redeem(amount, staker, staker, { from: staker });
+    return await vault.redeem(amount, staker, redeemFrom, { from: staker });
   }
 
-  async function safeWithdraw(vault, amount, staker) {
+  async function safeWithdraw(vault, amount, staker, withdrawFrom=staker) {
     let withdrawPeriod = (
       await hatVaultsRegistry.generalParameters()
     ).withdrawPeriod.toNumber();
@@ -141,6 +144,9 @@ contract("HatVaults", (accounts) => {
     //increase time for the case there is already pending request ..so make sure start a new one..
     await utils.increaseTime(7 * 24 * 3600);
     await vault.withdrawRequest({ from: staker });
+    if (withdrawFrom != staker) {
+      await vault.withdrawRequest({ from: withdrawFrom });
+    }
     //increase time for pending period
     await utils.increaseTime(7 * 24 * 3600);
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
@@ -151,7 +157,7 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.withdraw(amount, staker, staker, { from: staker });
+    return await vault.withdraw(amount, staker, withdrawFrom, { from: staker });
   }
 
   async function advanceToSafetyPeriod() {
@@ -2319,6 +2325,19 @@ contract("HatVaults", (accounts) => {
 
     //stake
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
+      assert(false, "cannot deposit for another user");
+    } catch (ex) {
+      assertVMException(ex, "CallerMustBeOwner");
+    }
+
+    try {
+      await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+      assert(false, "cannot deposit for another user");
+    } catch (ex) {
+      assertVMException(ex, "CallerMustBeOwner");
+    }
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
     assert.equal(
@@ -2360,9 +2379,16 @@ contract("HatVaults", (accounts) => {
 
     try {
       await safeWithdraw(vault, web3.utils.toWei("1.1"), staker2);
-      assert(false, "cannot withdraw to a paused vault");
+      assert(false, "cannot withdraw more than max");
     } catch (ex) {
       assertVMException(ex, "ERC4626: withdraw more than max");
+    }
+
+    try {
+      await safeWithdraw(vault, web3.utils.toWei("0.8"), staker, staker2);
+      assert(false, "cannot withdraw from another user");
+    } catch (ex) {
+      assertVMException(ex, "CallerMustBeOwner");
     }
 
     tx = await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2);
@@ -2375,9 +2401,16 @@ contract("HatVaults", (accounts) => {
 
     try {
       await safeRedeem(vault, web3.utils.toWei("2"), staker2);
-      assert(false, "cannot redeem to a paused vault");
+      assert(false, "cannot redeem more than max");
     } catch (ex) {
       assertVMException(ex, "ERC4626: redeem more than max");
+    }
+
+    try {
+      await safeRedeem(vault, web3.utils.toWei("1"), staker, staker2);
+      assert(false, "cannot redeem from another user");
+    } catch (ex) {
+      assertVMException(ex, "CallerMustBeOwner");
     }
 
     tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2);
@@ -4370,6 +4403,46 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "NotEnoughRewardsToTransferToUser");
     }
+  });
+
+  it("disabled erc20 functionalities", async () => {
+    await setup(accounts);
+    try {
+      await vault.transfer(accounts[1], web3.utils.toWei("1"));
+      assert(false, "transfer disabled");
+    } catch (ex) {
+      assertVMException(ex, "FunctionDisabled");
+    }
+
+    try {
+      await vault.transferFrom(accounts[0], accounts[1], web3.utils.toWei("1"));
+      assert(false, "transfer from disabled");
+    } catch (ex) {
+      assertVMException(ex, "FunctionDisabled");
+    }
+
+    try {
+      await vault.approve(accounts[1], web3.utils.toWei("1"));
+      assert(false, "approve disabled");
+    } catch (ex) {
+      assertVMException(ex, "FunctionDisabled");
+    }
+
+    try {
+      await vault.decreaseAllowance(accounts[1], web3.utils.toWei("1"));
+      assert(false, "decrease allowance disabled");
+    } catch (ex) {
+      assertVMException(ex, "FunctionDisabled");
+    }
+
+    try {
+      await vault.increaseAllowance(accounts[1], web3.utils.toWei("1"));
+      assert(false, "increase allowance disabled");
+    } catch (ex) {
+      assertVMException(ex, "FunctionDisabled");
+    }
+
+    assert.equal((await vault.allowance(accounts[0], accounts[1])), 0);
   });
 });
 

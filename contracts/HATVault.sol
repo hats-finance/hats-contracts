@@ -87,7 +87,7 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
-error CannotDepositToAnotherUserWithWithdrawRequest();
+error CallerMustBeOwner();
 error WithdrawMustBeGreaterThanZero();
 error FunctionDisabled();
 
@@ -506,8 +506,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
             revert CommitteeNotCheckedInYet();
         if (assets == 0) revert AmountToDepositIsZero();
         // Users can only deposit for themselves if withdraw request exists
-        if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {
-            revert CannotDepositToAnotherUserWithWithdrawRequest();
+        if (receiver != caller) {
+            revert CallerMustBeOwner();
         }
         
         // clear withdraw request
@@ -781,7 +781,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         checkWithdrawAndResetWithdrawEnableStartTime(owner);
         if (shares == 0) revert WithdrawMustBeGreaterThanZero();
         if (caller != owner) {
-            _spendAllowance(owner, caller, shares);
+            revert CallerMustBeOwner();
         }
 
         rewardController.updateVaultBalance(owner, shares, false, claimReward);
