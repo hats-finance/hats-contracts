@@ -513,10 +513,9 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         // clear withdraw request
         withdrawEnableStartTime[receiver] = 0;
 
-        balance += assets;
-
         rewardController.updateVaultBalance(receiver, shares, true, true);
 
+        balance += assets;
         super._deposit(caller, receiver, assets, shares);
     }
 
