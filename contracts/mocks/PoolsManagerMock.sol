@@ -11,15 +11,15 @@ contract VaultsManagerMock {
     function createVaults(HATVaultsRegistry _hatVaults,
                     IRewardController _rewardController,
                     uint256 _allocPoint,
-                    IERC20[] memory _lpTokens,
+                    IERC20[] memory _assets,
                     address _committee,
                     uint256 _maxBounty,
                     HATVault.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
                     uint256[2] memory _bountyVestingParams) external {
 
-        for (uint256 i=0; i < _lpTokens.length; i++) {
-            address vault = _hatVaults.createVault(_lpTokens[i],
+        for (uint256 i=0; i < _assets.length; i++) {
+            address vault = _hatVaults.createVault(_assets[i],
                                 _committee,
                                 _rewardController,
                                 _maxBounty,
@@ -51,15 +51,15 @@ contract VaultsManagerMock {
         target.claimReward(_vault);
     }
 
-    function deposit(HATVault _target, IERC20 _lpToken, uint256 _amount) external {
-        _lpToken.approve(address(_target), _amount);
-        _target.deposit(_amount);
+    function deposit(HATVault _target, IERC20 _asset, uint256 _amount) external {
+        _asset.approve(address(_target), _amount);
+        _target.deposit(_amount, address(this));
     }
 
-    function depositTwice(HATVault _target, IERC20 _lpToken, uint256 _amount) external {
-        _lpToken.approve(address(_target), _amount * 2);
-        _target.deposit(_amount);
-        _target.deposit(_amount);
+    function depositTwice(HATVault _target, IERC20 _asset, uint256 _amount) external {
+        _asset.approve(address(_target), _amount * 2);
+        _target.deposit(_amount, address(this));
+        _target.deposit(_amount, address(this));
     }
 
     function claimDifferentPids(RewardController _target, address[] memory _vaults) external {

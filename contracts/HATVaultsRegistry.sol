@@ -91,7 +91,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event VaultCreated(
         address indexed _vault,
-        address indexed _lpToken,
+        address indexed _asset,
         address _committee,
         IRewardController _rewardController,
         string _descriptionHash,
@@ -239,7 +239,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
 
     /**
     * @notice Create a new vault.
-    * @param _lpToken The vault's token
+    * @param _asset The vault's token
     * @param _committee The vault's committee addres
     * @param _maxBounty The vault's max bounty.
     * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
@@ -253,7 +253,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     */
 
     function createVault(
-        IERC20 _lpToken,
+        IERC20 _asset,
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
@@ -273,7 +273,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
             _bountyVestingParams[1],
             _maxBounty,
             _bountySplit,
-            _lpToken,
+            _asset,
             _committee,
             _isPaused
         );
@@ -282,7 +282,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
 
         emit VaultCreated(
             vault,
-            address(_lpToken),
+            address(_asset),
             _committee,
             _rewardController,
             _descriptionHash,

@@ -241,11 +241,11 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     function getTotalShares(address _vault) public view returns (uint256) {
-        return HATVault(_vault).totalShares();
+        return HATVault(_vault).totalSupply();
     }
 
     function getShares(address _vault, address _user) public view returns (uint256) {
-        return HATVault(_vault).userShares(_user);
+        return HATVault(_vault).balanceOf(_user);
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {

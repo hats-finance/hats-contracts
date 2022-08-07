@@ -5,6 +5,8 @@ pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -44,8 +46,6 @@ error CommitteeAlreadyCheckedIn();
 error AmountToSwapIsZero();
 // Pending withdraw request exists
 error PendingWithdrawRequestExists();
-// Deposit paused
-error DepositPaused();
 // Amount to deposit is zero
 error AmountToDepositIsZero();
 // Vault balance is zero
@@ -61,7 +61,7 @@ error AmountSwappedLessThanMinimum();
 // Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
 // LP token is zero
-error LPTokenIsZero();
+error AssetIsZero();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -74,8 +74,6 @@ error SetSharesArraysMustHaveSameLength();
 error CommitteeNotCheckedInYet();
 // Not enough user balance
 error NotEnoughUserBalance();
-// User shares must be greater than 0
-error UserSharesMustBeGreaterThanZero();
 // Swap was not successful
 error SwapFailed();
 // Routing contract must be whitelisted
@@ -89,8 +87,11 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
+error CannotDepositToAnotherUserWithWithdrawRequest();
+error WithdrawMustBeGreaterThanZero();
+error FunctionDisabled();
 
-contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
     using SafeERC20 for ERC20Burnable;
 
@@ -148,17 +149,13 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     IRewardController public rewardController;
 
-    mapping(address => uint256) public userShares;
-
     BountySplit public bountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
 
     bool public committeeCheckedIn;
-    IERC20 public lpToken;
     uint256 public balance;
-    uint256 public totalShares;
     uint256 public withdrawalFee;
 
     uint256 internal nonce;
@@ -192,10 +189,6 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         ClaimBounty _claimBounty
     );
     event DismissClaim(uint256 indexed _claimId);
-    event Deposit(address indexed user,
-        uint256 amount,
-        uint256 transferredAmount
-    );
     event SetCommittee(address indexed _committee);
     event SetVestingParams(
         uint256 indexed _duration,
@@ -226,8 +219,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         address indexed _beneficiary,
         uint256 indexed _withdrawEnableTime
     );
-    event Withdraw(address indexed user, uint256 shares);
-    event EmergencyWithdraw(address indexed user, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 assets, uint256 shares);
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();
@@ -265,7 +257,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 _vestingPeriods,
         uint256 _maxBounty,
         BountySplit memory _bountySplit,
-        IERC20 _lpToken,
+        IERC20 _asset,
         address _committee,
         bool _isPaused
     ) external initializer {
@@ -275,12 +267,12 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (_vestingDuration < _vestingPeriods)
             revert VestingDurationSmallerThanPeriods();
         if (_committee == address(0)) revert CommitteeIsZero();
-        if (address(_lpToken) == address(0)) revert LPTokenIsZero();
+        if (address(_asset) == address(0)) revert AssetIsZero();
         if (_maxBounty > HUNDRED_PERCENT)
             revert MaxBountyCannotBeMoreThanHundredPercent();
         validateSplit(_bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
         rewardController = _rewardController;
-        lpToken = _lpToken;
         vestingDuration = _vestingDuration;
         vestingPeriods = _vestingPeriods;
         maxBounty = _maxBounty;
@@ -413,10 +405,11 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             claimBounty.hackerHatVested +
             claimBounty.governanceHat;
 
+        IERC20 asset = IERC20(asset());
         if (claimBounty.hackerVested > 0) {
             //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
-                address(lpToken),
+                address(asset),
                 0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
                 claim.beneficiary,
                 claimBounty.hackerVested,
@@ -430,11 +423,11 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                 ITokenLock.Revocability.Disabled,
                 false
             );
-            lpToken.safeTransfer(tokenLock, claimBounty.hackerVested);
+            asset.safeTransfer(tokenLock, claimBounty.hackerVested);
         }
 
-        lpToken.safeTransfer(claim.beneficiary, claimBounty.hacker);
-        lpToken.safeTransfer(claim.committee, claimBounty.committee);
+        asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
+        asset.safeTransfer(claim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
         swapAndBurn += claimBounty.swapAndBurn;
         governanceHatReward += claimBounty.governanceHat;
@@ -502,45 +495,29 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* -------------------------------------------------------------------------------- */
     
     /* ---------------------------------- Deposit ------------------------------------- */
-    
-    /**
-    * @notice Deposit tokens to the vault
-    * Caller must have set an allowance first
-    * @param _amount Amount of vault token to deposit.
-    **/
-    function deposit(uint256 _amount) external nonReentrant {
+    // Note: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256 shares
+    ) internal override nonReentrant {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
-        if (depositPause) revert DepositPaused();
+        if (assets == 0) revert AmountToDepositIsZero();
+        // Users can only deposit for themselves if withdraw request exists
+        if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {
+            revert CannotDepositToAnotherUserWithWithdrawRequest();
+        }
         
         // clear withdraw request
-        withdrawEnableStartTime[msg.sender] = 0;
-        uint256 lpSupply = balance;
-        uint256 balanceBefore = lpToken.balanceOf(address(this));
+        withdrawEnableStartTime[receiver] = 0;
 
-        lpToken.safeTransferFrom(msg.sender, address(this), _amount);
+        balance += assets;
 
-        uint256 transferredAmount = lpToken.balanceOf(address(this)) - balanceBefore;
+        rewardController.updateVaultBalance(receiver, shares, true, true);
 
-        if (transferredAmount == 0) revert AmountToDepositIsZero();
-
-        balance += transferredAmount;
-
-        // create new shares (and add to the user and the vault's shares) that are the relative part of the user's new deposit
-        // out of the vault's total supply, relative to the previous total shares in the vault
-        uint256 addedUserShares;
-        if (totalShares == 0) {
-            addedUserShares = transferredAmount;
-        } else {
-            addedUserShares = totalShares * transferredAmount / lpSupply;
-        }
-
-        rewardController.updateVaultBalance(msg.sender, addedUserShares, true, true);
-
-        userShares[msg.sender] += addedUserShares;
-        totalShares += addedUserShares;
-
-        emit Deposit(msg.sender, _amount, transferredAmount);
+        super._deposit(caller, receiver, assets, shares);
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -744,14 +721,14 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     internal
     returns (uint256 swapTokenReceived)
     {
-        IERC20 token = lpToken;
+        IERC20 asset = IERC20(asset());
         ERC20Burnable _swapToken = swapToken;
-        if (address(token) == address(_swapToken)) {
+        if (address(asset) == address(_swapToken)) {
             return _amount;
         }
         if (!registry.whitelistedRouters(_routingContract))
             revert RoutingContractNotWhitelisted();
-        if (!token.approve(_routingContract, _amount))
+        if (!asset.approve(_routingContract, _amount))
             revert TokenApproveFailed();
         uint256 balanceBefore = _swapToken.balanceOf(address(this));
 
@@ -762,7 +739,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (swapTokenReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
             
-        if (!token.approve(address(_routingContract), 0))
+        if (!asset.approve(address(_routingContract), 0))
             revert TokenApproveResetFailed();
     }
 
@@ -791,92 +768,153 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit WithdrawRequest(msg.sender, withdrawEnableStartTime[msg.sender]);
     }
 
-    /**
-    * @notice Withdraw user's requested share from the vault.
-    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
-    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
-    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
-    * had finished.
-    * @param _shares Amount of shares user wants to withdraw
-    **/
-    function withdraw(uint256 _shares) external nonReentrant {
-        checkWithdrawAndResetWithdrawEnableStartTime();
-
-        if (userShares[msg.sender] < _shares) revert NotEnoughUserBalance();
-
-        rewardController.updateVaultBalance(msg.sender, _shares, false, true);
-
-        if (_shares > 0) {
-            userShares[msg.sender] -= _shares;
-            uint256 amountToWithdraw = (_shares * balance) / totalShares;
-            uint256 fee = amountToWithdraw * withdrawalFee / HUNDRED_PERCENT;
-            balance -= amountToWithdraw;
-            totalShares -= _shares;
-            safeWithdrawVaultToken(lpToken, amountToWithdraw, fee);
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256 shares,
+        bool claimReward
+    ) internal nonReentrant {
+        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
+        // Should consider disallowing withdraw from another user.
+        checkWithdrawAndResetWithdrawEnableStartTime(owner);
+        if (shares == 0) revert WithdrawMustBeGreaterThanZero();
+        if (caller != owner) {
+            _spendAllowance(owner, caller, shares);
         }
 
-        emit Withdraw(msg.sender, _shares);
+        rewardController.updateVaultBalance(owner, shares, false, claimReward);
+
+        _burn(owner, shares);
+        uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
+        balance -= assets;
+        safeWithdrawVaultToken(assets, fee, receiver);
+
+        emit Withdraw(caller, receiver, owner, assets, shares);
+    }
+
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        _withdraw(caller, receiver, owner, assets, shares, true);
     }
 
     /**
-    * @notice Withdraw all user's shares without claim for reward.
-    * The withdrawal will only take place if the user has submitted a withdraw request, and the pending period of
-    * `generalParameters.withdrawRequestPendingPeriod` had passed since then, and we are within the period where
-    * withdrawal is enabled, meaning `generalParameters.withdrawRequestEnablePeriod` had not passed since the pending period
-    * had finished.
-    **/
-    function emergencyWithdraw() external nonReentrant {
-        checkWithdrawAndResetWithdrawEnableStartTime();
-
-        uint256 currentUserShares = userShares[msg.sender];
-        if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
-
-        rewardController.updateVaultBalance(msg.sender, currentUserShares, false, false);
-
-        uint256 factoredBalance = (currentUserShares * balance) / totalShares;
-        uint256 fee = (factoredBalance * withdrawalFee) / HUNDRED_PERCENT;
-
-        totalShares -= currentUserShares;
-        balance -= factoredBalance;
-        userShares[msg.sender] = 0;
-        
-        safeWithdrawVaultToken(lpToken, factoredBalance, fee);
-
-        emit EmergencyWithdraw(msg.sender, factoredBalance);
+    * @dev Withdraw/redeem common workflow.
+    */
+    function emergencyWithdraw() external {
+        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
+        // Should consider disallowing withdraw from another user.
+        address msgSender = _msgSender();
+        uint256 shares = balanceOf(msgSender);
+        uint256 assets = previewRedeem(shares);
+        _withdraw(msgSender, msgSender, msgSender, assets, shares, false);
+        emit EmergencyWithdraw(msgSender, assets, shares);
     }
 
     // @notice Checks that the sender can perform a withdraw at this time
     // and also sets the withdrawRequest to 0
-    function checkWithdrawAndResetWithdrawEnableStartTime()
+    function checkWithdrawAndResetWithdrawEnableStartTime(address user)
         internal
         noActiveClaim
-        noSafetyPeriod
     {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // check that withdrawRequestPendingPeriod had passed
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < withdrawEnableStartTime[msg.sender] ||
-        // check that withdrawRequestEnablePeriod had not passed and that the
-        // last action was withdrawRequest (and not deposit or withdraw, which
-        // reset withdrawRequests[_pid][msg.sender] to 0)
-        // solhint-disable-next-line not-rely-on-time
-            block.timestamp >
-                withdrawEnableStartTime[msg.sender] +
-                generalParameters.withdrawRequestEnablePeriod)
+        if (!isWithdrawEnabledForUser(user))
             revert InvalidWithdrawRequest();
         // if all is ok and withdrawal can be made - reset withdrawRequests[_pid][msg.sender] so that another withdrawRequest
         // will have to be made before next withdrawal
-        withdrawEnableStartTime[msg.sender] = 0;
+        withdrawEnableStartTime[user] = 0;
     }
 
-    function safeWithdrawVaultToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee)
+    // @notice Checks that the sender can perform a withdraw at this time
+    function isWithdrawEnabledForUser(address user)
+        internal view
+        returns(bool)
+    {
+        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp %
+        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
+            generalParameters.withdrawPeriod) return false;
+        // check that withdrawRequestPendingPeriod had passed
+        // solhint-disable-next-line not-rely-on-time
+        return !(block.timestamp < withdrawEnableStartTime[user] ||
+        // check that withdrawRequestEnablePeriod had not passed and that the
+        // last action was withdrawRequest (and not deposit or withdraw, which
+        // reset withdrawRequests[user] to 0)
+        // solhint-disable-next-line not-rely-on-time
+            block.timestamp >
+                withdrawEnableStartTime[user] +
+                generalParameters.withdrawRequestEnablePeriod);
+    }
+
+    function safeWithdrawVaultToken(uint256 _totalAmount, uint256 _fee, address _receiver)
         internal
     {
+        IERC20 asset = IERC20(asset());
         if (_fee > 0) {
-            _lpToken.safeTransfer(owner(), _fee);
+            asset.safeTransfer(owner(), _fee);
         }
-        _lpToken.safeTransfer(msg.sender, _totalAmount - _fee);
+        asset.safeTransfer(_receiver, _totalAmount - _fee);
     }
 
     /* -------------------------------------------------------------------------------- */
+
+     /** @dev See {IERC4626-totalAssets}. */
+    function totalAssets() public view virtual override returns (uint256) {
+        return balance;
+    }
+
+    /** @dev See {IERC4626-maxDeposit}. */
+    function maxDeposit(address) public view virtual override returns (uint256) {
+        return depositPause ? 0 : type(uint256).max;
+    }
+
+    /** @dev See {IERC4626-maxMint}. */
+    function maxMint(address) public view virtual override returns (uint256) {
+        return depositPause ? 0 : type(uint256).max;
+    }
+
+    /** @dev See {IERC4626-maxWithdraw}. */
+    function maxWithdraw(address owner) public view virtual override returns (uint256) {
+        if (activeClaim != 0 || !isWithdrawEnabledForUser(msg.sender)) return 0;
+        return _convertToAssets(balanceOf(owner), MathUpgradeable.Rounding.Down);
+    }
+
+    /** @dev See {IERC4626-maxRedeem}. */
+    function maxRedeem(address owner) public view virtual override returns (uint256) {
+        if (activeClaim != 0 || !isWithdrawEnabledForUser(msg.sender)) return 0;
+        return balanceOf(owner);
+    }
+
+    /** ------------- Disabled ERC20 functionality ------------- */
+
+    function transfer(address, uint256) public virtual override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
+        revert FunctionDisabled();
+    }
+
+    function transferFrom(address, address, uint256) public override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
+        revert FunctionDisabled();
+    }
+
+    function allowance(address, address) public view override(ERC20Upgradeable,IERC20Upgradeable) returns (uint256) {
+        return 0;
+    }
+
+    function approve(address, uint256) public virtual override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
+        revert FunctionDisabled();
+    }
+    
+    function decreaseAllowance(address, uint256) public virtual override returns (bool) {
+        revert FunctionDisabled();
+    }
+    
+    function increaseAllowance(address, uint256) public virtual override returns (bool) {
+        revert FunctionDisabled();
+    }
 }

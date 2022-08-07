@@ -114,7 +114,7 @@ contract("HatTimelockController", (accounts) => {
       (await rewardController.vaultInfo(vault.address)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
-    let stakerAmount = await vault.userShares(staker);
+    let stakerAmount = await vault.balanceOf(staker);
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
       await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
@@ -192,7 +192,7 @@ contract("HatTimelockController", (accounts) => {
       from: staker,
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
-    await vault.deposit(web3.utils.toWei("1"), { from: staker });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
     await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
@@ -225,7 +225,7 @@ contract("HatTimelockController", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await stakingToken.mint(staker2, web3.utils.toWei("1"));
 
-    await vault.deposit(web3.utils.toWei("1"), { from: staker });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
@@ -355,7 +355,7 @@ contract("HatTimelockController", (accounts) => {
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: staker,
     });
-    await vault.deposit(web3.utils.toWei("1"), { from: staker });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await rewardController.updateVault(vault.address);
 
     const claimId = await submitClaim(vault, { accounts });
