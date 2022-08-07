@@ -129,7 +129,6 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-  await vault.setPoolInitialized();
   await vault.committeeCheckIn({ from: accounts[1] });
   return {
     hatVaultsRegistry,

@@ -95,7 +95,6 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-  await vault.setPoolInitialized();
   await vault.committeeCheckIn({ from: accounts[1] });
   return {
     hatVaultsRegistry,
@@ -275,18 +274,6 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "OnlyHATVaults");
     }
-
-    try {
-      await rewardController.setShares(
-        10,
-        [accounts[0], accounts[1]],
-        [1, 2],
-        { from: accounts[1] }
-      );
-      assert(false, "only hatvaults");
-    } catch (ex) {
-      assertVMException(ex, "OnlyHATVaults");
-    }
   });
 
   it("Set reward controller", async () => {
@@ -343,7 +330,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    newVault.setPoolInitialized();
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -2631,7 +2617,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    await newVault.setPoolInitialized();
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -2732,165 +2717,6 @@ contract("HatVaults", (accounts) => {
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
-    }
-  });
-
-  it("cannot deposit to pool before initialized", async () => {
-    await setup(accounts);
-    var staker = accounts[4];
-    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("1"));
-    await hatToken.mint(staker, web3.utils.toWei("1"));
-
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      accounts[1],
-      rewardController.address,
-      8000,
-      [8000, 1000, 100, 150, 350, 400],
-      "_descriptionHash",
-      [86400, 10],
-      false
-    )).logs[1].args._pool);
-
-    await rewardController.setAllocPoint(
-      newVault.address,
-      100
-    );
-
-    await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
-      from: staker,
-    });
-
-    await newVault.committeeCheckIn({ from: accounts[1] });
-
-    try {
-      await newVault.deposit(web3.utils.toWei("1"), { from: staker });
-      assert(false, "pool must be initialized");
-    } catch (ex) {
-      assertVMException(ex, "PoolMustBeInitialized");
-    }
-  });
-
-  it("set shares", async () => {
-    await setup(accounts);
-
-    try {
-      await vault.setShares(0, 0, [], [], []);
-      assert(false, "pool already initialized");
-    } catch (ex) {
-      assertVMException(ex, "PoolMustNotBeInitialized");
-    }
-
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      accounts[1],
-      rewardController.address,
-      8000,
-      [8000, 1000, 100, 150, 350, 400],
-      "_descriptionHash",
-      [86400, 10],
-      false
-    )).logs[1].args._pool);
-
-    await rewardController.setAllocPoint(
-      newVault.address,
-      100
-    );
-
-    try {
-      await newVault.setShares(100, 100, [accounts[0]], [1], [1, 1]);
-      assert(false, "arrays lengths must match");
-    } catch (ex) {
-      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
-    }
-
-    try {
-      await newVault.setShares(100, 100, [accounts[0]], [1, 1], [1]);
-      assert(false, "arrays lengths must match");
-    } catch (ex) {
-      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
-    }
-
-    try {
-      await newVault.setShares(
-        100,
-        100,
-        [accounts[0], accounts[1]],
-        [1],
-        [1]
-      );
-      assert(false, "arrays lengths must match");
-    } catch (ex) {
-      assertVMException(ex, "SetSharesArraysMustHaveSameLength");
-    }
-
-    try {
-      await newVault.setShares(
-        10,
-        100,
-        [accounts[0], accounts[1]],
-        [1, 2],
-        [1, 2],
-        { from: accounts[1] }
-      );
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    await newVault.setShares(
-      10,
-      100,
-      [accounts[0], accounts[1]],
-      [1, 2],
-      [1, 2]
-    );
-    assert.equal(
-      (await rewardController.poolInfo(newVault.address)).rewardPerShare.toString(),
-      "10"
-    );
-    assert.equal((await newVault.balance()).toString(), "100");
-    assert.equal((await newVault.totalShares()).toString(), "3");
-    assert.equal(
-      (await newVault.userShares(accounts[0])).toString(),
-      "1"
-    );
-    assert.equal(
-      (await rewardController.rewardDebt(newVault.address, accounts[0])).toString(),
-      "1"
-    );
-    assert.equal(
-      (await newVault.userShares(accounts[1])).toString(),
-      "2"
-    );
-    assert.equal(
-      (await rewardController.rewardDebt(newVault.address, accounts[1])).toString(),
-      "2"
-    );
-
-    let newVault2 = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      accounts[1],
-      rewardController.address,
-      8000,
-      [8000, 1000, 100, 150, 350, 400],
-      "_descriptionHash",
-      [86400, 10],
-      false
-    )).logs[1].args._pool);
-
-    await rewardController.setAllocPoint(
-      newVault2.address,
-      100
-    );
-
-    await newVault2.setPoolInitialized();
-
-    try {
-      await newVault2.setShares(0, 0, [], [], []);
-      assert(false, "pool already initialized");
-    } catch (ex) {
-      assertVMException(ex, "PoolMustNotBeInitialized");
     }
   });
 
@@ -3256,8 +3082,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-
-    await newVault.setPoolInitialized();
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -3839,7 +3663,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    await newVault.setPoolInitialized();
     await newVault.setPool(true, false, "123");
     await rewardController.setAllocPoint(newVault.address, 200);
     await newVault.setPool(true, false, "123");
@@ -3985,7 +3808,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    await newVault.setPoolInitialized();
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -4169,8 +3991,6 @@ contract("HatVaults", (accounts) => {
       false
     )).logs[1].args._pool);
 
-    await newVault.setPoolInitialized();
-
     await rewardController.setAllocPoint(
       newVault.address,
       100
@@ -4191,7 +4011,7 @@ contract("HatVaults", (accounts) => {
     await rewardController.claimReward(vault.address, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      await web3.utils.toWei("2096.175").toString()
+      await web3.utils.toWei("1654.875").toString()
     );
   });
 
@@ -4256,7 +4076,6 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._pool);
-    await newVault.setPoolInitialized();
 
     await rewardController.setAllocPoint(
       newVault.address,

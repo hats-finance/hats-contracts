@@ -145,26 +145,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-    * @notice set the shares of users in a pool
-    * only calleable by the owner, and only when a pool is not initialized
-    * This function is used for migrating older pool data to this new contract
-    */
-    function setShares(
-        uint256 _rewardPerShare,
-        address[] memory _accounts,
-        uint256[] memory _rewardDebts)
-    external onlyVaults {
-        address vault = msg.sender;
-        PoolInfo storage pool = poolInfo[vault];
-
-        pool.rewardPerShare = _rewardPerShare;
-
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            rewardDebt[vault][_accounts[i]] = _rewardDebts[i];
-        }
-    }
-
-    /**
      * @notice Called by owner to set reward multipliers
      * @param _rewardPerEpoch reward multipliers
     */

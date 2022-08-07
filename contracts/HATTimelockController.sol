@@ -68,10 +68,6 @@ contract HATTimelockController is TimelockController {
         );
     }
 
-    function setPoolInitialized(HATVault _vault) external onlyRole(PROPOSER_ROLE) {
-        _vault.setPoolInitialized();
-    }
-
     function setAllocPoint(HATVault _vault, uint256 _allocPoint)
     external onlyRole(PROPOSER_ROLE) {
         _vault.rewardController().setAllocPoint(address(_vault), _allocPoint);
@@ -93,24 +89,6 @@ contract HATTimelockController is TimelockController {
             _amountOutMinimum,
             _routingContract,
             _routingPayload
-        );
-    }
-
-    function setShares(
-        HATVault _vault,
-        uint256 _rewardPerShare,
-        uint256 _balance,
-        address[] memory _accounts,
-        uint256[] memory _shares,
-        uint256[] memory _rewardDebts)
-    external
-    onlyRole(PROPOSER_ROLE) {
-        _vault.setShares(
-            _rewardPerShare,
-            _balance,
-            _accounts,
-            _shares,
-            _rewardDebts
         );
     }
 }

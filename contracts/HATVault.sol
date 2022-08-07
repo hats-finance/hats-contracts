@@ -70,10 +70,6 @@ error OnlyFeeSetter();
 error PoolWithdrawalFeeTooBig();
 // Token approve reset failed
 error TokenApproveResetFailed();
-// Pool must not be initialized
-error PoolMustNotBeInitialized();
-// Pool must be initialized
-error PoolMustBeInitialized();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
 // Committee not checked in yet
@@ -174,7 +170,6 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     PendingMaxBounty public pendingMaxBounty;
 
     bool public poolDepositPause;
-    bool public poolInitialized;
 
     mapping(address => uint256) public withdrawEnableStartTime;
 
@@ -519,7 +514,6 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
         if (poolDepositPause) revert DepositPaused();
-        if (!poolInitialized) revert PoolMustBeInitialized();
         
         // clear withdraw request
         withdrawEnableStartTime[msg.sender] = 0;
@@ -684,41 +678,6 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         poolDepositPause = _depositPause;
 
         emit SetPool(_visible, _depositPause, _descriptionHash);
-    }
-
-    /**
-    * @notice set the flag that the pool is initialized to true
-    * ony calleable by the owner of the contract
-    */
-    function setPoolInitialized() external onlyOwner {
-        poolInitialized = true;
-    }
-
-    /**
-    * @notice set the shares of users in a pool
-    * only calleable by the owner, and only when a pool is not initialized
-    * This function is used for migrating older pool data to this new contract
-    */
-    function setShares(
-        uint256 _rewardPerShare,
-        uint256 _balance,
-        address[] memory _accounts,
-        uint256[] memory _shares,
-        uint256[] memory _rewardDebts)
-    external onlyOwner {
-        if (poolInitialized) revert PoolMustNotBeInitialized();
-        if (_accounts.length != _shares.length ||
-            _accounts.length != _rewardDebts.length)
-            revert SetSharesArraysMustHaveSameLength();
-
-        balance = _balance;
-
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            userShares[_accounts[i]] = _shares[i];
-            totalShares += _shares[i];
-        }
-
-        rewardController.setShares(_rewardPerShare, _accounts, _rewardDebts);
     }
 
     /* -------------------------------------------------------------------------------- */

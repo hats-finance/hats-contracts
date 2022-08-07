@@ -31,8 +31,6 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - setMaxBountyDelay - Set the timelock delay for setting the max bounty
 - can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
-- can call `setPoolInitialized` Set an "initialized" flag to disable "setShares"
-- can call `setShares` but only if the pool is not initialized
 
 ## `HatVaults - Vault committee` (committee set by each vault)
 
