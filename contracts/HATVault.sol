@@ -40,8 +40,6 @@ error DelayPeriodForSettingMaxBountyHadNotPassed();
 error CommitteeIsZero();
 // Committee already checked in
 error CommitteeAlreadyCheckedIn();
-// Pool does not exist
-error PoolDoesNotExist();
 // Amount to swap is zero
 error AmountToSwapIsZero();
 // Pending withdraw request exists
@@ -50,8 +48,8 @@ error PendingWithdrawRequestExists();
 error DepositPaused();
 // Amount to deposit is zero
 error AmountToDepositIsZero();
-// Pool balance is zero
-error PoolBalanceIsZero();
+// Vault balance is zero
+error VaultBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
@@ -67,7 +65,7 @@ error LPTokenIsZero();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
-error PoolWithdrawalFeeTooBig();
+error WithdrawalFeeTooBig();
 // Token approve reset failed
 error TokenApproveResetFailed();
 // Set shares arrays must have same length
@@ -96,7 +94,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
     using SafeERC20 for ERC20Burnable;
 
-    // How to divide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
+    // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
         uint256 hackerVested;
@@ -112,7 +110,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 hackerHatVested;
     }
 
-    // How to divide a bounty for a claim that has been approved, in amounts of pool's tokens
+    // How to divide a bounty for a claim that has been approved, in amounts of the vault's token
     struct ClaimBounty {
         uint256 hacker;
         uint256 hackerVested;
@@ -169,7 +167,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     PendingMaxBounty public pendingMaxBounty;
 
-    bool public poolDepositPause;
+    bool public depositPause;
 
     mapping(address => uint256) public withdrawEnableStartTime;
 
@@ -204,7 +202,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 indexed _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
-    event SetPoolWithdrawalFee(uint256 _newFee);
+    event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
@@ -288,7 +286,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         maxBounty = _maxBounty;
         bountySplit = _bountySplit;
         committee = _committee;
-        poolDepositPause = _isPaused;
+        depositPause = _isPaused;
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         registry = _registry;
         __ReentrancyGuard_init();
@@ -333,7 +331,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
     * This function should be called only on a safety period, where withdrawals are disabled.
-    * Upon a call to this function by the committee the pool withdrawals will be disabled
+    * Upon a call to this function by the committee the vault's withdrawals will be disabled
     * until the Hats governance will approve or dismiss this claim.
     * @param _beneficiary The submitted claim's beneficiary
     * @param _bountyPercentage The submitted claim's bug requested reward percentage
@@ -477,7 +475,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     view
     returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = balance;
-        if (totalSupply == 0) revert PoolBalanceIsZero();
+        if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
@@ -513,7 +511,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function deposit(uint256 _amount) external nonReentrant {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
-        if (poolDepositPause) revert DepositPaused();
+        if (depositPause) revert DepositPaused();
         
         // clear withdraw request
         withdrawEnableStartTime[msg.sender] = 0;
@@ -528,8 +526,8 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         balance += transferredAmount;
 
-        // create new shares (and add to the user and the pool's shares) that are the relative part of the user's new deposit
-        // out of the pool's total supply, relative to the previous total shares in the pool
+        // create new shares (and add to the user and the vault's shares) that are the relative part of the user's new deposit
+        // out of the vault's total supply, relative to the previous total shares in the vault
         uint256 addedUserShares;
         if (totalShares == 0) {
             addedUserShares = transferredAmount;
@@ -537,7 +535,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             addedUserShares = totalShares * transferredAmount / lpSupply;
         }
 
-        rewardController.updateRewardPool(msg.sender, addedUserShares, true, true);
+        rewardController.updateVaultBalance(msg.sender, addedUserShares, true, true);
 
         userShares[msg.sender] += addedUserShares;
         totalShares += addedUserShares;
@@ -597,10 +595,10 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit SetBountySplit(_bountySplit);
     }
 
-    function setPoolWithdrawalFee(uint256 _newFee) external onlyFeeSetter {
-        if (_newFee > MAX_FEE) revert PoolWithdrawalFeeTooBig();
+    function setWithdrawalFee(uint256 _newFee) external onlyFeeSetter {
+        if (_newFee > MAX_FEE) revert WithdrawalFeeTooBig();
         withdrawalFee = _newFee;
-        emit SetPoolWithdrawalFee(_newFee);
+        emit SetWithdrawalFee(_newFee);
     }
 
     /**
@@ -613,8 +611,8 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /**
-    * @notice Set pending request to set pool max bounty.
-    * The function can be called only by the pool committee.
+    * @notice Set pending request to set vault's max bounty.
+    * The function can be called only by the vault's committee.
     * Cannot be called if there are claims that have been submitted.
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`
     * @param _maxBounty The maximum bounty percentage that can be paid out
@@ -631,8 +629,8 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /**
-    * @notice Set the pool max bounty to the already pending max bounty.
-    * The function can be called only by the pool committee.
+    * @notice Set the vault's max bounty to the already pending max bounty.
+    * The function can be called only by the vault's committee.
     * Cannot be called if there are claims that have been submitted.
     * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
     * had passed.
@@ -659,23 +657,23 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     /* -------------------------------------------------------------------------------- */
 
-    /* ----------------------------------- Pool --------------------------------------- */
+    /* ----------------------------------- Info --------------------------------------- */
 
     // TODO: Update this function name (maybe split it up)
     /**
-    * @notice change the information for a pool
+    * @notice change the information of the vault
     * ony calleable by the owner of the contract
-    * @param _visible is this pool visible in the UI
-    * @param _depositPause pause pool deposit (default false).
-    * This parameter can be used by the UI to include or exclude the pool
-    * @param _descriptionHash the hash of the pool description.
+    * @param _visible is this vault visible in the UI
+    * @param _depositPause pause deposits (default false).
+    * This parameter can be used by the UI to include or exclude the vault
+    * @param _descriptionHash the hash of the vault's description.
     */
     function updateVaultInfo(
         bool _visible,
         bool _depositPause,
         string memory _descriptionHash
     ) external onlyOwner {
-        poolDepositPause = _depositPause;
+        depositPause = _depositPause;
 
         emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
     }
@@ -685,7 +683,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* ----------------------------------- Swap --------------------------------------- */
 
     /**
-    * @notice Swap pool's token to swapToken.
+    * @notice Swap the vault's token to swapToken.
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of swapToken.
     * Only governance is authorized to call this function.
@@ -806,7 +804,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         if (userShares[msg.sender] < _shares) revert NotEnoughUserBalance();
 
-        rewardController.updateRewardPool(msg.sender, _shares, false, true);
+        rewardController.updateVaultBalance(msg.sender, _shares, false, true);
 
         if (_shares > 0) {
             userShares[msg.sender] -= _shares;
@@ -814,7 +812,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             uint256 fee = amountToWithdraw * withdrawalFee / HUNDRED_PERCENT;
             balance -= amountToWithdraw;
             totalShares -= _shares;
-            safeWithdrawPoolToken(lpToken, amountToWithdraw, fee);
+            safeWithdrawVaultToken(lpToken, amountToWithdraw, fee);
         }
 
         emit Withdraw(msg.sender, _shares);
@@ -833,7 +831,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 currentUserShares = userShares[msg.sender];
         if (currentUserShares == 0) revert UserSharesMustBeGreaterThanZero();
 
-        rewardController.updateRewardPool(msg.sender, currentUserShares, false, false);
+        rewardController.updateVaultBalance(msg.sender, currentUserShares, false, false);
 
         uint256 factoredBalance = (currentUserShares * balance) / totalShares;
         uint256 fee = (factoredBalance * withdrawalFee) / HUNDRED_PERCENT;
@@ -842,7 +840,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         balance -= factoredBalance;
         userShares[msg.sender] = 0;
         
-        safeWithdrawPoolToken(lpToken, factoredBalance, fee);
+        safeWithdrawVaultToken(lpToken, factoredBalance, fee);
 
         emit EmergencyWithdraw(msg.sender, factoredBalance);
     }
@@ -871,7 +869,7 @@ contract HATVault is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         withdrawEnableStartTime[msg.sender] = 0;
     }
 
-    function safeWithdrawPoolToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee)
+    function safeWithdrawVaultToken(IERC20 _lpToken, uint256 _totalAmount, uint256 _fee)
         internal
     {
         if (_fee > 0) {

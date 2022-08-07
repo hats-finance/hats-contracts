@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 
 interface IRewardController {
-    function updateRewardPool(
+    function updateVaultBalance(
         address _user,
         uint256 _sharesChange,
         bool _isDeposit,

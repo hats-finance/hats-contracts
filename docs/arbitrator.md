@@ -15,7 +15,7 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 
 More precisely:
 
-1. The `committee` calls `submitClaim(poolId, beneficiary, bountyPercentage)`. This will create a new `claimId`
+1. The `committee` calls `submitClaim(beneficiary, bountyPercentage)`. This will create a new `claimId`
 2. The `arbitrator` can call `challengeClaim(_claimId)` at any time
 3. If `challengePeriod` has passed and the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
 4. If the claim is challenged, `arbitrator` can either call `approveClaim(claimId, bountyPercentage)`  (and set a new bounty percentage) or can call `dismissClaim` to reject the claim alltogether

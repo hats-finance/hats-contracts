@@ -17,9 +17,9 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - set to `HATTimelockController`
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `createVault` to create a new vault
-- can call `updateVaultInfo` to change pool properties
+- can call `updateVaultInfo` to change the vault's properties
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `swapBurnSend` and swap, burn, and send pool tokens that are earmarked for payout (after approveClaim
+- can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
 - can call `setClaimFee` set fee for submitting a vulnerability
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
@@ -38,12 +38,12 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
-- can call `setPoolWithdrawalFee` - set the fee for withdrawals from the pool
+- can call `setWithdrawalFee` - set the fee for withdrawals from the vault
 
 ## `HatVaults.feeSetter`
 
 - set to `HATTimeLockController`
-- can call `setPoolWithdrawalFee` (set the fee for withdrawals from the pool)
+- can call `setWithdrawalFee` (set the fee for withdrawals from the vault)
 
 ## `RewardController.owner`
 

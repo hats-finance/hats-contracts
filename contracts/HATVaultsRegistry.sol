@@ -66,7 +66,6 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
-    // rewardController determines how many rewards each pool gets in the incentive program
     ITokenLockFactory public tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
@@ -91,7 +90,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     event SetMaxBountyDelay(uint256 indexed _delay);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event VaultCreated(
-        address indexed _pool,
+        address indexed _vault,
         address indexed _lpToken,
         address _committee,
         IRewardController _rewardController,
@@ -206,7 +205,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all pools
+    * @notice setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all vaults
     * the function can be called only by governance.
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
@@ -239,15 +238,15 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Add a new pool. Can be called only by governance.
-    * @param _lpToken The pool's token
-    * @param _committee The pool's committee addres
-    * @param _maxBounty The pool's max bounty.
+    * @notice Create a new vault.
+    * @param _lpToken The vault's token
+    * @param _committee The vault's committee addres
+    * @param _maxBounty The vault's max bounty.
     * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
         Each entry is a number between 0 and `HUNDRED_PERCENT`.
         Total splits should be equal to `HUNDRED_PERCENT`.
-        Bounty must be specified for the hacker (direct or vested in pool's token).
-    * @param _descriptionHash the hash of the pool description.
+        Bounty must be specified for the hacker (direct or vested in vault's token).
+    * @param _descriptionHash the hash of the vault description.
     * @param _bountyVestingParams vesting params for the bounty
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods

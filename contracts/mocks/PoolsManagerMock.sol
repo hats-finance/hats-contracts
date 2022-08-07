@@ -6,7 +6,7 @@ import "../RewardController.sol";
 
 //this contract is used as an helper contract only for testing purpose
 
-contract PoolsManagerMock {
+contract VaultsManagerMock {
 
     function createVaults(HATVaultsRegistry _hatVaults,
                     IRewardController _rewardController,

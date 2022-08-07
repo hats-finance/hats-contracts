@@ -108,25 +108,25 @@ const setup = async function(
 contract("HatTimelockController", (accounts) => {
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    let lastRewardBlock = (await rewardController.poolInfo(vault.address)).lastRewardBlock;
-    let allocPoint = (await rewardController.poolInfo(vault.address)).allocPoint;
+    let lastRewardBlock = (await rewardController.vaultInfo(vault.address)).lastRewardBlock;
+    let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let rewardPerShare = new web3.utils.BN(
-      (await rewardController.poolInfo(vault.address)).rewardPerShare
+      (await rewardController.vaultInfo(vault.address)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
     let stakerAmount = await vault.userShares(staker);
-    let globalUpdatesLen = await rewardController.getGlobalPoolUpdatesLength();
+    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
-      await rewardController.globalPoolUpdates(globalUpdatesLen - 1)
+      await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
-    let poolReward = await rewardController.getRewardForBlocksRange(
+    let vaultReward = await rewardController.getRewardForBlocksRange(
       lastRewardBlock,
       currentBlockNumber + 1 + operationBlocksIncrement,
       allocPoint,
       totalAllocPoint
     );
     let lpSupply = await stakingToken.balanceOf(vault.address);
-    rewardPerShare = rewardPerShare.add(poolReward.mul(onee12).div(lpSupply));
+    rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(lpSupply));
     let rewardDebt = await rewardController.rewardDebt(vault.address, staker);
     return stakerAmount
       .mul(rewardPerShare)
@@ -356,7 +356,7 @@ contract("HatTimelockController", (accounts) => {
       from: staker,
     });
     await vault.deposit(web3.utils.toWei("1"), { from: staker });
-    await rewardController.updatePool(vault.address);
+    await rewardController.updateVault(vault.address);
 
     const claimId = await submitClaim(vault, { accounts });
 
@@ -386,7 +386,7 @@ contract("HatTimelockController", (accounts) => {
   it("setCommittee", async () => {
     await setup(accounts);
 
-    //set other pool with different committee
+    //creat another vault with a different committee
     let maxBounty = 8000;
     let bountySplit = [6000, 2000, 500, 0, 1000, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
