@@ -117,7 +117,7 @@ contract("HatVaults", (accounts) => {
     //increase time for the case there is already pending request ..so make sure start a new one..
     await utils.increaseTime(7 * 24 * 3600);
     await vault.withdrawRequest({ from: staker });
-    if (redeemFrom != staker) {
+    if (redeemFrom !== staker) {
       await vault.withdrawRequest({ from: redeemFrom });
     }
     //increase time for pending period
@@ -144,7 +144,7 @@ contract("HatVaults", (accounts) => {
     //increase time for the case there is already pending request ..so make sure start a new one..
     await utils.increaseTime(7 * 24 * 3600);
     await vault.withdrawRequest({ from: staker });
-    if (withdrawFrom != staker) {
+    if (withdrawFrom !== staker) {
       await vault.withdrawRequest({ from: withdrawFrom });
     }
     //increase time for pending period
