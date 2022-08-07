@@ -6,16 +6,14 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./HATVaultsRegistry.sol";
+import "./interfaces/IRewardController.sol";
+import "./HATVault.sol";
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Not enough rewards to transfer to user
-    error OnlyHATVaults();
-    error OnlySetHATVaultsRegistryOnce();
     error NotEnoughRewardsToTransferToUser();
-    error VaultDoesNotExist();
 
     struct PoolInfo {
         uint256 rewardPerShare;
@@ -42,7 +40,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => PoolInfo) public poolInfo;
     // vault address => user address => reward debt amount
     mapping(address => mapping(address => uint256)) public rewardDebt;
-    HATVaultsRegistry public hatVaultsRegistry;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
     event SafeTransferReward(
@@ -52,11 +49,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         address rewardToken
     );
     event ClaimReward(address indexed _vault);
-
-    modifier onlyVaults() {
-        if (!hatVaultsRegistry.isVaultRegistered(msg.sender)) revert OnlyHATVaults();
-        _;
-    }
 
     function initialize(
         address _rewardToken,
@@ -70,11 +62,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         epochLength = _epochLength;
         rewardPerEpoch = _rewardPerEpoch;
         _transferOwnership(_hatGovernance);
-    }
-
-    function setHATVaultsRegistry(HATVaultsRegistry _hatVaultsRegistry) external onlyOwner {
-        if (address(hatVaultsRegistry) != address(0)) revert OnlySetHATVaultsRegistryOnce();
-        hatVaultsRegistry = _hatVaultsRegistry;
     }
 
     function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {
@@ -98,12 +85,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         poolInfo[_vault].allocPoint = _allocPoint;
     }
 
-    function setPoolsLastProcessedTotalAllocPoint(address _vault) internal {
-        uint globalPoolUpdatesLength = globalPoolUpdates.length;
-
-        poolInfo[_vault].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
-    }
-
     /**
     * @notice Safe HAT transfer function, transfer rewards from the contract only if there are enough
     * rewards available.
@@ -125,7 +106,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @param _vault The vault address
     */
     function updatePool(address _vault) public {
-        if (!hatVaultsRegistry.isVaultRegistered(_vault)) revert VaultDoesNotExist();
         PoolInfo storage pool = poolInfo[_vault];
         uint256 lastRewardBlock = pool.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
@@ -141,7 +121,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             pool.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        setPoolsLastProcessedTotalAllocPoint(_vault);
+        poolInfo[_vault].lastProcessedTotalAllocPoint = globalPoolUpdates.length - 1;
     }
 
     /**
@@ -183,7 +163,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _sharesChange,
         bool _isDeposit,
         bool _claimReward
-    ) external onlyVaults {
+    ) external {
         _updateRewardPool(msg.sender, _user, _sharesChange, _isDeposit, _claimReward);
     }
 

@@ -60,8 +60,6 @@ async function main(
 
   await hatVaultsRegistry.deployed();
 
-  await rewardController.setHATVaultsRegistry(hatVaultsRegistry.address);
-
   if (governance !== deployerAddress) {
     await rewardController.transferOwnership(governance);
     await hatVaultsRegistry.transferOwnership(governance);

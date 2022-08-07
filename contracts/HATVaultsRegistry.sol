@@ -77,8 +77,6 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     ERC20Burnable public swapToken;
     mapping(address => bool) public whitelistedRouters;
 
-    mapping (address => bool) public isVaultRegistered;
-
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -266,7 +264,6 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
         bool _isPaused
     ) 
     external 
-    onlyOwner
     returns(address vault)
     {
         vault = Clones.clone(hatVaultImplementation);
@@ -282,7 +279,6 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
             _isPaused
         );
 
-        isVaultRegistered[vault] = true;
         hatVaults.push(vault);
 
         emit VaultCreated(

@@ -87,7 +87,7 @@ const setup = async function(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  vault = await HATVault.at((await hatTimelockController.createVault(
+  vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
     accounts[1],
     rewardController.address,
@@ -164,79 +164,6 @@ contract("HatTimelockController", (accounts) => {
         accounts[0]
       ),
       true
-    );
-  });
-
-  it("createVault", async () => {
-    await setup(accounts);
-    try {
-      await hatVaultsRegistry.createVault(
-        hatToken.address,
-        accounts[1],
-        rewardController.address,
-        8000,
-        [6000, 2000, 500, 0, 1000, 500],
-        "_descriptionHash",
-        [86400, 10],
-        false
-      );
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await hatTimelockController.createVault(
-        hatToken.address,
-        accounts[1],
-        rewardController.address,
-        8000,
-        [6000, 2000, 500, 0, 1000, 500],
-        "_descriptionHash",
-        [86400, 10],
-        false,
-        { from: accounts[1] }
-      );
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await rewardController.setAllocPoint(
-        vault.address,
-        100
-      );
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await hatTimelockController.setAllocPoint(
-        vault.address,
-        100,
-        { from: accounts[1] }
-      );
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    let newVault = await HATVault.at((await hatTimelockController.createVault(
-      hatToken.address,
-      accounts[1],
-      rewardController.address,
-      8000,
-      [6000, 2000, 500, 0, 1000, 500],
-      "_descriptionHash",
-      [86400, 10],
-      false
-    )).receipt.rawLogs[0].address);
-
-    await hatTimelockController.setAllocPoint(
-      newVault.address,
-      100
     );
   });
 
@@ -463,7 +390,7 @@ contract("HatTimelockController", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [6000, 2000, 500, 0, 1000, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatTimelockController.createVault(
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
       accounts[3],
       rewardController.address,

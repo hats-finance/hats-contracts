@@ -34,28 +34,6 @@ contract HATTimelockController is TimelockController {
         _vault.dismissClaim(_claimId);
     }
 
-    function createVault(IERC20 _lpToken,
-                    address _committee,
-                    IRewardController _rewardController,
-                    uint256 _maxBounty,
-                    HATVault.BountySplit memory _bountySplit,
-                    string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams,
-                    bool _isPaused)
-    external
-    onlyRole(PROPOSER_ROLE) returns(address vault) {
-        vault = hatVaultsRegistry.createVault(
-            _lpToken,
-            _committee,
-            _rewardController,
-            _maxBounty,
-            _bountySplit,
-            _descriptionHash,
-            _bountyVestingParams,
-            _isPaused
-        );
-    }
-
     function setPool(HATVault _vault, 
                     bool _registered,
                     bool _depositPause,
