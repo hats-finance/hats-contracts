@@ -495,7 +495,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     /* -------------------------------------------------------------------------------- */
     
     /* ---------------------------------- Deposit ------------------------------------- */
-    // Note: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred
+    // @note: Vaults should not use tokens which does not guarantee
+    // that the amount specified is the amount transferred
     function _deposit(
         address caller,
         address receiver,
@@ -509,7 +510,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         if (receiver != caller) {
             revert CallerMustBeOwner();
         }
-        
+
         // clear withdraw request
         withdrawEnableStartTime[receiver] = 0;
 

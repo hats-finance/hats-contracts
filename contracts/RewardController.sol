@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IRewardController.sol";
-import "./HATVault.sol";
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -114,7 +113,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         vault.lastRewardBlock = block.number;
 
-        uint256 totalShares = getTotalShares(_vault);
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
         if (totalShares != 0) {
             uint256 reward = getVaultReward(_vault, lastRewardBlock);
@@ -142,7 +141,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     ) internal {
         updateVault(_vault);
 
-        uint256 userShares = getShares(_vault, _user);
+        uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
         uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
         if (_sharesChange != 0) {
@@ -230,22 +229,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         VaultInfo memory vault = vaultInfo[_vault];
         uint256 rewardPerShare = vault.rewardPerShare;
-        uint256 totalShares = getTotalShares(_vault);
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
         if (block.number > vault.lastRewardBlock && totalShares > 0) {
             uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
             rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        return getShares(_vault, _user) * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
-    }
-
-    function getTotalShares(address _vault) public view returns (uint256) {
-        return HATVault(_vault).totalSupply();
-    }
-
-    function getShares(address _vault, address _user) public view returns (uint256) {
-        return HATVault(_vault).balanceOf(_user);
+        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {
