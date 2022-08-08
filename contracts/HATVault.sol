@@ -87,7 +87,7 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
-error CallerMustBeOwner();
+error CannotDepositToAnotherUserWithWithdrawRequest();
 error WithdrawMustBeGreaterThanZero();
 error WithdrawMoreThanMax();
 error RedeemMoreThanMax();
@@ -509,8 +509,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
             revert CommitteeNotCheckedInYet();
         if (assets == 0) revert AmountToDepositIsZero();
         // Users can only deposit for themselves if withdraw request exists
-        if (receiver != caller) {
-            revert CallerMustBeOwner();
+        if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {
+            revert CannotDepositToAnotherUserWithWithdrawRequest();
         }
 
         // clear withdraw request
@@ -784,7 +784,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         checkWithdrawAndResetWithdrawEnableStartTime(owner);
         if (shares == 0) revert WithdrawMustBeGreaterThanZero();
         if (caller != owner) {
-            revert CallerMustBeOwner();
+            _spendAllowance(owner, caller, shares);
         }
 
         rewardController.updateVaultBalance(owner, shares, false, claimReward);
@@ -934,22 +934,6 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     function transferFrom(address, address, uint256) public override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
-        revert FunctionDisabled();
-    }
-
-    function allowance(address, address) public view override(ERC20Upgradeable,IERC20Upgradeable) returns (uint256) {
-        return 0;
-    }
-
-    function approve(address, uint256) public virtual override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
-        revert FunctionDisabled();
-    }
-    
-    function decreaseAllowance(address, uint256) public virtual override returns (bool) {
-        revert FunctionDisabled();
-    }
-    
-    function increaseAllowance(address, uint256) public virtual override returns (bool) {
         revert FunctionDisabled();
     }
 }

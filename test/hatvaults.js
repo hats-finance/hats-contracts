@@ -2353,19 +2353,6 @@ contract("HatVaults", (accounts) => {
 
     //stake
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    try {
-      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
-      assert(false, "cannot deposit for another user");
-    } catch (ex) {
-      assertVMException(ex, "CallerMustBeOwner");
-    }
-
-    try {
-      await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
-      assert(false, "cannot deposit for another user");
-    } catch (ex) {
-      assertVMException(ex, "CallerMustBeOwner");
-    }
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
     assert.equal(
@@ -2412,13 +2399,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "WithdrawMoreThanMax");
     }
 
-    try {
-      await safeWithdraw(vault, web3.utils.toWei("0.8"), staker, staker2);
-      assert(false, "cannot withdraw from another user");
-    } catch (ex) {
-      assertVMException(ex, "CallerMustBeOwner");
-    }
-
     tx = await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2);
     assert.equal(tx.logs[3].event, "Withdraw");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("0.8"));
@@ -2432,13 +2412,6 @@ contract("HatVaults", (accounts) => {
       assert(false, "cannot redeem more than max");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
-    }
-
-    try {
-      await safeRedeem(vault, web3.utils.toWei("1"), staker, staker2);
-      assert(false, "cannot redeem from another user");
-    } catch (ex) {
-      assertVMException(ex, "CallerMustBeOwner");
     }
 
     tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2);
@@ -2538,7 +2511,257 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("enable farming  + 2xapprove+ exit", async () => {
+  it("deposit for another user", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    await vault.withdrawRequest({ from: staker });
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
+      assert(false, "cannot deposit for user with a withdraw request");
+    } catch (ex) {
+      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+    }
+
+    tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[4].event, "Deposit");
+    assert.equal(tx.logs[4].args.caller, staker);
+    assert.equal(tx.logs[4].args.owner, staker);
+    assert.equal(tx.logs[4].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[4].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));    
+  });
+
+  it("mint for another user", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    await vault.withdrawRequest({ from: staker });
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    try {
+      await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+      assert(false, "cannot deposit for user with a withdraw request");
+    } catch (ex) {
+      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+    }
+
+    tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[4].event, "Deposit");
+    assert.equal(tx.logs[4].args.caller, staker);
+    assert.equal(tx.logs[4].args.owner, staker);
+    assert.equal(tx.logs[4].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[4].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));    
+  });
+
+  it("withdraw from another user", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    try {
+      await safeWithdraw(vault, web3.utils.toWei("1"), staker2, staker);
+      assert(false, "cannot withdraw from another user without sufficient allowance");
+    } catch (ex) {
+      assertVMException(ex, "ERC20: insufficient allowance");
+    }
+
+    await vault.approve(staker2, web3.utils.toWei("0.5"), { from: staker });
+
+    try {
+      await safeWithdraw(vault, web3.utils.toWei("1"), staker2, staker);
+      assert(false, "cannot withdraw from another user without sufficient allowance");
+    } catch (ex) {
+      assertVMException(ex, "ERC20: insufficient allowance");
+    }
+
+    await vault.increaseAllowance(staker2, web3.utils.toWei("0.5"), { from: staker });
+    tx = await safeWithdraw(vault, web3.utils.toWei("1"), staker2, staker);
+
+    assert.equal(tx.logs[4].event, "Withdraw");
+    assert.equal(tx.logs[4].args.caller, staker2);
+    assert.equal(tx.logs[4].args.receiver, staker2);
+    assert.equal(tx.logs[4].args.owner, staker);
+    assert.equal(tx.logs[4].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[4].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("2"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+  });
+
+  it.only("redeem from another user", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    try {
+      await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker);
+      assert(false, "cannot withdraw from another user without sufficient allowance");
+    } catch (ex) {
+      assertVMException(ex, "ERC20: insufficient allowance");
+    }
+
+    await vault.approve(staker2, web3.utils.toWei("0.5"), { from: staker });
+
+    try {
+      await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker);
+      assert(false, "cannot withdraw from another user without sufficient allowance");
+    } catch (ex) {
+      assertVMException(ex, "ERC20: insufficient allowance");
+    }
+
+    await vault.increaseAllowance(staker2, web3.utils.toWei("0.5"), { from: staker });
+    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker);
+
+    assert.equal(tx.logs[4].event, "Withdraw");
+    assert.equal(tx.logs[4].args.caller, staker2);
+    assert.equal(tx.logs[4].args.receiver, staker2);
+    assert.equal(tx.logs[4].args.owner, staker);
+    assert.equal(tx.logs[4].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[4].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("2"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+  });
+
+  it("enable farming + 2xapprove+ exit", async () => {
     await setup(accounts);
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
