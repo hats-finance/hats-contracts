@@ -91,7 +91,6 @@ error CannotDepositToAnotherUserWithWithdrawRequest();
 error WithdrawMustBeGreaterThanZero();
 error WithdrawMoreThanMax();
 error RedeemMoreThanMax();
-error FunctionDisabled();
 
 contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
@@ -927,13 +926,22 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         return assets - fee;
     }
 
-    /** ------------- Disabled ERC20 functionality ------------- */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        if (from == address(0) || to == address(0)) {
+            return;
+        }
+        // Users can only deposit for themselves if withdraw request exists
+        if (withdrawEnableStartTime[to] != 0) {
+            revert CannotDepositToAnotherUserWithWithdrawRequest();
+        }
 
-    function transfer(address, uint256) public virtual override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
-        revert FunctionDisabled();
-    }
+        checkWithdrawAndResetWithdrawEnableStartTime(from);
 
-    function transferFrom(address, address, uint256) public override(ERC20Upgradeable,IERC20Upgradeable) returns (bool) {
-        revert FunctionDisabled();
+        rewardController.updateVaultBalance(to, amount, true, true);
+        rewardController.updateVaultBalance(from, amount, false, true);
     }
 }

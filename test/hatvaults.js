@@ -165,7 +165,7 @@ contract("HatVaults", (accounts) => {
   }
 
   //advanced time to a withdraw enable period
-  async function advanceToNoneSaftyPeriod() {
+  async function advanceToNonSafetyPeriod() {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
     let withdrawPeriod = (
       await hatVaultsRegistry.generalParameters()
@@ -531,7 +531,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 10000);
 
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
 
     try {
       await vault.setBountySplit([7000, 0, 1000, 1100, 0, 901]);
@@ -597,7 +597,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "SafetyPeriod");
     }
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
 
     await vault.setBountySplit([6000, 0, 1000, 1000, 1200, 800]);
 
@@ -980,7 +980,7 @@ contract("HatVaults", (accounts) => {
     );
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
     await vault.withdrawRequest({ from: staker });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
@@ -1008,7 +1008,7 @@ contract("HatVaults", (accounts) => {
     );
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
     try {
       await vault.redeem(web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw without request");
@@ -1608,7 +1608,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await hatToken.balanceOf(staker), 0);
 
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
     await vault.withdrawRequest({ from: staker });
     await utils.increaseTime(7 * 24 * 3600);
 
@@ -2121,7 +2121,7 @@ contract("HatVaults", (accounts) => {
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
     try {
       await vault.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[1],
@@ -2696,7 +2696,7 @@ contract("HatVaults", (accounts) => {
     assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
   });
 
-  it.only("redeem from another user", async () => {
+  it("redeem from another user", async () => {
     await setup(
       accounts,
       (await web3.eth.getBlock("latest")).number,
@@ -2761,6 +2761,179 @@ contract("HatVaults", (accounts) => {
     assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
   });
 
+  it("transfer shares", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    var staker3 = accounts[3];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    await vault.withdrawRequest({ from: staker });
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    
+    tx = await vault.transfer(staker2, web3.utils.toWei("1"), { from: staker });
+
+    assert.equal(tx.logs[1].event, "Transfer");
+    assert.equal(tx.logs[1].args.from, staker);
+    assert.equal(tx.logs[1].args.to, staker2);
+    assert.equal(tx.logs[1].args.value.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+
+    try {
+      await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
+      assert(false, "cannot transfer without making a withdraw request");
+    } catch (ex) {
+      assertVMException(ex, "InvalidWithdrawRequest");
+    }
+
+    await vault.withdrawRequest({ from: staker2 });
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+
+    await advanceToSafetyPeriod();
+    try {
+      await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
+      assert(false, "cannot transfer on safety period");
+    } catch (ex) {
+      assertVMException(ex, "InvalidWithdrawRequest");
+    }
+
+    await advanceToNonSafetyPeriod();
+
+    await vault.withdrawRequest({ from: staker });
+
+    try {
+      await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
+      assert(false, "cannot transfer to user with a withdraw request");
+    } catch (ex) {
+      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+    }
+    
+    await advanceToSafetyPeriod();
+
+    tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+    let claimId = tx.logs[0].args._claimId;
+
+    await advanceToNonSafetyPeriod();
+
+    try {
+      await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker2 });
+      assert(false, "cannot transfer when active claim exists");
+    } catch (ex) {
+      assertVMException(ex, "ActiveClaimExists");
+    }
+
+    await vault.challengeClaim(claimId);
+    await vault.dismissClaim(claimId);
+
+    tx = await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker2 });
+    assert.equal(tx.logs[1].event, "Transfer");
+    assert.equal(tx.logs[1].args.from, staker2);
+    assert.equal(tx.logs[1].args.to, staker3);
+    assert.equal(tx.logs[1].args.value.toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker3)).toString(), web3.utils.toWei("1"));
+  });
+
+  it("transferFrom shares", async () => {
+    await setup(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      10000
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(tx.logs[3].event, "Deposit");
+    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.owner, staker);
+    assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
+    assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+
+    await vault.withdrawRequest({ from: staker });
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    
+    try {
+      await vault.transferFrom(staker, staker2, web3.utils.toWei("1"), { from: staker2 });
+      assert(false, "insufficient allowance for transfer");
+    } catch (ex) {
+      assertVMException(ex, "ERC20: insufficient allowance");
+    }
+    await vault.approve(staker2, web3.utils.toWei("1"), { from: staker });
+
+    tx = await vault.transferFrom(staker, staker2, web3.utils.toWei("1"), { from: staker2 });
+
+    assert.equal(tx.logs[2].event, "Transfer");
+    assert.equal(tx.logs[2].args.from, staker);
+    assert.equal(tx.logs[2].args.to, staker2);
+    assert.equal(tx.logs[2].args.value.toString(), web3.utils.toWei("1"));
+
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+  });
+
   it("enable farming + 2xapprove+ exit", async () => {
     await setup(accounts);
     var staker = accounts[4];
@@ -2792,7 +2965,7 @@ contract("HatVaults", (accounts) => {
     let claimId2 = tx.logs[0].args._claimId;
     assert.isTrue(claimId.toString() !== claimId2.toString());
     await vault.approveClaim(claimId2, 4000);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
 
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await rewardController.vaultInfo(vault.address)).lastRewardBlock;
@@ -4587,7 +4760,7 @@ contract("HatVaults", (accounts) => {
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await newVault.deposit(web3.utils.toWei("2"), staker2, { from: staker2 });
     await utils.increaseTime(7 * 24 * 3600);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
 
     await newVault.withdrawRequest({ from: staker });
     assert.equal(
@@ -4599,7 +4772,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await hatToken.mint(newVault.address, web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
-    await advanceToNoneSaftyPeriod();
+    await advanceToNonSafetyPeriod();
     var tx = await newVault.redeem(web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
@@ -4654,46 +4827,6 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "NotEnoughRewardsToTransferToUser");
     }
-  });
-
-  it("disabled erc20 functionalities", async () => {
-    await setup(accounts);
-    try {
-      await vault.transfer(accounts[1], web3.utils.toWei("1"));
-      assert(false, "transfer disabled");
-    } catch (ex) {
-      assertVMException(ex, "FunctionDisabled");
-    }
-
-    try {
-      await vault.transferFrom(accounts[0], accounts[1], web3.utils.toWei("1"));
-      assert(false, "transfer from disabled");
-    } catch (ex) {
-      assertVMException(ex, "FunctionDisabled");
-    }
-
-    try {
-      await vault.approve(accounts[1], web3.utils.toWei("1"));
-      assert(false, "approve disabled");
-    } catch (ex) {
-      assertVMException(ex, "FunctionDisabled");
-    }
-
-    try {
-      await vault.decreaseAllowance(accounts[1], web3.utils.toWei("1"));
-      assert(false, "decrease allowance disabled");
-    } catch (ex) {
-      assertVMException(ex, "FunctionDisabled");
-    }
-
-    try {
-      await vault.increaseAllowance(accounts[1], web3.utils.toWei("1"));
-      assert(false, "increase allowance disabled");
-    } catch (ex) {
-      assertVMException(ex, "FunctionDisabled");
-    }
-
-    assert.equal((await vault.allowance(accounts[0], accounts[1])), 0);
   });
 });
 
