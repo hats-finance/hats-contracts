@@ -768,7 +768,7 @@ contract("HatVaults", (accounts) => {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     await vault.challengeClaim(claimId);
@@ -874,7 +874,7 @@ contract("HatVaults", (accounts) => {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     await vault.challengeClaim(claimId);
@@ -988,7 +988,7 @@ contract("HatVaults", (accounts) => {
       await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
       assert(false, "deposit cancel withdrawRequest");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
   });
 
@@ -1013,7 +1013,7 @@ contract("HatVaults", (accounts) => {
       await vault.redeem(web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw without request");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     try {
@@ -1032,7 +1032,7 @@ contract("HatVaults", (accounts) => {
       await vault.redeem(web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "request is pending");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     try {
@@ -1164,7 +1164,7 @@ contract("HatVaults", (accounts) => {
       await safeWithdraw(vault, web3.utils.toWei("0.99"), staker);
       assert(false, "cannot withdraw more than max");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: withdraw more than max");
+      assertVMException(ex, "WithdrawMoreThanMax");
     }
 
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
@@ -2067,7 +2067,7 @@ contract("HatVaults", (accounts) => {
       await vault.redeem(1, staker, staker, { from: staker });
       assert(false, "cannot withdraw after emergency withdraw");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
   });
 
@@ -2409,7 +2409,7 @@ contract("HatVaults", (accounts) => {
       await safeWithdraw(vault, web3.utils.toWei("1.1"), staker2);
       assert(false, "cannot withdraw more than max");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: withdraw more than max");
+      assertVMException(ex, "WithdrawMoreThanMax");
     }
 
     try {
@@ -2431,7 +2431,7 @@ contract("HatVaults", (accounts) => {
       await safeRedeem(vault, web3.utils.toWei("2"), staker2);
       assert(false, "cannot redeem more than max");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     try {
@@ -3890,14 +3890,14 @@ contract("HatVaults", (accounts) => {
       await unsafeRedeem(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot redeem on safety period");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: redeem more than max");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     try {
       await unsafeWithdraw(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: withdraw more than max");
+      assertVMException(ex, "WithdrawMoreThanMax");
     }
 
     await advanceToSafetyPeriod();
@@ -3906,7 +3906,7 @@ contract("HatVaults", (accounts) => {
       await vault.withdraw(web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
-      assertVMException(ex, "ERC4626: withdraw more than max");
+      assertVMException(ex, "WithdrawMoreThanMax");
     }
   });
 

@@ -89,6 +89,8 @@ error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
 error CallerMustBeOwner();
 error WithdrawMustBeGreaterThanZero();
+error WithdrawMoreThanMax();
+error RedeemMoreThanMax();
 error FunctionDisabled();
 
 contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
@@ -800,7 +802,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         address receiver,
         address owner
     ) public override returns (uint256) {
-        require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+        if (assets > maxWithdraw(owner)) revert WithdrawMoreThanMax();
 
         uint256 shares = previewWithdraw(assets);
         uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
@@ -815,7 +817,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         address receiver,
         address owner
     ) public override returns (uint256) {
-        require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
+        if (shares > maxRedeem(owner)) revert RedeemMoreThanMax();
 
         uint256 assets = previewRedeem(shares);
         uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
