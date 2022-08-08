@@ -774,6 +774,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         address owner,
         uint256 assets,
         uint256 shares,
+        uint256 fee,
         bool claimReward
     ) internal nonReentrant {
         // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
@@ -787,21 +788,40 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         rewardController.updateVaultBalance(owner, shares, false, claimReward);
 
         _burn(owner, shares);
-        uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
-        balance -= assets;
+        balance -= assets + fee;
         safeWithdrawVaultToken(assets, fee, receiver);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
+    /** @dev See {IERC4626-withdraw}. */
+    function withdraw(
         uint256 assets,
-        uint256 shares
-    ) internal override {
-        _withdraw(caller, receiver, owner, assets, shares, true);
+        address receiver,
+        address owner
+    ) public override returns (uint256) {
+        require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+
+        uint256 shares = previewWithdraw(assets);
+        uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+
+        return shares;
+    }
+
+    /** @dev See {IERC4626-redeem}. */
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) public override returns (uint256) {
+        require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
+
+        uint256 assets = previewRedeem(shares);
+        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+
+        return assets;
     }
 
     /**
@@ -813,7 +833,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         address msgSender = _msgSender();
         uint256 shares = balanceOf(msgSender);
         uint256 assets = previewRedeem(shares);
-        _withdraw(msgSender, msgSender, msgSender, assets, shares, false);
+        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
+        _withdraw(msgSender, msgSender, msgSender, assets, shares, fee, false);
         emit EmergencyWithdraw(msgSender, assets, shares);
     }
 
@@ -860,7 +881,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         if (_fee > 0) {
             asset.safeTransfer(owner(), _fee);
         }
-        asset.safeTransfer(_receiver, _totalAmount - _fee);
+        asset.safeTransfer(_receiver, _totalAmount);
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -882,14 +903,26 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
 
     /** @dev See {IERC4626-maxWithdraw}. */
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(msg.sender)) return 0;
-        return _convertToAssets(balanceOf(owner), MathUpgradeable.Rounding.Down);
+        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
+        return previewRedeem(balanceOf(owner));
     }
 
     /** @dev See {IERC4626-maxRedeem}. */
     function maxRedeem(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(msg.sender)) return 0;
+        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
+    }
+
+    /** @dev See {IERC4626-previewWithdraw}. */
+    function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
+        uint256 assetsPlusFee = (assets / (HUNDRED_PERCENT - withdrawalFee)) * HUNDRED_PERCENT;
+       return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+    }
+    /** @dev See {IERC4626-previewRedeem}. */
+    function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
+        uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
+        uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
+        return assets - fee;
     }
 
     /** ------------- Disabled ERC20 functionality ------------- */

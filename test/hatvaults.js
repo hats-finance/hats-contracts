@@ -1129,17 +1129,21 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._newFee, 200);
 
     var staker = accounts[2];
-    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+    var staker2 = accounts[3];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
       from: staker,
     });
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker2,
+    });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
 
     let governanceBalance = await stakingToken.balanceOf(accounts[0]);
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
-
     // Staker got back the reward minus the fee
     assert.equal(
       await stakingToken.balanceOf(staker),
@@ -1150,6 +1154,30 @@ contract("HatVaults", (accounts) => {
       (await stakingToken.balanceOf(accounts[0])).toString(),
       governanceBalance
         .add(new web3.utils.BN(web3.utils.toWei("0.02")))
+        .toString()
+    );
+
+    await stakingToken.mint(staker, web3.utils.toWei("0.02"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
+    try {
+      await safeWithdraw(vault, web3.utils.toWei("0.99"), staker);
+      assert(false, "cannot withdraw more than max");
+    } catch (ex) {
+      assertVMException(ex, "ERC4626: withdraw more than max");
+    }
+
+    await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
+
+    assert.equal(
+      await stakingToken.balanceOf(staker),
+      web3.utils.toWei("0.98")
+    );
+    // Governance received the fee
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[0])).toString(),
+      governanceBalance
+        .add(new web3.utils.BN(web3.utils.toWei("0.04")))
         .toString()
     );
   });
