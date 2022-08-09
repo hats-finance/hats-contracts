@@ -103,6 +103,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
 
     /**
     * @notice initialize -
+    * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _swapToken the token that part of a payout will be swapped for
     * and burned - this would typically be HATs
