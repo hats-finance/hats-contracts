@@ -7,18 +7,13 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaultsRegistry.sol";
 
 contract HATTimelockController is TimelockController {
-    HATVaultsRegistry public immutable hatVaultsRegistry;
 
     constructor(
-        HATVaultsRegistry _hatVaultsRegistry,
         uint256 _minDelay,
         address[] memory _proposers,
         address[] memory _executors
-    // solhint-disable-next-line func-visibility
-    ) TimelockController(_minDelay, _proposers, _executors) {
-        require(address(_hatVaultsRegistry) != address(0), "HATTimelockController: HATVaults address must not be 0");
-        hatVaultsRegistry = _hatVaultsRegistry;
-    }
+    // solhint-disable-next-line no-empty-blocks
+    ) TimelockController(_minDelay, _proposers, _executors) {}
     
     // Whitelisted functions
 

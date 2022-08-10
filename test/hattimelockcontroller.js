@@ -68,7 +68,6 @@ const setup = async function(
     deployment.rewardController.address
   );
   hatTimelockController = await HATTimelockController.new(
-    hatVaultsRegistry.address,
     hatGovernanceDelay,
     [accounts[0]],
     [accounts[0]]
@@ -135,22 +134,10 @@ contract("HatTimelockController", (accounts) => {
   }
 
   it("constructor and initialize", async () => {
-    try {
-      hatTimelockController = await HATTimelockController.new(
-        "0x0000000000000000000000000000000000000000",
-        hatGovernanceDelay,
-        [accounts[0]],
-        [accounts[0]]
-      );
-      assert(false, "hats vaults cannot be the 0 address");
-    } catch (ex) {
-      assertVMException(ex);
-    }
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), hatTimelockController.address);
     assert.equal(await vault.owner(), hatTimelockController.address);
-    assert.equal(await hatTimelockController.hatVaultsRegistry(), hatVaultsRegistry.address);
     assert.equal(
       await hatTimelockController.hasRole(
         await hatTimelockController.PROPOSER_ROLE(),
@@ -346,8 +333,6 @@ contract("HatTimelockController", (accounts) => {
   it("challenge - approve Claim ", async () => {
     await setup(accounts, 1000);
     const staker = accounts[1];
-    // set challenge period to 1000
-    // hatVaults.setChallengePeriod(1000);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
