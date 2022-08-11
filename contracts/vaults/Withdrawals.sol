@@ -47,7 +47,7 @@ contract Withdrawals is Base {
         rewardController.updateVaultBalance(owner, shares, false, claimReward);
 
         _burn(owner, shares);
-        balance -= assets + fee;
+
         safeWithdrawVaultToken(assets, fee, receiver);
 
         emit Withdraw(caller, receiver, owner, assets, shares);

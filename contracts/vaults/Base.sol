@@ -139,7 +139,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     uint256 public vestingPeriods;
 
     bool public committeeCheckedIn;
-    uint256 public balance;
     uint256 public withdrawalFee;
 
     uint256 internal nonce;

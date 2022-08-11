@@ -92,14 +92,6 @@ contract Claim is Base {
 
         ClaimBounty memory claimBounty = calcClaimBounty(claim.bountyPercentage);
 
-        balance -=
-            claimBounty.hacker +
-            claimBounty.hackerVested +
-            claimBounty.committee +
-            claimBounty.swapAndBurn +
-            claimBounty.hackerHatVested +
-            claimBounty.governanceHat;
-
         IERC20 asset = IERC20(asset());
         if (claimBounty.hackerVested > 0) {
             //hacker gets part of bounty to a vesting contract
@@ -164,7 +156,7 @@ contract Claim is Base {
     public
     view
     returns(ClaimBounty memory claimBounty) {
-        uint256 totalSupply = balance;
+        uint256 totalSupply = totalAssets();
         if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();

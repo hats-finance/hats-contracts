@@ -4759,7 +4759,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("withdraw+ deposit + addition HAT ", async () => {
+  it.only("withdraw+ deposit + addition HAT ", async () => {
     await setup(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];
@@ -4813,9 +4813,10 @@ contract("HatVaults", (accounts) => {
     await hatToken.mint(newVault.address, web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     await advanceToNonSafetyPeriod();
-    var tx = await newVault.redeem(web3.utils.toWei("1"), staker, staker, {
+    var tx = await newVault.withdraw(web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
+    assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("0.97087378640776699"));
     let logs = await rewardController.getPastEvents('SafeTransferReward', {
         fromBlock: tx.blockNumber,
         toBlock: tx.blockNumber
@@ -4833,7 +4834,7 @@ contract("HatVaults", (accounts) => {
       (await hatToken.balanceOf(staker2))
         .sub(logs[0].args.amount)
         .toString(),
-      web3.utils.toWei("2")
+      web3.utils.toWei("68.666666666666666673")
     );
   });
 

@@ -57,11 +57,6 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         return Withdrawals.redeem(shares, receiver, owner);
     }
 
-    /** @dev See {IERC4626-totalAssets}. */
-    function totalAssets() public view virtual override returns (uint256) {
-        return balance;
-    }
-
     /** @dev See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
         return depositPause ? 0 : type(uint256).max;

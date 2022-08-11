@@ -27,7 +27,6 @@ contract Deposits is Base {
 
         rewardController.updateVaultBalance(receiver, shares, true, true);
 
-        balance += assets;
         super._deposit(caller, receiver, assets, shares);
     }
 }
