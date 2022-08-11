@@ -242,21 +242,23 @@ contract("HatTimelockController", (accounts) => {
       ["address", "uint24", "address"],
       [stakingToken.address, 0, hatToken.address]
     );
-    let amountToSwapAndBurn = await vault.swapAndBurn();
-    let amountForHackersHatRewards = await vault.hackersHatReward(
+    let amountToSwapAndBurn = await hatVaultsRegistry.swapAndBurn(stakingToken.address);
+    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
       accounts[1]
     );
     let amount = amountToSwapAndBurn
       .add(amountForHackersHatRewards)
-      .add(await vault.governanceHatReward());
+      .add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
     let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
     let payload = ISwapRouter.encodeFunctionData("exactInput", [
-      [path, vault.address, 0, amount.toString(), 0],
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
     ]);
 
     try {
       await hatTimelockController.swapBurnSend(
-        vault.address,
+        hatVaultsRegistry.address,
+        stakingToken.address,
         accounts[1],
         0,
         router.address,
@@ -271,14 +273,15 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await vault.swapBurnSend(accounts[1], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[1], 0, router.address, payload);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
     let tx = await hatTimelockController.swapBurnSend(
-      vault.address,
+      hatVaultsRegistry.address,
+      stakingToken.address,
       accounts[1],
       0,
       router.address,
@@ -286,7 +289,7 @@ contract("HatTimelockController", (accounts) => {
       { from: accounts[0] }
     );
     let log = (
-      await vault.getPastEvents("SwapAndBurn", {
+      await hatVaultsRegistry.getPastEvents("SwapAndBurn", {
         fromBlock: tx.blockNumber,
         toBlock: "latest",
       })
@@ -321,7 +324,7 @@ contract("HatTimelockController", (accounts) => {
         .toString()
     );
     log = (
-      await vault.getPastEvents("SwapAndSend", {
+      await hatVaultsRegistry.getPastEvents("SwapAndSend", {
         fromBlock: tx.blockNumber,
         toBlock: "latest",
       })

@@ -7,10 +7,9 @@ pragma solidity 0.8.14;
 import "./vaults/Claim.sol";
 import "./vaults/Deposits.sol";
 import "./vaults/Params.sol";
-import "./vaults/Swap.sol";
 import "./vaults/Withdrawals.sol";
 
-contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
+contract HATVault is Claim, Deposits, Params, Withdrawals {
 
     function _deposit(
         address caller,

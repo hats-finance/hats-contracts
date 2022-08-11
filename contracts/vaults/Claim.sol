@@ -124,9 +124,14 @@ contract Claim is Base {
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
-        swapAndBurn += claimBounty.swapAndBurn;
-        governanceHatReward += claimBounty.governanceHat;
-        hackersHatReward[claim.beneficiary] += claimBounty.hackerHatVested;
+        asset.safeApprove(address(registry), claimBounty.swapAndBurn + claimBounty.hackerHatVested + claimBounty.governanceHat);
+        registry.addTokensToSwap(
+            asset,
+            claim.beneficiary,
+            claimBounty.swapAndBurn,
+            claimBounty.hackerHatVested,
+            claimBounty.governanceHat
+        );
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             msg.sender,

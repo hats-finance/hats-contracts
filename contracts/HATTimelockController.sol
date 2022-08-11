@@ -50,14 +50,18 @@ contract HATTimelockController is TimelockController {
         _vault.setCommittee(_committee);
     }
 
-    function swapBurnSend(HATVault _vault,
-                        address _beneficiary,
-                        uint256 _amountOutMinimum,
-                        address _routingContract,
-                        bytes calldata _routingPayload)
+    function swapBurnSend(
+        HATVaultsRegistry _registry,
+        address _asset,
+        address _beneficiary,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload
+    )
     external
     onlyRole(PROPOSER_ROLE) {
-        _vault.swapBurnSend(
+        _registry.swapBurnSend(
+            _asset,
             _beneficiary,
             _amountOutMinimum,
             _routingContract,
