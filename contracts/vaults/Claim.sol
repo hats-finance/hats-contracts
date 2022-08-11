@@ -45,8 +45,7 @@ contract Claim is Base {
         generalParameters.withdrawPeriod) revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        uint256 claimId = uint256(keccak256(abi.encodePacked(address(this), block.number, nonce++)));
-        claims[claimId] = Claim({
+        activeClaim = Claim({
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
@@ -54,9 +53,8 @@ contract Claim is Base {
             createdAt: block.timestamp,
             isChallenged: false
         });
-        activeClaim = claimId;
+
         emit SubmitClaim(
-            claimId,
             msg.sender,
             _beneficiary,
             _bountyPercentage,
@@ -65,31 +63,24 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Called by a the arbitrator to challenge a claim
+    * @notice Called by a the arbitrator to challenge the active claim
     * This will pause the vault for withdrawals until the claim is resolved
-    * @param _claimId The id of the claim
     */
-
-    function challengeClaim(uint256 _claimId) external onlyArbitrator {
-        Claim storage claim = claims[_claimId];
-        if (claim.beneficiary == address(0))
-            revert NoActiveClaimExists();
-        if (block.timestamp > claim.createdAt + registry.challengeTimeOutPeriod())
+    function challengeClaim() external onlyArbitrator activeClaimExists {
+        if (block.timestamp > activeClaim.createdAt + registry.challengeTimeOutPeriod())
             revert ChallengePeriodEnded();
-        claim.isChallenged = true;
+        activeClaim.isChallenged = true;
     }
 
     /**
-    * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * callable by the  arbitrator, if isChallenged == true
+    * @notice Approve the active claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
+    * callable by the arbitrator, if isChallenged == true
     * Callable by anyone after challengePeriod is passed and isChallenged == false
-    * @param _claimId The claim ID
     * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
     * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
     */
-    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
-        Claim storage claim = claims[_claimId];
-        if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
+    function approveClaim(uint256 _bountyPercentage) external nonReentrant activeClaimExists {
+        Claim memory claim = activeClaim;
         if (claim.isChallenged) {
             if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
             claim.bountyPercentage = _bountyPercentage;
@@ -138,7 +129,6 @@ contract Claim is Base {
         hackersHatReward[claim.beneficiary] += claimBounty.hackerHatVested;
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
-            _claimId,
             msg.sender,
             claim.beneficiary,
             claim.bountyPercentage,
@@ -147,23 +137,21 @@ contract Claim is Base {
         );
 
         delete activeClaim;
-        delete claims[_claimId];
     }
 
     /**
-    * @notice Dismiss a claim for a bounty submitted by a committee.
+    * @notice Dismiss the active claim for a bounty submitted by a committee.
     * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
-    * @param _claimId The claim ID
     */
-    function dismissClaim(uint256 _claimId) external {
-        Claim storage claim = claims[_claimId];
+    function dismissClaim() external {
+        Claim memory claim = activeClaim;
         if (!claim.isChallenged) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < claim.createdAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
-        delete claims[_claimId];
-        emit DismissClaim(_claimId);
+
+        emit DismissClaim();
     }
 
 

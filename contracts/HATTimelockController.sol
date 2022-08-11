@@ -17,16 +17,16 @@ contract HATTimelockController is TimelockController {
     
     // Whitelisted functions
 
-    function approveClaim(HATVault _vault, uint256 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
-        _vault.approveClaim(_claimId, _bountyPercentage);
+    function approveClaim(HATVault _vault, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
+        _vault.approveClaim(_bountyPercentage);
     }
 
-    function challengeClaim(HATVault _vault, uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
-        _vault.challengeClaim(_claimId);
+    function challengeClaim(HATVault _vault) external onlyRole(PROPOSER_ROLE) {
+        _vault.challengeClaim();
     }
 
-    function dismissClaim(HATVault _vault, uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
-        _vault.dismissClaim(_claimId);
+    function dismissClaim(HATVault _vault) external onlyRole(PROPOSER_ROLE) {
+        _vault.dismissClaim();
     }
 
     function updateVaultInfo(HATVault _vault, 

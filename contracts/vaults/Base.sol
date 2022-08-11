@@ -144,9 +144,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     ITokenLockFactory public tokenLockFactory;
     ERC20Burnable public swapToken;
 
-    uint256 public activeClaim;
-    // claimId -> Claim
-    mapping(uint256 => Claim) public claims;
+    Claim public activeClaim;
 
     IRewardController public rewardController;
 
@@ -175,21 +173,19 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
-        uint256 indexed _claimId,
-        address _committee,
+        address indexed _committee,
         address indexed _beneficiary,
-        uint256 indexed _bountyPercentage,
+        uint256 _bountyPercentage,
         string _descriptionHash
     );
     event ApproveClaim(
-        uint256 indexed _claimId,
         address indexed _committee,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
         ClaimBounty _claimBounty
     );
-    event DismissClaim(uint256 indexed _claimId);
+    event DismissClaim();
     event SetCommittee(address indexed _committee);
     event SetVestingParams(
         uint256 indexed _duration,
@@ -248,7 +244,12 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     modifier noActiveClaim() {
-        if (activeClaim != 0) revert ActiveClaimExists();
+        if (activeClaim.createdAt != 0) revert ActiveClaimExists();
+        _;
+    }
+
+    modifier activeClaimExists() {
+        if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
         _;
     }
 

@@ -67,15 +67,15 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8000, { from: accounts[2] }),
+      vault.approveClaim(8000, { from: accounts[2] }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8000, { from: accounts[3] }),
+      vault.approveClaim(8000, { from: accounts[3] }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
@@ -84,7 +84,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
 
     // challenge period is over
     // anyone can now approve the claim, accepting the claim with the same amount is fine
-    const tx = await vault.approveClaim(claimId, 1234, {
+    const tx = await vault.approveClaim(1234, {
       from: accounts[2],
     });
     assert.equal(tx.logs[4].event, "ApproveClaim");
@@ -107,14 +107,14 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    await submitClaim(vault, { accounts });
 
     // go and pass the challenge period
     await utils.increaseTime(2000);
 
     // challenge period is over
     // anyone can now approve the claim, accepting the claim with the same amount is fine
-    const tx = await vault.approveClaim(claimId, 1234, {
+    const tx = await vault.approveClaim(1234, {
       from: accounts[3],
     });
     assert.equal(tx.logs[4].event, "ApproveClaim");
@@ -138,19 +138,19 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    await submitClaim(vault, { accounts });
 
     // go and pass the challenge period
     await utils.increaseTime(2000);
 
     await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: accounts[3] }),
+      vault.challengeClaim({ from: accounts[3] }),
       "ChallengePeriodEnded"
     );
 
     // challenge period is over
     // anyone can now approve the claim, accepting the claim with the same amount is fine
-    const tx = await vault.approveClaim(claimId, 1234, {
+    const tx = await vault.approveClaim(1234, {
       from: accounts[3],
     });
     assert.equal(tx.logs[4].event, "ApproveClaim");
@@ -174,41 +174,41 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
-
-    // challengeClaim will fail if passing an non-existent claimID
+    // challengeClaim will fail if no active claim exists
     await assertFunctionRaisesException(
-      vault.challengeClaim("1234", { from: accounts[2] }),
+      vault.challengeClaim({ from: accounts[2] }),
       "NoActiveClaimExists"
     );
 
+    await submitClaim(vault, { accounts });
+
     // only arbitrator can challenge the claim
     await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: accounts[1] }),
+      vault.challengeClaim({ from: accounts[1] }),
       "OnlyArbitrator"
     );
     await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: owner }),
+      vault.challengeClaim({ from: owner }),
       "OnlyArbitrator"
     );
-    await vault.challengeClaim(claimId, { from: arbitrator });
+    await vault.challengeClaim({ from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 6000, { from: staker }),
+      vault.approveClaim(6000, { from: staker }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 10001, { from: accounts[2] }),
+      vault.approveClaim(10001, { from: accounts[2] }),
       "BountyPercentageHigherThanMaxBounty"
     );
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8001, { from: accounts[2] }),
+      vault.approveClaim(8001, { from: accounts[2] }),
       "BountyPercentageHigherThanMaxBounty"
     );
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 6000, { from: owner }),
+      vault.approveClaim(6000, { from: owner }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
 
@@ -216,12 +216,12 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     await utils.increaseTime(2000);
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8000, { from: owner }),
+      vault.approveClaim(8000, { from: owner }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
-    assert.equal((await vault.claims(claimId)).bountyPercentage, 8000);
+    assert.equal((await vault.activeClaim()).bountyPercentage, 8000);
     var stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
-    var tx = await vault.approveClaim(claimId, 6000, { from: arbitrator });
+    var tx = await vault.approveClaim(6000, { from: arbitrator });
     assert.equal(tx.logs[4].event, "ApproveClaim");
     assert.equal(tx.logs[4].args._bountyPercentage, 6000);
     assert.equal(
@@ -257,24 +257,24 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const arbitrator = accounts[1];
     await hatVaultsRegistry.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
-    const claimId = await submitClaim(vault, { accounts });
+    await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
-      vault.dismissClaim(claimId, { from: arbitrator }),
+      vault.dismissClaim({ from: arbitrator }),
       "OnlyCallableIfChallenged"
     );
 
-    await vault.challengeClaim(claimId, { from: arbitrator });
+    await vault.challengeClaim({ from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      vault.dismissClaim(claimId, { from: accounts[2] }),
+      vault.dismissClaim({ from: accounts[2] }),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
 
     await assertFunctionRaisesException(
-      vault.dismissClaim(claimId, { from: owner }),
+      vault.dismissClaim({ from: owner }),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
-    await vault.dismissClaim(claimId, { from: arbitrator });
+    await vault.dismissClaim({ from: arbitrator });
   });
 });

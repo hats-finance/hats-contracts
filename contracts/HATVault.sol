@@ -75,13 +75,13 @@ contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
 
     /** @dev See {IERC4626-maxWithdraw}. */
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
+        if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return previewRedeem(balanceOf(owner));
     }
 
     /** @dev See {IERC4626-maxRedeem}. */
     function maxRedeem(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
+        if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
     }
 
