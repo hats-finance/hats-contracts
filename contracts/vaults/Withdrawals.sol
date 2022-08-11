@@ -39,7 +39,7 @@ contract Withdrawals is Base {
         // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
         // Should consider disallowing withdraw from another user.
         checkWithdrawAndResetWithdrawEnableStartTime(owner);
-        if (shares == 0) revert WithdrawMustBeGreaterThanZero();
+        if (assets == 0) revert WithdrawMustBeGreaterThanZero();
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
@@ -113,7 +113,7 @@ contract Withdrawals is Base {
         returns(bool)
     {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod (e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
         (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=

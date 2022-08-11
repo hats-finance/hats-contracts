@@ -709,8 +709,19 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
     try {
-      await vault.deposit(0, staker, { from: staker });
+      await vault.mint(0, staker, { from: staker });
       assert(false, "cannot deposit 0");
+    } catch (ex) {
+      assertVMException(ex, "AmountToDepositIsZero");
+    }
+
+    await vault.deposit(1, staker, { from: staker });
+
+    await stakingToken.mint(vault.address, web3.utils.toWei("10"));
+
+    try {
+      await vault.deposit(1, staker, { from: staker });
+      assert(false, "cannot deposit amount too low for 1 share");
     } catch (ex) {
       assertVMException(ex, "AmountToDepositIsZero");
     }
@@ -804,6 +815,38 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "WithdrawMustBeGreaterThanZero");
     }
+  });
+
+  it("withdraw cannot be 0", async () => {
+    await setup(accounts);
+    var staker = accounts[1];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await advanceToSafetyPeriod();
+    await vault.submitClaim(accounts[2], 8000, "description hash", {
+      from: accounts[1],
+    });
+
+    await vault.approveClaim(8000);
+
+    try {
+      await safeRedeem(vault, 1, staker);
+      assert(false, "cannot redeem amount too low for 1 asset");
+    } catch (ex) {
+      assertVMException(ex, "WithdrawMustBeGreaterThanZero");
+    }      
   });
 
   it("setWithdrawSafetyPeriod", async () => {
