@@ -66,6 +66,15 @@ contract HATVaultsRegistry is Ownable {
         uint256 claimFee;  //claim fee in ETH
     }
 
+    struct SwapData {
+        uint256 totalHackersHatReward;
+        uint256 amount;
+        uint256 swapAndBurn;
+        uint256 hatsReceived;
+        uint256 burntHats;
+        uint256 totalHackerReward;
+    }
+
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
 
@@ -339,54 +348,64 @@ contract HATVaultsRegistry is Ownable {
     * Send to beneficiary and governance their HATs rewards.
     * Burn the rest of HAT tokens.
     * Only governance is authorized to call this function.
-    * @param _beneficiary beneficiary
+    * @param _beneficiaries beneficiaries to swap for
     * @param _amountOutMinimum minimum output of HAT tokens at swap
     * @param _routingContract routing contract to call for the swap
     * @param _routingPayload payload to send to the _routingContract for the swap
     **/
     function swapBurnSend(
         address _asset,
-        address _beneficiary,
+        address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload
     ) external onlyOwner {
-        uint256 amount = swapAndBurn[_asset] + hackersHatReward[_asset][_beneficiary] + governanceHatReward[_asset];
-        if (amount == 0) revert AmountToSwapIsZero();
+        // Needed to avoid a stack too deep error
+        SwapData memory swapData;
+        swapData.swapAndBurn = swapAndBurn[_asset];
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            swapData.totalHackersHatReward += hackersHatReward[_asset][_beneficiaries[i]];
+        }
+        swapData.amount = swapAndBurn[_asset] + swapData.totalHackersHatReward + governanceHatReward[_asset];
+        if (swapData.amount == 0) revert AmountToSwapIsZero();
         ERC20Burnable _HAT = HAT;
-        uint256 hatsReceived = swapTokenForHAT(_asset, amount, _amountOutMinimum, _routingContract, _routingPayload);
-        uint256 burntHats = hatsReceived * swapAndBurn[_asset] / amount;
-        uint256 hackerReward = hatsReceived * hackersHatReward[_asset][_beneficiary] / amount;
+        swapData.hatsReceived = swapTokenForHAT(_asset, swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
+        swapData.burntHats = swapData.hatsReceived * swapAndBurn[_asset] / swapData.amount;
+        if (swapData.burntHats > 0) {
+            _HAT.burn(swapData.burntHats);
+        }
+        emit SwapAndBurn(swapData.amount, swapData.burntHats);
+
         swapAndBurn[_asset] = 0;
         governanceHatReward[_asset] = 0;
-        hackersHatReward[_asset][_beneficiary] = 0;
-        if (burntHats > 0) {
-            _HAT.burn(burntHats);
-        }
-        emit SwapAndBurn(amount, burntHats);
 
-        address tokenLock;
-        if (hackerReward > 0) {
-            // hacker gets her reward via vesting contract
-            tokenLock = tokenLockFactory.createTokenLock(
-                address(_HAT),
-                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
-                _beneficiary,
-                hackerReward,
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp, //start
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp + generalParameters.hatVestingDuration, //end
-                generalParameters.hatVestingPeriods,
-                0, // no release start
-                0, // no cliff
-                ITokenLock.Revocability.Disabled,
-                true
-            );
-            _HAT.safeTransfer(tokenLock, hackerReward);
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+            swapData.totalHackerReward += hackerReward;
+            hackersHatReward[_asset][_beneficiaries[i]] = 0;
+            address tokenLock;
+            if (hackerReward > 0) {
+                // hacker gets her reward via vesting contract
+                tokenLock = tokenLockFactory.createTokenLock(
+                    address(_HAT),
+                    0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                    _beneficiaries[i],
+                    hackerReward,
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp, //start
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp + generalParameters.hatVestingDuration, //end
+                    generalParameters.hatVestingPeriods,
+                    0, // no release start
+                    0, // no cliff
+                    ITokenLock.Revocability.Disabled,
+                    true
+                );
+                _HAT.safeTransfer(tokenLock, hackerReward);
+            }
+            emit SwapAndSend(_beneficiaries[i], swapData.amount, hackerReward, tokenLock);
         }
-        emit SwapAndSend(_beneficiary, amount, hackerReward, tokenLock);
-        _HAT.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
+        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward - swapData.burntHats);
     }
 
     function swapTokenForHAT(

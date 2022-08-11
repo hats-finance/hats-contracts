@@ -3133,7 +3133,7 @@ contract("HatVaults", (accounts) => {
     ]);
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
@@ -3152,7 +3152,7 @@ contract("HatVaults", (accounts) => {
     await vault.approveClaim(claimId, 8000);
     await stakingToken.approveDisable(true);
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "approve disabled");
     } catch (ex) {
       assertVMException(ex, "SafeERC20: ERC20 operation did not succeed");
@@ -3160,7 +3160,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.approveDisable(false);
     await stakingToken.approveZeroDisable(true);
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "approve to 0 disabled");
     } catch (ex) {
       assertVMException(ex, "SafeERC20: ERC20 operation did not succeed");
@@ -3179,7 +3179,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address, 
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload
@@ -3226,7 +3226,7 @@ contract("HatVaults", (accounts) => {
       accounts[4]
     );
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
@@ -3285,7 +3285,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address, 
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload
@@ -3362,7 +3362,7 @@ contract("HatVaults", (accounts) => {
       [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
     ]);
     try {
-      await hatVaultsRegistry.swapBurnSend(hatToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(hatToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "cannot swapBurnSend before approve");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
@@ -3393,7 +3393,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       hatToken.address,
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload
@@ -3426,7 +3426,7 @@ contract("HatVaults", (accounts) => {
       accounts[4]
     );
     try {
-      await hatVaultsRegistry.swapBurnSend(hatToken.address, accounts[2], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(hatToken.address, [accounts[2]], 0, router.address, payload);
       assert(false, "cannot swapBurnSend twice");
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
@@ -3514,7 +3514,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address,
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload
@@ -3621,7 +3621,7 @@ contract("HatVaults", (accounts) => {
     ]);
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[1], 0, router.address, payload, {
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, router.address, payload, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -3630,7 +3630,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[1], 0, accounts[1], payload, {
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, accounts[1], payload, {
         from: accounts[0],
       });
       assert(false, "can only use whitelisted routers");
@@ -3656,7 +3656,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._status, false);
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[1], 0, router.address, payload, {
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, router.address, payload, {
         from: accounts[0],
       });
       assert(false, "can only use whitelisted routers");
@@ -3674,7 +3674,7 @@ contract("HatVaults", (accounts) => {
 
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address, 
-      accounts[1],
+      [accounts[1]],
       0,
       router.address,
       payload,
@@ -3734,7 +3734,7 @@ contract("HatVaults", (accounts) => {
 
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address, 
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload,
@@ -3767,7 +3767,7 @@ contract("HatVaults", (accounts) => {
     try {
       tx = await hatVaultsRegistry.swapBurnSend(
         stakingToken.address, 
-        accounts[1],
+        [accounts[1]],
         0,
         router.address,
         payload,
@@ -3783,7 +3783,7 @@ contract("HatVaults", (accounts) => {
     try {
       tx = await hatVaultsRegistry.swapBurnSend(
         stakingToken.address, 
-        accounts[2],
+        [accounts[2]],
         0,
         router.address,
         payload,
@@ -3879,7 +3879,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address,
-      accounts[1],
+      [accounts[1]],
       0,
       router.address,
       payload,
@@ -3967,7 +3967,7 @@ contract("HatVaults", (accounts) => {
     ]);
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address,
-      accounts[2],
+      [accounts[2]],
       0,
       router.address,
       payload,
@@ -4059,7 +4059,7 @@ contract("HatVaults", (accounts) => {
     try {
       await hatVaultsRegistry.swapBurnSend(
         stakingToken.address,
-        accounts[1],
+        [accounts[1]],
         web3.utils.toWei("1"),
         router.address,
         payload,
@@ -4113,7 +4113,7 @@ contract("HatVaults", (accounts) => {
     try {
       await hatVaultsRegistry.swapBurnSend(
         stakingToken.address,
-        accounts[1],
+        [accounts[1]],
         web3.utils.toWei("1"),
         router.address,
         payload,
