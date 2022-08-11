@@ -14,7 +14,7 @@ contract Withdrawals is Base {
     **/
     function withdrawRequest() external nonReentrant {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawwithdrawRequest
+        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawRequest
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
@@ -120,12 +120,12 @@ contract Withdrawals is Base {
             generalParameters.withdrawPeriod) return false;
         // check that withdrawRequestPendingPeriod had passed
         // solhint-disable-next-line not-rely-on-time
-        return !(block.timestamp < withdrawEnableStartTime[user] ||
+        return (block.timestamp >= withdrawEnableStartTime[user] &&
         // check that withdrawRequestEnablePeriod had not passed and that the
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp >
+            block.timestamp <=
                 withdrawEnableStartTime[user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }
