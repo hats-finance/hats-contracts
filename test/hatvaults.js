@@ -4759,7 +4759,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it.only("withdraw+ deposit + addition HAT ", async () => {
+  it("withdraw+ deposit + addition HAT ", async () => {
     await setup(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];

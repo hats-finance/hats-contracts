@@ -80,14 +80,14 @@ contract HATVaultsRegistry is Ownable {
     uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
-    ITokenLockFactory public tokenLockFactory;
+    ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20Burnable public swapToken;
+    ERC20Burnable public immutable swapToken;
     mapping(address => bool) public whitelistedRouters;
 
     // asset => amount
