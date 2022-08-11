@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -37,7 +36,7 @@ error DelayTooShort();
 /// bounty increases with the success of the token and project.
 /// This project is open-source and can be found on:
 /// https://github.com/hats-finance/hats-contracts
-contract HATVaultsRegistry is Ownable, ReentrancyGuard {
+contract HATVaultsRegistry is Ownable {
 
     struct GeneralParameters {
         uint256 hatVestingDuration;
