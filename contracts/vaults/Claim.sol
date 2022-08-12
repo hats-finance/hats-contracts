@@ -81,6 +81,8 @@ contract Claim is Base {
     */
     function approveClaim(uint256 _bountyPercentage) external nonReentrant activeClaimExists {
         Claim memory claim = activeClaim;
+        delete activeClaim;
+
         if (claim.isChallenged) {
             if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
             claim.bountyPercentage = _bountyPercentage;
@@ -132,8 +134,6 @@ contract Claim is Base {
             tokenLock,
             claimBounty
         );
-
-        delete activeClaim;
     }
 
     /**
