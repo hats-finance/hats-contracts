@@ -30,14 +30,10 @@ error VestingDurationSmallerThanPeriods();
 error DelayTooShort();
 // Amount to swap is zero
 error AmountToSwapIsZero();
-// Token approve reset failed
-error TokenApproveResetFailed();
 // Swap was not successful
 error SwapFailed();
 // Routing contract must be whitelisted
 error RoutingContractNotWhitelisted();
-// Token approve failed
-error TokenApproveFailed();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
 
@@ -409,8 +405,7 @@ contract HATVaultsRegistry is Ownable {
         }
         if (!whitelistedRouters[_routingContract])
             revert RoutingContractNotWhitelisted();
-        if (!IERC20(_asset).approve(_routingContract, _amount))
-            revert TokenApproveFailed();
+        IERC20(_asset).safeApprove(_routingContract, _amount);
         uint256 balanceBefore = _swapToken.balanceOf(address(this));
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -420,8 +415,7 @@ contract HATVaultsRegistry is Ownable {
         if (swapTokenReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
             
-        if (!IERC20(_asset).approve(address(_routingContract), 0))
-            revert TokenApproveResetFailed();
+        IERC20(_asset).safeApprove(address(_routingContract), 0);
     }
 
     function getGeneralParameters() external view returns(GeneralParameters memory) {

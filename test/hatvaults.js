@@ -3128,7 +3128,7 @@ contract("HatVaults", (accounts) => {
       await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
       assert(false, "approve disabled");
     } catch (ex) {
-      assertVMException(ex, "TokenApproveFailed");
+      assertVMException(ex, "SafeERC20: ERC20 operation did not succeed");
     }
     await stakingToken.approveDisable(false);
     await stakingToken.approveZeroDisable(true);
@@ -3136,7 +3136,7 @@ contract("HatVaults", (accounts) => {
       await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[2], 0, router.address, payload);
       assert(false, "approve to 0 disabled");
     } catch (ex) {
-      assertVMException(ex, "TokenApproveResetFailed");
+      assertVMException(ex, "SafeERC20: ERC20 operation did not succeed");
     }
     await stakingToken.approveZeroDisable(false);
     amountToSwapAndBurn = await hatVaultsRegistry.swapAndBurn(stakingToken.address);
