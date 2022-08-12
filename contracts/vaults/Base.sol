@@ -124,6 +124,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     HATVaultsRegistry public registry;

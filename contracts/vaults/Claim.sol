@@ -163,21 +163,21 @@ contract Claim is Base {
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
         claimBounty.hackerVested =
         totalBountyAmount * bountySplit.hackerVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.hacker =
         totalBountyAmount * bountySplit.hacker
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.committee =
         totalBountyAmount * bountySplit.committee
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.swapAndBurn =
         totalBountyAmount * bountySplit.swapAndBurn
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.governanceHat =
         totalBountyAmount * bountySplit.governanceHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.hackerHatVested =
         totalBountyAmount * bountySplit.hackerHatVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
     }
 }
