@@ -357,16 +357,16 @@ contract HATVaultsRegistry is Ownable {
         ERC20Burnable _swapToken = swapToken;
         uint256 hatsReceived = swapTokenForHAT(_asset, amount, _amountOutMinimum, _routingContract, _routingPayload);
         uint256 burntHats = hatsReceived * swapAndBurn[_asset] / amount;
+        uint256 hackerReward = hatsReceived * hackersHatReward[_asset][_beneficiary] / amount;
+        swapAndBurn[_asset] = 0;
+        governanceHatReward[_asset] = 0;
+        hackersHatReward[_asset][_beneficiary] = 0;
         if (burntHats > 0) {
             _swapToken.burn(burntHats);
         }
         emit SwapAndBurn(amount, burntHats);
 
         address tokenLock;
-        uint256 hackerReward = hatsReceived * hackersHatReward[_asset][_beneficiary] / amount;
-        swapAndBurn[_asset] = 0;
-        governanceHatReward[_asset] = 0;
-        hackersHatReward[_asset][_beneficiary] = 0;
         if (hackerReward > 0) {
             // hacker gets her reward via vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
