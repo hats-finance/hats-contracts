@@ -67,7 +67,8 @@ contract Claim is Base {
     * This will pause the vault for withdrawals until the claim is resolved
     */
     function challengeClaim() external onlyArbitrator activeClaimExists {
-        if (block.timestamp > activeClaim.createdAt + registry.challengeTimeOutPeriod())
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp > activeClaim.createdAt + registry.challengePeriod())
             revert ChallengePeriodEnded();
         activeClaim.isChallenged = true;
     }
@@ -138,7 +139,7 @@ contract Claim is Base {
 
     /**
     * @notice Dismiss the active claim for a bounty submitted by a committee.
-    * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
+    * Called either by the arbitrator, or by anyone if the claim is after the challenge timeout period.
     */
     function dismissClaim() external {
         Claim memory claim = activeClaim;
@@ -180,4 +181,4 @@ contract Claim is Base {
         totalBountyAmount * bountySplit.hackerHatVested
         / (HUNDRED_PERCENT_SQRD);
     }
-}
+}}
