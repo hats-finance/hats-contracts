@@ -39,6 +39,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => VaultInfo) public vaultInfo;
     // vault address => user address => reward debt amount
     mapping(address => mapping(address => uint256)) public rewardDebt;
+    // vault address => user address => unclaimed reward amount
+    mapping(address => mapping(address => uint256)) public unclaimedReward;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
     event SafeTransferReward(
@@ -146,7 +148,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+        uint256 pending = userShares * rewardPerShare / 1e12 + unclaimedReward[_vault][_user] - rewardDebt[_vault][_user];
         if (_sharesChange != 0) {
             if (_isDeposit) {
                 userShares += _sharesChange;
@@ -155,8 +157,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }
         }
         rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
-        if (pending > 0 && _claimReward) {
-            safeTransferReward(_user, pending, _vault);
+
+        if (pending > 0) {
+            if (_claimReward) {
+                unclaimedReward[_vault][_user] = 0;
+                safeTransferReward(_user, pending, _vault);
+            } else {
+                unclaimedReward[_vault][_user] = pending;
+            }
         }
     }
 

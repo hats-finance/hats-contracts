@@ -204,10 +204,12 @@ contract("HatVaults", (accounts) => {
     );
     let lpSupply = await currentVault.totalSupply();
     let rewardDebt = await rewardController.rewardDebt(currentVault.address, staker);
+    let unclaimedReward = await rewardController.unclaimedReward(currentVault.address, staker);
     rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(lpSupply));
     return stakerAmount
       .mul(rewardPerShare)
       .div(onee12)
+      .add(unclaimedReward)
       .sub(rewardDebt);
   }
 
@@ -2538,21 +2540,52 @@ contract("HatVaults", (accounts) => {
 
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[7].event, "ApproveClaim");
-    tx = await safeEmergencyWithdraw(vault, staker);
+    await vault.withdrawRequest({ from: staker });
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    let expectedReward = await calculateExpectedReward(staker);
+    tx = await vault.emergencyWithdraw({ from: staker })
     assert.equal(tx.logs[3].event, "EmergencyWithdraw");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
+    let unclaimedReward = await rewardController.unclaimedReward(vault.address, staker);
+    assert.equal(unclaimedReward.toString(), expectedReward.toString());
+
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
     assert.equal(await hatToken.balanceOf(staker2), 0);
 
-    tx = await safeEmergencyWithdraw(vault, staker2);
+    await utils.increaseTime(7 * 24 * 3600);
+    await vault.withdrawRequest({ from: staker2 });
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    let expectedRewardStaker2 = await calculateExpectedReward(staker2);
+    tx = await vault.emergencyWithdraw({ from: staker2 })
     assert.equal(tx.logs[3].event, "EmergencyWithdraw");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
 
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    let unclaimedRewardStaker2 = await rewardController.unclaimedReward(vault.address, staker2);
+    assert.equal(unclaimedRewardStaker2.toString(), expectedRewardStaker2.toString());
+    tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     let logs = await rewardController.getPastEvents('SafeTransferReward', {
+        fromBlock: tx.blockNumber,
+        toBlock: tx.blockNumber
+    });
+    assert.equal(logs[0].event, "SafeTransferReward");
+    assert.equal(logs[0].args.amount.toString(), unclaimedReward.toString());
+    assert.equal(
+      (await hatToken.balanceOf(rewardController.address)).toString(),
+      new web3.utils.BN(
+        web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+      )
+        .sub(logs[0].args.amount)
+        .toString()
+    );
+    assert.equal((await rewardController.unclaimedReward(vault.address, staker)).toString(), "0");
+    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    logs = await rewardController.getPastEvents('SafeTransferReward', {
         fromBlock: tx.blockNumber,
         toBlock: tx.blockNumber
     });
@@ -2563,9 +2596,10 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(
         web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
       )
-        .sub(logs[0].args.amount)
+        .sub(unclaimedReward).sub(logs[0].args.amount)
         .toString()
     );
+    assert.equal((await rewardController.unclaimedReward(vault.address, staker)).toString(), "0");
   });
 
   it("deposit for another user", async () => {
