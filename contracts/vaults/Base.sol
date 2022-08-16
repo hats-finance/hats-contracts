@@ -64,8 +64,6 @@ error OnlyArbitrator();
 // Claim can only be approved if challenge period is over, or if the
 // caller is the arbitrator
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
-// Bounty split must include hacker payout
-error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
 error CannotDepositToAnotherUserWithWithdrawRequest();
@@ -238,9 +236,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
-        if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
-            revert BountySplitMustIncludeHackerPayout();
-
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee +

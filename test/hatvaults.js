@@ -4521,22 +4521,6 @@ contract("HatVaults", (accounts) => {
         accounts[1],
         rewardController.address,
         8000,
-        [0, 0, 500, 0, 9000, 500],
-        "_descriptionHash",
-        [86400, 10],
-        false
-      );
-      assert(false, "bounty payout to hacker is zero");
-    } catch (ex) {
-      assertVMException(ex, "BountySplitMustIncludeHackerPayout");
-    }
-
-    try {
-      await hatVaultsRegistry.createVault(
-        stakingToken2.address,
-        accounts[1],
-        rewardController.address,
-        8000,
         [6000, 2000, 500, 0, 1000, 500],
         "_descriptionHash",
         [86400, 0],
