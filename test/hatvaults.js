@@ -317,15 +317,6 @@ contract("HatVaults", (accounts) => {
     await setup(accounts);
     assert.equal(await vault.committee(), accounts[1]);
 
-    try {
-      await vault.setCommittee(utils.NULL_ADDRESS, {
-        from: accounts[1],
-      });
-      assert(false, "cannot set zero address committee");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeIsZero");
-    }
-
     await vault.setCommittee(accounts[2], { from: accounts[1] });
 
     assert.equal(await vault.committee(), accounts[2]);
@@ -2197,20 +2188,6 @@ contract("HatVaults", (accounts) => {
       assert(false, "percentage requested too high");
     } catch (ex) {
       assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
-    }
-
-    try {
-      await vault.submitClaim(
-        utils.NULL_ADDRESS,
-        8000,
-        "description hash",
-        {
-          from: accounts[1],
-        }
-      );
-      assert(false, "beneficiary is zero");
-    } catch (ex) {
-      assertVMException(ex, "BeneficiaryIsZero");
     }
 
     try {
@@ -4505,37 +4482,6 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("2"));
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    try {
-      await hatVaultsRegistry.createVault(
-        stakingToken2.address,
-        utils.NULL_ADDRESS,
-        rewardController.address,
-        8000,
-        [6000, 2000, 500, 0, 1000, 500],
-        "_descriptionHash",
-        [86400, 10],
-        false
-      );
-      assert(false, "committee cannot be zero");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeIsZero");
-    }
-
-    try {
-      await hatVaultsRegistry.createVault(
-        utils.NULL_ADDRESS,
-        accounts[1],
-        rewardController.address,
-        8000,
-        [6000, 2000, 500, 0, 1000, 500],
-        "_descriptionHash",
-        [86400, 10],
-        false
-      );
-      assert(false, "asset cannot be zero");
-    } catch (ex) {
-      assertVMException(ex, "AssetIsZero");
-    }
 
     try {
       await hatVaultsRegistry.createVault(

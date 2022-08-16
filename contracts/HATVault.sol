@@ -21,8 +21,6 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         address _committee,
         bool _isPaused
     ) external initializer {
-        if (_committee == address(0)) revert CommitteeIsZero();
-        if (address(_asset) == address(0)) revert AssetIsZero();
         if (_maxBounty > HUNDRED_PERCENT)
             revert MaxBountyCannotBeMoreThanHundredPercent();
         validateSplit(_bountySplit);

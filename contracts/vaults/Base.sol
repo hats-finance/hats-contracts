@@ -21,8 +21,6 @@ error OnlyCommittee();
 error ActiveClaimExists();
 // Safety period
 error SafetyPeriod();
-// Beneficiary is zero
-error BeneficiaryIsZero();
 // Not safety period
 error NotSafetyPeriod();
 // Bounty percentage is higher than the max bounty
@@ -37,8 +35,6 @@ error NotEnoughFeePaid();
 error NoPendingMaxBounty();
 // Delay period for setting max bounty had not passed
 error DelayPeriodForSettingMaxBountyHadNotPassed();
-// Committee is zero
-error CommitteeIsZero();
 // Committee already checked in
 error CommitteeAlreadyCheckedIn();
 // Pending withdraw request exists
@@ -53,8 +49,6 @@ error TotalSplitPercentageShouldBeHundredPercent();
 error InvalidWithdrawRequest();
 // Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
-// LP token is zero
-error AssetIsZero();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%

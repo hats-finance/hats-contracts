@@ -37,7 +37,6 @@ contract Claim is Base {
     onlyCommittee()
     noActiveClaim()
     {
-        if (_beneficiary == address(0)) revert BeneficiaryIsZero();
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
@@ -88,6 +87,7 @@ contract Claim is Base {
             if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
             claim.bountyPercentage = _bountyPercentage;
         } else {
+            // solhint-disable-next-line not-rely-on-time
             if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
         }
 
