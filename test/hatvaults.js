@@ -3031,6 +3031,12 @@ contract("HatVaults", (accounts) => {
     assert.equal(balanceOfStakerHats.toString(), expectedReward);
   });
 
+  it("Update pool before start time", async () => {
+    await setup(accounts, (await web3.eth.getBlock("latest")).number + 10);
+    assert.equal(await rewardController.getPendingReward(vault.address, accounts[0]), 0);
+    await rewardController.updateVault(vault.address);
+  });
+
   it("deposit + withdraw after time end (bdp bug)", async () => {
     await setup(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
@@ -4575,6 +4581,49 @@ contract("HatVaults", (accounts) => {
       ),
       rewardControllerExpectedHatsBalance
     );
+  });
+
+  it("update vault before setting reward controller alloc points", async () => {
+    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
+    var tokenLock1 = await HATTokenLock.new();
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    var vaultsManager = await VaultsManagerMock.new();
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      rewardPerEpoch,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      [router1.address],
+      tokenLockFactory1.address,
+      true
+    );
+
+    hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
+    rewardController1 = await RewardController.at(
+      deployment.rewardController.address
+    );
+    var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
+    assert.equal(globalVaultsUpdatesLength, 0);
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    const vault1 = await HATVault.at((await hatVaultsRegistry1.createVault(
+      stakingToken2.address,
+      accounts[1],
+      rewardController1.address,
+      8000,
+      [8000, 1000, 100, 150, 350, 400],
+      "_descriptionHash",
+      [86400, 10],
+      false
+    )).logs[1].args._vault);
+
+    await rewardController1.updateVault(vault1.address);
+    await rewardController1.updateVault(vault1.address);
+
+    globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
+    assert.equal(globalVaultsUpdatesLength, 0);
   });
 
   it("add/set vault on the same block", async () => {

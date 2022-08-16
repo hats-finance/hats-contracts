@@ -63,10 +63,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         _transferOwnership(_hatGovernance);
     }
 
-    function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {
-        if (vaultInfo[_vault].lastRewardBlock == 0) {
-            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
-        }
+    function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
         updateVault(_vault);
         uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
         globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
@@ -107,6 +104,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     function updateVault(address _vault) public {
         VaultInfo storage vault = vaultInfo[_vault];
         uint256 lastRewardBlock = vault.lastRewardBlock;
+        if (lastRewardBlock == 0) {
+            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+            return;
+        }
         if (block.number <= lastRewardBlock) {
             return;
         }
@@ -120,7 +121,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             vault.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
+        if (globalVaultsUpdates.length != 0) {
+            vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
+        }
     }
 
     /**
@@ -231,7 +234,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 rewardPerShare = vault.rewardPerShare;
         uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
-        if (block.number > vault.lastRewardBlock && totalShares > 0) {
+        if (vault.lastRewardBlock != 0 && block.number > vault.lastRewardBlock && totalShares > 0) {
             uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
             rewardPerShare += (reward * 1e12 / totalShares);
         }
