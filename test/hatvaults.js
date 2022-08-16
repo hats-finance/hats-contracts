@@ -1050,7 +1050,7 @@ contract("HatVaults", (accounts) => {
     }
     await vault.withdrawRequest({ from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker })
+    await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker });
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.withdrawRequest({ from: staker });
@@ -2355,7 +2355,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     let expectedReward = await calculateExpectedReward(staker);
-    tx = await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker })
+    tx = await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker });
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
@@ -2371,7 +2371,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     let expectedRewardStaker2 = await calculateExpectedReward(staker2);
-    tx = await vault.redeem(await vault.balanceOf(staker2), staker2, staker2, { from: staker2 })
+    tx = await vault.redeem(await vault.balanceOf(staker2), staker2, staker2, { from: staker2 });
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
