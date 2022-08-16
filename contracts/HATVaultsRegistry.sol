@@ -20,6 +20,8 @@ error SafetyPeriodTooLong();
 error WithdrawRequestPendingPeriodTooLong();
 // Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
+// Withdraw request enabled period must be <= 100 days
+error WithdrawRequestEnabledPeriodTooLong();
 // Vesting duration is too long
 error VestingDurationTooLong();
 // Vesting periods cannot be zero
@@ -194,6 +196,8 @@ contract HATVaultsRegistry is Ownable {
             revert WithdrawRequestPendingPeriodTooLong();
         if (6 hours > _withdrawRequestEnablePeriod)
             revert WithdrawRequestEnabledPeriodTooShort();
+        if (100 days < _withdrawRequestEnablePeriod)
+            revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
         emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);

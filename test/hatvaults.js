@@ -985,6 +985,13 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
+      await hatVaultsRegistry.setWithdrawRequestParams(1, 24 * 60 * 60 * 100 + 1);
+      assert(false, "enable period must be <= 100 days");
+    } catch (ex) {
+      assertVMException(ex, "WithdrawRequestEnabledPeriodTooLong");
+    }
+
+    try {
       await hatVaultsRegistry.setWithdrawRequestParams(1, 60 * 24 * 3600, {
         from: accounts[4],
       });
