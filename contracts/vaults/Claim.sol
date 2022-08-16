@@ -181,4 +181,4 @@ contract Claim is Base {
         totalBountyAmount * bountySplit.hackerHatVested
         / (HUNDRED_PERCENT_SQRD);
     }
-}}
+}
