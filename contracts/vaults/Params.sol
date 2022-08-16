@@ -32,6 +32,10 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
+        _setVestingParams(_duration, _periods);
+    }
+
+    function _setVestingParams(uint256 _duration, uint256 _periods) internal {
         if (_duration >= 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();

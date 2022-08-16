@@ -11,6 +11,35 @@ import "./vaults/Withdrawals.sol";
 
 contract HATVault is Claim, Deposits, Params, Withdrawals {
 
+    function initialize(
+        IRewardController _rewardController,
+        uint256 _vestingDuration,
+        uint256 _vestingPeriods,
+        uint256 _maxBounty,
+        BountySplit memory _bountySplit,
+        IERC20 _asset,
+        address _committee,
+        bool _isPaused
+    ) external initializer {
+        if (_committee == address(0)) revert CommitteeIsZero();
+        if (address(_asset) == address(0)) revert AssetIsZero();
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
+        validateSplit(_bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
+        rewardController = _rewardController;
+        _setVestingParams(_vestingDuration, _vestingPeriods);
+        maxBounty = _maxBounty;
+        bountySplit = _bountySplit;
+        committee = _committee;
+        depositPause = _isPaused;
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
+        registry = _registry;
+        __ReentrancyGuard_init();
+        _transferOwnership(_registry.owner());
+        tokenLockFactory = _registry.tokenLockFactory();
+    }
+
     function _deposit(
         address caller,
         address receiver,

@@ -225,41 +225,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         _;
     }
 
-    function initialize(
-        IRewardController _rewardController,
-        uint256 _vestingDuration,
-        uint256 _vestingPeriods,
-        uint256 _maxBounty,
-        BountySplit memory _bountySplit,
-        IERC20 _asset,
-        address _committee,
-        bool _isPaused
-    ) external initializer {
-        if (_vestingDuration > 120 days)
-            revert VestingDurationTooLong();
-        if (_vestingPeriods == 0) revert VestingPeriodsCannotBeZero();
-        if (_vestingDuration < _vestingPeriods)
-            revert VestingDurationSmallerThanPeriods();
-        if (_committee == address(0)) revert CommitteeIsZero();
-        if (address(_asset) == address(0)) revert AssetIsZero();
-        if (_maxBounty > HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanHundredPercent();
-        validateSplit(_bountySplit);
-        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
-        rewardController = _rewardController;
-        vestingDuration = _vestingDuration;
-        vestingPeriods = _vestingPeriods;
-        maxBounty = _maxBounty;
-        bountySplit = _bountySplit;
-        committee = _committee;
-        depositPause = _isPaused;
-        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
-        registry = _registry;
-        __ReentrancyGuard_init();
-        _transferOwnership(_registry.owner());
-        tokenLockFactory = _registry.tokenLockFactory();
-    }
-
     /**
     * @notice change the information of the vault
     * ony calleable by the owner of the contract
