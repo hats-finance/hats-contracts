@@ -393,7 +393,7 @@ contract("HatVaults", (accounts) => {
 
   it("dismiss can be called by anyone after 5 weeks delay", async () => {
     var staker = accounts[1];
-    await setup(accounts, 0, 9000, [9000, 0, 200, 0, 100, 700]);
+    await setup(accounts, 0, 9000, [9000, 0, 200, 0, 100, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
 
     await advanceToSafetyPeriod();
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -448,7 +448,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "MaxBountyCannotBeMoreThanHundredPercent");
     }
 
-    await setup(accounts, 0, 9000, [8000, 1000, 100, 100, 100, 700]);
+    await setup(accounts, 0, 9000, [8000, 1000, 100, 100, 100, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     assert.equal((await vault.maxBounty()).toString(), "9000");
     assert.equal(
       (await vault.bountySplit()).hacker.toString(),
@@ -728,7 +728,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdrawn", async () => {
-    await setup(accounts);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -774,6 +774,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await vault.challengeClaim();
+
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -781,7 +783,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    await vault.challengeClaim();
     tx = await vault.dismissClaim();
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -850,7 +851,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("setWithdrawSafetyPeriod", async () => {
-    await setup(accounts);
+    await setup(accounts, 0, 8000, [6000, 2000, 500, 0, 1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     try {
       await hatVaultsRegistry.setWithdrawSafetyPeriod(60 * 60, 60 * 30, {
         from: accounts[1],
@@ -912,6 +913,8 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
 
+    await vault.challengeClaim();
+
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw while pending approval exists");
@@ -919,7 +922,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    await vault.challengeClaim();
     tx = await vault.dismissClaim();
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -2119,7 +2121,12 @@ contract("HatVaults", (accounts) => {
       (await web3.eth.getBlock("latest")).number,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
-      10000
+      10000,
+      0,
+      100,
+      false,
+      2500000,
+      60 * 60 * 24 * 3
     );
 
     var staker = accounts[4];
@@ -2142,13 +2149,15 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await vault.challengeClaim();
+    await utils.increaseTime(60 * 60 * 24 * 3 + 1);
+
     try {
       await vault.approveClaim(8000);
       assert(false, "lpbalance is zero");
     } catch (ex) {
       assertVMException(ex, "VaultBalanceIsZero");
     }
-    await vault.challengeClaim();
     let tx = await vault.dismissClaim();
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -2229,6 +2238,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._bountyPercentage, 8000);
     assert.equal(tx.logs[0].args._descriptionHash, "description hash");
 
+    await utils.increaseTime(60 * 60 * 24 * 3 + 1);
     tx = await vault.approveClaim(8000);
     assert.equal(
       await hatToken.balanceOf(rewardController.address),
@@ -2807,7 +2817,12 @@ contract("HatVaults", (accounts) => {
       (await web3.eth.getBlock("latest")).number,
       8000,
       [6000, 2000, 500, 0, 1000, 500],
-      10000
+      10000,
+      0,
+      100,
+      false,
+      2500000,
+      60 * 60 * 24 * 3
     );
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     var staker = accounts[1];
