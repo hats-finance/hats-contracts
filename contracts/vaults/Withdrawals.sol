@@ -33,8 +33,7 @@ contract Withdrawals is Base {
         address owner,
         uint256 assets,
         uint256 shares,
-        uint256 fee,
-        bool claimReward
+        uint256 fee
     ) internal nonReentrant {
         // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
         // Should consider disallowing withdraw from another user.
@@ -44,7 +43,7 @@ contract Withdrawals is Base {
             _spendAllowance(owner, caller, shares);
         }
 
-        rewardController.updateVaultBalance(owner, shares, false, claimReward);
+        rewardController.updateVaultBalance(owner, shares, false);
 
         _burn(owner, shares);
 
@@ -63,7 +62,7 @@ contract Withdrawals is Base {
 
         uint256 shares = previewWithdraw(assets);
         uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
     }
@@ -78,20 +77,9 @@ contract Withdrawals is Base {
 
         uint256 assets = previewRedeem(shares);
         uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
-    }
-
-    function emergencyWithdraw() external {
-        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
-        // Should consider disallowing withdraw from another user.
-        address msgSender = _msgSender();
-        uint256 shares = balanceOf(msgSender);
-        uint256 assets = previewRedeem(shares);
-        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
-        _withdraw(msgSender, msgSender, msgSender, assets, shares, fee, false);
-        emit EmergencyWithdraw(msgSender, assets, shares);
     }
 
     // @notice Checks that the sender can perform a withdraw at this time

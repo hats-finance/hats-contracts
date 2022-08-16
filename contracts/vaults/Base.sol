@@ -180,7 +180,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
-    event EmergencyWithdraw(address indexed user, uint256 assets, uint256 shares);
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();

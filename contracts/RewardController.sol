@@ -49,7 +49,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 amount,
         address rewardToken
     );
-    event ClaimReward(address indexed _vault);
+    event ClaimReward(address indexed _vault, uint256 amount);
 
     function initialize(
         address _rewardToken,
@@ -141,14 +141,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         address _vault,
         address _user,
         uint256 _sharesChange,
-        bool _isDeposit,
-        bool _claimReward
+        bool _isDeposit
     ) internal {
         updateVault(_vault);
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        uint256 pending = userShares * rewardPerShare / 1e12 + unclaimedReward[_vault][_user] - rewardDebt[_vault][_user];
+        unclaimedReward[_vault][_user] += userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+
         if (_sharesChange != 0) {
             if (_isDeposit) {
                 userShares += _sharesChange;
@@ -157,24 +157,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }
         }
         rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
-
-        if (pending > 0) {
-            if (_claimReward) {
-                unclaimedReward[_vault][_user] = 0;
-                safeTransferReward(_user, pending, _vault);
-            } else {
-                unclaimedReward[_vault][_user] = pending;
-            }
-        }
     }
 
-    function updateVaultBalance(
-        address _user,
-        uint256 _sharesChange,
-        bool _isDeposit,
-        bool _claimReward
-    ) external {
-        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit, _claimReward);
+    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
+        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
@@ -182,9 +168,16 @@ contract RewardController is IRewardController, OwnableUpgradeable {
      * @param _vault The vault address
      */
     function claimReward(address _vault) external {
-        _updateVaultBalance(_vault, msg.sender, 0, true, true);
+        address user = msg.sender;
+        _updateVaultBalance(_vault, user, 0, true);
 
-        emit ClaimReward(_vault);
+        uint256 userUnclaimedReward = unclaimedReward[_vault][user];
+        if (userUnclaimedReward > 0) {
+            unclaimedReward[_vault][user] = 0;
+            safeTransferReward(user, userUnclaimedReward, _vault);
+        }
+
+        emit ClaimReward(_vault, userUnclaimedReward);
     }
 
      /**
@@ -247,7 +240,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 + 
+                unclaimedReward[_vault][_user] -
+                rewardDebt[_vault][_user];
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {

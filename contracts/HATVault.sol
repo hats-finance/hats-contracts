@@ -62,8 +62,8 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
 
         checkWithdrawAndResetWithdrawEnableStartTime(from);
 
-        rewardController.updateVaultBalance(to, amount, true, true);
-        rewardController.updateVaultBalance(from, amount, false, true);
+        rewardController.updateVaultBalance(to, amount, true);
+        rewardController.updateVaultBalance(from, amount, false);
     }
 
     /** @dev See {IERC4626-withdraw}. */
