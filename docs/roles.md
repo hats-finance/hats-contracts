@@ -4,6 +4,7 @@
 The contracts in this repository define a number of different roles that have the power to change the way the contracts work. We list them here, with a short description of what an account with this role can do, and to which account this role will be assigned on deployment
 
 ## `HatVaultsRegistry.owner`
+
 - can call `setFeeSetter` set the feeSetter role
 - can call `setArbitrator` set the arbitrator role
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
@@ -21,9 +22,9 @@ The contracts in this repository define a number of different roles that have th
 The `owner` of a hatvault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` 
-- can call `updateVaultInfo` to change the vault's properties
+- can call `updateVaultInfo` to change some of the vault's properties (description, it is paused for deposits?)
 - can call `setVestingParams` set vesting parameters for bounty paid
-- can call `setBountySplit` set how the bounty is split betwen security researcher, committee and governance
+- can call `setBountySplit` set how the bounty is split between security researcher, committee and governance
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
 
@@ -73,14 +74,12 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 
 - set to governance multisig
 - can call `cancel` and cancel any pending operation
-- The following functions in HATVaults are **not** subject to a timelock:
-  - `addPool`
+
+
+## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
-<<<<<<< Updated upstream
+
   - `setPool`
-  - `setAllocPoints`
-=======
   - `updateVaultInfo`
   - `setAllocPoint`
->>>>>>> Stashed changes
   - `swapBurnSend`
