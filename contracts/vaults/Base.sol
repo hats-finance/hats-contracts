@@ -61,9 +61,10 @@ error CommitteeNotCheckedInYet();
 error NotEnoughUserBalance();
 // Only arbitrator
 error OnlyArbitrator();
-// Claim can only be approved if challenge period is over, or if the
-// caller is the arbitrator
-error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+// Unchalleged claim can only be approved if challenge period is over
+error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+// Challenged claim can only be approved by arbitrator before the challenge timeout period
+error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
 error CannotDepositToAnotherUserWithWithdrawRequest();

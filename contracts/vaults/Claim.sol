@@ -84,11 +84,13 @@ contract Claim is Base {
         delete activeClaim;
 
         if (claim.isChallenged) {
-            if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+            // solhint-disable-next-line not-rely-on-time
+            if (msg.sender != registry.arbitrator() || block.timestamp > claim.createdAt + registry.challengeTimeOutPeriod())
+                revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
             // solhint-disable-next-line not-rely-on-time
-            if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+            if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;

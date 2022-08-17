@@ -71,12 +71,12 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
 
     await assertFunctionRaisesException(
       vault.approveClaim(8000, { from: accounts[2] }),
-      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+      "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod"
     );
 
     await assertFunctionRaisesException(
       vault.approveClaim(8000, { from: accounts[3] }),
-      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+      "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod"
     );
 
     // go and pass the challenge period
@@ -121,11 +121,10 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
   });
 
-  it("Arbitrator cannot challenge after challenge timeout period", async () => {
+  it("Arbitrator cannot challenge after challenge period", async () => {
     const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to 1000
     hatVaultsRegistry.setChallengePeriod(1000);
-    hatVaultsRegistry.setChallengeTimeOutPeriod(2000);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     const staker = accounts[1];
@@ -141,7 +140,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     await submitClaim(vault, { accounts });
 
     // go and pass the challenge period
-    await utils.increaseTime(2000);
+    await utils.increaseTime(1000);
 
     await assertFunctionRaisesException(
       vault.challengeClaim({ from: accounts[3] }),
@@ -195,21 +194,21 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       vault.approveClaim(6000, { from: staker }),
-      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+      "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
     );
     await assertFunctionRaisesException(
-      vault.approveClaim(10001, { from: accounts[2] }),
+      vault.approveClaim(10001, { from: arbitrator }),
       "BountyPercentageHigherThanMaxBounty"
     );
 
     await assertFunctionRaisesException(
-      vault.approveClaim(8001, { from: accounts[2] }),
+      vault.approveClaim(8001, { from: arbitrator }),
       "BountyPercentageHigherThanMaxBounty"
     );
 
     await assertFunctionRaisesException(
       vault.approveClaim(6000, { from: owner }),
-      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+      "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
     );
 
     // go and pass the challenge period
@@ -217,7 +216,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
 
     await assertFunctionRaisesException(
       vault.approveClaim(8000, { from: owner }),
-      "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
+      "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
     );
     assert.equal((await vault.activeClaim()).bountyPercentage, 8000);
     var stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
@@ -249,7 +248,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     );
   });
 
-  it("challenge - dismiss claim", async () => {
+  it("challenge - dismiss claim by arbitrator", async () => {
     const { hatVaultsRegistry, vault } = await setup(accounts);
     // set challenge period to 1000
     hatVaultsRegistry.setChallengePeriod(1000);
@@ -277,4 +276,48 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     );
     await vault.dismissClaim({ from: arbitrator });
   });
+
+  it("challenge - dismiss claim by anyone after timeout", async () => {
+    const { hatVaultsRegistry, vault } = await setup(accounts);
+    // set challenge period to 1000
+    hatVaultsRegistry.setChallengePeriod(1000);
+    hatVaultsRegistry.setChallengeTimeOutPeriod(2000);
+    const owner = accounts[0];
+    const arbitrator = accounts[1];
+    await hatVaultsRegistry.setArbitrator(arbitrator);
+    await advanceToSafetyPeriod(hatVaultsRegistry);
+    await submitClaim(vault, { accounts });
+
+    await assertFunctionRaisesException(
+      vault.dismissClaim({ from: arbitrator }),
+      "OnlyCallableIfChallenged"
+    );
+
+    await vault.challengeClaim({ from: arbitrator });
+    // now that the claim is challenged, only arbitrator can accept or dismiss
+    await assertFunctionRaisesException(
+      vault.dismissClaim({ from: accounts[2] }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await assertFunctionRaisesException(
+      vault.dismissClaim({ from: owner }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await utils.increaseTime(2000);
+
+    await assertFunctionRaisesException(
+      vault.approveClaim(8000, { from: owner }),
+      "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
+    );
+
+    await assertFunctionRaisesException(
+      vault.approveClaim(8000, { from: arbitrator }),
+      "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
+    );
+
+    await vault.dismissClaim({ from: owner });
+  });
+
 });
