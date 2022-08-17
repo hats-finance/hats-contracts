@@ -37,7 +37,7 @@ const setup = async function(
   allocPoint = 100,
   weth = false,
   rewardInVaults = 2500000,
-  challengePeriod = 0
+  challengePeriod = 60 * 60 * 24
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
@@ -791,6 +791,8 @@ contract("HatVaults", (accounts) => {
     await vault.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
+    
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(8000);
 
@@ -2137,6 +2139,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await utils.increaseTime(60 * 60 * 24);
+
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[7].event, "ApproveClaim");
     let stakerAmount = await vault.balanceOf(staker);
@@ -2185,6 +2189,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(8000);
     await safeRedeem(vault, await vault.balanceOf(staker), staker, staker);
@@ -2237,6 +2243,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[7].event, "ApproveClaim");
@@ -2345,6 +2353,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[7].event, "ApproveClaim");
@@ -2842,11 +2852,15 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await vault.approveClaim(4000);
     await advanceToSafetyPeriod();
     await vault.submitClaim(accounts[2], 4000, "description hash", {
       from: accounts[1],
     });
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(4000);
     await advanceToNonSafetyPeriod();
@@ -2868,6 +2882,7 @@ contract("HatVaults", (accounts) => {
     rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    await rewardController.claimReward(vault.address, { from: staker });
     assert.equal(
       (await stakingToken.balanceOf(staker)).toString(),
       "360000000000000000"
@@ -2971,6 +2986,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(8000);
     await stakingToken.approveDisable(true);
@@ -3086,6 +3103,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await vault.approveClaim(8000);
     await stakingToken.approveDisable(true);
 
@@ -3198,6 +3217,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await newVault.approveClaim(8000);
     assert.equal(await hatToken.balanceOf(accounts[0]), 0);
@@ -3315,6 +3336,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await vault.approveClaim(8000);
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -3419,6 +3442,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(8000);
 
@@ -3673,7 +3698,12 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await vault.approveClaim(8000);
+
+    await utils.increaseTime(60 * 60 * 24 * 2);
+
     await newVault.approveClaim(8000);
  
     let path = ethers.utils.solidityPack(
@@ -3853,6 +3883,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await vault.approveClaim(8000);
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -3919,6 +3951,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     await vault.approveClaim(8000);
     let payload = "0x00000000000000000000000000000000000001";
@@ -4000,6 +4034,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[7].event, "ApproveClaim");
@@ -4108,6 +4144,8 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
     assert.equal(tx.logs[5].event, "ApproveClaim");

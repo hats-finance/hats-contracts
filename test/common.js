@@ -71,7 +71,7 @@ const setup = async function(
   allocPoint = 100,
   weth = false,
   rewardInVaults = 2500000,
-  challengePeriod = 0
+  challengePeriod = 60 * 60 * 24
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");

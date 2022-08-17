@@ -38,6 +38,14 @@ error SwapFailed();
 error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and
@@ -213,11 +221,15 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
     }
 
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        if (7 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (90 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }

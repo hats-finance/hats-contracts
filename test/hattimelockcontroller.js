@@ -32,7 +32,7 @@ const {
 
 const setup = async function(
   accounts,
-  challengePeriod=0,
+  challengePeriod=60 * 60 * 24,
   startBlock = 0,
   maxBounty = 8000,
   bountySplit = [6000, 2000, 500, 0, 1000, 500],
@@ -236,6 +236,8 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
 
+    await utils.increaseTime(60 * 60 * 24);
+
     await hatTimelockController.approveClaim(vault.address, bountyPercentage);
 
     let path = ethers.utils.solidityPack(
@@ -334,7 +336,7 @@ contract("HatTimelockController", (accounts) => {
   });
 
   it("challenge - approve Claim ", async () => {
-    await setup(accounts, 1000);
+    await setup(accounts);
     const staker = accounts[1];
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
@@ -358,7 +360,7 @@ contract("HatTimelockController", (accounts) => {
   });
 
   it("challenge - dismiss claim", async () => {
-    await setup(accounts, 1000);
+    await setup(accounts);
     // set challenge period to 1000
     await advanceToSafetyPeriod(hatVaultsRegistry);
     await submitClaim(vault, { accounts });
