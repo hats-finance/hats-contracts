@@ -221,7 +221,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 _fromBlock = endBlock;
             }
             result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
-            reward = result * _allocPoint / _totalAllocPoint / 100;
+            reward = result * _allocPoint / _totalAllocPoint;
         }
     }
 

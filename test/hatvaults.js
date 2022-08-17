@@ -1764,7 +1764,7 @@ contract("HatVaults", (accounts) => {
 
   it("setRewardPerEpoch", async () => {
     var rewardPerEpochRandom = [...Array(24)].map(() =>
-      web3.utils.toWei(((Math.random() * 10000) | 0).toString())
+      web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
     await setup(accounts, 0);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
@@ -1799,7 +1799,7 @@ contract("HatVaults", (accounts) => {
         )
       ).toString(),
       new web3.utils.BN(rewardPerEpochRandom[0])
-        .div(new web3.utils.BN(10))
+        .mul(new web3.utils.BN(10))
         .toString()
     );
     assert.equal(
@@ -1816,7 +1816,6 @@ contract("HatVaults", (accounts) => {
         .add(
           new web3.utils.BN(rewardPerEpochRandom[1]).mul(new web3.utils.BN(5))
         )
-        .div(new web3.utils.BN(100))
         .toString()
     );
     assert.equal(
@@ -1830,7 +1829,7 @@ contract("HatVaults", (accounts) => {
       ).toString(),
       new web3.utils.BN(rewardPerEpochRandom[0])
         .add(new web3.utils.BN(rewardPerEpochRandom[1]))
-        .div(new web3.utils.BN(10))
+        .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
@@ -1846,7 +1845,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      multiplier.div(new web3.utils.BN(10)).toString()
+      multiplier.mul(new web3.utils.BN(10)).toString()
     );
   });
 
@@ -1866,7 +1865,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpoch[0]).div(new web3.utils.BN(10)).toString()
+      new web3.utils.BN(rewardPerEpoch[0]).mul(new web3.utils.BN(10)).toString()
     );
     assert.equal(
       (
@@ -1880,7 +1879,6 @@ contract("HatVaults", (accounts) => {
       new web3.utils.BN(rewardPerEpoch[0])
         .mul(new web3.utils.BN(10))
         .add(new web3.utils.BN(rewardPerEpoch[1]).mul(new web3.utils.BN(5)))
-        .div(new web3.utils.BN(100))
         .toString()
     );
     assert.equal(
@@ -1894,7 +1892,7 @@ contract("HatVaults", (accounts) => {
       ).toString(),
       new web3.utils.BN(rewardPerEpoch[0])
         .add(new web3.utils.BN(rewardPerEpoch[1]))
-        .div(new web3.utils.BN(10))
+        .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
@@ -1911,7 +1909,7 @@ contract("HatVaults", (accounts) => {
           totalAllocPoint
         )
       ).toString(),
-      multiplier.div(new web3.utils.BN(10)).toString()
+      multiplier.mul(new web3.utils.BN(10)).toString()
     );
     var staker = accounts[1];
     assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
