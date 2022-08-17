@@ -1,38 +1,34 @@
 # Security Analysis HATVaults 2.0
 
-**Some of the functions have changed after this document has written**
 
 The contracts in this repository define a number of different roles that have the power to change the way the contracts work. We list them here, with a short description of what an account with this role can do, and to which account this role will be assigned on deployment
 
-## `HatVaults.ProxyOwner`
-
-- set to `HATTimelockController`
-- can upgrade the proxy
-- can `transferOwnership` and `renounceOwnership`
+## `HatVaultsRegistry.owner`
+- can call `setFeeSetter` set the feeSetter role
+- can call `setArbitrator` set the arbitrator role
+- can call `setWithdrawRequestParams` set time limits for withdrawal requests
+- can call `setClaimFee` set fee for submitting a vulnerability
+- can call `setChallengePeriod` 
+- can call `setChallengeTimeOutPeriod` 
+- can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
+- can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
+- `setMaxBountyDelay` - Set the timelock delay for setting the max bounty
+- can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
+- can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
 
 ## `HatVaults.owner`
 
-The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the future), limited by a modified TimeLock (which means that the owner can call essential functions only with a delay set by the Timelock)
+The `owner` of a hatvault created by the registry is the same registry owner.
 
-- set to `HATTimelockController`
-- can call `transferOwnership` and `renounceOwnership` of `HATVaults`
-- can call `addPool` to add a pool
-- can call `setPool` to change pool properties
-- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `swapBurnSend` and swap, burn, and send pool tokens that are earmarked for payout (after approveClaim
-- can call `setClaimFee` set fee for submitting a vulnerability
-- can call `setWithdrawRequestParams` set time limits for withdrawal requests
-- can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
+- can call `transferOwnership` and `renounceOwnership` 
+- can call `updateVaultInfo` to change the vault's properties
+- can call `setVestingParams` set vesting parameters for bounty paid
 - can call `setBountySplit` set how the bounty is split betwen security researcher, committee and governance
-- can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
-- can call `setVestingParams` set vesting parameters for bounty paid in lptoken
-- can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
-- can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
-- setMaxBountyDelay - Set the timelock delay for setting the max bounty
-- can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
-- can call `setPoolInitialized` Set an "initialized" flag to disable "setShares"
-- can call `setShares` but only if the pool is not initialized
+- can call `setRewardController`  and set the reward controller
+
+## `HatVaults.arbitrator`
+- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee (see [arbitrator](./arbitrator.md))
 
 ## `HatVaults - Vault committee` (committee set by each vault)
 
@@ -80,6 +76,11 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - The following functions in HATVaults are **not** subject to a timelock:
   - `addPool`
   - `approveClaim`
+<<<<<<< Updated upstream
   - `setPool`
   - `setAllocPoints`
+=======
+  - `updateVaultInfo`
+  - `setAllocPoint`
+>>>>>>> Stashed changes
   - `swapBurnSend`
