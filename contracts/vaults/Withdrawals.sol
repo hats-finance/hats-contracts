@@ -67,6 +67,15 @@ contract Withdrawals is Base {
         return shares;
     }
 
+    function withdrawAndClaim(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external returns (uint256 shares) {
+        shares = withdraw(assets, receiver, owner);
+        rewardController.claimReward(address(this), owner);
+    }
+
     /** @dev See {IERC4626-redeem}. */
     function redeem(
         uint256 shares,
@@ -80,6 +89,15 @@ contract Withdrawals is Base {
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
+    }
+
+    function redeemAndClaim(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 assets) {
+        assets = redeem(shares, receiver, owner);
+        rewardController.claimReward(address(this), owner);
     }
 
     // @notice Checks that the sender can perform a withdraw at this time

@@ -49,7 +49,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 amount,
         address rewardToken
     );
-    event ClaimReward(address indexed _vault, uint256 amount);
+    event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     function initialize(
         address _rewardToken,
@@ -166,18 +166,18 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     /**
      * @notice Transfer to the sender their pending share of rewards.
      * @param _vault The vault address
+     * @param _user The user address to claim for
      */
-    function claimReward(address _vault) external {
-        address user = msg.sender;
-        _updateVaultBalance(_vault, user, 0, true);
+    function claimReward(address _vault, address _user) external {
+        _updateVaultBalance(_vault, _user, 0, true);
 
-        uint256 userUnclaimedReward = unclaimedReward[_vault][user];
+        uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
-            unclaimedReward[_vault][user] = 0;
-            safeTransferReward(user, userUnclaimedReward, _vault);
+            unclaimedReward[_vault][_user] = 0;
+            safeTransferReward(_user, userUnclaimedReward, _vault);
         }
 
-        emit ClaimReward(_vault, userUnclaimedReward);
+        emit ClaimReward(_vault, _user, userUnclaimedReward);
     }
 
      /**

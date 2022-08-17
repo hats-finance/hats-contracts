@@ -47,8 +47,8 @@ contract VaultsManagerMock {
     }
 
     function claimRewardTwice(RewardController target, address _vault) external {
-        target.claimReward(_vault);
-        target.claimReward(_vault);
+        target.claimReward(_vault, address(this));
+        target.claimReward(_vault, address(this));
     }
 
     function deposit(HATVault _target, IERC20 _asset, uint256 _amount) external {
@@ -65,7 +65,7 @@ contract VaultsManagerMock {
     function claimDifferentPids(RewardController _target, address[] memory _vaults) external {
         uint256 i;
         for (i = 0; i < _vaults.length; i++) {
-            _target.claimReward(_vaults[i]);
+            _target.claimReward(_vaults[i], address(this));
         }
     }
 

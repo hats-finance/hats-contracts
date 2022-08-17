@@ -186,7 +186,7 @@ contract("HatTimelockController", (accounts) => {
     await hatTimelockController.setAllocPoint(vault.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
-    await rewardController.claimReward(vault.address, { from: staker });
+    await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
