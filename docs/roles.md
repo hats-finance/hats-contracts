@@ -28,9 +28,6 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
 
-## `HatVaults.arbitrator`
-- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee (see [arbitrator](./arbitrator.md))
-
 ## `HatVaults - Vault committee` (committee set by each vault)
 
 - a specific address for each vault, typically a multisig
@@ -38,6 +35,12 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
 - can call `setPoolWithdrawalFee` - set the fee for withdrawals from the pool
+- `setPendingMaxBounty`
+- `setMaxBounty`
+
+## `HatVaults.arbitrator`
+- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee (see [arbitrator](./arbitrator.md))
+
 
 ## `HatVaults.feeSetter`
 
