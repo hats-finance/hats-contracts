@@ -13,7 +13,7 @@ contract Params is Base {
     function setCommittee(address _committee)
     external {
         // governance can update committee only if committee was not checked in yet.
-        if (msg.sender == owner() && committee != msg.sender) {
+        if (msg.sender == registry.owner() && committee != msg.sender) {
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();
         } else {
@@ -125,7 +125,7 @@ contract Params is Base {
         emit UpdateVaultDescription(_descriptionHash);
     }
 
-    function setRewardController(IRewardController _newRewardController) public onlyOwner {
+    function setRewardController(IRewardController _newRewardController) external onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }

@@ -141,7 +141,7 @@ contract Withdrawals is Base {
     {
         IERC20 asset = IERC20(asset());
         if (_fee > 0) {
-            asset.safeTransfer(owner(), _fee);
+            asset.safeTransfer(registry.owner(), _fee);
         }
         asset.safeTransfer(_receiver, _totalAmount);
     }

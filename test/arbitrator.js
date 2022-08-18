@@ -119,8 +119,8 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(1234, {
       from: accounts[2],
     });
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._bountyPercentage.toString(), "8000");
   });
 
   it("Arbitrator can only change bounty if claim is challenged", async () => {
@@ -149,8 +149,8 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(1234, {
       from: accounts[3],
     });
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._bountyPercentage.toString(), "8000");
   });
 
   it("Arbitrator cannot challenge after challenge period", async () => {
@@ -184,8 +184,8 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(1234, {
       from: accounts[3],
     });
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._bountyPercentage.toString(), "8000");
   });
 
   it("challenge - approve Claim ", async () => {
@@ -253,13 +253,13 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     assert.equal((await vault.activeClaim()).bountyPercentage, 8000);
     var stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
     var tx = await vault.approveClaim(6000, { from: arbitrator });
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._bountyPercentage, 6000);
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._bountyPercentage, 6000);
     assert.equal(
       (await stakingToken.balanceOf(vault.address)).toString(),
       stakingTokenBalanceBefore.sub(new web3.utils.BN(web3.utils.toWei("0.6"))).toString()
     );
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[7].args._tokenLock);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[6].args._tokenLock);
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.6"));
     var expectedHackerBalance = depositValutBNAfterClaim
@@ -271,7 +271,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[7].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[6].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );

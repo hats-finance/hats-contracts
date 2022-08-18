@@ -18,7 +18,7 @@ contract Claim is Base {
             if (msg.value < generalParameters.claimFee)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
-            payable(owner()).transfer(msg.value);
+            payable(registry.owner()).transfer(msg.value);
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }

@@ -90,7 +90,7 @@ const setup = async function(
     "_descriptionHash",
     [86400, 10],
     false
-  )).logs[1].args._vault);
+  )).logs[0].args._vault);
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
@@ -253,7 +253,6 @@ contract("HatVaults", (accounts) => {
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), accounts[0]);
-    assert.equal(await vault.owner(), accounts[0]);
   });
 
   it("Set reward controller", async () => {
@@ -264,7 +263,7 @@ contract("HatVaults", (accounts) => {
       await vault.setRewardController(accounts[2], { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyOwner");
     }
 
     await vault.setRewardController(accounts[2]);
@@ -300,7 +299,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -592,7 +591,7 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false,
       { from: accounts[1] }
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
     await newVault.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
@@ -698,7 +697,7 @@ contract("HatVaults", (accounts) => {
       let tx = await vault.setDepositPause(true, { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyOwner");
     }
 
     let tx = await vault.setDepositPause(true);
@@ -2113,7 +2112,7 @@ contract("HatVaults", (accounts) => {
       await hatToken.balanceOf(rewardController.address),
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
-    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
@@ -2177,7 +2176,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
     let stakerAmount = await vault.balanceOf(staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     await safeRedeem(vault, stakerAmount, staker);
@@ -2282,7 +2281,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
     assert.equal(await vault.totalSupply(), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker2), web3.utils.toWei("0"));
@@ -2392,7 +2391,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
     await vault.withdrawRequest({ from: staker });
     //increase time for pending period
     await utils.increaseTime(7 * 24 * 3600);
@@ -3201,7 +3200,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -3701,7 +3700,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -4087,8 +4086,8 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     let tx = await vault.approveClaim(8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[7].args._tokenLock);
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[6].args._tokenLock);
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
     var expectedHackerBalance = depositValutBNAfterClaim
@@ -4100,7 +4099,7 @@ contract("HatVaults", (accounts) => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[7].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[6].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -4218,7 +4217,7 @@ contract("HatVaults", (accounts) => {
       await vault.setVestingParams(21000, 7, { from: accounts[2] });
       assert(false, "only gov can set vesting params");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyOwner");
     }
     try {
       await vault.setVestingParams(21000, 0);
@@ -4339,7 +4338,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
     await hatVaultsRegistry.updateVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 200);
     await hatVaultsRegistry.updateVaultVisibility(newVault.address, true);
@@ -4437,7 +4436,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -4501,7 +4500,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController1.updateVault(vault1.address);
     await rewardController1.updateVault(vault1.address);
@@ -4595,7 +4594,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -4681,7 +4680,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
