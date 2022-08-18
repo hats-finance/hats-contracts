@@ -227,7 +227,7 @@ contract("HatTimelockController", (accounts) => {
       }
     );
 
-    let claimId = tx.logs[0].args._claimId
+    let claimId = tx.logs[0].args._claimId;
 
     try {
       await hatTimelockController.approveClaim(vault.address, claimId, bountyPercentage, {

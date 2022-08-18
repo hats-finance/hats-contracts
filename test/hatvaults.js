@@ -2370,7 +2370,7 @@ contract("HatVaults", (accounts) => {
       }
     );
 
-    let claimId = tx.logs[0].args._claimId
+    let claimId = tx.logs[0].args._claimId;
     await vault.approveClaim(claimId, 8000);
     await safeEmergencyWithdraw(vault, staker);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
