@@ -693,11 +693,17 @@ contract("HatVaults", (accounts) => {
       await hatToken.balanceOf(rewardController.address),
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
-    let tx = await vault.updateVaultInfo(true, true, "_descriptionHash");
-    assert.equal(tx.logs[0].event, "UpdateVaultInfo");
-    assert.equal(tx.logs[0].args._registered, true);
+
+    try {
+      let tx = await vault.setDepositPause(true, { from: accounts[1] });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    let tx = await vault.setDepositPause(true);
+    assert.equal(tx.logs[0].event, "SetDepositPause");
     assert.equal(tx.logs[0].args._depositPause, true);
-    assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
 
     try {
       await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -712,7 +718,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "ERC4626: mint more than max");
     }
-    await vault.updateVaultInfo(true, false, "_descriptionHash");
+    await vault.setDepositPause(false);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
@@ -756,6 +762,8 @@ contract("HatVaults", (accounts) => {
     rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    await rewardController.claimReward(vault.address, staker, { from: staker });
+
     //staker get stake back
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(
@@ -3305,10 +3313,24 @@ contract("HatVaults", (accounts) => {
   it("Update vault info", async () => {
     await setup(accounts);
 
-    let tx = await vault.updateVaultInfo(true, false, "_descriptionHash");
-    assert.equal(tx.logs[0].event, "UpdateVaultInfo");
-    assert.equal(tx.logs[0].args._registered, true);
-    assert.equal(tx.logs[0].args._depositPause, false);
+    try {
+      await hatVaultsRegistry.updateVaultVisibility(vault.address, true, { from: accounts[1] });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    let tx = await hatVaultsRegistry.updateVaultVisibility(vault.address, true);
+    assert.equal(tx.logs[0].event, "UpdateVaultVisibility");
+    assert.equal(tx.logs[0].args._visible, true);
+
+    try {
+      await vault.updateVaultDescription("_descriptionHash");
+      assert(false, "only committee");
+    } catch (ex) {
+      assertVMException(ex, "OnlyCommittee");
+    }
+    tx = await vault.updateVaultDescription("_descriptionHash", { from: accounts[1] });
     assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
     await rewardController.setAllocPoint(vault.address, 200);
 
@@ -4318,9 +4340,9 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._vault);
-    await newVault.updateVaultInfo(true, false, "123");
+    await hatVaultsRegistry.updateVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 200);
-    await newVault.updateVaultInfo(true, false, "123");
+    await hatVaultsRegistry.updateVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 0);
     await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
       from: staker,
@@ -4432,7 +4454,7 @@ contract("HatVaults", (accounts) => {
     await newVault.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    await vault.updateVaultInfo(true, false, "123");
+    await hatVaultsRegistry.updateVaultVisibility(vault.address, true);
     await rewardController.setAllocPoint(vault.address, 200);
 
     await rewardController.updateVault(vault.address);
@@ -4486,67 +4508,6 @@ contract("HatVaults", (accounts) => {
 
     globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
-  });
-
-  it("add/set vault on the same block", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
-    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
-    var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
-    var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      rewardPerEpoch,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      [router1.address],
-      tokenLockFactory1.address,
-      true
-    );
-
-    hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
-    rewardController1 = await RewardController.at(
-      deployment.rewardController.address
-    );
-    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let stakingToken3 = await ERC20Mock.new("Staking", "STK");
-    var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
-    assert.equal(globalVaultsUpdatesLength, 0);
-    await vaultsManager.createVaults(
-      hatVaultsRegistry1.address,
-      rewardController1.address,
-      100,
-      [stakingToken2.address, stakingToken3.address],
-      accounts[1],
-      8000,
-      [6000, 2000, 500, 0, 1000, 500],
-      "_descriptionHash",
-      [86400, 10]
-    );
-    
-    let newVault1 = await HATVault.at(await hatVaultsRegistry1.hatVaults(0));
-    let newVault2 = await HATVault.at(await hatVaultsRegistry1.hatVaults(1));
-    globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
-    assert.equal(globalVaultsUpdatesLength, 1); //2 got in the same block
-    assert.equal(await hatVaultsRegistry1.getNumberOfVaults(), 2);
-    await vaultsManager.updateVaultsInfo(
-      [newVault1.address, newVault2.address],
-      rewardController1.address,
-      200,
-      true,
-      false,
-      "_descriptionHash"
-    );
-
-    globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
-    assert.equal(globalVaultsUpdatesLength, 2); //2 got in the same block
-    let globalUpdatesLen = await rewardController1.getGlobalVaultsUpdatesLength();
-    let totalAllocPoint = (
-      await rewardController1.globalVaultsUpdates(globalUpdatesLen - 1)
-    ).totalAllocPoint;
-    assert.equal(totalAllocPoint.toString(), 400); //2 got in the same block
   });
 
   it("stop in the middle", async () => {
@@ -4644,7 +4605,7 @@ contract("HatVaults", (accounts) => {
     //5
     await newVault.setCommittee(accounts[0], { from: accounts[1] });
     //5
-    await newVault.updateVaultInfo(true, false, "123");
+    await hatVaultsRegistry.updateVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 300);
     //2.5
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);

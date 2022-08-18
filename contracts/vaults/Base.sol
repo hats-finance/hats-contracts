@@ -171,11 +171,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
-    event UpdateVaultInfo(
-        bool indexed _registered,
-        bool _depositPause,
-        string _descriptionHash
-    );
+    event SetDepositPause(bool _depositPause);
+    event UpdateVaultDescription(string _descriptionHash);
 
     event WithdrawRequest(
         address indexed _beneficiary,
@@ -215,24 +212,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     modifier activeClaimExists() {
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
         _;
-    }
-
-    /**
-    * @notice change the information of the vault
-    * ony calleable by the owner of the contract
-    * @param _visible is this vault visible in the UI
-    * @param _depositPause pause deposits (default false).
-    * This parameter can be used by the UI to include or exclude the vault
-    * @param _descriptionHash the hash of the vault's description.
-    */
-    function updateVaultInfo(
-        bool _visible,
-        bool _depositPause,
-        string memory _descriptionHash
-    ) external onlyOwner {
-        depositPause = _depositPause;
-
-        emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {

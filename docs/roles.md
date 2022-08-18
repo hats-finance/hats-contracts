@@ -17,7 +17,8 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - set to `HATTimelockController`
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `createVault` to create a new vault
-- can call `updateVaultInfo` to change the vault's properties
+- can call `updateVaultVisibility` to change the vault's visibility in the UI
+- can call `setDepositPause` to pause and unpause deposits to the vault
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
 - can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
 - can call `setClaimFee` set fee for submitting a vulnerability
@@ -78,6 +79,7 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 - can call `cancel` and cancel any pending operation
 - The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
-  - `updateVaultInfo`
+  - `updateVaultVisibility`
+  - `setDepositPause`
   - `setAllocPoints`
   - `swapBurnSend`

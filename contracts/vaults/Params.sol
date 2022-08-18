@@ -111,6 +111,20 @@ contract Params is Base {
         emit SetMaxBounty(maxBounty);
     }
 
+    function setDepositPause(bool _depositPause) external onlyOwner {
+        depositPause = _depositPause;
+
+        emit SetDepositPause(_depositPause);
+    }
+
+    /**
+    * @notice change the description of the vault
+    * @param _descriptionHash the hash of the vault's description.
+    */
+    function updateVaultDescription(string memory _descriptionHash) external onlyCommittee {
+        emit UpdateVaultDescription(_descriptionHash);
+    }
+
     function setRewardController(IRewardController _newRewardController) public onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);

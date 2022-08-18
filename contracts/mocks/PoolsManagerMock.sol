@@ -8,44 +8,6 @@ import "../RewardController.sol";
 
 contract VaultsManagerMock {
 
-    function createVaults(HATVaultsRegistry _hatVaults,
-                    IRewardController _rewardController,
-                    uint256 _allocPoint,
-                    IERC20[] memory _assets,
-                    address _committee,
-                    uint256 _maxBounty,
-                    HATVault.BountySplit memory _bountySplit,
-                    string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams) external {
-
-        for (uint256 i=0; i < _assets.length; i++) {
-            address vault = _hatVaults.createVault(_assets[i],
-                                _committee,
-                                _rewardController,
-                                _maxBounty,
-                                _bountySplit,
-                                _descriptionHash,
-                                _bountyVestingParams,
-                                false);
-            _rewardController.setAllocPoint(vault, _allocPoint);
-        }
-    }
-
-    function updateVaultsInfo(HATVault[] memory _hatVaults,
-                    IRewardController _rewardController,
-                    uint256 _allocPoint,
-                    bool _registered,
-                    bool _depositPause,
-                    string memory _descriptionHash) external {
-
-        for (uint256 i=0; i < _hatVaults.length; i++) {
-            _hatVaults[i].updateVaultInfo(_registered,
-                            _depositPause,
-                            _descriptionHash);
-            _rewardController.setAllocPoint(address(_hatVaults[i]), _allocPoint);
-        }
-    }
-
     function claimRewardTwice(RewardController target, address _vault) external {
         target.claimReward(_vault, address(this));
         target.claimReward(_vault, address(this));

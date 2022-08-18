@@ -154,10 +154,10 @@ contract("HatTimelockController", (accounts) => {
     );
   });
 
-  it("Update vault info", async () => {
+  it("Update vault visibility", async () => {
     await setup(accounts);
     try {
-      await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash", {
+      await hatTimelockController.updateVaultVisibility(vault.address, true, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -166,12 +166,12 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await vault.updateVaultInfo(true, false, "_descriptionHash");
+      await hatVaultsRegistry.updateVaultVisibility(vault.address, true);
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
-    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
+    await hatTimelockController.updateVaultVisibility(vault.address, true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
@@ -181,8 +181,8 @@ contract("HatTimelockController", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
-    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
-    await hatTimelockController.updateVaultInfo(vault.address, true, false, "_descriptionHash");
+    await hatTimelockController.updateVaultVisibility(vault.address, true);
+    await hatTimelockController.updateVaultVisibility(vault.address, true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
@@ -196,6 +196,43 @@ contract("HatTimelockController", (accounts) => {
       await stakingToken.balanceOf(vault.address),
       web3.utils.toWei("1")
     );
+  });
+
+  it("Pause vault deposits", async () => {
+    await setup(accounts);
+    try {
+      await hatTimelockController.setDepositPause(vault.address, true, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await vault.setDepositPause(true);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    await hatTimelockController.setDepositPause(vault.address, true);
+    await hatTimelockController.setAllocPoint(vault.address, 200);
+
+    var staker = accounts[4];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      assert(false, "cannot deposit when vault deposits are paused");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await hatTimelockController.setDepositPause(vault.address, false);
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
   });
 
   it("swapBurnSend", async () => {
