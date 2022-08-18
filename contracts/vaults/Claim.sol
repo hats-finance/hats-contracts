@@ -36,6 +36,7 @@ contract Claim is Base {
     external
     onlyCommittee()
     noActiveClaim()
+    returns (bytes32 claimId)
     {
         if (_beneficiary == address(0)) revert BeneficiaryIsZero();
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -45,7 +46,9 @@ contract Claim is Base {
         generalParameters.withdrawPeriod) revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
+        claimId = keccak256(abi.encodePacked(address(this), nonce++));
         activeClaim = Claim({
+            claimId: claimId,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
@@ -55,6 +58,7 @@ contract Claim is Base {
         });
 
         emit SubmitClaim(
+            claimId,
             msg.sender,
             _beneficiary,
             _bountyPercentage,
@@ -66,10 +70,11 @@ contract Claim is Base {
     * @notice Called by a the arbitrator to challenge the active claim
     * This will pause the vault for withdrawals until the claim is resolved
     */
-    function challengeClaim() external onlyArbitrator activeClaimExists {
+    function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         if (block.timestamp > activeClaim.createdAt + registry.challengeTimeOutPeriod())
             revert ChallengePeriodEnded();
         activeClaim.isChallenged = true;
+        emit ChallengeClaim(_claimId);
     }
 
     /**
@@ -79,7 +84,7 @@ contract Claim is Base {
     * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
     * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
     */
-    function approveClaim(uint256 _bountyPercentage) external nonReentrant activeClaimExists {
+    function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
         if (claim.isChallenged) {
             if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
@@ -126,6 +131,7 @@ contract Claim is Base {
         );
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
+            _claimId,
             msg.sender,
             claim.beneficiary,
             claim.bountyPercentage,
@@ -140,7 +146,7 @@ contract Claim is Base {
     * @notice Dismiss the active claim for a bounty submitted by a committee.
     * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
     */
-    function dismissClaim() external {
+    function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
         if (!claim.isChallenged) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
@@ -148,7 +154,7 @@ contract Claim is Base {
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
-        emit DismissClaim();
+        emit DismissClaim(_claimId);
     }
 
 

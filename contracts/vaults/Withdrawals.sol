@@ -84,8 +84,6 @@ contract Withdrawals is Base {
     }
 
     function emergencyWithdraw() external {
-        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
-        // Should consider disallowing withdraw from another user.
         address msgSender = _msgSender();
         uint256 shares = balanceOf(msgSender);
         uint256 assets = previewRedeem(shares);
