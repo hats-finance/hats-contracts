@@ -75,6 +75,8 @@ contract Claim is Base {
     /**
     * @notice Called by the arbitrator to challenge a claim for a bounty
     * payout that had been previously submitted by the committee.
+    * Can only be called during the challenge period after submission of the
+    * claim.
     * @param _claimId The claim ID
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
