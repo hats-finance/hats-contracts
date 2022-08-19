@@ -13,7 +13,7 @@ The contracts in this repository define a number of different roles that have th
 - can call `setChallengeTimeOutPeriod` 
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
-- `setMaxBountyDelay` - Set the timelock delay for setting the max bounty
+- can call `setMaxBountyDelay` to set the timelock delay for setting the max bounty
 - can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
 - can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
 
