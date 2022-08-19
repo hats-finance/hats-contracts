@@ -7,10 +7,13 @@ contract Claim is Base {
     using SafeERC20 for IERC20;
 
     /**
-    * @notice emit an event that includes the given _descriptionHash
-    * This can be used by the claimer as evidence that she had access to the information at the time of the call
-    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
-    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
+    * @notice Emit an event that includes the given `_descriptionHash`.
+    * This can be used by the hacker as evidence that she had access to the
+    * information at the time of the call.
+    * If HATVaultsRegistry.GeneralParameters.claimFee > 0, the caller must
+    * send claimFee ETH for the claim to succeed
+    * @param _descriptionHash - a hash of an IPFS encrypted file which
+    * describes the claim.
     */
     function logClaim(string memory _descriptionHash) external payable {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -24,11 +27,14 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Called by a committee to submit a claim for a bounty.
-    * The submitted claim needs to be approved or dismissed by the Hats governance.
-    * This function should be called only on a safety period, where withdrawals are disabled.
-    * Upon a call to this function by the committee the vault's withdrawals will be disabled
-    * until the Hats governance will approve or dismiss this claim.
+    * @notice Called by the committee to submit a claim for a bounty payout.
+    * The submitted claim needs to be approved or dismissed by governance.
+    * This function should be called only on a safety period, when withdrawals
+    * are disabled.
+    * Upon a call to this function by the committee the vault's withdrawals
+    * will be disabled until the Hats governance will approve or dismiss this
+    * claim. Also from the time of this call the arbitrator will have a period
+    * of `HATVaultsRegistry.challengePeriod` to challenge the claim.
     * @param _beneficiary The submitted claim's beneficiary
     * @param _bountyPercentage The submitted claim's bug requested reward percentage
     */
@@ -65,11 +71,10 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Called by a the arbitrator to challenge a claim
-    * This will pause the vault for withdrawals until the claim is resolved
-    * @param _claimId The id of the claim
+    * @notice Called by a the arbitrator to challenge a claim for a bounty
+    * payout that had been previously submitted by the committee.
+    * @param _claimId The claim ID
     */
-
     function challengeClaim(uint256 _claimId) external onlyArbitrator {
         Claim storage claim = claims[_claimId];
         if (claim.beneficiary == address(0))
@@ -80,12 +85,15 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Approve a claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * callable by the  arbitrator, if isChallenged == true
-    * Callable by anyone after challengePeriod is passed and isChallenged == false
+    * @notice Approve a claim for a bounty submitted by a committee, and
+    * pay out bounty to hacker and committee.
+    * If the claim had been previously challenged, this is only callable by
+    * the arbitrator. Otherwise, callable by anyone after challengePeriod had
+    * passed.
     * @param _claimId The claim ID
-    * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
-    * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
+    * @param _bountyPercentage The percentage of the vault's balance that will
+    * be sent as a bounty. The value for _bountyPercentage will be ignored if
+    * the caller is not the arbitrator.
     */
     function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
         Claim storage claim = claims[_claimId];
@@ -151,8 +159,10 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Dismiss a claim for a bounty submitted by a committee.
-    * Called either by the arbitrator, or by anyone if the claim is over 5 weeks old.
+    * @notice Dismiss a claim for a bounty payout that had been previously
+    * challenged. 
+    * Called either by the arbitrator, or by anyone if challengeTimeOutPeriod
+    * had passed.
     * @param _claimId The claim ID
     */
     function dismissClaim(uint256 _claimId) external {
@@ -166,7 +176,13 @@ contract Claim is Base {
         emit DismissClaim(_claimId);
     }
 
-
+    /**
+    * @dev calculate the specific bounty payout distribution, according to the
+    * predefined bounty split and the current bounty percentage
+    * @param _bountyPercentage The percentage of the vault's funds to be paid
+    * out as bounty
+    * @return The bounty distribution for this specific claim
+    */
     function calcClaimBounty(uint256 _bountyPercentage)
     public
     view

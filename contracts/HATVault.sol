@@ -10,6 +10,40 @@ import "./vaults/Params.sol";
 import "./vaults/Swap.sol";
 import "./vaults/Withdrawals.sol";
 
+
+/** @title A HAT vault which holds the funds for a specific project's bug 
+* bounties
+* @author hats.finance
+* @notice The HAT vault can be deposited into in a permissionless maner using
+* the vault’s native token. When a bug is submitted and approved, the bounty 
+* is paid out using the funds in the vault. Bounties are paid out as a
+* percentage of the vault. The percentage is set according to the severity of
+* the bug.
+*
+* In addition to the roles defined in the HATVaultsRegistry, every HATVault 
+* has the roles:
+* Committee - The only address which can submit a claim for a bounty payout
+* and set the maximum bounty.
+* User - Anyone can deposit the vault's token into the vault and recieve 
+* shares for it. Shares represent the user's relative part in the vault, and
+* when a bounty is paid out, users lose part of their deposits (based on 
+* percentage paid), but keep their share of the vault.
+* Users also receive rewards for their deposits, which can be claimed at any
+* time.
+* To withdraw the deposited vault's tokens, a user must first send a withdraw
+* request, and the withdrawal will be made available after a pending period.
+*
+* Bounties are payed out distributed between a few channels, and that 
+* distribution is set upon creation (the hacker gets part in direct transfer,
+* part in vested reward and part in vested HAT token, part gets rewarded to
+* the committee, part gets swapped to HAT token and burned and/or sent to Hats
+* governance).
+*
+* This project is open-source and can be found at:
+* https://github.com/hats-finance/hats-contracts
+*
+* @dev HATVault implements the ERC4626 standard
+*/
 contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
 
     function _deposit(

@@ -85,11 +85,17 @@ error OnlyArbitrator();
 error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 // Bounty split must include hacker payout
 error BountySplitMustIncludeHackerPayout();
+// Challenge period had ended
 error ChallengePeriodEnded();
+// Only callable if challenged
 error OnlyCallableIfChallenged();
+// Cannot deposit to another user with withdraw request
 error CannotDepositToAnotherUserWithWithdrawRequest();
+// Withdraw amount must be greater than zero
 error WithdrawMustBeGreaterThanZero();
+// Withdraw amount cannot be more than maximum for user
 error WithdrawMoreThanMax();
+// Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
@@ -252,6 +258,25 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         _;
     }
 
+    /**
+    * @notice Initialize a vault instance
+    * @param _rewardController The reward controller for the vault
+    * @param _vestingDuration Duration of the vesting period of the vault's
+    * token vested part of the bounty
+    * @param _periods The number of vesting periods of the vault's token
+    * vested part of the bounty
+    * @param _maxBounty The maximum percentage of the vault that can be paid
+    * out as a bounty
+    * @param _bountySplit The way to split the bounty between the hacker, 
+    * committee and governance.
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be equal to `HUNDRED_PERCENT`.
+    *   Bounty larger then 0 must be specified for the hacker (direct or 
+    *   vested in vault's token).
+    * @param _asset The vault's token
+    * @param _committee The address of the vault's committee 
+    * @param _isPaused Whether to initialize the vault with deposits disabled
+    */
     function initialize(
         IRewardController _rewardController,
         uint256 _vestingDuration,
@@ -289,12 +314,11 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     /**
-    * @notice change the information of the vault
-    * ony calleable by the owner of the contract
-    * @param _visible is this vault visible in the UI
-    * @param _depositPause pause deposits (default false).
-    * This parameter can be used by the UI to include or exclude the vault
-    * @param _descriptionHash the hash of the vault's description.
+    * @notice Called by governance to update the information of the vault
+    * @param _visible Is this vault visible in the Hats Dapp. This parameter
+    * can be used by the UI to include or exclude the vault
+    * @param _depositPause Whether to pause deposits
+    * @param _descriptionHash Hash of the vault's description.
     */
     function updateVaultInfo(
         bool _visible,
@@ -306,6 +330,15 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
     }
 
+    /** 
+    * @dev Check that a given bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be equal to `HUNDRED_PERCENT`.
+    *   Bounty larger then 0 must be specified for the hacker (direct or 
+    *   vested in vault's token).
+    * function will revert in case the bounty split is not legal.
+    * @param _bountySplit The bounty split to check
+    */
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
             revert BountySplitMustIncludeHackerPayout();

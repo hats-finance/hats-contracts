@@ -35,15 +35,16 @@ The `owner` of hatvaults is HATs governance (currently a multisig, a DAO in the 
 ## `HatVaults - Vault committee` (committee set by each vault)
 
 - a specific address for each vault, typically a multisig
-- can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
+- can call `committeeCheckIn` to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
-- can call `setWithdrawalFee` - set the fee for withdrawals from the vault
+- can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
+- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
 
 ## `HatVaults.feeSetter`
 
 - set to `HATTimeLockController`
-- can call `setWithdrawalFee` (set the fee for withdrawals from the vault)
+- can call `setWithdrawalFee` - set the fee for withdrawals from the vault
 
 ## `RewardController.owner`
 
