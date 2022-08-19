@@ -89,15 +89,15 @@ contract Claim is Base {
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and
     * pay out bounty to hacker and committee. Also transfer to the 
-    * HATVaultsRegistrythe part of the bounty that will be swapped to HAT 
+    * HATVaultsRegistry the part of the bounty that will be swapped to HAT 
     * tokens.
     * If the claim had been previously challenged, this is only callable by
     * the arbitrator. Otherwise, callable by anyone after challengePeriod had
     * passed.
     * @param _claimId The claim ID
     * @param _bountyPercentage The percentage of the vault's balance that will
-    * be sent as a bounty. The value for _bountyPercentage will be ignored if
-    * the caller is not the arbitrator.
+    * be sent as a bounty. This value will be ignored if the caller is not the
+    * arbitrator.
     */
     function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
