@@ -6,26 +6,22 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./HATVaults.sol";
+import "./interfaces/IRewardController.sol";
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Not enough rewards to transfer to user
-    error OnlyHATVaults();
-    error OnlySetHATVaultsOnce();
     error NotEnoughRewardsToTransferToUser();
-    error InvalidPoolRange();
 
-
-    struct PoolInfo {
+    struct VaultInfo {
         uint256 rewardPerShare;
         uint256 lastProcessedTotalAllocPoint;
         uint256 lastRewardBlock;
         uint256 allocPoint;
     }
 
-    struct PoolUpdate {
+    struct VaultUpdate {
         uint256 blockNumber;// update blocknumber
         uint256 totalAllocPoint; //totalAllocPoint
     }
@@ -39,25 +35,19 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     IERC20Upgradeable public rewardToken;
     // Reward Multipliers
     uint256[24] public rewardPerEpoch;
-    PoolUpdate[] public globalPoolUpdates;
-    mapping(uint256 => PoolInfo) public poolInfo;
-    mapping(uint256 => mapping(address => uint256)) public rewardDebt;
-    HATVaults public hatVaults;
+    VaultUpdate[] public globalVaultsUpdates;
+    mapping(address => VaultInfo) public vaultInfo;
+    // vault address => user address => reward debt amount
+    mapping(address => mapping(address => uint256)) public rewardDebt;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
     event SafeTransferReward(
         address indexed user,
-        uint256 indexed pid,
+        address indexed vault,
         uint256 amount,
         address rewardToken
     );
-    event ClaimReward(uint256 indexed _pid);
-    event MassUpdatePools(uint256 _fromPid, uint256 _toPid);
-
-    modifier onlyVaults() {
-        if (address(hatVaults) != msg.sender) revert OnlyHATVaults();
-        _;
-    }
+    event ClaimReward(address indexed _vault);
 
     function initialize(
         address _rewardToken,
@@ -73,36 +63,25 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         _transferOwnership(_hatGovernance);
     }
 
-    function setHATVaults(HATVaults _hatVaults) external onlyOwner {
-        if (address(hatVaults) != address(0)) revert OnlySetHATVaultsOnce();
-        hatVaults = _hatVaults;
-    }
-
-    function setAllocPoint(uint256 _pid, uint256 _allocPoint) external onlyOwner {
-        if (poolInfo[_pid].lastRewardBlock == 0) {
-            poolInfo[_pid].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+    function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {
+        if (vaultInfo[_vault].lastRewardBlock == 0) {
+            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
         }
-        updatePool(_pid);
-        uint256 totalAllocPoint = (globalPoolUpdates.length == 0) ? _allocPoint :
-        globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
-        if (globalPoolUpdates.length > 0 &&
-            globalPoolUpdates[globalPoolUpdates.length-1].blockNumber == block.number) {
+        updateVault(_vault);
+        uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
+        globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
+        if (globalVaultsUpdates.length > 0 &&
+            globalVaultsUpdates[globalVaultsUpdates.length-1].blockNumber == block.number) {
             // already update in this block
-            globalPoolUpdates[globalPoolUpdates.length-1].totalAllocPoint = totalAllocPoint;
+            globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint = totalAllocPoint;
         } else {
-            globalPoolUpdates.push(PoolUpdate({
+            globalVaultsUpdates.push(VaultUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint
             }));
         }
 
-        poolInfo[_pid].allocPoint = _allocPoint;
-    }
-
-    function setPoolsLastProcessedTotalAllocPoint(uint256 _pid) internal {
-        uint globalPoolUpdatesLength = globalPoolUpdates.length;
-
-        poolInfo[_pid].lastProcessedTotalAllocPoint = globalPoolUpdatesLength - 1;
+        vaultInfo[_vault].allocPoint = _allocPoint;
     }
 
     /**
@@ -110,58 +89,38 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * rewards available.
     * @param _to The address to transfer the reward to
     * @param _amount The amount of rewards to transfer
-    * @param _pid The pool id
+    * @param _vault The vault address
    */
-    function safeTransferReward(address _to, uint256 _amount, uint256 _pid) internal {
+    function safeTransferReward(address _to, uint256 _amount, address _vault) internal {
         if (rewardToken.balanceOf(address(this)) < _amount)
             revert NotEnoughRewardsToTransferToUser();
             
         rewardToken.safeTransfer(_to, _amount);
 
-        emit SafeTransferReward(_to, _pid, _amount, address(rewardToken));
+        emit SafeTransferReward(_to, _vault, _amount, address(rewardToken));
     }
 
     /**
-    * @notice Update the pool's rewardPerShare, not more then once per block
-    * @param _pid The pool id
+    * @notice Update the vault's rewardPerShare, not more then once per block
+    * @param _vault The vault's address
     */
-    function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        uint256 lastRewardBlock = pool.lastRewardBlock;
+    function updateVault(address _vault) public {
+        VaultInfo storage vault = vaultInfo[_vault];
+        uint256 lastRewardBlock = vault.lastRewardBlock;
         if (block.number <= lastRewardBlock) {
             return;
         }
 
-        pool.lastRewardBlock = block.number;
+        vault.lastRewardBlock = block.number;
 
-        uint256 totalShares = getTotalShares(_pid);
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
         if (totalShares != 0) {
-            uint256 reward = getPoolReward(_pid, lastRewardBlock);
-            pool.rewardPerShare += (reward * 1e12 / totalShares);
+            uint256 reward = getVaultReward(_vault, lastRewardBlock);
+            vault.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        setPoolsLastProcessedTotalAllocPoint(_pid);
-    }
-
-    /**
-    * @notice set the shares of users in a pool
-    * only calleable by the owner, and only when a pool is not initialized
-    * This function is used for migrating older pool data to this new contract
-    */
-    function setShares(
-        uint256 _pid,
-        uint256 _rewardPerShare,
-        address[] memory _accounts,
-        uint256[] memory _rewardDebts)
-    external onlyVaults {
-        PoolInfo storage pool = poolInfo[_pid];
-
-        pool.rewardPerShare = _rewardPerShare;
-
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            rewardDebt[_pid][_accounts[i]] = _rewardDebts[i];
-        }
+        vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
     }
 
     /**
@@ -173,18 +132,18 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         emit SetRewardPerEpoch(_rewardPerEpoch);
     }
 
-    function _updateRewardPool(
-        uint256 _pid,
+    function _updateVaultBalance(
+        address _vault,
         address _user,
         uint256 _sharesChange,
         bool _isDeposit,
         bool _claimReward
     ) internal {
-        updatePool(_pid);
+        updateVault(_vault);
 
-        uint256 userShares = getShares(_pid, _user);
-        uint256 rewardPerShare = poolInfo[_pid].rewardPerShare;
-        uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_pid][_user];
+        uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
+        uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
+        uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
         if (_sharesChange != 0) {
             if (_isDeposit) {
                 userShares += _sharesChange;
@@ -192,75 +151,54 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 userShares -= _sharesChange;
             }
         }
-        rewardDebt[_pid][_user] = userShares * rewardPerShare / 1e12;
+        rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
         if (pending > 0 && _claimReward) {
-            safeTransferReward(_user, pending, _pid);
+            safeTransferReward(_user, pending, _vault);
         }
     }
 
-    function updateRewardPool(
-        uint256 _pid,
+    function updateVaultBalance(
         address _user,
         uint256 _sharesChange,
         bool _isDeposit,
         bool _claimReward
-    ) external onlyVaults {
-        _updateRewardPool(_pid, _user, _sharesChange, _isDeposit, _claimReward);
+    ) external {
+        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit, _claimReward);
     }
 
     /**
      * @notice Transfer to the sender their pending share of rewards.
-     * @param _pid The pool id
+     * @param _vault The vault address
      */
-    function claimReward(uint256 _pid) external {
-        _updateRewardPool(_pid, msg.sender, 0, true, true);
+    function claimReward(address _vault) external {
+        _updateVaultBalance(_vault, msg.sender, 0, true, true);
 
-        emit ClaimReward(_pid);
-    }
-
-    /**
-    * @notice massUpdatePools - Update reward variables for all pools
-    * Be careful of gas spending!
-    * @param _fromPid update pools range from this pool id
-    * @param _toPid update pools range to this pool id
-    */
-    function massUpdatePools(uint256 _fromPid, uint256 _toPid) external {
-        if (_fromPid > _toPid)
-            revert InvalidPoolRange();
-
-        for (uint256 pid = _fromPid; pid < _toPid; ++pid) {
-            if (poolInfo[pid].lastRewardBlock == 0) {
-                revert InvalidPoolRange();
-            }
-            updatePool(pid);
-        }
-
-        emit MassUpdatePools(_fromPid, _toPid);
+        emit ClaimReward(_vault);
     }
 
      /**
-    * @notice Calculate rewards for a pool by iterating over the history of totalAllocPoints updates,
-    * and sum up all rewards periods from pool.lastRewardBlock until current block number.
-    * @param _pid The pool id
+    * @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,
+    * and sum up all rewards periods from vault.lastRewardBlock until current block number.
+    * @param _vault The vault address
     * @param _fromBlock The block from which to start calculation
     * @return reward
     */
-    function getPoolReward(uint256 _pid, uint256 _fromBlock) public view returns(uint256 reward) {
-        uint256 poolAllocPoint = poolInfo[_pid].allocPoint;
-        uint256 i = poolInfo[_pid].lastProcessedTotalAllocPoint;
-        for (; i < globalPoolUpdates.length-1; i++) {
-            uint256 nextUpdateBlock = globalPoolUpdates[i+1].blockNumber;
+    function getVaultReward(address _vault, uint256 _fromBlock) public view returns(uint256 reward) {
+        uint256 vaultAllocPoint = vaultInfo[_vault].allocPoint;
+        uint256 i = vaultInfo[_vault].lastProcessedTotalAllocPoint;
+        for (; i < globalVaultsUpdates.length-1; i++) {
+            uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
             reward =
             reward + getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
-                                            poolAllocPoint,
-                                            globalPoolUpdates[i].totalAllocPoint);
+                                            vaultAllocPoint,
+                                            globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
         }
         return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,
-                                                poolAllocPoint,
-                                                globalPoolUpdates[i].totalAllocPoint);
+                                                vaultAllocPoint,
+                                                globalVaultsUpdates[i].totalAllocPoint);
     }
 
     function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
@@ -284,33 +222,25 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice calculate the amount of rewards an account can claim for having contributed to a specific pool
-     * @param _pid the id of the pool
+     * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
+     * @param _vault the vault address
      * @param _user the account for which the reward is calculated
     */
-    function getPendingReward(uint256 _pid, address _user) external view returns (uint256) {
-        PoolInfo memory pool = poolInfo[_pid];
-        uint256 rewardPerShare = pool.rewardPerShare;
-        uint256 totalShares = getTotalShares(_pid);
+    function getPendingReward(address _vault, address _user) external view returns (uint256) {
+        VaultInfo memory vault = vaultInfo[_vault];
+        uint256 rewardPerShare = vault.rewardPerShare;
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
-        if (block.number > pool.lastRewardBlock && totalShares > 0) {
-            uint256 reward = getPoolReward(_pid, pool.lastRewardBlock);
+        if (block.number > vault.lastRewardBlock && totalShares > 0) {
+            uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
             rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        return getShares(_pid, _user) * rewardPerShare / 1e12 - rewardDebt[_pid][_user];
+        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
     }
 
-    function getTotalShares(uint256 _pid) public view returns (uint256 totalShares) {
-        ( , , , totalShares, , ) = hatVaults.poolInfos(_pid);
-    }
-
-    function getShares(uint256 _pid, address _user) public view returns (uint256) {
-        return hatVaults.userShares(_pid, _user);
-    }
-
-    function getGlobalPoolUpdatesLength() external view returns (uint256) {
-        return globalPoolUpdates.length;
+    function getGlobalVaultsUpdatesLength() external view returns (uint256) {
+        return globalVaultsUpdates.length;
     }
 
 }

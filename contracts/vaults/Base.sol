@@ -3,14 +3,16 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../tokenlock/TokenLockFactory.sol";
 import "../interfaces/IRewardController.sol";
+import "../HATVaultsRegistry.sol";
+
 
 // Errors:
 // Only committee
@@ -25,28 +27,14 @@ error BeneficiaryIsZero();
 error NotSafetyPeriod();
 // Bounty percentage is higher than the max bounty
 error BountyPercentageHigherThanMaxBounty();
-// Withdraw request pending period must be <= 3 months
-error WithdrawRequestPendingPeriodTooLong();
-// Withdraw request enabled period must be >= 6 hour
-error WithdrawRequestEnabledPeriodTooShort();
 // Only callable by arbitrator or after challenge timeout period
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
-// Withdraw period must be >= 1 hour
-error WithdrawPeriodTooShort();
-// Safety period must be <= 6 hours
-error SafetyPeriodTooLong();
+// Claim Id specified is not the active claim Id
+error WrongClaimId();
 // Not enough fee paid
 error NotEnoughFeePaid();
-// Vesting duration is too long
-error VestingDurationTooLong();
-// Vesting periods cannot be zero
-error VestingPeriodsCannotBeZero();
-// Vesting duration smaller than periods
-error VestingDurationSmallerThanPeriods();
-// Delay is too short
-error DelayTooShort();
 // No pending max bounty
 error NoPendingMaxBounty();
 // Delay period for setting max bounty had not passed
@@ -55,52 +43,30 @@ error DelayPeriodForSettingMaxBountyHadNotPassed();
 error CommitteeIsZero();
 // Committee already checked in
 error CommitteeAlreadyCheckedIn();
-// Pool does not exist
-error PoolDoesNotExist();
-// Amount to swap is zero
-error AmountToSwapIsZero();
 // Pending withdraw request exists
 error PendingWithdrawRequestExists();
-// Deposit paused
-error DepositPaused();
 // Amount to deposit is zero
 error AmountToDepositIsZero();
-// Pool balance is zero
-error PoolBalanceIsZero();
+// Vault balance is zero
+error VaultBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
 error InvalidWithdrawRequest();
-// Token approve failed
-error TokenApproveFailed();
-// Wrong amount received
-error AmountSwappedLessThanMinimum();
 // Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
 // LP token is zero
-error LPTokenIsZero();
+error AssetIsZero();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
-error PoolWithdrawalFeeTooBig();
-// Token approve reset failed
-error TokenApproveResetFailed();
-// Pool must not be initialized
-error PoolMustNotBeInitialized();
-// Pool must be initialized
-error PoolMustBeInitialized();
+error WithdrawalFeeTooBig();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
 // Committee not checked in yet
 error CommitteeNotCheckedInYet();
 // Not enough user balance
 error NotEnoughUserBalance();
-// User shares must be greater than 0
-error UserSharesMustBeGreaterThanZero();
-// Swap was not successful
-error SwapFailed();
-// Routing contract must be whitelisted
-error RoutingContractNotWhitelisted();
 // Only arbitrator
 error OnlyArbitrator();
 // Claim can only be approved if challenge period is over, or if the
@@ -110,52 +76,15 @@ error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
 error BountySplitMustIncludeHackerPayout();
 error ChallengePeriodEnded();
 error OnlyCallableIfChallenged();
+error CannotDepositToAnotherUserWithWithdrawRequest();
+error WithdrawMustBeGreaterThanZero();
+error WithdrawMoreThanMax();
+error RedeemMoreThanMax();
 
-
-contract Base is Ownable, ReentrancyGuard {
-    // Parameters that apply to all the vaults
+contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
-    using SafeERC20 for ERC20Burnable;
-    
-    struct GeneralParameters {
-        uint256 hatVestingDuration;
-        uint256 hatVestingPeriods;
-        // withdraw enable period. safetyPeriod starts when finished.
-        uint256 withdrawPeriod;
-        // withdraw disable period - time for the committee to gather and decide on actions,
-        // withdrawals are not possible in this time. withdrawPeriod starts when finished.
-        uint256 safetyPeriod;
-        // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
-        // (after which withdrawal is not possible)
-        uint256 withdrawRequestEnablePeriod;
-        // period of time that has to pass after withdraw request until withdraw is possible
-        uint256 withdrawRequestPendingPeriod;
-        uint256 setMaxBountyDelay;
-        uint256 claimFee;  //claim fee in ETH
-    }
 
-    // Info of each pool.
-    struct PoolInfo {
-        bool committeeCheckedIn;
-        IERC20 lpToken;
-        // total amount of LP tokens in pool
-        uint256 balance;
-        uint256 totalShares;
-        // fee to take from withdrawals to governance
-        uint256 withdrawalFee;
-        
-        IRewardController rewardController;
-    }
-
-    // Info of each pool's bounty policy.
-    struct BountyInfo {
-        BountySplit bountySplit;
-        uint256 maxBounty;
-        uint256 vestingDuration;
-        uint256 vestingPeriods;
-    }
-
-    // How to divide the bounties for each pool, in percentages (out of `HUNDRED_PERCENT`)
+    // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
         uint256 hackerVested;
@@ -171,7 +100,7 @@ contract Base is Ownable, ReentrancyGuard {
         uint256 hackerHatVested;
     }
 
-    // How to divide a bounty for a claim that has been approved, in amounts of pool's tokens
+    // How to divide a bounty for a claim that has been approved, in amounts of the vault's token
     struct ClaimBounty {
         uint256 hacker;
         uint256 hackerVested;
@@ -181,13 +110,12 @@ contract Base is Ownable, ReentrancyGuard {
         uint256 governanceHat;
     }
 
-    // Info of a claim for a bounty payout that has been submitted by a committee
     struct Claim {
-        uint256 pid;
+        bytes32 claimId;
         address beneficiary;
         uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee will
-        // be payed their share of the bounty in case the committee changes before claim approval
+        // be paid their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
         bool isChallenged;
@@ -201,159 +129,90 @@ contract Base is Ownable, ReentrancyGuard {
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
-    // PARAMETERS FOR ALL VAULTS
-    // time during which a claim can be challenged by the arbitrator
-    uint256 public challengePeriod;
-    // time after which a challenged claim is automatically dismissed
-    uint256 public challengeTimeOutPeriod;
-    // a struct with parameters for all vaults
-    GeneralParameters public generalParameters;
-    // rewardController determines how many rewards each pool gets in the incentive program
+    HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
-    // feeSetter sets the withdrawal fee
-    address public feeSetter;
-    // address of the arbitrator - which can dispute claims and override the committee's decisions
-    address public arbitrator;
-    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
-    // typically be HATs
-    ERC20Burnable public swapToken;
-    mapping(address => bool) public whitelistedRouters;
+
+    Claim public activeClaim;
+
+    IRewardController public rewardController;
+
+    BountySplit public bountySplit;
+    uint256 public maxBounty;
+    uint256 public vestingDuration;
+    uint256 public vestingPeriods;
+
+    bool public committeeCheckedIn;
+    uint256 public withdrawalFee;
+
     uint256 internal nonce;
 
-    // PARAMETERS PER VAULT
-    PoolInfo[] public poolInfos;
-    // Info of each pool.
-    // poolId -> committee address
-    mapping(uint256 => address) public committees;
-    // Info of each user that stakes LP tokens. poolId => user address => shares
-    mapping(uint256 => mapping(address => uint256)) public userShares;
-    // poolId -> BountyInfo
-    mapping(uint256 => BountyInfo) public bountyInfos;
-    // poolId -> PendingMaxBounty
-    mapping(uint256 => PendingMaxBounty) public pendingMaxBounty;
-    // poolId -> claimId
-    mapping(uint256 => uint256) public activeClaims;
-    // poolId -> isPoolInitialized
-    mapping(uint256 => bool) public poolInitialized;
-    // poolID -> isPoolPausedForDeposit
-    mapping(uint256 => bool) public poolDepositPause;
-    // Time of when last withdraw request pending period ended, or 0 if last action was deposit or withdraw
-    // poolId -> (address -> requestTime)
-    mapping(uint256 => mapping(address => uint256)) public withdrawEnableStartTime;
+    address public committee;
 
-    // PARAMETERS PER CLAIM
-    // claimId -> Claim
-    mapping(uint256 => Claim) public claims;
-    // poolId -> amount
-    mapping(uint256 => uint256) public swapAndBurns;
-    // hackerAddress -> (pid -> amount)
-    mapping(address => mapping(uint256 => uint256)) public hackersHatRewards;
-    // poolId -> amount
-    mapping(uint256 => uint256) public governanceHatRewards;
+    PendingMaxBounty public pendingMaxBounty;
 
+    bool public depositPause;
+
+    mapping(address => uint256) public withdrawEnableStartTime;
+    
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
-        uint256 indexed _pid,
-        uint256 _claimId,
-        address _committee,
+        bytes32 indexed _claimId,
+        address indexed _committee,
         address indexed _beneficiary,
-        uint256 indexed _bountyPercentage,
+        uint256 _bountyPercentage,
         string _descriptionHash
     );
+    event ChallengeClaim(bytes32 indexed _claimId);
     event ApproveClaim(
-        uint256 indexed _pid,
-        uint256 indexed _claimId,
+        bytes32 indexed _claimId,
         address indexed _committee,
-        address _beneficiary,
+        address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
         ClaimBounty _claimBounty
     );
-    event DismissClaim(uint256 indexed _pid, uint256 indexed _claimId);
-    event Deposit(address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        uint256 transferredAmount
-    );
-    event SetFeeSetter(address indexed _newFeeSetter);
-    event SetCommittee(uint256 indexed _pid, address indexed _committee);
-    event SetChallengePeriod(uint256 _challengePeriod);
-    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrator(address indexed _arbitrator);
-    event SetWithdrawRequestParams(
-        uint256 indexed _withdrawRequestPendingPeriod,
-        uint256 indexed _withdrawRequestEnablePeriod
-    );
-    event SetClaimFee(uint256 _fee);
-    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
+    event DismissClaim(bytes32 indexed _claimId);
+    event SetCommittee(address indexed _committee);
     event SetVestingParams(
-        uint256 indexed _pid,
-        uint256 indexed _duration,
-        uint256 indexed _periods
+        uint256 _duration,
+        uint256 _periods
     );
-    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
-    event SetBountySplit(uint256 indexed _pid, BountySplit _bountySplit);
-    event SetMaxBountyDelay(uint256 indexed _delay);
-    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
-    event SetPoolWithdrawalFee(uint256 indexed _pid, uint256 _newFee);
-    event CommitteeCheckedIn(uint256 indexed _pid);
-    event SetPendingMaxBounty(uint256 indexed _pid, uint256 _maxBounty, uint256 _timeStamp);
-    event SetMaxBounty(uint256 indexed _pid, uint256 _maxBounty);
-    event SetRewardController(uint256 indexed _pid, IRewardController indexed _newRewardController);
-    event AddPool(
-        uint256 indexed _pid,
-        address indexed _lpToken,
-        address _committee,
-        IRewardController _rewardController,
-        string _descriptionHash,
-        uint256 _maxBounty,
-        BountySplit _bountySplit,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods
-    );
-    event SetPool(
-        uint256 indexed _pid,
+    event SetBountySplit(BountySplit _bountySplit);
+    event SetWithdrawalFee(uint256 _newFee);
+    event CommitteeCheckedIn();
+    event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
+    event SetMaxBounty(uint256 _maxBounty);
+    event SetRewardController(IRewardController indexed _newRewardController);
+    event UpdateVaultInfo(
         bool indexed _registered,
         bool _depositPause,
         string _descriptionHash
     );
-    event SwapAndBurn(
-        uint256 indexed _pid,
-        uint256 indexed _amountSwapped,
-        uint256 indexed _amountBurned
-    );
-    event SwapAndSend(
-        uint256 indexed _pid,
-        address indexed _beneficiary,
-        uint256 indexed _amountSwapped,
-        uint256 _amountReceived,
-        address _tokenLock
-    );
+
     event WithdrawRequest(
-        uint256 indexed _pid,
         address indexed _beneficiary,
-        uint256 indexed _withdrawEnableTime
+        uint256 _withdrawEnableTime
     );
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 shares);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 assets, uint256 shares);
 
     modifier onlyFeeSetter() {
-        if (feeSetter != msg.sender) revert OnlyFeeSetter();
+        if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();
         _;
     }
 
-    modifier onlyCommittee(uint256 _pid) {
-        if (committees[_pid] != msg.sender) revert OnlyCommittee();
+    modifier onlyCommittee() {
+        if (committee != msg.sender) revert OnlyCommittee();
         _;
     }
 
     modifier onlyArbitrator() {
-        if (arbitrator != msg.sender) revert OnlyArbitrator();
+        if (registry.arbitrator() != msg.sender) revert OnlyArbitrator();
         _;
     }
 
     modifier noSafetyPeriod() {
-        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
         (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
@@ -361,9 +220,68 @@ contract Base is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier noActiveClaims(uint256 _pid) {
-        if (activeClaims[_pid] != 0) revert ActiveClaimExists();
+    modifier noActiveClaim() {
+        if (activeClaim.createdAt != 0) revert ActiveClaimExists();
         _;
+    }
+
+    modifier isActiveClaim(bytes32 _claimId) {
+        if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
+        if (activeClaim.claimId != _claimId) revert WrongClaimId();
+        _;
+    }
+
+    function initialize(
+        IRewardController _rewardController,
+        uint256 _vestingDuration,
+        uint256 _vestingPeriods,
+        uint256 _maxBounty,
+        BountySplit memory _bountySplit,
+        IERC20 _asset,
+        address _committee,
+        bool _isPaused
+    ) external initializer {
+        if (_vestingDuration > 120 days)
+            revert VestingDurationTooLong();
+        if (_vestingPeriods == 0) revert VestingPeriodsCannotBeZero();
+        if (_vestingDuration < _vestingPeriods)
+            revert VestingDurationSmallerThanPeriods();
+        if (_committee == address(0)) revert CommitteeIsZero();
+        if (address(_asset) == address(0)) revert AssetIsZero();
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
+        validateSplit(_bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
+        rewardController = _rewardController;
+        vestingDuration = _vestingDuration;
+        vestingPeriods = _vestingPeriods;
+        maxBounty = _maxBounty;
+        bountySplit = _bountySplit;
+        committee = _committee;
+        depositPause = _isPaused;
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
+        registry = _registry;
+        __ReentrancyGuard_init();
+        _transferOwnership(_registry.owner());
+        tokenLockFactory = _registry.tokenLockFactory();
+    }
+
+    /**
+    * @notice change the information of the vault
+    * ony calleable by the owner of the contract
+    * @param _visible is this vault visible in the UI
+    * @param _depositPause pause deposits (default false).
+    * This parameter can be used by the UI to include or exclude the vault
+    * @param _descriptionHash the hash of the vault's description.
+    */
+    function updateVaultInfo(
+        bool _visible,
+        bool _depositPause,
+        string memory _descriptionHash
+    ) external onlyOwner {
+        depositPause = _depositPause;
+
+        emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
     }
 
     function validateSplit(BountySplit memory _bountySplit) internal pure {
