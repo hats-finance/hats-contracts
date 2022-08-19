@@ -23,7 +23,7 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `updateVaultInfo` to change some of the vault's properties (description, it is paused for deposits?)
-- can call `setVestingParams` set vesting parameters for bounty paid
+- can call `setVestingParams` set vesting parameters for bounty paid in vault's token
 - can call `setBountySplit` set how the bounty is split between security researcher, committee and governance
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
