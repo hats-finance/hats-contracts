@@ -699,7 +699,7 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      let tx = await vault.setDepositPause(true, { from: accounts[1] });
+      await vault.setDepositPause(true, { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex, "OnlyOwner");
