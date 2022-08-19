@@ -586,6 +586,8 @@ contract("HatVaults", (accounts) => {
   it("anyone can create a vault", async () => {
     await setup(accounts);
 
+    assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "1");
+
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
       accounts[1],
@@ -597,6 +599,9 @@ contract("HatVaults", (accounts) => {
       false,
       { from: accounts[1] }
     )).logs[0].args._vault);
+
+    assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "2");
+
     await newVault.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
@@ -641,12 +646,12 @@ contract("HatVaults", (accounts) => {
       from: staker,
     });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    let expectedBalance = (await hatToken.balanceOf(staker)).toString();
-    await rewardController.updateVault(newVault.address, { from: staker });
+    let expectedBalance = (await hatToken.balanceOf(staker));
+    expectedReward = await calculateExpectedReward(staker, 0, newVault);
     await rewardController.claimReward(newVault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      expectedBalance
+      expectedBalance.add(expectedReward).toString()
     );
   });
 
@@ -4524,6 +4529,64 @@ contract("HatVaults", (accounts) => {
 
     globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
+  });
+
+  it("add/set vault on the same block", async () => {
+    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
+    var tokenLock1 = await HATTokenLock.new();
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    var vaultsManager = await VaultsManagerMock.new();
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      rewardPerEpoch,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      [router1.address],
+      tokenLockFactory1.address,
+      true
+    );
+
+    hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
+    rewardController1 = await RewardController.at(
+      deployment.rewardController.address
+    );
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    let stakingToken3 = await ERC20Mock.new("Staking", "STK");
+    var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
+    assert.equal(globalVaultsUpdatesLength, 0);
+    await vaultsManager.createVaults(
+      hatVaultsRegistry1.address,
+      rewardController1.address,
+      100,
+      [stakingToken2.address, stakingToken3.address],
+      accounts[1],
+      8000,
+      [6000, 2000, 500, 0, 1000, 500],
+      "_descriptionHash",
+      [86400, 10]
+    );
+    
+    let newVault1 = await HATVault.at(await hatVaultsRegistry1.hatVaults(0));
+    let newVault2 = await HATVault.at(await hatVaultsRegistry1.hatVaults(1));
+    globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
+    assert.equal(globalVaultsUpdatesLength, 1); //2 got in the same block
+    assert.equal(await hatVaultsRegistry1.getNumberOfVaults(), 2);
+    await vaultsManager.setVaultsAllocPoint(
+      [newVault1.address, newVault2.address],
+      rewardController1.address,
+      200
+    );
+
+    globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
+    assert.equal(globalVaultsUpdatesLength, 2); //2 got in the same block
+    let globalUpdatesLen = await rewardController1.getGlobalVaultsUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController1.globalVaultsUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
+    assert.equal(totalAllocPoint.toString(), 400); //2 got in the same block
   });
 
   it("stop in the middle", async () => {
