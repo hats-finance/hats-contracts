@@ -24,7 +24,6 @@ async function main(config) {
   } else {
     hatGovernanceDelay = 60 * 60 * 24 * 7; // 7 days
   }
-  const hatVaultsAddress = config.hatVaultsAddress;
   let executors = config.executors;
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -37,7 +36,6 @@ async function main(config) {
   var hatTimelockController;
   if (network.name !== "hardhat") {
     hatTimelockController = await HATTimelockController.deploy(
-      hatVaultsAddress,
       hatGovernanceDelay, // minDelay
       [governance], // proposers
       executors // executors
@@ -52,7 +50,6 @@ async function main(config) {
       executors = [deployerAddress];
     }
     hatTimelockController = await HATTimelockControllerArtifact.new(
-      hatVaultsAddress,
       hatGovernanceDelay, // minDelay
       [governance], // proposers
       executors // executors

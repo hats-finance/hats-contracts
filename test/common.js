@@ -1,4 +1,5 @@
-const HATVaults = artifacts.require("./HATVaults.sol");
+const HATVault = artifacts.require("./HATVault.sol");
+const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
@@ -94,7 +95,7 @@ const setup = async function(
     true
   );
 
-  hatVaults = await HATVaults.at(deployment.hatVaults.address);
+  hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
     deployment.rewardController.address
   );
@@ -113,8 +114,8 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  await hatVaults.setChallengePeriod(challengePeriod);
-  await hatVaults.addPool(
+  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
+  let vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
     accounts[1],
     rewardController.address,
@@ -122,29 +123,29 @@ const setup = async function(
     bountySplit,
     "_descriptionHash",
     [86400, 10],
-    false,
-    true
-  );
+    false
+  )).logs[1].args._vault);
   await rewardController.setAllocPoint(
-    (await hatVaults.getNumberOfPools()) - 1,
+    vault.address,
     allocPoint
   );
-  await hatVaults.committeeCheckIn(0, { from: accounts[1] });
+  await vault.committeeCheckIn({ from: accounts[1] });
   return {
-    hatVaults,
+    hatVaultsRegistry,
+    vault,
     hatToken,
     stakingToken,
   };
 };
 
-async function advanceToSafetyPeriod(hatVaults) {
+async function advanceToSafetyPeriod(hatVaultsRegistry) {
   let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
 
   let withdrawPeriod = (
-    await hatVaults.generalParameters()
+    await hatVaultsRegistry.generalParameters()
   ).withdrawPeriod.toNumber();
   let safetyPeriod = (
-    await hatVaults.generalParameters()
+    await hatVaultsRegistry.generalParameters()
   ).safetyPeriod.toNumber();
 
   if (currentTimeStamp % (withdrawPeriod + safetyPeriod) < withdrawPeriod) {
@@ -154,9 +155,8 @@ async function advanceToSafetyPeriod(hatVaults) {
   }
 }
 
-async function submitClaim(hatVaults, { accounts, bountyPercentage = 8000 }) {
-  let tx = await hatVaults.submitClaim(
-    0,
+async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
+  const tx = await vault.submitClaim(
     accounts[2],
     bountyPercentage,
     "description hash",
@@ -164,8 +164,8 @@ async function submitClaim(hatVaults, { accounts, bountyPercentage = 8000 }) {
       from: accounts[1],
     }
   );
-  let claimId = tx.logs[0].args._claimId;
-  return claimId;
+
+  return tx.logs[0].args._claimId;
 }
 
 async function assertFunctionRaisesException(functionCall, exceptionString) {

@@ -21,7 +21,7 @@ The contracts in this repository define a number of different roles that have th
 
 The `owner` of a hatvault created by the registry is the same registry owner.
 
-- can call `transferOwnership` and `renounceOwnership` 
+- can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `updateVaultInfo` to change some of the vault's properties (description, it is paused for deposits?)
 - can call `setVestingParams` set vesting parameters for bounty paid
 - can call `setBountySplit` set how the bounty is split between security researcher, committee and governance
@@ -34,18 +34,16 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
-- can call `setPoolWithdrawalFee` - set the fee for withdrawals from the pool
 - `setPendingMaxBounty`
 - `setMaxBounty`
 
 ## `HatVaults.arbitrator`
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee (see [arbitrator](./arbitrator.md))
 
-
 ## `HatVaults.feeSetter`
 
 - set to `HATTimeLockController`
-- can call `setPoolWithdrawalFee` (set the fee for withdrawals from the pool)
+- can call `setWithdrawalFee` (set the fee for withdrawals from the vault)
 
 ## `RewardController.owner`
 
@@ -77,12 +75,12 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 
 - set to governance multisig
 - can call `cancel` and cancel any pending operation
+<<<<<<< HEAD
 
 
 ## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
-
   - `setPool`
   - `updateVaultInfo`
   - `setAllocPoint`
-  - `swapBurnSend`
+
