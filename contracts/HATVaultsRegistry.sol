@@ -257,8 +257,9 @@ contract HATVaultsRegistry is Ownable {
     /**
     * @notice Called by governance to set the withdraw period and safety
     * period, which are always interchanging.
-    * The safety period is time for the committee to gather and decide on
-    * actions, during which withdrawals are disabled.
+    * The safety period is time that the committee can submit claims for 
+    * bounty payouts, and during which withdrawals are disabled and the bounty
+    * split cannot be changed.
     * @param _withdrawPeriod Amount of time during which withdrawals are
     * enabled, and the bounty split can be changed by the governance. Must be
     * at least 1 hour.
