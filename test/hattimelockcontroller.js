@@ -197,6 +197,26 @@ contract("HatTimelockController", (accounts) => {
     );
   });
 
+  it("Update vault description", async () => {
+    await setup(accounts);
+    try {
+      await hatTimelockController.updateVaultDescription(vault.address, "descHash", {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await hatVaultsRegistry.updateVaultDescription(vault.address, "descHash");
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+    await hatTimelockController.updateVaultDescription(vault.address, "descHash");
+  });
+
   it("Pause vault deposits", async () => {
     await setup(accounts);
     try {

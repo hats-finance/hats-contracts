@@ -3341,7 +3341,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("Update vault info", async () => {
+  it("Update vault description", async () => {
     await setup(accounts);
 
     try {
@@ -3356,37 +3356,14 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._visible, true);
 
     try {
-      await vault.updateVaultDescription("_descriptionHash");
-      assert(false, "only committee");
+      await hatVaultsRegistry.updateVaultDescription(vault.address, "_descriptionHash", { from: accounts[1] });
+      assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "OnlyCommittee");
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
-    tx = await vault.updateVaultDescription("_descriptionHash", { from: accounts[1] });
+    tx = await hatVaultsRegistry.updateVaultDescription(vault.address, "_descriptionHash");
+    assert.equal(tx.logs[0].event, "UpdateVaultDescription");
     assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
-    await rewardController.setAllocPoint(vault.address, 200);
-
-    var staker = accounts[4];
-    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
-      from: staker,
-    });
-    await stakingToken.mint(staker, web3.utils.toWei("1"));
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    assert.equal(await hatToken.balanceOf(staker), 0);
-    await rewardController.setAllocPoint(vault.address, 200);
-    let expectedReward = await calculateExpectedReward(staker);
-    assert.equal(await stakingToken.balanceOf(staker), 0);
-    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
-      expectedReward.toString()
-    );
-    assert.equal(await stakingToken.balanceOf(staker), 0);
-    assert.equal(
-      await stakingToken.balanceOf(vault.address),
-      web3.utils.toWei("1")
-    );
   });
 
   it("swapAndBurn bounty check", async () => {

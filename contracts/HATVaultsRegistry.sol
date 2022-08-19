@@ -117,6 +117,7 @@ contract HATVaultsRegistry is Ownable {
     event SetMaxBountyDelay(uint256 _delay);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event UpdateVaultVisibility(address indexed _vault, bool indexed _visible);
+    event UpdateVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
@@ -338,14 +339,24 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice change the UI visibility of the vault
-    * ony calleable by the owner of the contract
+    * @notice change the UI visibility of a vault
+    * only calleable by the owner of the contract
     * @param _vault the vault to update
     * @param _visible is this vault visible in the UI
     * This parameter can be used by the UI to include or exclude the vault
     */
     function updateVaultVisibility(address _vault, bool _visible) external onlyOwner {
         emit UpdateVaultVisibility(_vault, _visible);
+    }
+
+    /**
+    * @notice change the description of a vault
+    * only calleable by the owner of the contract
+    * @param _vault the vault to update
+    * @param _descriptionHash the hash of the vault's description.
+    */
+    function updateVaultDescription(address _vault, string memory _descriptionHash) external onlyOwner {
+        emit UpdateVaultDescription(_vault, _descriptionHash);
     }
 
     function addTokensToSwap(

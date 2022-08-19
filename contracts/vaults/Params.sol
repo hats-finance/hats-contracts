@@ -117,14 +117,6 @@ contract Params is Base {
         emit SetDepositPause(_depositPause);
     }
 
-    /**
-    * @notice change the description of the vault
-    * @param _descriptionHash the hash of the vault's description.
-    */
-    function updateVaultDescription(string memory _descriptionHash) external onlyCommittee {
-        emit UpdateVaultDescription(_descriptionHash);
-    }
-
     function setRewardController(IRewardController _newRewardController) external onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);

@@ -24,6 +24,7 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `createVault` to create a new vault
 - can call `updateVaultVisibility` to change the vault's visibility in the UI
+- can call `updateVaultDescription` to change the vault's description hash
 - can call `setDepositPause` to pause and unpause deposits to the vault
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
 - can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
@@ -95,6 +96,7 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 ## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
   - `updateVaultVisibility`
+  - `updateVaultDescription`
   - `setDepositPause`
   - `setAllocPoints`
   - `swapBurnSend`

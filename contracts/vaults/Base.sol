@@ -179,7 +179,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
-    event UpdateVaultDescription(string _descriptionHash);
 
     event WithdrawRequest(
         address indexed _beneficiary,
