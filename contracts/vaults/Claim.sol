@@ -42,6 +42,7 @@ contract Claim is Base {
     external
     onlyCommittee()
     noActiveClaim()
+    returns (bytes32 claimId)
     {
         if (_beneficiary == address(0)) revert BeneficiaryIsZero();
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -51,8 +52,9 @@ contract Claim is Base {
         generalParameters.withdrawPeriod) revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        uint256 claimId = uint256(keccak256(abi.encodePacked(address(this), block.number, nonce++)));
-        claims[claimId] = Claim({
+        claimId = keccak256(abi.encodePacked(address(this), nonce++));
+        activeClaim = Claim({
+            claimId: claimId,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
             committee: msg.sender,
@@ -60,7 +62,7 @@ contract Claim is Base {
             createdAt: block.timestamp,
             isChallenged: false
         });
-        activeClaim = claimId;
+
         emit SubmitClaim(
             claimId,
             msg.sender,
@@ -71,17 +73,15 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Called by a the arbitrator to challenge a claim for a bounty
+    * @notice Called by the arbitrator to challenge a claim for a bounty
     * payout that had been previously submitted by the committee.
     * @param _claimId The claim ID
     */
-    function challengeClaim(uint256 _claimId) external onlyArbitrator {
-        Claim storage claim = claims[_claimId];
-        if (claim.beneficiary == address(0))
-            revert NoActiveClaimExists();
-        if (block.timestamp > claim.createdAt + registry.challengeTimeOutPeriod())
+    function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
+        if (block.timestamp > activeClaim.createdAt + registry.challengeTimeOutPeriod())
             revert ChallengePeriodEnded();
-        claim.isChallenged = true;
+        activeClaim.isChallenged = true;
+        emit ChallengeClaim(_claimId);
     }
 
     /**
@@ -95,9 +95,8 @@ contract Claim is Base {
     * be sent as a bounty. The value for _bountyPercentage will be ignored if
     * the caller is not the arbitrator.
     */
-    function approveClaim(uint256 _claimId, uint256 _bountyPercentage) external nonReentrant {
-        Claim storage claim = claims[_claimId];
-        if (claim.beneficiary == address(0)) revert NoActiveClaimExists();
+    function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
+        Claim memory claim = activeClaim;
         if (claim.isChallenged) {
             if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
             claim.bountyPercentage = _bountyPercentage;
@@ -108,14 +107,6 @@ contract Claim is Base {
         address tokenLock;
 
         ClaimBounty memory claimBounty = calcClaimBounty(claim.bountyPercentage);
-
-        balance -=
-            claimBounty.hacker +
-            claimBounty.hackerVested +
-            claimBounty.committee +
-            claimBounty.swapAndBurn +
-            claimBounty.hackerHatVested +
-            claimBounty.governanceHat;
 
         IERC20 asset = IERC20(asset());
         if (claimBounty.hackerVested > 0) {
@@ -141,9 +132,14 @@ contract Claim is Base {
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
         //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
-        swapAndBurn += claimBounty.swapAndBurn;
-        governanceHatReward += claimBounty.governanceHat;
-        hackersHatReward[claim.beneficiary] += claimBounty.hackerHatVested;
+        asset.safeApprove(address(registry), claimBounty.swapAndBurn + claimBounty.hackerHatVested + claimBounty.governanceHat);
+        registry.addTokensToSwap(
+            asset,
+            claim.beneficiary,
+            claimBounty.swapAndBurn,
+            claimBounty.hackerHatVested,
+            claimBounty.governanceHat
+        );
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,
@@ -155,7 +151,6 @@ contract Claim is Base {
         );
 
         delete activeClaim;
-        delete claims[_claimId];
     }
 
     /**
@@ -165,14 +160,14 @@ contract Claim is Base {
     * had passed.
     * @param _claimId The claim ID
     */
-    function dismissClaim(uint256 _claimId) external {
-        Claim storage claim = claims[_claimId];
+    function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
+        Claim memory claim = activeClaim;
         if (!claim.isChallenged) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < claim.createdAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
-        delete claims[_claimId];
+
         emit DismissClaim(_claimId);
     }
 
@@ -187,7 +182,7 @@ contract Claim is Base {
     public
     view
     returns(ClaimBounty memory claimBounty) {
-        uint256 totalSupply = balance;
+        uint256 totalSupply = totalAssets();
         if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();

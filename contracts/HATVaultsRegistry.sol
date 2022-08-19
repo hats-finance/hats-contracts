@@ -3,8 +3,8 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./tokenlock/TokenLockFactory.sol";
@@ -28,6 +28,14 @@ error VestingPeriodsCannotBeZero();
 error VestingDurationSmallerThanPeriods();
 // Delay is too short
 error DelayTooShort();
+// Amount to swap is zero
+error AmountToSwapIsZero();
+// Swap was not successful
+error SwapFailed();
+// Routing contract must be whitelisted
+error RoutingContractNotWhitelisted();
+// Wrong amount received
+error AmountSwappedLessThanMinimum();
 
 /**  @title Registry to manage all Hats.finance vaults
 * @author hats.finance
@@ -49,7 +57,9 @@ error DelayTooShort();
 * This project is open-source and can be found at:
 * https://github.com/hats-finance/hats-contracts
 */
-contract HATVaultsRegistry is Ownable, ReentrancyGuard {
+contract HATVaultsRegistry is Ownable {
+    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20Burnable;
 
     struct GeneralParameters {
         // vesting duration for the part of the bounty given to the hacker in HAT tokens
@@ -83,28 +93,35 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
-    ITokenLockFactory public tokenLockFactory;
+    ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
-    ERC20Burnable public swapToken;
+    ERC20Burnable public immutable HAT;
     mapping(address => bool) public whitelistedRouters;
+
+    // asset => amount
+    mapping(address => uint256) public swapAndBurn;
+    // asset => hacker address => amount
+    mapping(address => mapping(address => uint256)) public hackersHatReward;
+    // asset => amount
+    mapping(address => uint256) public governanceHatReward;
 
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
     event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
-        uint256 indexed _withdrawRequestPendingPeriod,
-        uint256 indexed _withdrawRequestEnablePeriod
+        uint256 _withdrawRequestPendingPeriod,
+        uint256 _withdrawRequestEnablePeriod
     );
     event SetClaimFee(uint256 _fee);
-    event SetWithdrawSafetyPeriod(uint256 indexed _withdrawPeriod, uint256 indexed _safetyPeriod);
-    event SetHatVestingParams(uint256 indexed _duration, uint256 indexed _periods);
-    event SetMaxBountyDelay(uint256 indexed _delay);
+    event SetWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod);
+    event SetHatVestingParams(uint256 _duration, uint256 _periods);
+    event SetMaxBountyDelay(uint256 _delay);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event VaultCreated(
         address indexed _vault,
@@ -117,13 +134,22 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods
     );
+    event SwapAndBurn(
+        uint256 _amountSwapped,
+        uint256 _amountBurned
+    );
+    event SwapAndSend(
+        address indexed _beneficiary,
+        uint256 _amountSwapped,
+        uint256 _amountReceived,
+        address indexed _tokenLock
+    );
 
     /**
     * @notice initialize -
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
-    * @param _swapToken The token that part of a payout will be swapped for
-    * and burned - this would typically be HATs
+    * @param _HAT the HAT token address
     * @param _whitelistedRouters Initial list of whitelisted routers allowed
     * to be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
@@ -132,13 +158,13 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     constructor(
         address _hatVaultImplementation,
         address _hatGovernance,
-        address _swapToken,
+        address _HAT,
         address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
-        swapToken = ERC20Burnable(_swapToken);
+        HAT = ERC20Burnable(_HAT);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -348,6 +374,103 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
         );
     }
 
+    function addTokensToSwap(
+        IERC20 _asset,
+        address _hacker,
+        uint256 _swapAndBurn,
+        uint256 _hackersHatReward,
+        uint256 _governanceHatReward
+    ) external {
+        uint256 amount = _swapAndBurn + _hackersHatReward + _governanceHatReward;
+        swapAndBurn[address(_asset)] += _swapAndBurn;
+        hackersHatReward[address(_asset)][_hacker] += _hackersHatReward;
+        governanceHatReward[address(_asset)] += _governanceHatReward;
+        _asset.safeTransferFrom(msg.sender, address(this), amount);
+    }
+
+    /**
+    * @notice Swap the vault's token to HATs.
+    * Send to beneficiary and governance their HATs rewards.
+    * Burn the rest of HAT tokens.
+    * Only governance is authorized to call this function.
+    * @param _beneficiary beneficiary
+    * @param _amountOutMinimum minimum output of HAT tokens at swap
+    * @param _routingContract routing contract to call for the swap
+    * @param _routingPayload payload to send to the _routingContract for the swap
+    **/
+    function swapBurnSend(
+        address _asset,
+        address _beneficiary,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload
+    ) external onlyOwner {
+        uint256 amount = swapAndBurn[_asset] + hackersHatReward[_asset][_beneficiary] + governanceHatReward[_asset];
+        if (amount == 0) revert AmountToSwapIsZero();
+        ERC20Burnable _HAT = HAT;
+        uint256 hatsReceived = swapTokenForHAT(_asset, amount, _amountOutMinimum, _routingContract, _routingPayload);
+        uint256 burntHats = hatsReceived * swapAndBurn[_asset] / amount;
+        uint256 hackerReward = hatsReceived * hackersHatReward[_asset][_beneficiary] / amount;
+        swapAndBurn[_asset] = 0;
+        governanceHatReward[_asset] = 0;
+        hackersHatReward[_asset][_beneficiary] = 0;
+        if (burntHats > 0) {
+            _HAT.burn(burntHats);
+        }
+        emit SwapAndBurn(amount, burntHats);
+
+        address tokenLock;
+        if (hackerReward > 0) {
+            // hacker gets her reward via vesting contract
+            tokenLock = tokenLockFactory.createTokenLock(
+                address(_HAT),
+                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                _beneficiary,
+                hackerReward,
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp, //start
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp + generalParameters.hatVestingDuration, //end
+                generalParameters.hatVestingPeriods,
+                0, // no release start
+                0, // no cliff
+                ITokenLock.Revocability.Disabled,
+                true
+            );
+            _HAT.safeTransfer(tokenLock, hackerReward);
+        }
+        emit SwapAndSend(_beneficiary, amount, hackerReward, tokenLock);
+        _HAT.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
+    }
+
+    function swapTokenForHAT(
+        address _asset,
+        uint256 _amount,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload)
+    internal
+    returns (uint256 hatsReceived)
+    {
+        ERC20Burnable _HAT = HAT;
+        if (_asset == address(_HAT)) {
+            return _amount;
+        }
+        if (!whitelistedRouters[_routingContract])
+            revert RoutingContractNotWhitelisted();
+        IERC20(_asset).safeApprove(_routingContract, _amount);
+        uint256 balanceBefore = _HAT.balanceOf(address(this));
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success,) = _routingContract.call(_routingPayload);
+        if (!success) revert SwapFailed();
+        hatsReceived = _HAT.balanceOf(address(this)) - balanceBefore;
+        if (hatsReceived < _amountOutMinimum)
+            revert AmountSwappedLessThanMinimum();
+            
+        IERC20(_asset).safeApprove(address(_routingContract), 0);
+    }
+
     /**
     * @notice Returns the general parameters for all vaults
     * @return generalParameters: 
@@ -368,7 +491,7 @@ contract HATVaultsRegistry is Ownable, ReentrancyGuard {
     *   setMaxBountyDelay - period of time that has to pass after setting a
     *   pending max bounty before it can be set as the new max bounty
     *   claimFee - fee in ETH to be transferred with every logging of a claim
-    */
+    */    
     function getGeneralParameters() external view returns(GeneralParameters memory) {
         return generalParameters;
     }

@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgrad
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "../tokenlock/TokenLockFactory.sol";
 import "../interfaces/IRewardController.sol";
 import "../HATVaultsRegistry.sol";
@@ -32,6 +31,8 @@ error BountyPercentageHigherThanMaxBounty();
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
+// Claim Id specified is not the active claim Id
+error WrongClaimId();
 // Not enough fee paid
 error NotEnoughFeePaid();
 // No pending max bounty
@@ -42,8 +43,6 @@ error DelayPeriodForSettingMaxBountyHadNotPassed();
 error CommitteeIsZero();
 // Committee already checked in
 error CommitteeAlreadyCheckedIn();
-// Amount to swap is zero
-error AmountToSwapIsZero();
 // Pending withdraw request exists
 error PendingWithdrawRequestExists();
 // Amount to deposit is zero
@@ -54,10 +53,6 @@ error VaultBalanceIsZero();
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
 error InvalidWithdrawRequest();
-// Token approve failed
-error TokenApproveFailed();
-// Wrong amount received
-error AmountSwappedLessThanMinimum();
 // Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
 // LP token is zero
@@ -66,18 +61,12 @@ error AssetIsZero();
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
 error WithdrawalFeeTooBig();
-// Token approve reset failed
-error TokenApproveResetFailed();
 // Set shares arrays must have same length
 error SetSharesArraysMustHaveSameLength();
 // Committee not checked in yet
 error CommitteeNotCheckedInYet();
 // Not enough user balance
 error NotEnoughUserBalance();
-// Swap was not successful
-error SwapFailed();
-// Routing contract must be whitelisted
-error RoutingContractNotWhitelisted();
 // Only arbitrator
 error OnlyArbitrator();
 // Claim can only be approved if challenge period is over, or if the
@@ -100,7 +89,6 @@ error RedeemMoreThanMax();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
-    using SafeERC20 for ERC20Burnable;
 
     // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
     struct BountySplit {
@@ -129,6 +117,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     struct Claim {
+        bytes32 claimId;
         address beneficiary;
         uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee will
@@ -148,11 +137,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
-    ERC20Burnable public swapToken;
 
-    uint256 public activeClaim;
-    // claimId -> Claim
-    mapping(uint256 => Claim) public claims;
+    Claim public activeClaim;
 
     IRewardController public rewardController;
 
@@ -162,7 +148,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     uint256 public vestingPeriods;
 
     bool public committeeCheckedIn;
-    uint256 public balance;
     uint256 public withdrawalFee;
 
     uint256 internal nonce;
@@ -174,32 +159,29 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     bool public depositPause;
 
     mapping(address => uint256) public withdrawEnableStartTime;
-
-    uint256 public swapAndBurn;
-    mapping(address => uint256) public hackersHatReward;
-    uint256 public governanceHatReward;
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
-        uint256 indexed _claimId,
-        address _committee,
+        bytes32 indexed _claimId,
+        address indexed _committee,
         address indexed _beneficiary,
-        uint256 indexed _bountyPercentage,
+        uint256 _bountyPercentage,
         string _descriptionHash
     );
+    event ChallengeClaim(bytes32 indexed _claimId);
     event ApproveClaim(
-        uint256 indexed _claimId,
+        bytes32 indexed _claimId,
         address indexed _committee,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
         ClaimBounty _claimBounty
     );
-    event DismissClaim(uint256 indexed _claimId);
+    event DismissClaim(bytes32 indexed _claimId);
     event SetCommittee(address indexed _committee);
     event SetVestingParams(
-        uint256 indexed _duration,
-        uint256 indexed _periods
+        uint256 _duration,
+        uint256 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
     event SetWithdrawalFee(uint256 _newFee);
@@ -212,19 +194,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         bool _depositPause,
         string _descriptionHash
     );
-    event SwapAndBurn(
-        uint256 indexed _amountSwapped,
-        uint256 indexed _amountBurned
-    );
-    event SwapAndSend(
-        address indexed _beneficiary,
-        uint256 indexed _amountSwapped,
-        uint256 _amountReceived,
-        address _tokenLock
-    );
+
     event WithdrawRequest(
         address indexed _beneficiary,
-        uint256 indexed _withdrawEnableTime
+        uint256 _withdrawEnableTime
     );
     event EmergencyWithdraw(address indexed user, uint256 assets, uint256 shares);
 
@@ -245,7 +218,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     modifier noSafetyPeriod() {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
         (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
@@ -254,7 +227,13 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     modifier noActiveClaim() {
-        if (activeClaim != 0) revert ActiveClaimExists();
+        if (activeClaim.createdAt != 0) revert ActiveClaimExists();
+        _;
+    }
+
+    modifier isActiveClaim(bytes32 _claimId) {
+        if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
+        if (activeClaim.claimId != _claimId) revert WrongClaimId();
         _;
     }
 
@@ -309,7 +288,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         registry = _registry;
         __ReentrancyGuard_init();
         _transferOwnership(_registry.owner());
-        swapToken = _registry.swapToken();
         tokenLockFactory = _registry.tokenLockFactory();
     }
 

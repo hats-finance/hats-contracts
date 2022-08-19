@@ -67,7 +67,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
       vault.approveClaim(claimId, 8000, { from: accounts[2] }),
@@ -87,8 +87,9 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(claimId, 1234, {
       from: accounts[2],
     });
-    assert.equal(tx.logs[4].event, "ApproveClaim");
-    assert.equal(tx.logs[4].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
   });
 
   it("Arbitrator can only change bounty if claim is challenged", async () => {
@@ -107,7 +108,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     // go and pass the challenge period
     await utils.increaseTime(2000);
@@ -117,8 +118,9 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(claimId, 1234, {
       from: accounts[3],
     });
-    assert.equal(tx.logs[4].event, "ApproveClaim");
-    assert.equal(tx.logs[4].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
   });
 
   it("Arbitrator cannot challenge after challenge timeout period", async () => {
@@ -138,7 +140,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     // go and pass the challenge period
     await utils.increaseTime(2000);
@@ -153,8 +155,9 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const tx = await vault.approveClaim(claimId, 1234, {
       from: accounts[3],
     });
-    assert.equal(tx.logs[4].event, "ApproveClaim");
-    assert.equal(tx.logs[4].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[7].args._bountyPercentage.toString(), "8000");
   });
 
   it("challenge - approve Claim ", async () => {
@@ -174,12 +177,18 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    const claimId = await submitClaim(vault, { accounts });
-
-    // challengeClaim will fail if passing an non-existent claimID
+    // challengeClaim will fail if no active claim exists
     await assertFunctionRaisesException(
-      vault.challengeClaim("1234", { from: accounts[2] }),
+      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
       "NoActiveClaimExists"
+    );
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    // challengeClaim will fail if no active claim exists
+    await assertFunctionRaisesException(
+      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
+      "WrongClaimId"
     );
 
     // only arbitrator can challenge the claim
@@ -191,7 +200,10 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
       vault.challengeClaim(claimId, { from: owner }),
       "OnlyArbitrator"
     );
-    await vault.challengeClaim(claimId, { from: arbitrator });
+    let tx = await vault.challengeClaim(claimId, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       vault.approveClaim(claimId, 6000, { from: staker }),
@@ -219,19 +231,20 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
       vault.approveClaim(claimId, 8000, { from: owner }),
       "ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator"
     );
-    assert.equal((await vault.claims(claimId)).bountyPercentage, 8000);
-    var stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
-    var tx = await vault.approveClaim(claimId, 6000, { from: arbitrator });
-    assert.equal(tx.logs[4].event, "ApproveClaim");
-    assert.equal(tx.logs[4].args._bountyPercentage, 6000);
+    assert.equal((await vault.activeClaim()).bountyPercentage, 8000);
+    let stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
+    tx = await vault.approveClaim(claimId, 6000, { from: arbitrator });
+    assert.equal(tx.logs[7].event, "ApproveClaim");
+    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[7].args._bountyPercentage, 6000);
     assert.equal(
       (await stakingToken.balanceOf(vault.address)).toString(),
-      stakingTokenBalanceBefore.sub(new web3.utils.BN(web3.utils.toWei("0.51"))).toString()
+      stakingTokenBalanceBefore.sub(new web3.utils.BN(web3.utils.toWei("0.6"))).toString()
     );
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[4].args._tokenLock);
+    let vestingTokenLock = await HATTokenLock.at(tx.logs[7].args._tokenLock);
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
-    var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.6"));
-    var expectedHackerBalance = depositValutBNAfterClaim
+    let depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.6"));
+    let expectedHackerBalance = depositValutBNAfterClaim
       .mul(new web3.utils.BN(6000))
       .div(new web3.utils.BN(10000));
     assert.isTrue(
@@ -240,7 +253,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[4].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[7].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -257,7 +270,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const arbitrator = accounts[1];
     await hatVaultsRegistry.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
-    const claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
       vault.dismissClaim(claimId, { from: arbitrator }),
@@ -275,6 +288,8 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
       vault.dismissClaim(claimId, { from: owner }),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
-    await vault.dismissClaim(claimId, { from: arbitrator });
+    tx = await vault.dismissClaim(claimId, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "DismissClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
   });
 });

@@ -14,7 +14,7 @@ contract Withdrawals is Base {
     **/
     function withdrawRequest() external nonReentrant {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawwithdrawRequest
+        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawRequest
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
@@ -39,7 +39,7 @@ contract Withdrawals is Base {
         // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
         // Should consider disallowing withdraw from another user.
         checkWithdrawAndResetWithdrawEnableStartTime(owner);
-        if (shares == 0) revert WithdrawMustBeGreaterThanZero();
+        if (assets == 0) revert WithdrawMustBeGreaterThanZero();
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
@@ -47,7 +47,7 @@ contract Withdrawals is Base {
         rewardController.updateVaultBalance(owner, shares, false, claimReward);
 
         _burn(owner, shares);
-        balance -= assets + fee;
+
         safeWithdrawVaultToken(assets, fee, receiver);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
@@ -84,8 +84,6 @@ contract Withdrawals is Base {
     }
 
     function emergencyWithdraw() external {
-        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
-        // Should consider disallowing withdraw from another user.
         address msgSender = _msgSender();
         uint256 shares = balanceOf(msgSender);
         uint256 assets = previewRedeem(shares);
@@ -113,19 +111,19 @@ contract Withdrawals is Base {
         returns(bool)
     {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        //disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
+        // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod (e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
         (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
             generalParameters.withdrawPeriod) return false;
         // check that withdrawRequestPendingPeriod had passed
         // solhint-disable-next-line not-rely-on-time
-        return !(block.timestamp < withdrawEnableStartTime[user] ||
+        return (block.timestamp >= withdrawEnableStartTime[user] &&
         // check that withdrawRequestEnablePeriod had not passed and that the
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp >
+            block.timestamp <=
                 withdrawEnableStartTime[user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }

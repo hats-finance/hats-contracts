@@ -7,7 +7,6 @@ pragma solidity 0.8.14;
 import "./vaults/Claim.sol";
 import "./vaults/Deposits.sol";
 import "./vaults/Params.sol";
-import "./vaults/Swap.sol";
 import "./vaults/Withdrawals.sol";
 
 
@@ -44,7 +43,7 @@ import "./vaults/Withdrawals.sol";
 *
 * @dev HATVault implements the ERC4626 standard
 */
-contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
+contract HATVault is Claim, Deposits, Params, Withdrawals {
 
     function _deposit(
         address caller,
@@ -92,11 +91,6 @@ contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
         return Withdrawals.redeem(shares, receiver, owner);
     }
 
-    /** @dev See {IERC4626-totalAssets}. */
-    function totalAssets() public view virtual override returns (uint256) {
-        return balance;
-    }
-
     /** @dev See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
         return depositPause ? 0 : type(uint256).max;
@@ -109,20 +103,20 @@ contract HATVault is Claim, Deposits, Params, Swap, Withdrawals {
 
     /** @dev See {IERC4626-maxWithdraw}. */
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
+        if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return previewRedeem(balanceOf(owner));
     }
 
     /** @dev See {IERC4626-maxRedeem}. */
     function maxRedeem(address owner) public view virtual override returns (uint256) {
-        if (activeClaim != 0 || !isWithdrawEnabledForUser(owner)) return 0;
+        if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
     }
 
     /** @dev See {IERC4626-previewWithdraw}. */
     function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
-        uint256 assetsPlusFee = (assets / (HUNDRED_PERCENT - withdrawalFee)) * HUNDRED_PERCENT;
-       return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+        uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
+        return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
     }
     /** @dev See {IERC4626-previewRedeem}. */
     function previewRedeem(uint256 shares) public view virtual override returns (uint256) {

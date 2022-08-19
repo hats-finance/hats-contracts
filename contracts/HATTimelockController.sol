@@ -7,30 +7,25 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaultsRegistry.sol";
 
 contract HATTimelockController is TimelockController {
-    HATVaultsRegistry public immutable hatVaultsRegistry;
 
     constructor(
-        HATVaultsRegistry _hatVaultsRegistry,
         uint256 _minDelay,
         address[] memory _proposers,
         address[] memory _executors
-    // solhint-disable-next-line func-visibility
-    ) TimelockController(_minDelay, _proposers, _executors) {
-        require(address(_hatVaultsRegistry) != address(0), "HATTimelockController: HATVaults address must not be 0");
-        hatVaultsRegistry = _hatVaultsRegistry;
-    }
+    // solhint-disable-next-line no-empty-blocks
+    ) TimelockController(_minDelay, _proposers, _executors) {}
     
     // Whitelisted functions
 
-    function approveClaim(HATVault _vault, uint256 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
+    function approveClaim(HATVault _vault, bytes32 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
         _vault.approveClaim(_claimId, _bountyPercentage);
     }
 
-    function challengeClaim(HATVault _vault, uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
+    function challengeClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
         _vault.challengeClaim(_claimId);
     }
 
-    function dismissClaim(HATVault _vault, uint256 _claimId) external onlyRole(PROPOSER_ROLE) {
+    function dismissClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
         _vault.dismissClaim(_claimId);
     }
 
@@ -55,14 +50,18 @@ contract HATTimelockController is TimelockController {
         _vault.setCommittee(_committee);
     }
 
-    function swapBurnSend(HATVault _vault,
-                        address _beneficiary,
-                        uint256 _amountOutMinimum,
-                        address _routingContract,
-                        bytes calldata _routingPayload)
+    function swapBurnSend(
+        HATVaultsRegistry _registry,
+        address _asset,
+        address _beneficiary,
+        uint256 _amountOutMinimum,
+        address _routingContract,
+        bytes calldata _routingPayload
+    )
     external
     onlyRole(PROPOSER_ROLE) {
-        _vault.swapBurnSend(
+        _registry.swapBurnSend(
+            _asset,
             _beneficiary,
             _amountOutMinimum,
             _routingContract,
