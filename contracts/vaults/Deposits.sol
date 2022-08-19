@@ -9,8 +9,8 @@ contract Deposits is Base {
     /**
     * @dev Deposit funds to the vault. Can only be called if the committee had
     * checked in and deposits are not paused.
-    * @note: Vaults should not use tokens which do not guarantee
-    * that the amount specified is the amount transferred
+    * NOTE: Vaults should not use tokens which do not guarantee that the 
+    * amount specified is the amount transferred
     * @param caller Caller of the action (msg.sender)
     * @param receiver Reciever of the shares from the deposit
     * @param assets Amount of vault's token to deposit
