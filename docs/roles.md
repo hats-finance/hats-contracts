@@ -32,6 +32,7 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setBountySplit` set how the bounty is split betwen security researcher, committee and governance
 - can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
+- can call `setVestingParams` set vesting parameters for bounty paid
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
 - setMaxBountyDelay - Set the timelock delay for setting the max bounty
@@ -47,7 +48,6 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `submitClaim` - submit a claim for a bounty payout
 - can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
 - can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage
-- can call `setVestingParams` set vesting parameters for bounty paid
 
 ## `HATVaultsRegistry.arbitrator`
 - can call `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee

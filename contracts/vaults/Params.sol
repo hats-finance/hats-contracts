@@ -30,7 +30,7 @@ contract Params is Base {
     * @param _duration duration of the vesting period
     * @param _periods the vesting periods
     */
-    function setVestingParams(uint256 _duration, uint256 _periods) external onlyCommittee {
+    function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         _setVestingParams(_duration, _periods);
     }
 

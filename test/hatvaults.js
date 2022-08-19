@@ -4254,30 +4254,30 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.vestingPeriods(), 10);
 
     try {
-      await vault.setVestingParams(21000, 7);
-      assert(false, "only committee can set vesting params");
+      await vault.setVestingParams(21000, 7, { from: accounts[2] });
+      assert(false, "only gov can set vesting params");
     } catch (ex) {
-      assertVMException(ex, "OnlyCommittee");
+      assertVMException(ex, "OnlyOwner");
     }
     try {
-      await vault.setVestingParams(21000, 0, { from: accounts[1] });
+      await vault.setVestingParams(21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
       assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     try {
-      await vault.setVestingParams(120 * 24 * 3600, 7, { from: accounts[1] });
+      await vault.setVestingParams(120 * 24 * 3600, 7);
       assert(false, "duration should be less than 120 days");
     } catch (ex) {
       assertVMException(ex, "VestingDurationTooLong");
     }
     try {
-      await vault.setVestingParams(6, 7, { from: accounts[1] });
+      await vault.setVestingParams(6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
       assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
-    var tx = await vault.setVestingParams(21000, 7, { from: accounts[1] });
+    var tx = await vault.setVestingParams(21000, 7);
     assert.equal(tx.logs[0].event, "SetVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
     assert.equal(tx.logs[0].args._periods, 7);
