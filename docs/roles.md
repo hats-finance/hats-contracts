@@ -17,12 +17,12 @@ The contracts in this repository define a number of different roles that have th
 - can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
 - can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
 
-## `HatVaults.owner`
+## `HatVault.owner`
 
 The `owner` of a hatvault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
-- can call `updateVaultInfo` to change some of the vault's properties (description, it is paused for deposits?)
+- can call `updateVaultInfo` to change some of the vault's properties (description, if it is paused for deposit, visibility in the app) [SUBJECT TO CHANGE]
 - can call `setVestingParams` set vesting parameters for bounty paid in vault's token
 - can call `setBountySplit` set how the bounty is split between security researcher, committee and governance
 - can call `setCommittee` but only if the committee has not checked in yet
@@ -75,7 +75,6 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 
 - set to governance multisig
 - can call `cancel` and cancel any pending operation
-<<<<<<< HEAD
 
 
 ## The following functions in HATVaults are **not** subject to a timelock:
