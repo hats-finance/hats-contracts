@@ -254,7 +254,7 @@ contract("HatTimelockController", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod(hatVaultsRegistry);
     const bountyPercentage = 300;
-    await vault.submitClaim(
+    let tx = await vault.submitClaim(
       accounts[2],
       bountyPercentage,
       "description hash",
@@ -263,8 +263,10 @@ contract("HatTimelockController", (accounts) => {
       }
     );
 
+    let claimId = tx.logs[0].args._claimId;
+
     try {
-      await hatTimelockController.approveClaim(vault.address, bountyPercentage, {
+      await hatTimelockController.approveClaim(vault.address, claimId, bountyPercentage, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -274,7 +276,7 @@ contract("HatTimelockController", (accounts) => {
 
     await utils.increaseTime(60 * 60 * 24);
 
-    await hatTimelockController.approveClaim(vault.address, bountyPercentage);
+    await hatTimelockController.approveClaim(vault.address, claimId, bountyPercentage);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
@@ -317,7 +319,7 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
 
-    let tx = await hatTimelockController.swapBurnSend(
+    tx = await hatTimelockController.swapBurnSend(
       hatVaultsRegistry.address,
       stakingToken.address,
       accounts[1],
@@ -384,29 +386,29 @@ contract("HatTimelockController", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await rewardController.updateVault(vault.address);
 
-    await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     assertFunctionRaisesException(
-      vault.challengeClaim(),
+      vault.challengeClaim(claimId),
       "OnlyArbitrator"
     );
-    await hatTimelockController.challengeClaim(vault.address);
+    await hatTimelockController.challengeClaim(vault.address, claimId);
 
-    await hatTimelockController.approveClaim(vault.address, 8000);
+    await hatTimelockController.approveClaim(vault.address, claimId, 8000);
   });
 
   it("challenge - dismiss claim", async () => {
     await setup(accounts);
     // set challenge period to 1000
     await advanceToSafetyPeriod(hatVaultsRegistry);
-    await submitClaim(vault, { accounts });
-    await hatTimelockController.challengeClaim(vault.address);
+    let claimId = await submitClaim(vault, { accounts });
+    await hatTimelockController.challengeClaim(vault.address, claimId);
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      vault.dismissClaim(),
+      vault.dismissClaim(claimId),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
-    await hatTimelockController.dismissClaim(vault.address);
+    await hatTimelockController.dismissClaim(vault.address, claimId);
   });
 
   it("setCommittee", async () => {

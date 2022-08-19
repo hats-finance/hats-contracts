@@ -30,6 +30,8 @@ error BountyPercentageHigherThanMaxBounty();
 error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
+// Claim Id specified is not the active claim Id
+error WrongClaimId();
 // Not enough fee paid
 error NotEnoughFeePaid();
 // No pending max bounty
@@ -103,6 +105,7 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     }
 
     struct Claim {
+        bytes32 claimId;
         address beneficiary;
         uint256 bountyPercentage;
         // the address of the committee at the time of the submittal, so that this committee will
@@ -148,19 +151,22 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
+        bytes32 indexed _claimId,
         address indexed _committee,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         string _descriptionHash
     );
+    event ChallengeClaim(bytes32 indexed _claimId);
     event ApproveClaim(
+        bytes32 indexed _claimId,
         address indexed _committee,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
         ClaimBounty _claimBounty
     );
-    event DismissClaim();
+    event DismissClaim(bytes32 indexed _claimId);
     event SetCommittee(address indexed _committee);
     event SetVestingParams(
         uint256 _duration,
@@ -215,8 +221,9 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
-    modifier activeClaimExists() {
+    modifier isActiveClaim(bytes32 _claimId) {
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
+        if (activeClaim.claimId != _claimId) revert WrongClaimId();
         _;
     }
 

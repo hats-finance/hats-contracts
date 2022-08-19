@@ -156,7 +156,7 @@ async function advanceToSafetyPeriod(hatVaultsRegistry) {
 }
 
 async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
-  await vault.submitClaim(
+  const tx = await vault.submitClaim(
     accounts[2],
     bountyPercentage,
     "description hash",
@@ -164,6 +164,8 @@ async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
       from: accounts[1],
     }
   );
+
+  return tx.logs[0].args._claimId;
 }
 
 async function assertFunctionRaisesException(functionCall, exceptionString) {
