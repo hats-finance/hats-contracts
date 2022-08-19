@@ -736,7 +736,8 @@ contract("HatVaults", (accounts) => {
       }
     );
 
-    await vault.challengeClaim();
+    let claimId = tx.logs[0].args._claimId;
+    await vault.challengeClaim(claimId);
 
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
@@ -745,8 +746,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    let claimId = tx.logs[0].args._claimId;
-    await vault.challengeClaim(claimId);
     tx = await vault.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -882,7 +881,9 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
 
-    await vault.challengeClaim();
+    let claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
 
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
@@ -891,9 +892,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    let claimId = tx.logs[0].args._claimId;
-
-    await vault.challengeClaim(claimId);
     tx = await vault.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -2042,10 +2040,10 @@ contract("HatVaults", (accounts) => {
       }
     );
 
+    let claimId = tx.logs[0].args._claimId;
+
     await vault.challengeClaim(claimId);
     await utils.increaseTime(60 * 60 * 24 * 3 + 1);
-
-    let claimId = tx.logs[0].args._claimId;
 
     try {
       await vault.approveClaim(claimId, 8000);
@@ -2252,7 +2250,7 @@ contract("HatVaults", (accounts) => {
     await safeRedeem(vault, await vault.balanceOf(staker), staker, staker);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await safeRedeem(vault, web3.utils.toWei("1"), staker2);
-    let tx = await rewardController.claimReward(vault.address, staker, { from: staker2 });
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker2 });
     assert.equal(tx.logs[0].event, "SafeTransferReward");
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
@@ -2416,7 +2414,7 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    let tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000);
     assert.equal(tx.logs[6].event, "ApproveClaim");
     assert.equal(tx.logs[6].args._claimId, claimId);
     await vault.withdrawRequest({ from: staker });

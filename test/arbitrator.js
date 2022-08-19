@@ -264,7 +264,7 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     );
     assert.equal((await vault.activeClaim()).bountyPercentage, 8000);
     var stakingTokenBalanceBefore = await stakingToken.balanceOf(vault.address);
-    var tx = await vault.approveClaim(claimId, 6000, { from: arbitrator });
+    tx = await vault.approveClaim(claimId, 6000, { from: arbitrator });
     assert.equal(tx.logs[6].event, "ApproveClaim");
     assert.equal(tx.logs[6].args._claimId, claimId);
     assert.equal(tx.logs[6].args._bountyPercentage, 6000);
@@ -333,38 +333,38 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
     const arbitrator = accounts[1];
     await hatVaultsRegistry.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
-    await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
-      vault.dismissClaim({ from: arbitrator }),
+      vault.dismissClaim(claimId, { from: arbitrator }),
       "OnlyCallableIfChallenged"
     );
 
-    await vault.challengeClaim({ from: arbitrator });
+    await vault.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      vault.dismissClaim({ from: accounts[2] }),
+      vault.dismissClaim(claimId, { from: accounts[2] }),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
 
     await assertFunctionRaisesException(
-      vault.dismissClaim({ from: owner }),
+      vault.dismissClaim(claimId, { from: owner }),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
 
     await utils.increaseTime(60 * 60 * 24 * 7);
 
     await assertFunctionRaisesException(
-      vault.approveClaim(8000, { from: owner }),
+      vault.approveClaim(claimId, 8000, { from: owner }),
       "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
     );
 
     await assertFunctionRaisesException(
-      vault.approveClaim(8000, { from: arbitrator }),
+      vault.approveClaim(claimId, 8000, { from: arbitrator }),
       "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
     );
 
-    await vault.dismissClaim({ from: owner });
+    await vault.dismissClaim(claimId, { from: owner });
   });
 
 });
