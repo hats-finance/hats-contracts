@@ -86,7 +86,9 @@ contract Claim is Base {
 
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and
-    * pay out bounty to hacker and committee.
+    * pay out bounty to hacker and committee. Also transfer to the 
+    * HATVaultsRegistrythe part of the bounty that will be swapped to HAT 
+    * tokens.
     * If the claim had been previously challenged, this is only callable by
     * the arbitrator. Otherwise, callable by anyone after challengePeriod had
     * passed.
@@ -131,7 +133,8 @@ contract Claim is Base {
 
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
-        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
+
+        //storing the amount of tokens which can be swapped and burned so it could be swapAndBurn in a separate tx.
         asset.safeApprove(address(registry), claimBounty.swapAndBurn + claimBounty.hackerHatVested + claimBounty.governanceHat);
         registry.addTokensToSwap(
             asset,
@@ -140,6 +143,7 @@ contract Claim is Base {
             claimBounty.hackerHatVested,
             claimBounty.governanceHat
         );
+
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,
@@ -176,7 +180,7 @@ contract Claim is Base {
     * predefined bounty split and the current bounty percentage
     * @param _bountyPercentage The percentage of the vault's funds to be paid
     * out as bounty
-    * @return The bounty distribution for this specific claim
+    * @return claimBounty The bounty distribution for this specific claim
     */
     function calcClaimBounty(uint256 _bountyPercentage)
     public

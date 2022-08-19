@@ -118,6 +118,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
         return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
     }
+    
     /** @dev See {IERC4626-previewRedeem}. */
     function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
         uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
