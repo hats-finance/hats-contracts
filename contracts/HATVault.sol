@@ -45,6 +45,16 @@ import "./vaults/Withdrawals.sol";
 */
 contract HATVault is Claim, Deposits, Params, Withdrawals {
 
+    /**
+    * @dev Deposit funds to the vault. Can only be called if the committee had
+    * checked in and deposits are not paused.
+    * @note: Vaults should not use tokens which do not guarantee
+    * that the amount specified is the amount transferred
+    * @param caller Caller of the action (msg.sender)
+    * @param receiver Reciever of the shares from the deposit
+    * @param assets Amount of vault's token to deposit
+    * @param shares Respective amount of shares to be received
+    */
     function _deposit(
         address caller,
         address receiver,
@@ -73,7 +83,16 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         rewardController.updateVaultBalance(from, amount, false, true);
     }
 
-    /** @dev See {IERC4626-withdraw}. */
+    /** 
+    * @notice Withdraw previously deposited funds from the vault.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed.
+    * @param assets Amount of tokens to withdraw
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds 
+    * @dev See {IERC4626-withdraw}.
+    */
     function withdraw(
         uint256 assets,
         address receiver,
@@ -82,7 +101,17 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         return Withdrawals.withdraw(assets, receiver, owner);
     }
 
-    /** @dev See {IERC4626-redeem}. */
+    /** 
+    * @notice Redeem shares in the vault, and receive the respective amount of
+    * underlying assets.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed.
+    * @param shares Amount of shares to redeem
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds 
+    * @dev See {IERC4626-redeem}.
+    */
     function redeem(
         uint256 shares,
         address receiver,
@@ -91,35 +120,35 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         return Withdrawals.redeem(shares, receiver, owner);
     }
 
-    /** @dev See {IERC4626-maxDeposit}. */
+    /** @notice See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
         return depositPause ? 0 : type(uint256).max;
     }
 
-    /** @dev See {IERC4626-maxMint}. */
+    /** @notice See {IERC4626-maxMint}. */
     function maxMint(address) public view virtual override returns (uint256) {
         return depositPause ? 0 : type(uint256).max;
     }
 
-    /** @dev See {IERC4626-maxWithdraw}. */
+    /** @notice See {IERC4626-maxWithdraw}. */
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
         if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return previewRedeem(balanceOf(owner));
     }
 
-    /** @dev See {IERC4626-maxRedeem}. */
+    /** @notice See {IERC4626-maxRedeem}. */
     function maxRedeem(address owner) public view virtual override returns (uint256) {
         if (activeClaim.createdAt != 0 || !isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
     }
 
-    /** @dev See {IERC4626-previewWithdraw}. */
+    /** @notice See {IERC4626-previewWithdraw}. */
     function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
         uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
         return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
     }
-    
-    /** @dev See {IERC4626-previewRedeem}. */
+
+    /** @notice See {IERC4626-previewRedeem}. */
     function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
         uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
         uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
