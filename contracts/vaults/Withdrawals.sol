@@ -8,10 +8,11 @@ contract Withdrawals is Base {
 
     /**
     * @notice Submit a request to withdraw funds from the vault.
-    * The request will only be approved if the last action was a deposit or withdrawal or in case the last action was a withdraw request,
-    * that the pending period (of `generalParameters.withdrawRequestPendingPeriod`) had ended and the withdraw enable period (of `generalParameters.withdrawRequestEnablePeriod`)
-    * had also ended.
-    **/
+    * The request will only be approved if the last action was a deposit or
+    * withdrawal, or in case the last action was a withdraw request, that the
+    * withdraw request had expired (meaning that the pending period and the
+    * withdraw enable period had both ended).
+    */
     function withdrawRequest() external nonReentrant {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawRequest
@@ -21,7 +22,7 @@ contract Withdrawals is Base {
             withdrawEnableStartTime[msg.sender] +
                 generalParameters.withdrawRequestEnablePeriod)
             revert PendingWithdrawRequestExists();
-        // set the withdrawRequests time to be withdrawRequestPendingPeriod from now
+        // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         withdrawEnableStartTime[msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
         emit WithdrawRequest(msg.sender, withdrawEnableStartTime[msg.sender]);
@@ -53,7 +54,16 @@ contract Withdrawals is Base {
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 
-    /** @dev See {IERC4626-withdraw}. */
+    /** 
+    * @notice Withdraw previously deposited funds from the vault.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed.
+    * @param assets Amount of tokens to withdraw
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds 
+    * @dev See {IERC4626-withdraw}.
+    */
     function withdraw(
         uint256 assets,
         address receiver,
@@ -68,7 +78,17 @@ contract Withdrawals is Base {
         return shares;
     }
 
-    /** @dev See {IERC4626-redeem}. */
+    /** 
+    * @notice Redeem shares in the vault, and receive the respective amount of
+    * underlying assets.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed.
+    * @param assets Amount of shares to redeem
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds 
+    * @dev See {IERC4626-redeem}.
+    */
     function redeem(
         uint256 shares,
         address receiver,
@@ -92,21 +112,27 @@ contract Withdrawals is Base {
         emit EmergencyWithdraw(msgSender, assets, shares);
     }
 
-    // @notice Checks that the sender can perform a withdraw at this time
-    // and also sets the withdrawRequest to 0
-    function checkWithdrawAndResetWithdrawEnableStartTime(address user)
+    /**
+    * @dev Checks that the sender can perform a withdraw at this time
+    * and also sets the withdrawEnableStartTime to 0
+    * @param _user Address of the user to check
+    */
+    function checkWithdrawAndResetWithdrawEnableStartTime(address _user)
         internal
         noActiveClaim
     {
-        if (!isWithdrawEnabledForUser(user))
+        if (!isWithdrawEnabledForUser(_user))
             revert InvalidWithdrawRequest();
         // if all is ok and withdrawal can be made - reset withdrawRequests[_pid][msg.sender] so that another withdrawRequest
         // will have to be made before next withdrawal
-        withdrawEnableStartTime[user] = 0;
+        withdrawEnableStartTime[_user] = 0;
     }
 
-    // @notice Checks that the sender can perform a withdraw at this time
-    function isWithdrawEnabledForUser(address user)
+    /**
+    * @dev Checks that the given user can perform a withdraw at this time
+    * @param _user Address of the user to check
+    */
+    function isWithdrawEnabledForUser(address _user)
         internal view
         returns(bool)
     {
@@ -118,16 +144,22 @@ contract Withdrawals is Base {
             generalParameters.withdrawPeriod) return false;
         // check that withdrawRequestPendingPeriod had passed
         // solhint-disable-next-line not-rely-on-time
-        return (block.timestamp >= withdrawEnableStartTime[user] &&
+        return (block.timestamp >= withdrawEnableStartTime[_user] &&
         // check that withdrawRequestEnablePeriod had not passed and that the
         // last action was withdrawRequest (and not deposit or withdraw, which
-        // reset withdrawRequests[user] to 0)
+        // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
             block.timestamp <=
-                withdrawEnableStartTime[user] +
+                withdrawEnableStartTime[_user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }
 
+    /**
+    * @dev Safely transfer vault's token to reciever, and fee to governance
+    * @param _totalAmount Amount of vault's token to transfer to _receiver
+    * @param _fee Amount of vault's token to transfer to vault's owner
+    * @param _receiver Address of receiver of funds
+    */
     function safeWithdrawVaultToken(uint256 _totalAmount, uint256 _fee, address _receiver)
         internal
     {

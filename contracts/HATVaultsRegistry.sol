@@ -51,7 +51,7 @@ error AmountSwappedLessThanMinimum();
 * and bounty parameters and change vaults' info.
 * Arbitrator - Can challenge submitted claims for bounty payouts, approve them
 * with a different bounty percentage or dismiss them.
-* FeeSetter - The only address which can set the fee on withdrawals from all
+* FeeSetter - The only address which can set the fee on withdrawals on all
 * vaults.
 *
 * This project is open-source and can be found at:
@@ -331,7 +331,7 @@ contract HATVaultsRegistry is Ownable {
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods
     * @param _isPaused Whether to initialize the vault with deposits disabled
-    * @return The address of the new vault
+    * @return vault The address of the new vault
     */
     function createVault(
         IERC20 _asset,
@@ -374,6 +374,19 @@ contract HATVaultsRegistry is Ownable {
         );
     }
 
+    /**
+    * @notice Transfer the part of the bounty that is supposed to be swapped
+    * into HAT tokens from the HATVault to the registry, and keep track of the
+    * amounts to be swapped and sent/burnt in a later transaction
+    * @param _asset The vault's token
+    * @param _hacker The address of the beneficiary of the bounty
+    * @param _swapAndBurn The amount of the vault's token to be swapped to HAT
+    * tokens and burnt
+    * @param _hackersHatReward The amount of the vault's token to be swapped to 
+    * HAT tokens and sent to the hacker via a vesting contract
+    * @param _governanceHatReward The amount of the vault's token to be 
+    * swapped to HAT tokens and sent to governance
+    */
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
@@ -389,15 +402,16 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Swap the vault's token to HATs.
-    * Send to beneficiary and governance their HATs rewards.
-    * Burn the rest of HAT tokens.
-    * Only governance is authorized to call this function.
-    * @param _beneficiary beneficiary
-    * @param _amountOutMinimum minimum output of HAT tokens at swap
-    * @param _routingContract routing contract to call for the swap
-    * @param _routingPayload payload to send to the _routingContract for the swap
-    **/
+    * @notice Called by governance to swap vault's tokens to HAT tokens and
+    * distribute the HAT tokens: Send to governance their share, send to
+    * beneficiary her share through a vesting contract and burn the rest.
+    * @param _asset The vault's token
+    * @param _beneficiary Address of beneficiary
+    * @param _amountOutMinimum Minimum amount of HAT tokens at swap
+    * @param _routingContract Routing contract to call for the swap
+    * @param _routingPayload Payload to send to the _routingContract for the
+    * swap
+    */
     function swapBurnSend(
         address _asset,
         address _beneficiary,
@@ -443,6 +457,15 @@ contract HATVaultsRegistry is Ownable {
         _HAT.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
     }
 
+    /**
+    * @dev Use the given routing contract to swap the given token to HAT token
+    * @param _asset The token to swap
+    * @param _amount Amount of token to swap
+    * @param _amountOutMinimum Minimum amount of HAT tokens at swap
+    * @param _routingContract Routing contract to call for the swap
+    * @param _routingPayload Payload to send to the _routingContract for the 
+    * swap
+    */
     function swapTokenForHAT(
         address _asset,
         uint256 _amount,

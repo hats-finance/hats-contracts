@@ -242,7 +242,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @param _rewardController The reward controller for the vault
     * @param _vestingDuration Duration of the vesting period of the vault's
     * token vested part of the bounty
-    * @param _periods The number of vesting periods of the vault's token
+    * @param _vestingPeriods The number of vesting periods of the vault's token
     * vested part of the bounty
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty

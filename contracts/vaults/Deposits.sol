@@ -6,7 +6,7 @@ import "./Base.sol";
 contract Deposits is Base {
     using SafeERC20 for IERC20;
 
-    // @note: Vaults should not use tokens which does not guarantee
+    // @note: Vaults should not use tokens which do not guarantee
     // that the amount specified is the amount transferred
     function _deposit(
         address caller,
