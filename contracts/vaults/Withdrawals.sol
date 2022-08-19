@@ -84,7 +84,7 @@ contract Withdrawals is Base {
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed.
-    * @param assets Amount of shares to redeem
+    * @param shares Amount of shares to redeem
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds 
     * @dev See {IERC4626-redeem}.
