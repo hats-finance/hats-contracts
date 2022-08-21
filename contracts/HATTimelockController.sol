@@ -33,12 +33,12 @@ contract HATTimelockController is TimelockController {
         _vault.setDepositPause(_depositPause);
     }
 
-    function updateVaultVisibility(HATVault _vault, bool _visible) external onlyRole(PROPOSER_ROLE) {
-        _vault.registry().updateVaultVisibility(address(_vault), _visible);
+    function setVaultVisibility(HATVault _vault, bool _visible) external onlyRole(PROPOSER_ROLE) {
+        _vault.registry().setVaultVisibility(address(_vault), _visible);
     }
 
-    function updateVaultDescription(HATVault _vault, string memory _descriptionHash) external onlyRole(PROPOSER_ROLE) {
-        _vault.registry().updateVaultDescription(address(_vault), _descriptionHash);
+    function setVaultDescription(HATVault _vault, string memory _descriptionHash) external onlyRole(PROPOSER_ROLE) {
+        _vault.registry().setVaultDescription(address(_vault), _descriptionHash);
     }
 
     function setAllocPoint(HATVault _vault, uint256 _allocPoint)

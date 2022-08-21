@@ -156,7 +156,7 @@ contract("HatTimelockController", (accounts) => {
   it("Update vault visibility", async () => {
     await setup(accounts);
     try {
-      await hatTimelockController.updateVaultVisibility(vault.address, true, {
+      await hatTimelockController.setVaultVisibility(vault.address, true, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -165,12 +165,12 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.updateVaultVisibility(vault.address, true);
+      await hatVaultsRegistry.setVaultVisibility(vault.address, true);
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
-    await hatTimelockController.updateVaultVisibility(vault.address, true);
+    await hatTimelockController.setVaultVisibility(vault.address, true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
@@ -180,8 +180,8 @@ contract("HatTimelockController", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
-    await hatTimelockController.updateVaultVisibility(vault.address, true);
-    await hatTimelockController.updateVaultVisibility(vault.address, true);
+    await hatTimelockController.setVaultVisibility(vault.address, true);
+    await hatTimelockController.setVaultVisibility(vault.address, true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
@@ -200,7 +200,7 @@ contract("HatTimelockController", (accounts) => {
   it("Update vault description", async () => {
     await setup(accounts);
     try {
-      await hatTimelockController.updateVaultDescription(vault.address, "descHash", {
+      await hatTimelockController.setVaultDescription(vault.address, "descHash", {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -209,12 +209,12 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.updateVaultDescription(vault.address, "descHash");
+      await hatVaultsRegistry.setVaultDescription(vault.address, "descHash");
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
-    await hatTimelockController.updateVaultDescription(vault.address, "descHash");
+    await hatTimelockController.setVaultDescription(vault.address, "descHash");
   });
 
   it("Pause vault deposits", async () => {

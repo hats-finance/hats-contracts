@@ -164,7 +164,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice Transfer to the sender their pending share of rewards.
+     * @notice Transfer to the specified user their pending share of rewards.
      * @param _vault The vault address
      * @param _user The user address to claim for
      */
