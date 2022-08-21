@@ -112,7 +112,7 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         // be paid their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
-        bool isChallenged;
+        uint256 challengedAt;
     }
 
     struct PendingMaxBounty {

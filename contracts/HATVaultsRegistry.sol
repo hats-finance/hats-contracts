@@ -230,8 +230,8 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
-        if (7 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (90 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }

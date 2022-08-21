@@ -53,7 +53,7 @@ contract Claim is Base {
             committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp,
-            isChallenged: false
+            challengedAt: 0
         });
 
         emit SubmitClaim(
@@ -73,14 +73,15 @@ contract Claim is Base {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + registry.challengePeriod())
             revert ChallengePeriodEnded();
-        activeClaim.isChallenged = true;
+        // solhint-disable-next-line not-rely-on-time
+        activeClaim.challengedAt = block.timestamp;
         emit ChallengeClaim(_claimId);
     }
 
     /**
     * @notice Approve the active claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * callable by the arbitrator, if isChallenged == true
-    * Callable by anyone after challengePeriod is passed and isChallenged == false
+    * callable by the arbitrator, if claim is challenged, untiil the challenge timeout period has passed
+    * Callable by anyone after challengePeriod is passed and claim is not challenged
     * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
     * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
     */
@@ -88,9 +89,9 @@ contract Claim is Base {
         Claim memory claim = activeClaim;
         delete activeClaim;
 
-        if (claim.isChallenged) {
+        if (claim.challengedAt != 0) {
             // solhint-disable-next-line not-rely-on-time
-            if (msg.sender != registry.arbitrator() || block.timestamp > claim.createdAt + registry.challengeTimeOutPeriod())
+            if (msg.sender != registry.arbitrator() || block.timestamp > claim.challengedAt + registry.challengeTimeOutPeriod())
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
@@ -151,7 +152,7 @@ contract Claim is Base {
     */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
-        if (!claim.isChallenged) revert OnlyCallableIfChallenged();
+        if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < claim.createdAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
