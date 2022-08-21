@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "./Base.sol";
 
@@ -154,7 +154,7 @@ contract Claim is Base {
         Claim memory claim = activeClaim;
         if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.createdAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
+        if (block.timestamp < claim.challengedAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
