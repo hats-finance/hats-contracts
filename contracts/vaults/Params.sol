@@ -87,13 +87,14 @@ contract Params is Base {
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`.
     * The pending value can later be set after the time delay (of 
     * HATVaultsRegistry.GeneralParameters.setMaxBountyDelay) had passed.
+    * Max bounty should be less than or equal to `MAX_BOUNTY_LIMIT`
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
     function setPendingMaxBounty(uint256 _maxBounty)
     external
     onlyCommittee noActiveClaim {
-        if (_maxBounty > HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanHundredPercent();
+        if (_maxBounty > MAX_BOUNTY_LIMIT)
+            revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty.timestamp = block.timestamp;
@@ -106,6 +107,7 @@ contract Params is Base {
     * Cannot be called if there are active claims that have been submitted.
     * Can only be called if there is a max bounty pending approval, and the
     * time delay since setting the pending max bounty had passed.
+    * Max bounty should be less than or equal to `MAX_BOUNTY_LIMIT`
     */
     function setMaxBounty() external onlyCommittee noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();

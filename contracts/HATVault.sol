@@ -75,8 +75,8 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         address _committee,
         bool _isPaused
     ) external initializer {
-        if (_maxBounty > HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanHundredPercent();
+        if (_maxBounty > MAX_BOUNTY_LIMIT)
+            revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         validateSplit(_bountySplit);
         __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
         rewardController = _rewardController;
