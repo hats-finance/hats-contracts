@@ -3358,7 +3358,7 @@ contract("HatVaults", (accounts) => {
       "_descriptionHash",
       [86400, 10],
       false
-    )).logs[1].args._vault);
+    )).logs[0].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -3404,6 +3404,9 @@ contract("HatVaults", (accounts) => {
     );
 
     let claimId2 = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId1);
+    await newVault.challengeClaim(claimId2);
 
     await vault.approveClaim(claimId1, 8000);
     await newVault.approveClaim(claimId2, 4000);
