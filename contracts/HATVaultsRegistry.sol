@@ -112,6 +112,7 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
+    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -187,6 +188,22 @@ contract HATVaultsRegistry is Ownable {
         arbitrator = _hatGovernance;
         challengePeriod = 3 days;
         challengeTimeOutPeriod = 5 weeks;
+    }
+
+    /**
+    * @notice emit an event that includes the given _descriptionHash
+    * This can be used by the claimer as evidence that she had access to the information at the time of the call
+    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
+    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
+    */
+    function logClaim(string memory _descriptionHash) external payable {
+        if (generalParameters.claimFee > 0) {
+            if (msg.value < generalParameters.claimFee)
+                revert NotEnoughFeePaid();
+            // solhint-disable-next-line indent
+            payable(registry.owner()).transfer(msg.value);
+        }
+        emit LogClaim(msg.sender, _descriptionHash);
     }
 
     function setFeeSetter(address _newFeeSetter) external onlyOwner {

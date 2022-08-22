@@ -7,23 +7,6 @@ contract Claim is Base {
     using SafeERC20 for IERC20;
 
     /**
-    * @notice emit an event that includes the given _descriptionHash
-    * This can be used by the claimer as evidence that she had access to the information at the time of the call
-    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
-    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
-    */
-    function logClaim(string memory _descriptionHash) external payable {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        if (generalParameters.claimFee > 0) {
-            if (msg.value < generalParameters.claimFee)
-                revert NotEnoughFeePaid();
-            // solhint-disable-next-line indent
-            payable(registry.owner()).transfer(msg.value);
-        }
-        emit LogClaim(msg.sender, _descriptionHash);
-    }
-
-    /**
     * @notice Called by a committee to submit a claim for a bounty.
     * The submitted claim needs to be approved or dismissed by the Hats governance.
     * This function should be called only on a safety period, where withdrawals are disabled.
