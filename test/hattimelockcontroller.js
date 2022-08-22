@@ -261,7 +261,7 @@ contract("HatTimelockController", (accounts) => {
       await hatTimelockController.swapBurnSend(
         hatVaultsRegistry.address,
         stakingToken.address,
-        accounts[1],
+        [accounts[1]],
         0,
         router.address,
         payload,
@@ -275,7 +275,7 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, accounts[1], 0, router.address, payload);
+      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, router.address, payload);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
@@ -284,7 +284,7 @@ contract("HatTimelockController", (accounts) => {
     tx = await hatTimelockController.swapBurnSend(
       hatVaultsRegistry.address,
       stakingToken.address,
-      accounts[1],
+      [accounts[1]],
       0,
       router.address,
       payload,

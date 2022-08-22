@@ -53,7 +53,7 @@ contract HATTimelockController is TimelockController {
     function swapBurnSend(
         HATVaultsRegistry _registry,
         address _asset,
-        address _beneficiary,
+        address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload
@@ -62,7 +62,7 @@ contract HATTimelockController is TimelockController {
     onlyRole(PROPOSER_ROLE) {
         _registry.swapBurnSend(
             _asset,
-            _beneficiary,
+            _beneficiaries,
             _amountOutMinimum,
             _routingContract,
             _routingPayload
