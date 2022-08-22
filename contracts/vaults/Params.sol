@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "./Base.sol";
 
@@ -12,9 +12,8 @@ contract Params is Base {
     */
     function setCommittee(address _committee)
     external {
-        if (_committee == address(0)) revert CommitteeIsZero();
         // governance can update committee only if committee was not checked in yet.
-        if (msg.sender == owner() && committee != msg.sender) {
+        if (msg.sender == registry.owner() && committee != msg.sender) {
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();
         } else {
@@ -32,6 +31,10 @@ contract Params is Base {
     * @param _periods the vesting periods
     */
     function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
+        _setVestingParams(_duration, _periods);
+    }
+
+    function _setVestingParams(uint256 _duration, uint256 _periods) internal {
         if (_duration >= 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
@@ -108,7 +111,13 @@ contract Params is Base {
         emit SetMaxBounty(maxBounty);
     }
 
-    function setRewardController(IRewardController _newRewardController) public onlyOwner {
+    function setDepositPause(bool _depositPause) external onlyOwner {
+        depositPause = _depositPause;
+
+        emit SetDepositPause(_depositPause);
+    }
+
+    function setRewardController(IRewardController _newRewardController) external onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }

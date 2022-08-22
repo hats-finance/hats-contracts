@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "./Base.sol";
 
@@ -25,7 +25,7 @@ contract Deposits is Base {
         // clear withdraw request
         withdrawEnableStartTime[receiver] = 0;
 
-        rewardController.updateVaultBalance(receiver, shares, true, true);
+        rewardController.updateVaultBalance(receiver, shares, true);
 
         super._deposit(caller, receiver, assets, shares);
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -20,6 +20,8 @@ error SafetyPeriodTooLong();
 error WithdrawRequestPendingPeriodTooLong();
 // Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
+// Withdraw request enabled period must be <= 100 days
+error WithdrawRequestEnabledPeriodTooLong();
 // Vesting duration is too long
 error VestingDurationTooLong();
 // Vesting periods cannot be zero
@@ -36,6 +38,14 @@ error SwapFailed();
 error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 /// @title Manage all Hats.finance vaults
 /// Hats.finance is a proactive bounty protocol for white hat hackers and
@@ -102,6 +112,7 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
+    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -115,6 +126,8 @@ contract HATVaultsRegistry is Ownable {
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
     event SetMaxBountyDelay(uint256 _delay);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+    event SetVaultVisibility(address indexed _vault, bool indexed _visible);
+    event SetVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
@@ -177,6 +190,22 @@ contract HATVaultsRegistry is Ownable {
         challengeTimeOutPeriod = 5 weeks;
     }
 
+    /**
+    * @notice emit an event that includes the given _descriptionHash
+    * This can be used by the claimer as evidence that she had access to the information at the time of the call
+    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
+    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
+    */
+    function logClaim(string memory _descriptionHash) external payable {
+        if (generalParameters.claimFee > 0) {
+            if (msg.value < generalParameters.claimFee)
+                revert NotEnoughFeePaid();
+            // solhint-disable-next-line indent
+            payable(owner()).transfer(msg.value);
+        }
+        emit LogClaim(msg.sender, _descriptionHash);
+    }
+
     function setFeeSetter(address _newFeeSetter) external onlyOwner {
         feeSetter = _newFeeSetter;
         emit SetFeeSetter(_newFeeSetter);
@@ -203,6 +232,8 @@ contract HATVaultsRegistry is Ownable {
             revert WithdrawRequestPendingPeriodTooLong();
         if (6 hours > _withdrawRequestEnablePeriod)
             revert WithdrawRequestEnabledPeriodTooShort();
+        if (100 days < _withdrawRequestEnablePeriod)
+            revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
         emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
@@ -218,11 +249,15 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
     }
 
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
@@ -327,6 +362,27 @@ contract HATVaultsRegistry is Ownable {
             _bountyVestingParams[0],
             _bountyVestingParams[1]
         );
+    }
+
+    /**
+    * @notice change the UI visibility of a vault
+    * only calleable by the owner of the contract
+    * @param _vault the vault to update
+    * @param _visible is this vault visible in the UI
+    * This parameter can be used by the UI to include or exclude the vault
+    */
+    function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
+        emit SetVaultVisibility(_vault, _visible);
+    }
+
+    /**
+    * @notice change the description of a vault
+    * only calleable by the owner of the contract
+    * @param _vault the vault to update
+    * @param _descriptionHash the hash of the vault's description.
+    */
+    function setVaultDescription(address _vault, string memory _descriptionHash) external onlyOwner {
+        emit SetVaultDescription(_vault, _descriptionHash);
     }
 
     function addTokensToSwap(

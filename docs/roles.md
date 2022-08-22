@@ -22,9 +22,22 @@ The contracts in this repository define a number of different roles that have th
 The `owner` of a hatvault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
-- can call `updateVaultInfo` to change some of the vault's properties (description, if it is paused for deposit, visibility in the app) [SUBJECT TO CHANGE]
-- can call `setVestingParams` set vesting parameters for bounty paid in vault's token
-- can call `setBountySplit` set how the bounty is split between security researcher, committee and governance
+- can call `createVault` to create a new vault
+- can call `setVaultVisibility` to change the vault's visibility in the UI
+- can call `setVaultDescription` to change the vault's description hash
+- can call `setDepositPause` to pause and unpause deposits to the vault
+- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
+- can call `swapBurnSend` and swap, burn, and send the vauit's token that are earmarked for payout (after approveClaim)
+- can call `setClaimFee` set fee for submitting a vulnerability
+- can call `setWithdrawRequestParams` set time limits for withdrawal requests
+- can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
+- can call `setBountySplit` set how the bounty is split betwen security researcher, committee and governance
+- can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
+- can call `setVestingParams` set vesting parameters for bounty paid
+- can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
+- can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
+- setMaxBountyDelay - Set the timelock delay for setting the max bounty
+- can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
 
@@ -34,8 +47,8 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
-- `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty.
-- `setMaxBounty` - set the vault's max bounty to the already pending max bounty, after the time delay (of HATVaultsRegistry.GeneralParameters.setMaxBountyDelay) had passed.
+- can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
+- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage
 
 ## `HATVaultsRegistry.arbitrator`
 - can call `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
@@ -82,7 +95,8 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 
 ## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
-  - `setPool`
-  - `updateVaultInfo`
-  - `setAllocPoint`
-
+  - `setVaultVisibility`
+  - `setVaultDescription`
+  - `setDepositPause`
+  - `setAllocPoints`
+  - `swapBurnSend`

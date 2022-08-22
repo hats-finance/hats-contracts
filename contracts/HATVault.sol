@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 
 import "./vaults/Claim.sol";
@@ -10,6 +10,32 @@ import "./vaults/Params.sol";
 import "./vaults/Withdrawals.sol";
 
 contract HATVault is Claim, Deposits, Params, Withdrawals {
+
+    function initialize(
+        IRewardController _rewardController,
+        uint256 _vestingDuration,
+        uint256 _vestingPeriods,
+        uint256 _maxBounty,
+        BountySplit memory _bountySplit,
+        IERC20 _asset,
+        address _committee,
+        bool _isPaused
+    ) external initializer {
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
+        validateSplit(_bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
+        rewardController = _rewardController;
+        _setVestingParams(_vestingDuration, _vestingPeriods);
+        maxBounty = _maxBounty;
+        bountySplit = _bountySplit;
+        committee = _committee;
+        depositPause = _isPaused;
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
+        registry = _registry;
+        __ReentrancyGuard_init();
+        tokenLockFactory = _registry.tokenLockFactory();
+    }
 
     function _deposit(
         address caller,
@@ -35,8 +61,8 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
 
         checkWithdrawAndResetWithdrawEnableStartTime(from);
 
-        rewardController.updateVaultBalance(to, amount, true, true);
-        rewardController.updateVaultBalance(from, amount, false, true);
+        rewardController.updateVaultBalance(to, amount, true);
+        rewardController.updateVaultBalance(from, amount, false);
     }
 
     /** @dev See {IERC4626-withdraw}. */

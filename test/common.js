@@ -11,30 +11,30 @@ const utils = require("./utils.js");
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 
 let rewardPerEpoch = [
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("44130"),
-  web3.utils.toWei("88250"),
-  web3.utils.toWei("77880"),
-  web3.utils.toWei("68730"),
-  web3.utils.toWei("60650"),
-  web3.utils.toWei("53530"),
-  web3.utils.toWei("47240"),
-  web3.utils.toWei("41690"),
-  web3.utils.toWei("36790"),
-  web3.utils.toWei("32470"),
-  web3.utils.toWei("28650"),
-  web3.utils.toWei("25280"),
-  web3.utils.toWei("22310"),
-  web3.utils.toWei("19690"),
-  web3.utils.toWei("17380"),
-  web3.utils.toWei("15340"),
-  web3.utils.toWei("13530"),
-  web3.utils.toWei("11940"),
-  web3.utils.toWei("10540"),
-  web3.utils.toWei("9300"),
-  web3.utils.toWei("8210"),
-  web3.utils.toWei("7240"),
-  web3.utils.toWei("6390"),
+  web3.utils.toWei("441.3"),
+  web3.utils.toWei("441.3"),
+  web3.utils.toWei("882.5"),
+  web3.utils.toWei("778.8"),
+  web3.utils.toWei("687.3"),
+  web3.utils.toWei("606.5"),
+  web3.utils.toWei("535.3"),
+  web3.utils.toWei("472.4"),
+  web3.utils.toWei("416.9"),
+  web3.utils.toWei("367.9"),
+  web3.utils.toWei("324.7"),
+  web3.utils.toWei("286.5"),
+  web3.utils.toWei("252.8"),
+  web3.utils.toWei("223.1"),
+  web3.utils.toWei("196.9"),
+  web3.utils.toWei("173.8"),
+  web3.utils.toWei("153.4"),
+  web3.utils.toWei("135.3"),
+  web3.utils.toWei("119.4"),
+  web3.utils.toWei("105.4"),
+  web3.utils.toWei("93"),
+  web3.utils.toWei("82.1"),
+  web3.utils.toWei("72.4"),
+  web3.utils.toWei("63.9"),
 ];
 
 function assertVMException(error, expectedError = "") {
@@ -71,7 +71,7 @@ const setup = async function(
   allocPoint = 100,
   weth = false,
   rewardInVaults = 2500000,
-  challengePeriod = 0
+  challengePeriod = 60 * 60 * 24
 ) {
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
@@ -124,7 +124,7 @@ const setup = async function(
     "_descriptionHash",
     [86400, 10],
     false
-  )).logs[1].args._vault);
+  )).logs[0].args._vault);
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
