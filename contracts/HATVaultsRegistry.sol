@@ -201,7 +201,7 @@ contract HATVaultsRegistry is Ownable {
             if (msg.value < generalParameters.claimFee)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
-            payable(registry.owner()).transfer(msg.value);
+            payable(owner()).transfer(msg.value);
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }
