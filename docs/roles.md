@@ -38,13 +38,11 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
 - setMaxBountyDelay - Set the timelock delay for setting the max bounty
 - can call `setFeeSetter` set the feeSetter role
-- can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
 
 ## `HATVault.committee` (committee of each vault, set on creation)
 
 - a specific address for each vault, typically a multisig
-- can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
 - can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty

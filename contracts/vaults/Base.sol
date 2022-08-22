@@ -38,8 +38,6 @@ error NotEnoughFeePaid();
 error NoPendingMaxBounty();
 // Delay period for setting max bounty had not passed
 error DelayPeriodForSettingMaxBountyHadNotPassed();
-// Committee already checked in
-error CommitteeAlreadyCheckedIn();
 // Pending withdraw request exists
 error PendingWithdrawRequestExists();
 // Amount to deposit is zero
@@ -136,7 +134,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
 
-    bool public committeeCheckedIn;
     uint256 public withdrawalFee;
 
     uint256 internal nonce;
@@ -149,7 +146,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
 
     mapping(address => uint256) public withdrawEnableStartTime;
     
-    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         bytes32 indexed _claimId,
         address indexed _committee,
@@ -174,7 +170,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     );
     event SetBountySplit(BountySplit _bountySplit);
     event SetWithdrawalFee(uint256 _newFee);
-    event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);

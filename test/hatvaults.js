@@ -95,7 +95,7 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-  await vault.committeeCheckIn({ from: accounts[1] });
+
   return {
     hatVaultsRegistry,
     vault,
@@ -308,38 +308,17 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await newVault.committee(), accounts[3]);
 
-    await newVault.setCommittee(accounts[1]);
-
-    assert.equal(await newVault.committee(), accounts[1]);
-    var staker = accounts[1];
-    await stakingToken2.approve(newVault.address, web3.utils.toWei("4"), {
-      from: staker,
-    });
-    await stakingToken2.mint(staker, web3.utils.toWei("1"));
     try {
-      await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-      assert(false, "cannot deposit before committee check in");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeNotCheckedInYet");
-    }
-
-    try {
-      await newVault.committeeCheckIn({ from: accounts[0] });
-      assert(false, "only committee can check in");
+      await newVault.setCommittee(accounts[2]);
+      assert(false, "only committee");
     } catch (ex) {
       assertVMException(ex, "OnlyCommittee");
     }
-    let tx = await newVault.committeeCheckIn({ from: accounts[1] });
-    assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
 
-    try {
-      await newVault.setCommittee(accounts[2]);
-      assert(false, "committee already checked in");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeAlreadyCheckedIn");
-    }
-    await newVault.setCommittee(accounts[2], { from: accounts[1] });
+    await newVault.setCommittee(accounts[2], { from: accounts[3] });
+    assert.equal(await newVault.committee(), accounts[2]);
     await newVault.setCommittee(accounts[1], { from: accounts[2] });
+    assert.equal(await newVault.committee(), accounts[1]);
   });
 
   it("dismiss can be called by anyone after 5 weeks delay", async () => {
@@ -601,8 +580,6 @@ contract("HatVaults", (accounts) => {
     )).logs[0].args._vault);
 
     assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "2");
-
-    await newVault.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
     await stakingToken.approve(newVault.address, web3.utils.toWei("1"), {
@@ -3248,7 +3225,7 @@ contract("HatVaults", (accounts) => {
     });
     await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("1"));
     await hatToken.mint(staker, web3.utils.toWei("1"));
-    await newVault.committeeCheckIn({ from: accounts[1] });
+
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     assert.equal(
@@ -3364,8 +3341,6 @@ contract("HatVaults", (accounts) => {
       newVault.address,
       100
     );
-
-    await newVault.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[3];
     var beneficiary1 = accounts[4];
@@ -3883,8 +3858,6 @@ contract("HatVaults", (accounts) => {
       newVault.address,
       100
     );
-
-    await newVault.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
     var staker2 = accounts[3];
@@ -4531,7 +4504,6 @@ contract("HatVaults", (accounts) => {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("2"));
-    await newVault.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(
       Math.round(
@@ -4634,7 +4606,6 @@ contract("HatVaults", (accounts) => {
     await stakingToken2.mint(staker, web3.utils.toWei("1"));
 
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await newVault.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     await hatVaultsRegistry.setVaultVisibility(vault.address, true);
@@ -4930,7 +4901,6 @@ contract("HatVaults", (accounts) => {
     );
 
     await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("110"));
-    await newVault.committeeCheckIn({ from: accounts[1] });
 
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
       from: staker,

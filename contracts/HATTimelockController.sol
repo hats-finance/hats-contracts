@@ -46,10 +46,6 @@ contract HATTimelockController is TimelockController {
         _vault.rewardController().setAllocPoint(address(_vault), _allocPoint);
     }
 
-    function setCommittee(HATVault _vault, address _committee) external onlyRole(PROPOSER_ROLE) {
-        _vault.setCommittee(_committee);
-    }
-
     function swapBurnSend(
         HATVaultsRegistry _registry,
         address _asset,

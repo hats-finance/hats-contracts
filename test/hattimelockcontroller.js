@@ -100,8 +100,6 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-
-  await vault.committeeCheckIn({ from: accounts[1] });
 };
 
 contract("HatTimelockController", (accounts) => {
@@ -429,54 +427,5 @@ contract("HatTimelockController", (accounts) => {
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
     await hatTimelockController.dismissClaim(vault.address, claimId);
-  });
-
-  it("setCommittee", async () => {
-    await setup(accounts);
-
-    //creat another vault with a different committee
-    let maxBounty = 8000;
-    let bountySplit = [6000, 2000, 500, 0, 1000, 500];
-    var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      accounts[3],
-      rewardController.address,
-      maxBounty,
-      bountySplit,
-      "_descriptionHash",
-      [86400, 10],
-      false
-    )).receipt.rawLogs[0].address);
-
-    await hatTimelockController.setAllocPoint(
-      newVault.address,
-      100
-    );
-
-    assert.equal(await newVault.committee(), accounts[3]);
-
-    try {
-      await newVault.setCommittee(accounts[2]);
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    await hatTimelockController.setCommittee(newVault.address, accounts[1]);
-
-    assert.equal(await newVault.committee(), accounts[1]);
-
-    let tx = await newVault.committeeCheckIn({ from: accounts[1] });
-    assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
-
-    try {
-      await hatTimelockController.setCommittee(newVault.address, accounts[2]);
-      assert(false, "committee already checked in");
-    } catch (ex) {
-      assertVMException(ex, "CommitteeAlreadyCheckedIn");
-    }
-    await newVault.setCommittee(accounts[2], { from: accounts[1] });
-    await newVault.setCommittee(accounts[1], { from: accounts[2] });
   });
 });

@@ -14,8 +14,6 @@ contract Deposits is Base {
         uint256 assets,
         uint256 shares
     ) internal override virtual nonReentrant {
-        if (!committeeCheckedIn)
-            revert CommitteeNotCheckedInYet();
         if (shares == 0) revert AmountToDepositIsZero();
         // Users can only deposit for themselves if withdraw request exists
         if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {

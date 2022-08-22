@@ -129,7 +129,6 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-  await vault.committeeCheckIn({ from: accounts[1] });
   return {
     hatVaultsRegistry,
     vault,

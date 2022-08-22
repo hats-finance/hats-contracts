@@ -6,20 +6,10 @@ import "./Base.sol";
 contract Params is Base {
 
     /**
-    * @notice Set new committee address. Can be called by existing committee if it had checked in, or
-    * by the governance otherwise.
+    * @notice Set new committee address. Can be called only by the existing committee.
     * @param _committee new committee address
     */
-    function setCommittee(address _committee)
-    external {
-        // governance can update committee only if committee was not checked in yet.
-        if (msg.sender == registry.owner() && committee != msg.sender) {
-            if (committeeCheckedIn)
-                revert CommitteeAlreadyCheckedIn();
-        } else {
-            if (committee != msg.sender) revert OnlyCommittee();
-        }
-
+    function setCommittee(address _committee) external onlyCommittee {
         committee = _committee;
 
         emit SetCommittee(_committee);
@@ -60,15 +50,6 @@ contract Params is Base {
         if (_newFee > MAX_FEE) revert WithdrawalFeeTooBig();
         withdrawalFee = _newFee;
         emit SetWithdrawalFee(_newFee);
-    }
-
-    /**
-    * @notice committeeCheckIn - committee check in.
-    * deposit is enable only after committee check in
-    */
-    function committeeCheckIn() external onlyCommittee {
-        committeeCheckedIn = true;
-        emit CommitteeCheckedIn();
     }
 
     /**
