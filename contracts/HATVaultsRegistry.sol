@@ -77,6 +77,7 @@ contract HATVaultsRegistry is Ownable {
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
+        uint256 amountUnused;
         uint256 hatsReceived;
         uint256 totalHackerReward;
     }
@@ -410,14 +411,14 @@ contract HATVaultsRegistry is Ownable {
         swapData.amount = swapData.totalHackersHatReward + governanceHatReward[_asset];
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
-        swapData.hatsReceived = swapTokenForHAT(_asset, swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
+        (swapData.hatsReceived, swapData.amountUnused) = swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
 
-        governanceHatReward[_asset] = 0;
+        governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = 0;
+            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
@@ -444,27 +445,29 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function swapTokenForHAT(
-        address _asset,
+        IERC20 _asset,
         uint256 _amount,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload)
     internal
-    returns (uint256 hatsReceived)
+    returns (uint256 hatsReceived, uint256 amountUnused)
     {
         IERC20 _HAT = HAT;
-        if (_asset == address(_HAT)) {
-            return _amount;
+        if (_asset == _HAT) {
+            return (_amount, 0);
         }
         if (!whitelistedRouters[_routingContract])
             revert RoutingContractNotWhitelisted();
         IERC20(_asset).safeApprove(_routingContract, _amount);
         uint256 balanceBefore = _HAT.balanceOf(address(this));
+        uint256 assetBalanceBefore = _asset.balanceOf(address(this));
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = _routingContract.call(_routingPayload);
         if (!success) revert SwapFailed();
         hatsReceived = _HAT.balanceOf(address(this)) - balanceBefore;
+        amountUnused = _amount - (assetBalanceBefore - _asset.balanceOf(address(this)));
         if (hatsReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
             

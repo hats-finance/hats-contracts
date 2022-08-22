@@ -3668,6 +3668,249 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("swapAndSend router uses partial amount", async () => {
+    await setup(accounts);
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+
+    let govHatReward = await hatVaultsRegistry.governanceHatReward(stakingToken.address);
+    let amount = amountForHackersHatRewards.add(govHatReward);
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+
+    await router.setUsePartialAmountFlag(true);
+
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2]],
+      0,
+      router.address,
+      payload,
+      {
+        from: accounts[0],
+      }
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.governanceHatReward(stakingToken.address)).toString(),
+      govHatReward.mul(new web3.utils.BN(20)).div(new web3.utils.BN(100)).toString()
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.hackersHatReward(stakingToken.address, accounts[2])).toString(),
+      amountForHackersHatRewards.mul(new web3.utils.BN(20)).div(new web3.utils.BN(100)).toString()
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).hackerHatVested
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
+    );
+
+    let govBalance = await hatToken.balanceOf(accounts[0]);
+    assert.equal(
+      govBalance.toString(),
+      new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).governanceHat
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+
+    govHatReward = await hatVaultsRegistry.governanceHatReward(stakingToken.address);
+    amount = amountForHackersHatRewards.add(govHatReward);
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2]],
+      0,
+      router.address,
+      payload,
+      {
+        from: accounts[0],
+      }
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.governanceHatReward(stakingToken.address)).toString(),
+      govHatReward.mul(new web3.utils.BN(20)).div(new web3.utils.BN(100)).toString()
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.hackersHatReward(stakingToken.address, accounts[2])).toString(),
+      amountForHackersHatRewards.mul(new web3.utils.BN(20)).div(new web3.utils.BN(100)).toString()
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).hackerHatVested
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
+    );
+
+    assert.equal(
+      (await hatToken.balanceOf(accounts[0])).sub(govBalance).toString(),
+      new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).governanceHat
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    await router.setUsePartialAmountFlag(false);
+
+    govBalance = await hatToken.balanceOf(accounts[0]);
+
+    amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+
+    govHatReward = await hatVaultsRegistry.governanceHatReward(stakingToken.address);
+    amount = amountForHackersHatRewards.add(govHatReward);
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2]],
+      0,
+      router.address,
+      payload,
+      {
+        from: accounts[0],
+      }
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.governanceHatReward(stakingToken.address)).toString(),
+      "0"
+    );
+
+    assert.equal(
+      (await hatVaultsRegistry.hackersHatReward(stakingToken.address, accounts[2])).toString(),
+      "0"
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      new web3.utils.BN(web3.utils.toWei("0.032"))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).hackerHatVested
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    assert.equal(
+      tx.logs[1].args._amountReceived.toString(),
+      (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
+    );
+
+    assert.equal(
+      (await hatToken.balanceOf(accounts[0])).sub(govBalance).toString(),
+      new web3.utils.BN(web3.utils.toWei("0.032"))
+        .mul(
+          new web3.utils.BN(
+            (await vault.bountySplit()).governanceHat
+          )
+        )
+        .div(new web3.utils.BN("10000"))
+        .toString()
+    );
+
+    try {
+      tx = await hatVaultsRegistry.swapAndSend(
+        stakingToken.address, 
+        [accounts[2]],
+        0,
+        router.address,
+        payload,
+        {
+          from: accounts[0],
+        }
+      );
+      assert(false, "can claim only once, nothing to redeem");
+    } catch (ex) {
+      assertVMException(ex, "AmountToSwapIsZero");
+    }
+  });
+
   it("swapAndSend 2 vaults with same token", async () => {
     await setup(accounts);
 
