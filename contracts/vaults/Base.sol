@@ -86,8 +86,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         uint256 hacker;
         // the percentage of the total bounty to be sent to the committee
         uint256 committee;
-        // the percentage of the total bounty to be swapped to HATs and then burned
-        uint256 swapAndBurn;
         // the percentage of the total bounty to be swapped to HATs and sent to governance
         uint256 governanceHat;
         // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
@@ -99,7 +97,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         uint256 hacker;
         uint256 hackerVested;
         uint256 committee;
-        uint256 swapAndBurn;
         uint256 hackerHatVested;
         uint256 governanceHat;
     }
@@ -230,7 +227,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee +
-            _bountySplit.swapAndBurn +
             _bountySplit.governanceHat +
             _bountySplit.hackerHatVested != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();

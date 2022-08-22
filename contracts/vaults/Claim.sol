@@ -109,12 +109,11 @@ contract Claim is Base {
 
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
-        //storing the amount of token which can be swap and burned so it could be swapAndBurn in a separate tx.
-        asset.safeApprove(address(registry), claimBounty.swapAndBurn + claimBounty.hackerHatVested + claimBounty.governanceHat);
+
+        asset.safeApprove(address(registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
         registry.addTokensToSwap(
             asset,
             claim.beneficiary,
-            claimBounty.swapAndBurn,
             claimBounty.hackerHatVested,
             claimBounty.governanceHat
         );
@@ -162,9 +161,6 @@ contract Claim is Base {
         / (HUNDRED_PERCENT_SQRD);
         claimBounty.committee =
         totalBountyAmount * bountySplit.committee
-        / (HUNDRED_PERCENT_SQRD);
-        claimBounty.swapAndBurn =
-        totalBountyAmount * bountySplit.swapAndBurn
         / (HUNDRED_PERCENT_SQRD);
         claimBounty.governanceHat =
         totalBountyAmount * bountySplit.governanceHat
