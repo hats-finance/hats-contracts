@@ -88,6 +88,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         registry = _registry;
         __ReentrancyGuard_init();
+        _transferOwnership(_registry.owner());
         tokenLockFactory = _registry.tokenLockFactory();
     }
 

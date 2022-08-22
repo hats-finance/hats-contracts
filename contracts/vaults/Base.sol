@@ -4,6 +4,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -16,8 +17,6 @@ import "../HATVaultsRegistry.sol";
 // Errors:
 // Only committee
 error OnlyCommittee();
-// Only owner of the registry
-error OnlyOwner();
 // Active claim exists
 error ActiveClaimExists();
 // Safety period
@@ -80,7 +79,7 @@ error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
 
-contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
+contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
@@ -188,11 +187,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
-
-    modifier onlyOwner() {
-        if (registry.owner() != msg.sender) revert OnlyOwner();
-        _;
-    }
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();

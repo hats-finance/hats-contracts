@@ -136,6 +136,7 @@ contract("HatTimelockController", (accounts) => {
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), hatTimelockController.address);
+    assert.equal(await vault.owner(), hatTimelockController.address);
     assert.equal(
       await hatTimelockController.hasRole(
         await hatTimelockController.PROPOSER_ROLE(),

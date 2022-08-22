@@ -14,7 +14,7 @@ contract Params is Base {
     function setCommittee(address _committee)
     external {
         // governance can update committee only if committee was not checked in yet.
-        if (msg.sender == registry.owner() && committee != msg.sender) {
+        if (msg.sender == owner() && committee != msg.sender) {
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();
         } else {

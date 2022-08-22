@@ -123,7 +123,7 @@ const setup = async function(
     "_descriptionHash",
     [86400, 10],
     false
-  )).logs[0].args._vault);
+  )).logs[1].args._vault);
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
