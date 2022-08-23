@@ -5,7 +5,7 @@ import "./Base.sol";
 
 contract Claim is Base {
     using SafeERC20 for IERC20;
-    
+
     /**
     * @notice Called by the committee to submit a claim for a bounty payout.
     * This function should be called only on a safety period, when withdrawals
