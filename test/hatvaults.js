@@ -79,7 +79,6 @@ const setup = async function(
   rewardControllerExpectedHatsBalance = rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
   vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
     accounts[1],
@@ -90,6 +89,7 @@ const setup = async function(
     [86400, 10],
     false
   )).logs[1].args._vault);
+  await vault.setChallengePeriod(challengePeriod);
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
@@ -3204,6 +3204,7 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._vault);
+    await newVault.setChallengePeriod(60 * 60 * 24);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -3468,12 +3469,12 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._visible, true);
 
     try {
-      await hatVaultsRegistry.setVaultDescription(vault.address, "_descriptionHash", { from: accounts[1] });
+      await vault.setVaultDescription("_descriptionHash", { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
-    tx = await hatVaultsRegistry.setVaultDescription(vault.address, "_descriptionHash");
+    tx = await vault.setVaultDescription("_descriptionHash");
     assert.equal(tx.logs[0].event, "SetVaultDescription");
     assert.equal(tx.logs[0].args._descriptionHash, "_descriptionHash");
   });

@@ -6,11 +6,8 @@ The contracts in this repository define a number of different roles that have th
 ## `HATVaultsRegistry.owner`
 
 - can call `setFeeSetter` set the feeSetter role
-- can call `setArbitrator` set the arbitrator role
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setClaimFee` set fee for submitting a vulnerability
-- can call `setChallengePeriod` to set the time during which a claim can be challenged by the arbitrator
-- can call `setChallengeTimeOutPeriod` to set the time after which a challenged claim is automatically dismissed
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setMaxBountyDelay` to set the timelock delay for setting the max bounty
@@ -49,6 +46,9 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 - can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
+- can call `setArbitrator` set the arbitrator role
+- can call `setChallengePeriod` to set the time during which a claim can be challenged by the arbitrator
+- can call `setChallengeTimeOutPeriod` to set the time after which a challenged claim is automatically dismissed
 
 ## `HATVault.committee` (committee of each vault, set on creation)
 

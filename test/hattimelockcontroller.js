@@ -62,7 +62,6 @@ const setup = async function(
     true
   );
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
-  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
   rewardController = await RewardController.at(
     deployment.rewardController.address
   );
@@ -71,9 +70,7 @@ const setup = async function(
     [accounts[0]],
     [accounts[0]]
   );
-  await hatVaultsRegistry.setArbitrator(hatTimelockController.address);
-  tx = await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
-  tx = await rewardController.transferOwnership(hatTimelockController.address);
+
   await utils.setMinter(
     hatToken,
     accounts[0],
@@ -95,6 +92,13 @@ const setup = async function(
     [86400, 10],
     false
   )).receipt.rawLogs[0].address);
+  await vault.setArbitrator(hatTimelockController.address);
+  await vault.setChallengePeriod(challengePeriod);
+
+  await vault.transferOwnership(hatTimelockController.address);
+  await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
+  await rewardController.transferOwnership(hatTimelockController.address);
+
   await hatTimelockController.setAllocPoint(
     vault.address,
     allocPoint
@@ -209,7 +213,7 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.setVaultDescription(vault.address, "descHash");
+      await vault.setVaultDescription("descHash");
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);

@@ -113,7 +113,6 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
   let vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
     accounts[1],
@@ -124,6 +123,8 @@ const setup = async function(
     [86400, 10],
     false
   )).logs[1].args._vault);
+  await vault.setChallengePeriod(challengePeriod);
+
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint

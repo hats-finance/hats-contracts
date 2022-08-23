@@ -35,14 +35,6 @@ error AmountToSwapIsZero();
 error SwapFailed();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
-// Challenge period too short
-error ChallengePeriodTooShort();
-// Challenge period too long
-error ChallengePeriodTooLong();
-// Challenge timeout period too short
-error ChallengeTimeOutPeriodTooShort();
-// Challenge timeout period too long
-error ChallengeTimeOutPeriodTooLong();
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
@@ -101,19 +93,15 @@ contract HATVaultsRegistry is Ownable {
     address[] public hatVaults;
 
     // PARAMETERS FOR ALL VAULTS
-    // time during which a claim can be challenged by the arbitrator
-    uint256 public challengePeriod;
-    // time after which a challenged claim is automatically dismissed
-    uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
-    // address of the arbitrator - which can dispute claims and override the committee's decisions
-    address public arbitrator;
+
     // the token into which a part of the the bounty will be swapped into
     IERC20 public immutable HAT;
+    mapping(address => bool) public whitelistedRouters;
 
     // asset => hacker address => amount
     mapping(address => mapping(address => uint256)) public hackersHatReward;
@@ -122,9 +110,6 @@ contract HATVaultsRegistry is Ownable {
 
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
-    event SetChallengePeriod(uint256 _challengePeriod);
-    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 _withdrawRequestPendingPeriod,
         uint256 _withdrawRequestEnablePeriod
@@ -134,7 +119,6 @@ contract HATVaultsRegistry is Ownable {
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
     event SetMaxBountyDelay(uint256 _delay);
     event SetVaultVisibility(address indexed _vault, bool indexed _visible);
-    event SetVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
@@ -182,9 +166,6 @@ contract HATVaultsRegistry is Ownable {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        arbitrator = _hatGovernance;
-        challengePeriod = 3 days;
-        challengeTimeOutPeriod = 5 weeks;
     }
 
     /**
@@ -210,15 +191,6 @@ contract HATVaultsRegistry is Ownable {
     function setFeeSetter(address _feeSetter) external onlyOwner {
         feeSetter = _feeSetter;
         emit SetFeeSetter(_feeSetter);
-    }
-
-    /**
-    * @notice Called by governance to set the arbitrator role
-    * @param _arbitrator Address of new arbitrator
-    */
-    function setArbitrator(address _arbitrator) external onlyOwner {
-        arbitrator = _arbitrator;
-        emit SetArbitrator(_arbitrator);
     }
 
     /**
@@ -250,32 +222,6 @@ contract HATVaultsRegistry is Ownable {
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
-    }
-
-    /**
-    * @notice Called by governance to set the time during which a claim can be
-    * challenged by the arbitrator
-    * @param _challengePeriod Time period after claim submittion during
-    * which the claim can be challenged
-    */
-    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
-        challengePeriod = _challengePeriod;
-        emit SetChallengePeriod(_challengePeriod);
-    }
-
-    /**
-    * @notice Called by governance to set time after which a challenged claim 
-    * is automatically dismissed
-    * @param _challengeTimeOutPeriod Time period after claim has been
-    * challenged where the only possible action is dismissal
-    */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
-        challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
     /**
@@ -397,16 +343,6 @@ contract HATVaultsRegistry is Ownable {
     */
     function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
         emit SetVaultVisibility(_vault, _visible);
-    }
-
-    /**
-    * @notice change the description of a vault
-    * only calleable by the owner of the contract
-    * @param _vault the vault to update
-    * @param _descriptionHash the hash of the vault's description.
-    */
-    function setVaultDescription(address _vault, string memory _descriptionHash) external onlyOwner {
-        emit SetVaultDescription(_vault, _descriptionHash);
     }
 
     /**

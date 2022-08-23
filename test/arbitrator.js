@@ -10,75 +10,75 @@ const {
 
 contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("Set arbitrator", async () => {
-    const { hatVaultsRegistry } = await setup(accounts);
+    const { vault } = await setup(accounts);
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setArbitrator(accounts[1], { from: accounts[1] }),
+      vault.setArbitrator(accounts[1], { from: accounts[1] }),
       "Ownable: caller is not the owner"
     );
 
-    tx = await hatVaultsRegistry.setArbitrator(accounts[1]);
+    tx = await vault.setArbitrator(accounts[1]);
 
-    assert.equal(await hatVaultsRegistry.arbitrator(), accounts[1]);
+    assert.equal(await vault.arbitrator(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetArbitrator");
     assert.equal(tx.logs[0].args._arbitrator, accounts[1]);
   });
 
   it("Set challenge period", async () => {
-    const { hatVaultsRegistry } = await setup(accounts);
+    const { vault } = await setup(accounts);
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengePeriod(60 * 60 * 24, { from: accounts[1] }),
+      vault.setChallengePeriod(60 * 60 * 24, { from: accounts[1] }),
       "Ownable: caller is not the owner"
     );
 
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengePeriod(60 * 60 * 24 - 1),
+      vault.setChallengePeriod(60 * 60 * 24 - 1),
       "ChallengePeriodTooShort"
     );
 
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengePeriod(60 * 60 * 24 * 5 + 1),
+      vault.setChallengePeriod(60 * 60 * 24 * 5 + 1),
       "ChallengePeriodTooLong"
     );
 
-    tx = await hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    tx = await vault.setChallengePeriod(60 * 60 * 24);
 
-    assert.equal(await hatVaultsRegistry.challengePeriod(), 60 * 60 * 24);
+    assert.equal(await vault.challengePeriod(), 60 * 60 * 24);
     assert.equal(tx.logs[0].event, "SetChallengePeriod");
     assert.equal(tx.logs[0].args._challengePeriod, 60 * 60 * 24);
 
-    tx = await hatVaultsRegistry.setChallengePeriod(60 * 60 * 24 * 5);
+    tx = await vault.setChallengePeriod(60 * 60 * 24 * 5);
 
-    assert.equal(await hatVaultsRegistry.challengePeriod(), 60 * 60 * 24 * 5);
+    assert.equal(await vault.challengePeriod(), 60 * 60 * 24 * 5);
     assert.equal(tx.logs[0].event, "SetChallengePeriod");
     assert.equal(tx.logs[0].args._challengePeriod, 60 * 60 * 24 * 5);
   });
 
   it("Set challengeTimeOutPeriod", async () => {
-    const { hatVaultsRegistry } = await setup(accounts);
+    const { vault } = await setup(accounts);
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 2, { from: accounts[1] }),
+      vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 2, { from: accounts[1] }),
       "Ownable: caller is not the owner"
     );
 
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 2 - 1),
+      vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 2 - 1),
       "ChallengeTimeOutPeriodTooShort"
     );
 
     await assertFunctionRaisesException(
-      hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 85 + 1),
+      vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 85 + 1),
       "ChallengeTimeOutPeriodTooLong"
     );
 
-    tx = await hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 2);
+    tx = await vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 2);
 
-    assert.equal(await hatVaultsRegistry.challengeTimeOutPeriod(), 60 * 60 * 24 * 2);
+    assert.equal(await vault.challengeTimeOutPeriod(), 60 * 60 * 24 * 2);
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 2);
 
-    tx = await hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 85);
+    tx = await vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 85);
 
-    assert.equal(await hatVaultsRegistry.challengeTimeOutPeriod(), 60 * 60 * 24 * 85);
+    assert.equal(await vault.challengeTimeOutPeriod(), 60 * 60 * 24 * 85);
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 85);
   });
@@ -86,11 +86,11 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("No challenge - approve claim", async () => {
     const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to 1 day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengePeriod(60 * 60 * 24);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     const staker = accounts[1];
-    await hatVaultsRegistry.setArbitrator(accounts[3]);
+    await vault.setArbitrator(accounts[3]);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
     await stakingToken.mint(staker, web3.utils.toWei("2"));
@@ -128,11 +128,11 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("Arbitrator can only change bounty if claim is challenged", async () => {
     const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to one day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengePeriod(60 * 60 * 24);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     const staker = accounts[1];
-    await hatVaultsRegistry.setArbitrator(accounts[3]);
+    await vault.setArbitrator(accounts[3]);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
     await stakingToken.mint(staker, web3.utils.toWei("2"));
@@ -159,11 +159,11 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("Arbitrator cannot challenge after challenge period", async () => {
     const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to one day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengePeriod(60 * 60 * 24);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     const staker = accounts[1];
-    await hatVaultsRegistry.setArbitrator(accounts[3]);
+    await vault.setArbitrator(accounts[3]);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
     await stakingToken.mint(staker, web3.utils.toWei("2"));
@@ -195,11 +195,11 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("challenge - approve Claim ", async () => {
     const { hatVaultsRegistry, vault, stakingToken } = await setup(accounts);
     // set challenge period to one day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengePeriod(60 * 60 * 24);
     const owner = accounts[0];
     const staker = accounts[1];
     const arbitrator = accounts[2];
-    await hatVaultsRegistry.setArbitrator(arbitrator);
+    await vault.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
 
     // we send some funds to the vault so we can pay out later when approveClaim is called
@@ -297,10 +297,10 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("challenge - dismiss claim by arbitrator", async () => {
     const { hatVaultsRegistry, vault } = await setup(accounts);
     // set challenge period to one day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengePeriod(60 * 60 * 24);
     const owner = accounts[0];
     const arbitrator = accounts[1];
-    await hatVaultsRegistry.setArbitrator(arbitrator);
+    await vault.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
     let claimId = await submitClaim(vault, { accounts });
 
@@ -328,11 +328,11 @@ contract("HatVaultsRegistry Arbitrator", (accounts) => {
   it("challenge - dismiss claim by anyone after timeout", async () => {
     const { hatVaultsRegistry, vault } = await setup(accounts);
     // set challenge period to one day
-    hatVaultsRegistry.setChallengePeriod(60 * 60 * 24);
-    hatVaultsRegistry.setChallengeTimeOutPeriod(60 * 60 * 24 * 2);
+    vault.setChallengePeriod(60 * 60 * 24);
+    vault.setChallengeTimeOutPeriod(60 * 60 * 24 * 2);
     const owner = accounts[0];
     const arbitrator = accounts[1];
-    await hatVaultsRegistry.setArbitrator(arbitrator);
+    await vault.setArbitrator(arbitrator);
     await advanceToSafetyPeriod(hatVaultsRegistry);
     let claimId = await submitClaim(vault, { accounts });
 

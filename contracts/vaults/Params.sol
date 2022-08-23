@@ -133,11 +133,55 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by governance to set the vault's reward controller
-    * @param _rewardController The new reward controller
+    * @notice change the description of the vault
+    * only calleable by the owner of the vault
+    * @param _descriptionHash the hash of the vault's description.
     */
-    function setRewardController(IRewardController _rewardController) external onlyOwner {
-        rewardController = _rewardController;
-        emit SetRewardController(_rewardController);
+    function setVaultDescription(string memory _descriptionHash) external onlyOwner {
+        emit SetVaultDescription(_descriptionHash);
+    }
+
+    /**
+    * @notice setArbitrator - called by vault owner to set arbitrator
+    * @param _arbitrator New arbitrator.
+    */
+    function setArbitrator(address _arbitrator) external onlyOwner {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the time during which a claim can be
+    * challenged by the arbitrator
+    * @param _challengePeriod Time period after claim submittion during
+    * which the claim can be challenged
+    */
+    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        challengePeriod = _challengePeriod;
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set time after which a challenged claim 
+    * is automatically dismissed
+    * @param _challengeTimeOutPeriod Time period after claim has been
+    * challenged where the only possible action is dismissal
+    */
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
+    }
+
+    /**
+    * @notice Called by vault's owner to set the vault's reward controller
+    * @param _newRewardController The new reward controller
+    */
+    function setRewardController(IRewardController _newRewardController) external onlyOwner {
+        rewardController = _newRewardController;
+        emit SetRewardController(_newRewardController);
     }
 }

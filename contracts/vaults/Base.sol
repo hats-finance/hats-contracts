@@ -78,6 +78,14 @@ error WithdrawMustBeGreaterThanZero();
 error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
@@ -150,6 +158,13 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     bool public depositPause;
 
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
+    address public arbitrator;
+    // time during which a claim can be challenged by the arbitrator
+    uint256 public challengePeriod;
+    // time after which a challenged claim is automatically dismissed
+    uint256 public challengeTimeOutPeriod;
+
     mapping(address => uint256) public withdrawEnableStartTime;
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
@@ -182,6 +197,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
+    event SetVaultDescription(string _descriptionHash);
+    event SetChallengePeriod(uint256 _challengePeriod);
+    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitrator(address indexed _arbitrator);
 
     event WithdrawRequest(
         address indexed _beneficiary,
@@ -199,7 +218,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     modifier onlyArbitrator() {
-        if (registry.arbitrator() != msg.sender) revert OnlyArbitrator();
+        if (arbitrator != msg.sender) revert OnlyArbitrator();
         _;
     }
 

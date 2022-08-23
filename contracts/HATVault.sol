@@ -90,6 +90,9 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         __ReentrancyGuard_init();
         _transferOwnership(_registry.owner());
         tokenLockFactory = _registry.tokenLockFactory();
+        arbitrator = _registry.owner();
+        challengePeriod = 3 days;
+        challengeTimeOutPeriod = 5 weeks;
     }
 
     /**
