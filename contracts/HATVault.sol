@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 
 import "./vaults/Claim.sol";
@@ -49,6 +49,49 @@ import "./vaults/Withdrawals.sol";
 contract HATVault is Claim, Deposits, Params, Withdrawals {
 
     /**
+    * @notice Initialize a vault instance
+    * @param _rewardController The reward controller for the vault
+    * @param _vestingDuration Duration of the vesting period of the vault's
+    * token vested part of the bounty
+    * @param _vestingPeriods The number of vesting periods of the vault's token
+    * vested part of the bounty
+    * @param _maxBounty The maximum percentage of the vault that can be paid
+    * out as a bounty
+    * @param _bountySplit The way to split the bounty between the hacker, 
+    * committee and governance.
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be equal to `HUNDRED_PERCENT`.
+    * @param _asset The vault's native token
+    * @param _committee The address of the vault's committee 
+    * @param _isPaused Whether to initialize the vault with deposits disabled
+    */
+    function initialize(
+        IRewardController _rewardController,
+        uint256 _vestingDuration,
+        uint256 _vestingPeriods,
+        uint256 _maxBounty,
+        BountySplit memory _bountySplit,
+        IERC20 _asset,
+        address _committee,
+        bool _isPaused
+    ) external initializer {
+        if (_maxBounty > HUNDRED_PERCENT)
+            revert MaxBountyCannotBeMoreThanHundredPercent();
+        validateSplit(_bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
+        rewardController = _rewardController;
+        _setVestingParams(_vestingDuration, _vestingPeriods);
+        maxBounty = _maxBounty;
+        bountySplit = _bountySplit;
+        committee = _committee;
+        depositPause = _isPaused;
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
+        registry = _registry;
+        __ReentrancyGuard_init();
+        tokenLockFactory = _registry.tokenLockFactory();
+    }
+
+    /**
     * @dev Deposit funds to the vault. Can only be called if the committee had
     * checked in and deposits are not paused.
     * NOTE: Vaults should not use tokens which do not guarantee that the 
@@ -82,8 +125,8 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
 
         checkWithdrawAndResetWithdrawEnableStartTime(from);
 
-        rewardController.updateVaultBalance(to, amount, true, true);
-        rewardController.updateVaultBalance(from, amount, false, true);
+        rewardController.updateVaultBalance(to, amount, true);
+        rewardController.updateVaultBalance(from, amount, false);
     }
 
     /** 

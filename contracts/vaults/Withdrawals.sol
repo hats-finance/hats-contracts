@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "./Base.sol";
 
@@ -37,8 +37,7 @@ contract Withdrawals is Base {
         address owner,
         uint256 assets,
         uint256 shares,
-        uint256 fee,
-        bool claimReward
+        uint256 fee
     ) internal nonReentrant {
         // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
         // Should consider disallowing withdraw from another user.
@@ -48,7 +47,7 @@ contract Withdrawals is Base {
             _spendAllowance(owner, caller, shares);
         }
 
-        rewardController.updateVaultBalance(owner, shares, false, claimReward);
+        rewardController.updateVaultBalance(owner, shares, false);
 
         _burn(owner, shares);
 
@@ -58,7 +57,8 @@ contract Withdrawals is Base {
     }
 
     /** 
-    * @notice Withdraw previously deposited funds from the vault.
+    * @notice Withdraw previously deposited funds from the vault, without
+    * transferring the accumulated HAT reward.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -77,9 +77,30 @@ contract Withdrawals is Base {
 
         uint256 shares = previewWithdraw(assets);
         uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
+    }
+
+    /** 
+    * @notice Withdraw previously deposited funds from the vault and claim
+    * the HAT reward that the user has earned.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * @param assets Amount of tokens to withdraw
+    * @param receiver Address of receiver of the funds
+    * @param owner Address of owner of the funds
+    * @dev See {IERC4626-withdraw}.
+    */
+    function withdrawAndClaim(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external returns (uint256 shares) {
+        shares = withdraw(assets, receiver, owner);
+        rewardController.claimReward(address(this), owner);
     }
 
     /** 
@@ -103,18 +124,18 @@ contract Withdrawals is Base {
 
         uint256 assets = previewRedeem(shares);
         uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee, true);
+        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
     }
 
-    function emergencyWithdraw() external {
-        address msgSender = _msgSender();
-        uint256 shares = balanceOf(msgSender);
-        uint256 assets = previewRedeem(shares);
-        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
-        _withdraw(msgSender, msgSender, msgSender, assets, shares, fee, false);
-        emit EmergencyWithdraw(msgSender, assets, shares);
+    function redeemAndClaim(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 assets) {
+        assets = redeem(shares, receiver, owner);
+        rewardController.claimReward(address(this), owner);
     }
 
     /**
@@ -170,7 +191,7 @@ contract Withdrawals is Base {
     {
         IERC20 asset = IERC20(asset());
         if (_fee > 0) {
-            asset.safeTransfer(owner(), _fee);
+            asset.safeTransfer(registry.owner(), _fee);
         }
         asset.safeTransfer(_receiver, _totalAmount);
     }

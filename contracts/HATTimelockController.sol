@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaultsRegistry.sol";
@@ -29,16 +29,16 @@ contract HATTimelockController is TimelockController {
         _vault.dismissClaim(_claimId);
     }
 
-    function updateVaultInfo(HATVault _vault, 
-                    bool _registered,
-                    bool _depositPause,
-                    string memory _descriptionHash)
-    external onlyRole(PROPOSER_ROLE) {
-        _vault.updateVaultInfo(
-            _registered,
-            _depositPause,
-            _descriptionHash
-        );
+    function setDepositPause(HATVault _vault, bool _depositPause) external onlyRole(PROPOSER_ROLE) {
+        _vault.setDepositPause(_depositPause);
+    }
+
+    function setVaultVisibility(HATVault _vault, bool _visible) external onlyRole(PROPOSER_ROLE) {
+        _vault.registry().setVaultVisibility(address(_vault), _visible);
+    }
+
+    function setVaultDescription(HATVault _vault, string memory _descriptionHash) external onlyRole(PROPOSER_ROLE) {
+        _vault.registry().setVaultDescription(address(_vault), _descriptionHash);
     }
 
     function setAllocPoint(HATVault _vault, uint256 _allocPoint)
@@ -53,7 +53,7 @@ contract HATTimelockController is TimelockController {
     function swapBurnSend(
         HATVaultsRegistry _registry,
         address _asset,
-        address _beneficiary,
+        address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload
@@ -62,7 +62,7 @@ contract HATTimelockController is TimelockController {
     onlyRole(PROPOSER_ROLE) {
         _registry.swapBurnSend(
             _asset,
-            _beneficiary,
+            _beneficiaries,
             _amountOutMinimum,
             _routingContract,
             _routingPayload

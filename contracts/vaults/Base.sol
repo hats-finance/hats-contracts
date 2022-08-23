@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,12 +16,12 @@ import "../HATVaultsRegistry.sol";
 // Errors:
 // Only committee
 error OnlyCommittee();
+// Only owner of the registry
+error OnlyOwner();
 // Active claim exists
 error ActiveClaimExists();
 // Safety period
 error SafetyPeriod();
-// Beneficiary is zero
-error BeneficiaryIsZero();
 // Not safety period
 error NotSafetyPeriod();
 // Bounty percentage is higher than the max bounty
@@ -39,8 +38,6 @@ error NotEnoughFeePaid();
 error NoPendingMaxBounty();
 // Delay period for setting max bounty had not passed
 error DelayPeriodForSettingMaxBountyHadNotPassed();
-// Committee is zero
-error CommitteeIsZero();
 // Committee already checked in
 error CommitteeAlreadyCheckedIn();
 // Pending withdraw request exists
@@ -55,8 +52,6 @@ error TotalSplitPercentageShouldBeHundredPercent();
 error InvalidWithdrawRequest();
 // Max bounty cannot be more than `HUNDRED_PERCENT`
 error MaxBountyCannotBeMoreThanHundredPercent();
-// LP token is zero
-error AssetIsZero();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -69,12 +64,10 @@ error CommitteeNotCheckedInYet();
 error NotEnoughUserBalance();
 // Only arbitrator
 error OnlyArbitrator();
-// Claim can only be approved if challenge period is over, or if the
-// caller is the arbitrator
-error ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
-// Bounty split must include hacker payout
-error BountySplitMustIncludeHackerPayout();
-// Challenge period had ended
+// Unchalleged claim can only be approved if challenge period is over
+error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+// Challenged claim can only be approved by arbitrator before the challenge timeout period
+error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
 error ChallengePeriodEnded();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
@@ -87,7 +80,7 @@ error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
 
-contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
@@ -124,7 +117,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         // be paid their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;
-        bool isChallenged;
+        uint256 challengedAt;
     }
 
     struct PendingMaxBounty {
@@ -133,6 +126,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
     HATVaultsRegistry public registry;
@@ -189,17 +183,17 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
-    event UpdateVaultInfo(
-        bool indexed _registered,
-        bool _depositPause,
-        string _descriptionHash
-    );
+    event SetDepositPause(bool _depositPause);
 
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
-    event EmergencyWithdraw(address indexed user, uint256 assets, uint256 shares);
+
+    modifier onlyOwner() {
+        if (registry.owner() != msg.sender) revert OnlyOwner();
+        _;
+    }
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();
@@ -237,75 +231,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         _;
     }
 
-    /**
-    * @notice Initialize a vault instance
-    * @param _rewardController The reward controller for the vault
-    * @param _vestingDuration Duration of the vesting period of the vault's
-    * token vested part of the bounty
-    * @param _vestingPeriods The number of vesting periods of the vault's token
-    * vested part of the bounty
-    * @param _maxBounty The maximum percentage of the vault that can be paid
-    * out as a bounty
-    * @param _bountySplit The way to split the bounty between the hacker, 
-    * committee and governance.
-    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-    *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param _asset The vault's token
-    * @param _committee The address of the vault's committee 
-    * @param _isPaused Whether to initialize the vault with deposits disabled
-    */
-    function initialize(
-        IRewardController _rewardController,
-        uint256 _vestingDuration,
-        uint256 _vestingPeriods,
-        uint256 _maxBounty,
-        BountySplit memory _bountySplit,
-        IERC20 _asset,
-        address _committee,
-        bool _isPaused
-    ) external initializer {
-        if (_vestingDuration > 120 days)
-            revert VestingDurationTooLong();
-        if (_vestingPeriods == 0) revert VestingPeriodsCannotBeZero();
-        if (_vestingDuration < _vestingPeriods)
-            revert VestingDurationSmallerThanPeriods();
-        if (_committee == address(0)) revert CommitteeIsZero();
-        if (address(_asset) == address(0)) revert AssetIsZero();
-        if (_maxBounty > HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanHundredPercent();
-        validateSplit(_bountySplit);
-        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
-        rewardController = _rewardController;
-        vestingDuration = _vestingDuration;
-        vestingPeriods = _vestingPeriods;
-        maxBounty = _maxBounty;
-        bountySplit = _bountySplit;
-        committee = _committee;
-        depositPause = _isPaused;
-        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
-        registry = _registry;
-        __ReentrancyGuard_init();
-        _transferOwnership(_registry.owner());
-        tokenLockFactory = _registry.tokenLockFactory();
-    }
-
-    /**
-    * @notice Called by governance to update the information of the vault
-    * @param _visible Is this vault visible in the Hats Dapp. This parameter
-    * can be used by the UI to include or exclude the vault
-    * @param _depositPause Whether to pause deposits
-    * @param _descriptionHash Hash of the vault's description.
-    */
-    function updateVaultInfo(
-        bool _visible,
-        bool _depositPause,
-        string memory _descriptionHash
-    ) external onlyOwner {
-        depositPause = _depositPause;
-
-        emit UpdateVaultInfo(_visible, _depositPause, _descriptionHash);
-    }
-
     /** 
     * @dev Check that a given bounty split is legal, meaning that:
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
@@ -316,9 +241,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @param _bountySplit The bounty split to check
     */
     function validateSplit(BountySplit memory _bountySplit) internal pure {
-        if (_bountySplit.hacker + _bountySplit.hackerVested == 0) 
-            revert BountySplitMustIncludeHackerPayout();
-
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee +

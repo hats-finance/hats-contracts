@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -20,6 +20,8 @@ error SafetyPeriodTooLong();
 error WithdrawRequestPendingPeriodTooLong();
 // Withdraw request enabled period must be >= 6 hour
 error WithdrawRequestEnabledPeriodTooShort();
+// Withdraw request enabled period must be <= 100 days
+error WithdrawRequestEnabledPeriodTooLong();
 // Vesting duration is too long
 error VestingDurationTooLong();
 // Vesting periods cannot be zero
@@ -36,6 +38,14 @@ error SwapFailed();
 error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
@@ -83,6 +93,15 @@ contract HATVaultsRegistry is Ownable {
         uint256 claimFee;  
     }
 
+    struct SwapData {
+        uint256 totalHackersHatReward;
+        uint256 amount;
+        uint256 swapAndBurn;
+        uint256 hatsReceived;
+        uint256 burntHats;
+        uint256 totalHackerReward;
+    }
+
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
 
@@ -110,6 +129,7 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
+    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -123,6 +143,8 @@ contract HATVaultsRegistry is Ownable {
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
     event SetMaxBountyDelay(uint256 _delay);
     event RouterWhitelistStatusChanged(address indexed _router, bool _status);
+    event SetVaultVisibility(address indexed _vault, bool indexed _visible);
+    event SetVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
@@ -186,12 +208,28 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
+    * @notice emit an event that includes the given _descriptionHash
+    * This can be used by the claimer as evidence that she had access to the information at the time of the call
+    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
+    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
+    */
+    function logClaim(string memory _descriptionHash) external payable {
+        if (generalParameters.claimFee > 0) {
+            if (msg.value < generalParameters.claimFee)
+                revert NotEnoughFeePaid();
+            // solhint-disable-next-line indent
+            payable(owner()).transfer(msg.value);
+        }
+        emit LogClaim(msg.sender, _descriptionHash);
+    }
+   
+    /**
     * @notice Called by governance to set the fee setter role
     * @param _feeSetter Address of new fee setter
     */
-    function setFeeSetter(address _feeSetter) external onlyOwner {
-        feeSetter = _feeSetter;
-        emit SetFeeSetter(_feeSetter);
+    function setFeeSetter(address _newFeeSetter) external onlyOwner {
+        feeSetter = _newFeeSetter;
+        emit SetFeeSetter(_newFeeSetter);
     }
 
     /**
@@ -217,6 +255,8 @@ contract HATVaultsRegistry is Ownable {
             revert WithdrawRequestPendingPeriodTooLong();
         if (6 hours > _withdrawRequestEnablePeriod)
             revert WithdrawRequestEnabledPeriodTooShort();
+        if (100 days < _withdrawRequestEnablePeriod)
+            revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
         emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
@@ -239,6 +279,8 @@ contract HATVaultsRegistry is Ownable {
     * which the claim can be challenged
     */
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
     }
@@ -250,6 +292,8 @@ contract HATVaultsRegistry is Ownable {
     * challenged where the only possible action is dismissal
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
@@ -376,6 +420,27 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
+    * @notice change the UI visibility of a vault
+    * only calleable by the owner of the contract
+    * @param _vault the vault to update
+    * @param _visible is this vault visible in the UI
+    * This parameter can be used by the UI to include or exclude the vault
+    */
+    function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
+        emit SetVaultVisibility(_vault, _visible);
+    }
+
+    /**
+    * @notice change the description of a vault
+    * only calleable by the owner of the contract
+    * @param _vault the vault to update
+    * @param _descriptionHash the hash of the vault's description.
+    */
+    function setVaultDescription(address _vault, string memory _descriptionHash) external onlyOwner {
+        emit SetVaultDescription(_vault, _descriptionHash);
+    }
+
+    /**
     * @notice Transfer the part of the bounty that is supposed to be swapped
     * into HAT tokens from the HATVault to the registry, and keep track of the
     * amounts to be swapped and sent/burnt in a later transaction
@@ -405,9 +470,9 @@ contract HATVaultsRegistry is Ownable {
     /**
     * @notice Called by governance to swap vault's tokens to HAT tokens and
     * distribute the HAT tokens: Send to governance their share, send to
-    * beneficiary her share through a vesting contract and burn the rest.
+    * beneficiaries their share through a vesting contract and burn the rest.
     * @param _asset The vault's token
-    * @param _beneficiary Address of beneficiary
+    * @param _beneficiaries Addresses of beneficiaries
     * @param _amountOutMinimum Minimum amount of HAT tokens at swap
     * @param _routingContract Routing contract to call for the swap
     * @param _routingPayload Payload to send to the _routingContract for the
@@ -415,47 +480,57 @@ contract HATVaultsRegistry is Ownable {
     */
     function swapBurnSend(
         address _asset,
-        address _beneficiary,
+        address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload
     ) external onlyOwner {
-        uint256 amount = swapAndBurn[_asset] + hackersHatReward[_asset][_beneficiary] + governanceHatReward[_asset];
-        if (amount == 0) revert AmountToSwapIsZero();
+        // Needed to avoid a stack too deep error
+        SwapData memory swapData;
+        swapData.swapAndBurn = swapAndBurn[_asset];
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            swapData.totalHackersHatReward += hackersHatReward[_asset][_beneficiaries[i]];
+        }
+        swapData.amount = swapAndBurn[_asset] + swapData.totalHackersHatReward + governanceHatReward[_asset];
+        if (swapData.amount == 0) revert AmountToSwapIsZero();
         ERC20Burnable _HAT = HAT;
-        uint256 hatsReceived = swapTokenForHAT(_asset, amount, _amountOutMinimum, _routingContract, _routingPayload);
-        uint256 burntHats = hatsReceived * swapAndBurn[_asset] / amount;
-        uint256 hackerReward = hatsReceived * hackersHatReward[_asset][_beneficiary] / amount;
+        swapData.hatsReceived = swapTokenForHAT(_asset, swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
+        swapData.burntHats = swapData.hatsReceived * swapAndBurn[_asset] / swapData.amount;
+        if (swapData.burntHats > 0) {
+            _HAT.burn(swapData.burntHats);
+        }
+        emit SwapAndBurn(swapData.amount, swapData.burntHats);
+
         swapAndBurn[_asset] = 0;
         governanceHatReward[_asset] = 0;
-        hackersHatReward[_asset][_beneficiary] = 0;
-        if (burntHats > 0) {
-            _HAT.burn(burntHats);
-        }
-        emit SwapAndBurn(amount, burntHats);
 
-        address tokenLock;
-        if (hackerReward > 0) {
-            // hacker gets her reward via vesting contract
-            tokenLock = tokenLockFactory.createTokenLock(
-                address(_HAT),
-                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
-                _beneficiary,
-                hackerReward,
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp, //start
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp + generalParameters.hatVestingDuration, //end
-                generalParameters.hatVestingPeriods,
-                0, // no release start
-                0, // no cliff
-                ITokenLock.Revocability.Disabled,
-                true
-            );
-            _HAT.safeTransfer(tokenLock, hackerReward);
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+            swapData.totalHackerReward += hackerReward;
+            hackersHatReward[_asset][_beneficiaries[i]] = 0;
+            address tokenLock;
+            if (hackerReward > 0) {
+                // hacker gets her reward via vesting contract
+                tokenLock = tokenLockFactory.createTokenLock(
+                    address(_HAT),
+                    0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                    _beneficiaries[i],
+                    hackerReward,
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp, //start
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp + generalParameters.hatVestingDuration, //end
+                    generalParameters.hatVestingPeriods,
+                    0, // no release start
+                    0, // no cliff
+                    ITokenLock.Revocability.Disabled,
+                    true
+                );
+                _HAT.safeTransfer(tokenLock, hackerReward);
+            }
+            emit SwapAndSend(_beneficiaries[i], swapData.amount, hackerReward, tokenLock);
         }
-        emit SwapAndSend(_beneficiary, amount, hackerReward, tokenLock);
-        _HAT.safeTransfer(owner(), hatsReceived - hackerReward - burntHats);
+        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward - swapData.burntHats);
     }
 
     /**

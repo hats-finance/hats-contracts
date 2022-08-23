@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Disclaimer https://github.com/hats-finance/hats-contracts/blob/main/DISCLAIMER.md
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -39,6 +39,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => VaultInfo) public vaultInfo;
     // vault address => user address => reward debt amount
     mapping(address => mapping(address => uint256)) public rewardDebt;
+    // vault address => user address => unclaimed reward amount
+    mapping(address => mapping(address => uint256)) public unclaimedReward;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
     event SafeTransferReward(
@@ -47,7 +49,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 amount,
         address rewardToken
     );
-    event ClaimReward(address indexed _vault);
+    event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     function initialize(
         address _rewardToken,
@@ -63,10 +65,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         _transferOwnership(_hatGovernance);
     }
 
-    function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {
-        if (vaultInfo[_vault].lastRewardBlock == 0) {
-            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
-        }
+    function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
         updateVault(_vault);
         uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
         globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
@@ -107,6 +106,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     function updateVault(address _vault) public {
         VaultInfo storage vault = vaultInfo[_vault];
         uint256 lastRewardBlock = vault.lastRewardBlock;
+        if (lastRewardBlock == 0) {
+            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+            return;
+        }
         if (block.number <= lastRewardBlock) {
             return;
         }
@@ -120,7 +123,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             vault.rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
+        if (globalVaultsUpdates.length != 0) {
+            vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
+        }
     }
 
     /**
@@ -136,14 +141,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         address _vault,
         address _user,
         uint256 _sharesChange,
-        bool _isDeposit,
-        bool _claimReward
+        bool _isDeposit
     ) internal {
         updateVault(_vault);
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        uint256 pending = userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+        unclaimedReward[_vault][_user] += userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+
         if (_sharesChange != 0) {
             if (_isDeposit) {
                 userShares += _sharesChange;
@@ -152,28 +157,27 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }
         }
         rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
-        if (pending > 0 && _claimReward) {
-            safeTransferReward(_user, pending, _vault);
-        }
     }
 
-    function updateVaultBalance(
-        address _user,
-        uint256 _sharesChange,
-        bool _isDeposit,
-        bool _claimReward
-    ) external {
-        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit, _claimReward);
+    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
+        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
-     * @notice Transfer to the sender their pending share of rewards.
+     * @notice Transfer to the specified user their pending share of rewards.
      * @param _vault The vault address
+     * @param _user The user address to claim for
      */
-    function claimReward(address _vault) external {
-        _updateVaultBalance(_vault, msg.sender, 0, true, true);
+    function claimReward(address _vault, address _user) external {
+        _updateVaultBalance(_vault, _user, 0, true);
 
-        emit ClaimReward(_vault);
+        uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
+        if (userUnclaimedReward > 0) {
+            unclaimedReward[_vault][_user] = 0;
+            safeTransferReward(_user, userUnclaimedReward, _vault);
+        }
+
+        emit ClaimReward(_vault, _user, userUnclaimedReward);
     }
 
      /**
@@ -217,7 +221,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 _fromBlock = endBlock;
             }
             result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
-            reward = result * _allocPoint / _totalAllocPoint / 100;
+            reward = result * _allocPoint / _totalAllocPoint;
         }
     }
 
@@ -231,12 +235,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 rewardPerShare = vault.rewardPerShare;
         uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
 
-        if (block.number > vault.lastRewardBlock && totalShares > 0) {
+        if (vault.lastRewardBlock != 0 && block.number > vault.lastRewardBlock && totalShares > 0) {
             uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
             rewardPerShare += (reward * 1e12 / totalShares);
         }
 
-        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 + 
+                unclaimedReward[_vault][_user] -
+                rewardDebt[_vault][_user];
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {
