@@ -28,7 +28,7 @@ contract Params is Base {
 
     /**
     * @notice Called by governance to set the vesting params for the part of
-    * the bounty that the hacker gets vested in the vault's token
+    * the bounty that the hacker gets vested in the vault's native token
     * @param _duration Duration of the vesting period. Must be smaller than
     * 120 days and bigger than `_periods`
     * @param _periods Number of vesting periods. Cannot be 0.
@@ -134,8 +134,8 @@ contract Params is Base {
     * @notice Called by governance to set the vault's reward controller
     * @param _rewardController The new reward controller
     */
-    function setRewardController(IRewardController _newRewardController) external onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(_newRewardController);
+    function setRewardController(IRewardController _rewardController) external onlyOwner {
+        rewardController = _rewardController;
+        emit SetRewardController(_rewardController);
     }
 }
