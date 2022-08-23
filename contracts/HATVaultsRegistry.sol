@@ -316,7 +316,7 @@ contract HATVaultsRegistry is Ownable {
 
     /**
     * @notice Create a new vault
-    * @param _asset The vault's token
+    * @param _asset The vault's native token
     * @param _committee The address of the vault's committee 
     * @param _rewardController The reward controller for the vault
     * @param _maxBounty The maximum percentage of the vault that can be paid
@@ -326,7 +326,7 @@ contract HATVaultsRegistry is Ownable {
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     *   Bounty larger than 0 must be specified for the hacker (direct or 
-    *   vested in vault's token).
+    *   vested in vault's native token).
     * @param _descriptionHash Hash of the vault description.
     * @param _bountyVestingParams Vesting params for the bounty
     *        _bountyVestingParams[0] - vesting duration
@@ -379,13 +379,13 @@ contract HATVaultsRegistry is Ownable {
     * @notice Transfer the part of the bounty that is supposed to be swapped
     * into HAT tokens from the HATVault to the registry, and keep track of the
     * amounts to be swapped and sent/burnt in a later transaction
-    * @param _asset The vault's token
+    * @param _asset The vault's native token
     * @param _hacker The address of the beneficiary of the bounty
-    * @param _swapAndBurn The amount of the vault's token to be swapped to HAT
-    * tokens and burnt
-    * @param _hackersHatReward The amount of the vault's token to be swapped to 
-    * HAT tokens and sent to the hacker via a vesting contract
-    * @param _governanceHatReward The amount of the vault's token to be 
+    * @param _swapAndBurn The amount of the vault's native token to be swapped
+    * to HATntokens and burnt
+    * @param _hackersHatReward The amount of the vault's native token to be
+    * swapped to HAT tokens and sent to the hacker via a vesting contract
+    * @param _governanceHatReward The amount of the vault's native token to be
     * swapped to HAT tokens and sent to governance
     */
     function addTokensToSwap(
@@ -403,10 +403,10 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Called by governance to swap vault's tokens to HAT tokens and
-    * distribute the HAT tokens: Send to governance their share, send to
+    * @notice Called by governance to swap vault's native tokens to HAT tokens
+    * and distribute the HAT tokens: Send to governance their share, send to
     * beneficiary her share through a vesting contract and burn the rest.
-    * @param _asset The vault's token
+    * @param _asset The vault's native token
     * @param _beneficiary Address of beneficiary
     * @param _amountOutMinimum Minimum amount of HAT tokens at swap
     * @param _routingContract Routing contract to call for the swap

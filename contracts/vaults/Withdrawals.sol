@@ -160,9 +160,11 @@ contract Withdrawals is Base {
     }
 
     /**
-    * @dev Safely transfer vault's token to reciever, and fee to governance
-    * @param _totalAmount Amount of vault's token to transfer to _receiver
-    * @param _fee Amount of vault's token to transfer to vault's owner
+    * @dev Safely transfer vault's native token to reciever, and fee to 
+    * governance
+    * @param _totalAmount Amount of vault's native token to transfer to the 
+    * receiver
+    * @param _fee Amount of vault's native token to transfer to vault's owner
     * @param _receiver Address of receiver of funds
     */
     function safeWithdrawVaultToken(uint256 _totalAmount, uint256 _fee, address _receiver)

@@ -106,7 +106,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 hackerHatVested;
     }
 
-    // How to divide a bounty for a claim that has been approved, in amounts of the vault's token
+    // How to divide a bounty for a claim that has been approved, in amounts
+    // of the vault's native token
     struct ClaimBounty {
         uint256 hacker;
         uint256 hackerVested;
@@ -242,15 +243,15 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @param _rewardController The reward controller for the vault
     * @param _vestingDuration Duration of the vesting period of the vault's
     * token vested part of the bounty
-    * @param _vestingPeriods The number of vesting periods of the vault's token
-    * vested part of the bounty
+    * @param _vestingPeriods The number of vesting periods of the vault's
+    * native token vested part of the bounty
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty
     * @param _bountySplit The way to split the bounty between the hacker, 
     * committee and governance.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param _asset The vault's token
+    * @param _asset The vault's native token
     * @param _committee The address of the vault's committee 
     * @param _isPaused Whether to initialize the vault with deposits disabled
     */
@@ -311,7 +312,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     *   Bounty larger then 0 must be specified for the hacker (direct or 
-    *   vested in vault's token).
+    *   vested in vault's native token).
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */

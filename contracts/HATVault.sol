@@ -24,10 +24,10 @@ import "./vaults/Withdrawals.sol";
 * has the roles:
 * Committee - The only address which can submit a claim for a bounty payout
 * and set the maximum bounty.
-* User - Anyone can deposit the vault's token into the vault and recieve 
-* shares for it. Shares represent the user's relative part in the vault, and
-* when a bounty is paid out, users lose part of their deposits (based on 
-* percentage paid), but keep their share of the vault.
+* User - Anyone can deposit the vault's native token into the vault and 
+* recieve shares for it. Shares represent the user's relative part in the
+* vault, and when a bounty is paid out, users lose part of their deposits
+* (based on percentage paid), but keep their share of the vault.
 * Users also receive rewards for their deposits, which can be claimed at any
 * time.
 * To withdraw previously deposited tokens, a user must first send a withdraw
