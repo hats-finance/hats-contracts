@@ -250,8 +250,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * committee and governance.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    *   Bounty larger then 0 must be specified for the hacker (direct or 
-    *   vested in vault's token).
     * @param _asset The vault's token
     * @param _committee The address of the vault's committee 
     * @param _isPaused Whether to initialize the vault with deposits disabled

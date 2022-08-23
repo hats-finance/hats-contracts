@@ -28,13 +28,12 @@ contract Claim is Base {
 
     /**
     * @notice Called by the committee to submit a claim for a bounty payout.
-    * The submitted claim needs to be approved or dismissed by governance.
     * This function should be called only on a safety period, when withdrawals
     * are disabled.
     * Upon a call to this function by the committee the vault's withdrawals
-    * will be disabled until the Hats governance will approve or dismiss this
-    * claim. Also from the time of this call the arbitrator will have a period
-    * of `HATVaultsRegistry.challengePeriod` to challenge the claim.
+    * will be disabled until the claim is approved or dismissed. Also from the
+    * time of this call the arbitrator will have a period of 
+    *`HATVaultsRegistry.challengePeriod` to challenge the claim.
     * @param _beneficiary The submitted claim's beneficiary
     * @param _bountyPercentage The submitted claim's bug requested reward percentage
     */
@@ -136,7 +135,8 @@ contract Claim is Base {
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
 
-        //storing the amount of tokens which can be swapped and burned so it could be swapAndBurn in a separate tx.
+        // send to the registry the amount of tokens which should be swapped 
+        // to HAT so it could call swapAndBurn in a separate tx.
         asset.safeApprove(address(registry), claimBounty.swapAndBurn + claimBounty.hackerHatVested + claimBounty.governanceHat);
         registry.addTokensToSwap(
             asset,

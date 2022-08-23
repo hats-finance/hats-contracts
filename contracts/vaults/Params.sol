@@ -6,8 +6,9 @@ import "./Base.sol";
 contract Params is Base {
 
     /**
-    * @notice Set new committee address. Can be called by existing committee
-    * if it had previously checked in, or by the governance otherwise.
+    * @notice Set new committee address. Can be called by existing committee,
+    * or by the governance in the case that the committee hadn't checked in
+    * yet.
     * @param _committee The address of the new committee 
     */
     function setCommittee(address _committee)
@@ -118,8 +119,7 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by the vault's committee to set the vault's reward
-    * controller
+    * @notice Called by governance to set the vault's reward controller
     * @param _rewardController The new reward controller
     */
     function setRewardController(IRewardController _rewardController) public onlyOwner {

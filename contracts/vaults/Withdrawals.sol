@@ -8,14 +8,17 @@ contract Withdrawals is Base {
 
     /**
     * @notice Submit a request to withdraw funds from the vault.
-    * The request will only be approved if the last action was a deposit or
-    * withdrawal, or in case the last action was a withdraw request, that the
-    * withdraw request had expired (meaning that the pending period and the
-    * withdraw enable period had both ended).
+    * The request will only be approved if there is no previous active
+    * withdraw request.
+    * The request will be pending for a period of
+    * `HATVaultsRegistry.GeneralParameters.withdrawRequestPendingPeriod`,
+    * after which a withdraw will be possible for a duration of
+    * `HATVaultsRegistry.GeneralParameters.withdrawRequestEnablePeriod`
     */
     function withdrawRequest() external nonReentrant {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod since last withdrawRequest
+        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
+        // since last withdrawRequest (meaning the last withdraw request had expired)
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
@@ -58,7 +61,8 @@ contract Withdrawals is Base {
     * @notice Withdraw previously deposited funds from the vault.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
-    * enabled timeout had not passed.
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
     * @param assets Amount of tokens to withdraw
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds 
@@ -79,11 +83,12 @@ contract Withdrawals is Base {
     }
 
     /** 
-    * @notice Redeem shares in the vault, and receive the respective amount of
-    * underlying assets.
+    * @notice Redeem shares in the vault, and withdraw the respective amount
+    * of underlying assets.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
-    * enabled timeout had not passed.
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
     * @param shares Amount of shares to redeem
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds 

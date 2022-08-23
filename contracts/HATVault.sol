@@ -17,7 +17,8 @@ import "./vaults/Withdrawals.sol";
 * the vault’s native token. When a bug is submitted and approved, the bounty 
 * is paid out using the funds in the vault. Bounties are paid out as a
 * percentage of the vault. The percentage is set according to the severity of
-* the bug.
+* the bug. Vaults have regular safety periods (typically for an hour twice a
+* day) which are time for the committee to make decisions.
 *
 * In addition to the roles defined in the HATVaultsRegistry, every HATVault 
 * has the roles:
@@ -29,8 +30,10 @@ import "./vaults/Withdrawals.sol";
 * percentage paid), but keep their share of the vault.
 * Users also receive rewards for their deposits, which can be claimed at any
 * time.
-* To withdraw the deposited vault's tokens, a user must first send a withdraw
+* To withdraw previously deposited tokens, a user must first send a withdraw
 * request, and the withdrawal will be made available after a pending period.
+* Withdrawals are not permitted during safety periods or while there is an 
+* active claim for a bounty payout.
 *
 * Bounties are payed out distributed between a few channels, and that 
 * distribution is set upon creation (the hacker gets part in direct transfer,
@@ -87,7 +90,8 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     * @notice Withdraw previously deposited funds from the vault.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
-    * enabled timeout had not passed.
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
     * @param assets Amount of tokens to withdraw
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds 
@@ -102,11 +106,12 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     }
 
     /** 
-    * @notice Redeem shares in the vault, and receive the respective amount of
-    * underlying assets.
+    * @notice Redeem shares in the vault, and withdraw the respective amount
+    * of underlying assets.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
-    * enabled timeout had not passed.
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
     * @param shares Amount of shares to redeem
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds 
