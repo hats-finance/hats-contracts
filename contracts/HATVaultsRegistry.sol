@@ -37,7 +37,7 @@ error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
 
-/**  @title Registry to manage all Hats.finance vaults
+/** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
 * @notice Hats.finance is a proactive bounty protocol for white hat hackers
 * and auditors, where projects, community members, and stakeholders
@@ -509,9 +509,9 @@ contract HATVaultsRegistry is Ownable {
     *   time. withdrawPeriod starts when finished.
     *   withdrawRequestEnablePeriod - period of time after 
     *   withdrawRequestPendingPeriod where it is possible to withdraw (after 
-    *   which withdrawals are not possible)
+    *   the withdraw request expires)
     *   withdrawRequestPendingPeriod - period of time that has to pass after
-    *   withdraw request until withdraw is possible
+    *   withdraw request until withdrawal is possible
     *   setMaxBountyDelay - period of time that has to pass after setting a
     *   pending max bounty before it can be set as the new max bounty
     *   claimFee - fee in ETH to be transferred with every logging of a claim
