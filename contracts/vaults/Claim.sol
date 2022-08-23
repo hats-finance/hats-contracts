@@ -1,31 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "./Base.sol";
 
 contract Claim is Base {
     using SafeERC20 for IERC20;
-
-    /**
-    * @notice Emit an event that includes the given `_descriptionHash`.
-    * This can be used by the hacker as evidence that she had access to the
-    * information at the time of the call.
-    * If HATVaultsRegistry.GeneralParameters.claimFee > 0, the caller must
-    * send claimFee ETH for the claim to succeed
-    * @param _descriptionHash - a hash of an IPFS encrypted file which
-    * describes the claim.
-    */
-    function logClaim(string memory _descriptionHash) external payable {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        if (generalParameters.claimFee > 0) {
-            if (msg.value < generalParameters.claimFee)
-                revert NotEnoughFeePaid();
-            // solhint-disable-next-line indent
-            payable(owner()).transfer(msg.value);
-        }
-        emit LogClaim(msg.sender, _descriptionHash);
-    }
-
+    
     /**
     * @notice Called by the committee to submit a claim for a bounty payout.
     * This function should be called only on a safety period, when withdrawals
@@ -43,7 +23,6 @@ contract Claim is Base {
     noActiveClaim()
     returns (bytes32 claimId)
     {
-        if (_beneficiary == address(0)) revert BeneficiaryIsZero();
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
@@ -59,7 +38,7 @@ contract Claim is Base {
             committee: msg.sender,
             // solhint-disable-next-line not-rely-on-time
             createdAt: block.timestamp,
-            isChallenged: false
+            challengedAt: 0
         });
 
         emit SubmitClaim(
@@ -79,9 +58,11 @@ contract Claim is Base {
     * @param _claimId The claim ID
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
-        if (block.timestamp > activeClaim.createdAt + registry.challengeTimeOutPeriod())
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp > activeClaim.createdAt + registry.challengePeriod())
             revert ChallengePeriodEnded();
-        activeClaim.isChallenged = true;
+        // solhint-disable-next-line not-rely-on-time
+        activeClaim.challengedAt = block.timestamp;
         emit ChallengeClaim(_claimId);
     }
 
@@ -100,11 +81,16 @@ contract Claim is Base {
     */
     function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
-        if (claim.isChallenged) {
-            if (msg.sender != registry.arbitrator()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+        delete activeClaim;
+
+        if (claim.challengedAt != 0) {
+            // solhint-disable-next-line not-rely-on-time
+            if (msg.sender != registry.arbitrator() || block.timestamp > claim.challengedAt + registry.challengeTimeOutPeriod())
+                revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
-            if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert ClaimCanOnlyBeApprovedAfterChallengePeriodOrByArbitrator();
+            // solhint-disable-next-line not-rely-on-time
+            if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;
@@ -155,22 +141,17 @@ contract Claim is Base {
             tokenLock,
             claimBounty
         );
-
-        delete activeClaim;
     }
 
     /**
-    * @notice Dismiss a claim for a bounty payout that had been previously
-    * challenged. 
-    * Called either by the arbitrator, or by anyone if challengeTimeOutPeriod
-    * had passed.
-    * @param _claimId The claim ID
+    * @notice Dismiss the active claim for a bounty submitted by a committee.
+    * Called either by the arbitrator, or by anyone if the claim is after the challenge timeout period.
     */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
-        if (!claim.isChallenged) revert OnlyCallableIfChallenged();
+        if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.createdAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
+        if (block.timestamp < claim.challengedAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
@@ -195,21 +176,21 @@ contract Claim is Base {
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
         claimBounty.hackerVested =
         totalBountyAmount * bountySplit.hackerVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.hacker =
         totalBountyAmount * bountySplit.hacker
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.committee =
         totalBountyAmount * bountySplit.committee
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.swapAndBurn =
         totalBountyAmount * bountySplit.swapAndBurn
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.governanceHat =
         totalBountyAmount * bountySplit.governanceHat
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
         claimBounty.hackerHatVested =
         totalBountyAmount * bountySplit.hackerHatVested
-        / (HUNDRED_PERCENT * HUNDRED_PERCENT);
+        / (HUNDRED_PERCENT_SQRD);
     }
 }

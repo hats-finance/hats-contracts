@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "../HATVaultsRegistry.sol";
 import "../RewardController.sol";
@@ -31,24 +31,15 @@ contract VaultsManagerMock {
         }
     }
 
-    function updateVaultsInfo(HATVault[] memory _hatVaults,
-                    IRewardController _rewardController,
-                    uint256 _allocPoint,
-                    bool _registered,
-                    bool _depositPause,
-                    string memory _descriptionHash) external {
-
+    function setVaultsAllocPoint(HATVault[] memory _hatVaults, IRewardController _rewardController, uint256 _allocPoint) external {
         for (uint256 i=0; i < _hatVaults.length; i++) {
-            _hatVaults[i].updateVaultInfo(_registered,
-                            _depositPause,
-                            _descriptionHash);
             _rewardController.setAllocPoint(address(_hatVaults[i]), _allocPoint);
         }
     }
 
     function claimRewardTwice(RewardController target, address _vault) external {
-        target.claimReward(_vault);
-        target.claimReward(_vault);
+        target.claimReward(_vault, address(this));
+        target.claimReward(_vault, address(this));
     }
 
     function deposit(HATVault _target, IERC20 _asset, uint256 _amount) external {
@@ -65,7 +56,7 @@ contract VaultsManagerMock {
     function claimDifferentPids(RewardController _target, address[] memory _vaults) external {
         uint256 i;
         for (i = 0; i < _vaults.length; i++) {
-            _target.claimReward(_vaults[i]);
+            _target.claimReward(_vaults[i], address(this));
         }
     }
 
