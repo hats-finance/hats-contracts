@@ -79,7 +79,7 @@ contract Params is Base {
     /**
     * @notice Called by the vault's committee to set a pending request for the
     * maximum percentage of the vault that can be paid out as a bounty.
-    * Cannot be called if there are active claims that have been submitted.
+    * Cannot be called if there is an active claim that has been submitted.
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`.
     * The pending value can later be set after the time delay (of 
     * HATVaultsRegistry.GeneralParameters.setMaxBountyDelay) had passed.

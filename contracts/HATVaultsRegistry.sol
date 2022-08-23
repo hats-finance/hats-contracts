@@ -277,8 +277,8 @@ contract HATVaultsRegistry is Ownable {
     /**
     * @notice Called by governance to set vesting params for rewarding claim
     * reporters with rewardToken, for all vaults
-    * @param _duration Duration of the vesting period. Must be less then 180 days.
-    * @param _periods The number of vesting periods. Must be more then 0 and 
+    * @param _duration Duration of the vesting period. Must be less than 180 days.
+    * @param _periods The number of vesting periods. Must be more than 0 and 
     * less then the vesting duration.
     */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
@@ -325,7 +325,7 @@ contract HATVaultsRegistry is Ownable {
     * committee and governance.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    *   Bounty larger then 0 must be specified for the hacker (direct or 
+    *   Bounty larger than 0 must be specified for the hacker (direct or 
     *   vested in vault's token).
     * @param _descriptionHash Hash of the vault description.
     * @param _bountyVestingParams Vesting params for the bounty
