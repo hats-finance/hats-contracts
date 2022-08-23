@@ -55,7 +55,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     * amount specified is the amount transferred
     * @param caller Caller of the action (msg.sender)
     * @param receiver Reciever of the shares from the deposit
-    * @param assets Amount of vault's token to deposit
+    * @param assets Amount of vault's native token to deposit
     * @param shares Respective amount of shares to be received
     */
     function _deposit(
