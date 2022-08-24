@@ -101,8 +101,28 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     function deposit(       
         uint256 assets,
         address receiver
-    ) public override(Deposits, ERC4626Upgradeable) returns (uint256){
+    ) public override(ERC4626Upgradeable) returns (uint256){
         super.deposit(assets, receiver);
+    }
+
+
+    /**
+    * @dev Deposit funds to the vault. Can only be called if deposits are not
+    * paused.
+    * NOTE: Vaults should not use tokens which do not guarantee that the 
+    * amount specified is the amount transferred
+    * @param caller Caller of the action (msg.sender)
+    * @param receiver Reciever of the shares from the deposit
+    * @param assets Amount of vault's native token to deposit
+    * @param shares Respective amount of shares to be received
+    */
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256 shares
+    ) internal override(Deposits, ERC4626Upgradeable) {
+        Deposits._deposit(caller, receiver, assets, shares);
     }
 
     function _beforeTokenTransfer(
