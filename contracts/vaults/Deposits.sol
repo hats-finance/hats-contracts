@@ -27,7 +27,10 @@ contract Deposits is Base {
         if (shares == 0) revert AmountToDepositIsZero();
         // Users can only deposit for themselves if withdraw request exists
         if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {
-            revert CannotDepositToAnotherUserWithWithdrawRequest();
+            HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+            // solhint-disable-next-line not-rely-on-time
+            if (block.timestamp < withdrawEnableStartTime[receiver] + generalParameters.withdrawRequestEnablePeriod)
+                revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
         }
 
         // clear withdraw request

@@ -135,7 +135,10 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         }
         // Users can only deposit for themselves if withdraw request exists
         if (withdrawEnableStartTime[to] != 0) {
-            revert CannotDepositToAnotherUserWithWithdrawRequest();
+            HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+            // solhint-disable-next-line not-rely-on-time
+            if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
+                revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
         }
 
         checkWithdrawAndResetWithdrawEnableStartTime(from);

@@ -72,7 +72,7 @@ error ChallengePeriodEnded();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
 // Cannot deposit to another user with withdraw request
-error CannotDepositToAnotherUserWithWithdrawRequest();
+error CannotTransferToAnotherUserWithActiveWithdrawRequest();
 // Withdraw amount must be greater than zero
 error WithdrawMustBeGreaterThanZero();
 // Withdraw amount cannot be more than maximum for user
