@@ -101,7 +101,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     function deposit(       
         uint256 assets,
         address receiver
-    ) public override(Deposits, ERC4626Upgradeable) {
+    ) public override(Deposits, ERC4626Upgradeable) returns (uint256){
         super.deposit(assets, receiver);
     }
 
