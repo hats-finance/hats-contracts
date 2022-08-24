@@ -17,9 +17,21 @@ The contracts in this repository define a number of different roles that have th
 - can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
 - can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
-## `HatVault.owner`
+## `HATVaultsRegistry.arbitrator`
 
-The `owner` of a hatvault created by the registry is the same registry owner.
+- can call `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
+- can call `approveClaim` to approve a claim for a bounty payout that was previously challenged and change the bounty percentage (in case the claim was not challenged and the challengePeriod had ended - anyone can approve the claim without changing the bounty percentage)
+- can call `dismissClaim` to dismiss a claim for a bounty payout that was previously challenged (in case the claim was challenged and the challengeTimeOutPeriod had ended - anyone can dismiss the claim)
+(see [arbitrator](./arbitrator.md))
+
+## `HATVaultsRegistry.feeSetter`
+
+- set to `HATTimeLockController`
+- can call `setWithdrawalFee` - set the fee for withdrawals from the vault
+
+## `HATVault.owner`
+
+The `owner` of a HATVault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `createVault` to create a new vault
@@ -43,22 +55,11 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 ## `HATVault.committee` (committee of each vault, set on creation)
 
 - a specific address for each vault, typically a multisig
-- can call `committeeCheckIn`  to claim it's role - only after the committee has checked in, deposits to the vault are enabled
+- can call `committeeCheckIn` to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
 - can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
-- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage
-
-## `HATVaultsRegistry.arbitrator`
-- can call `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `approveClaim` to approve a claim for a bounty payout that was previously challenged and change the bounty percentage (in case the claim was not challenged and the challengePeriod had ended - anyone can approve the claim without changing the bounty percentage)
-- can call `dismissClaim` to dismiss a claim for a bounty payout that was previously challenged (in case the claim was challenged and the challengeTimeOutPeriod had ended - anyone can dismiss the claim)
-(see [arbitrator](./arbitrator.md))
-
-## `HATVaultsRegistry.feeSetter`
-
-- set to `HATTimeLockController`
-- can call `setWithdrawalFee` (set the fee for withdrawals from the vault)
+- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
 
 ## `RewardController.owner`
 

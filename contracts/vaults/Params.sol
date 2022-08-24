@@ -6,9 +6,10 @@ import "./Base.sol";
 contract Params is Base {
 
     /**
-    * @notice Set new committee address. Can be called by existing committee if it had checked in, or
-    * by the governance otherwise.
-    * @param _committee new committee address
+    * @notice Set new committee address. Can be called by existing committee,
+    * or by the governance in the case that the committee hadn't checked in
+    * yet.
+    * @param _committee The address of the new committee 
     */
     function setCommittee(address _committee)
     external {
@@ -26,9 +27,11 @@ contract Params is Base {
     }
 
     /**
-    * @notice setVestingParams - set the vesting params for rewarding a claim reporter with the vault token
-    * @param _duration duration of the vesting period
-    * @param _periods the vesting periods
+    * @notice Called by governance to set the vesting params for the part of
+    * the bounty that the hacker gets vested in the vault's native token
+    * @param _duration Duration of the vesting period. Must be smaller than
+    * 120 days and bigger than `_periods`
+    * @param _periods Number of vesting periods. Cannot be 0.
     */
     function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         _setVestingParams(_duration, _periods);
@@ -44,8 +47,9 @@ contract Params is Base {
     }
 
     /**
-    * @notice Set the vault token bounty split upon an approval
-    * The function can be called only by governance.
+    * @notice Called by governance to set the vault token bounty split upon an
+    * approval.
+    * Can only be called if is no active claim and not during safety periods.
     * @param _bountySplit The bounty split
     */
     function setBountySplit(BountySplit memory _bountySplit)
@@ -56,15 +60,20 @@ contract Params is Base {
         emit SetBountySplit(_bountySplit);
     }
 
-    function setWithdrawalFee(uint256 _newFee) external onlyFeeSetter {
-        if (_newFee > MAX_FEE) revert WithdrawalFeeTooBig();
-        withdrawalFee = _newFee;
-        emit SetWithdrawalFee(_newFee);
+    /**
+    * @notice Called by the fee setter to set the fee for withdrawals from the
+    * vault.
+    * @param _fee The new fee. Must be smaller then `MAX_FEE`
+    */
+    function setWithdrawalFee(uint256 _fee) external onlyFeeSetter {
+        if (_fee > MAX_FEE) revert WithdrawalFeeTooBig();
+        withdrawalFee = _fee;
+        emit SetWithdrawalFee(_fee);
     }
 
     /**
-    * @notice committeeCheckIn - committee check in.
-    * deposit is enable only after committee check in
+    * @notice Called by the vault's committee to claim it's role.
+    * Deposits are enabled only after committee check in.
     */
     function committeeCheckIn() external onlyCommittee {
         committeeCheckedIn = true;
@@ -72,10 +81,12 @@ contract Params is Base {
     }
 
     /**
-    * @notice Set pending request to set vault's max bounty.
-    * The function can be called only by the vault's committee.
-    * Cannot be called if there are claims that have been submitted.
-    * Max bounty should be less than or equal to `HUNDRED_PERCENT`
+    * @notice Called by the vault's committee to set a pending request for the
+    * maximum percentage of the vault that can be paid out as a bounty.
+    * Cannot be called if there is an active claim that has been submitted.
+    * Max bounty should be less than or equal to `HUNDRED_PERCENT`.
+    * The pending value can later be set after the time delay (of 
+    * HATVaultsRegistry.GeneralParameters.setMaxBountyDelay) had passed.
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
     function setPendingMaxBounty(uint256 _maxBounty)
@@ -90,12 +101,11 @@ contract Params is Base {
     }
 
     /**
-    * @notice Set the vault's max bounty to the already pending max bounty.
-    * The function can be called only by the vault's committee.
-    * Cannot be called if there are claims that have been submitted.
-    * Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty
-    * had passed.
-    * Max bounty should be less than `HUNDRED_PERCENT`
+    * @notice Called by the vault's committee to set the vault's max bounty to
+    * the already pending max bounty.
+    * Cannot be called if there are active claims that have been submitted.
+    * Can only be called if there is a max bounty pending approval, and the
+    * time delay since setting the pending max bounty had passed.
     */
     function setMaxBounty() external onlyCommittee noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
@@ -111,14 +121,21 @@ contract Params is Base {
         emit SetMaxBounty(maxBounty);
     }
 
+    /**
+    * @notice Called by governance to disable all deposits to the vault
+    * @param _depositPause Are deposits paused
+    */
     function setDepositPause(bool _depositPause) external onlyOwner {
         depositPause = _depositPause;
-
         emit SetDepositPause(_depositPause);
     }
 
-    function setRewardController(IRewardController _newRewardController) external onlyOwner {
-        rewardController = _newRewardController;
-        emit SetRewardController(_newRewardController);
+    /**
+    * @notice Called by governance to set the vault's reward controller
+    * @param _rewardController The new reward controller
+    */
+    function setRewardController(IRewardController _rewardController) external onlyOwner {
+        rewardController = _rewardController;
+        emit SetRewardController(_rewardController);
     }
 }

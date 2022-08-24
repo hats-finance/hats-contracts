@@ -46,19 +46,33 @@ error ChallengeTimeOutPeriodTooShort();
 // Challenge timeout period too long
 error ChallengeTimeOutPeriodTooLong();
 
-/// @title Manage all Hats.finance vaults
-/// Hats.finance is a proactive bounty protocol for white hat hackers and
-/// auditors, where projects, community members, and stakeholders incentivize
-/// protocol security and responsible disclosure.
-/// Hats create scalable vaults using the project’s own token. The value of the
-/// bounty increases with the success of the token and project.
-/// This project is open-source and can be found on:
-/// https://github.com/hats-finance/hats-contracts
+/** @title Registry to deploy Hats.finance vaults and manage shared parameters
+* @author hats.finance
+* @notice Hats.finance is a proactive bounty protocol for white hat hackers
+* and auditors, where projects, community members, and stakeholders
+* incentivize protocol security and responsible disclosure.
+* Hats create scalable vaults using the project’s own token. The value of the
+* bounty increases with the success of the token and project.
+*
+* The HATVaultsRegistry defines a few roles which are relevant to all vaults:
+* Governance - The owner of HATVaultsRegistry and every HATVault created, has
+* the permission to set the feeSetter and arbitrator roles, to set time limits
+* and bounty parameters and change vaults' info.
+* Arbitrator - Can challenge submitted claims for bounty payouts, approve them
+* with a different bounty percentage or dismiss them.
+* FeeSetter - The only address which can set the fee on withdrawals on all
+* vaults.
+*
+* This project is open-source and can be found at:
+* https://github.com/hats-finance/hats-contracts
+*/
 contract HATVaultsRegistry is Ownable {
     using SafeERC20 for IERC20;
 
     struct GeneralParameters {
+        // vesting duration for the part of the bounty given to the hacker in HAT tokens
         uint256 hatVestingDuration;
+        // vesting periods for the part of the bounty given to the hacker in HAT tokens
         uint256 hatVestingPeriods;
         // withdraw enable period. safetyPeriod starts when finished.
         uint256 withdrawPeriod;
@@ -66,12 +80,15 @@ contract HATVaultsRegistry is Ownable {
         // withdrawals are not possible in this time. withdrawPeriod starts when finished.
         uint256 safetyPeriod;
         // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
-        // (after which withdrawal is not possible)
+        // (after which withdrawals are not possible)
         uint256 withdrawRequestEnablePeriod;
         // period of time that has to pass after withdraw request until withdraw is possible
         uint256 withdrawRequestPendingPeriod;
+        // period of time that has to pass after setting a pending max
+        // bounty before it can be set as the new max bounty
         uint256 setMaxBountyDelay;
-        uint256 claimFee;  //claim fee in ETH
+        // fee in ETH to be transferred with every logging of a claim
+        uint256 claimFee;  
     }
 
     struct SwapData {
@@ -145,10 +162,10 @@ contract HATVaultsRegistry is Ownable {
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _whitelistedRouters initial list of whitelisted routers allowed to
-    * be used to swap tokens for HAT token.
+    * @param _whitelistedRouters Initial list of whitelisted routers allowed
+    * to be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
-    *        to create a vesting contract for the approved claim reporter.
+    * to create a vesting contract for the approved claim reporter.
     */
     constructor(
         address _hatVaultImplementation,
@@ -195,15 +212,19 @@ contract HATVaultsRegistry is Ownable {
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }
-
-    function setFeeSetter(address _newFeeSetter) external onlyOwner {
-        feeSetter = _newFeeSetter;
-        emit SetFeeSetter(_newFeeSetter);
+   
+    /**
+    * @notice Called by governance to set the fee setter role
+    * @param _feeSetter Address of new fee setter
+    */
+    function setFeeSetter(address _feeSetter) external onlyOwner {
+        feeSetter = _feeSetter;
+        emit SetFeeSetter(_feeSetter);
     }
 
-   /**
-     * @notice setArbitrator - called by hats governance to set arbitrator
-     * @param _arbitrator New arbitrator.
+    /**
+    * @notice Called by governance to set the arbitrator role
+    * @param _arbitrator Address of new arbitrator
     */
     function setArbitrator(address _arbitrator) external onlyOwner {
         arbitrator = _arbitrator;
@@ -211,9 +232,11 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice setWithdrawRequestParams - called by hats governance to set withdraw request params
-    * @param _withdrawRequestPendingPeriod - the time period where the withdraw request is pending.
-    * @param _withdrawRequestEnablePeriod - the time period where the withdraw is enable for a withdraw request.
+    * @notice Called by governance to set time limits for withdraw requests
+    * @param _withdrawRequestPendingPeriod Time period where the withdraw
+    * request is pending
+    * @param _withdrawRequestEnablePeriod Time period after the peding period
+    * has ended during which withdrawal is enabled
     */
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
@@ -230,14 +253,21 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-     * @notice Called by hats governance to set fee for submitting a claim to any vault
-     * @param _fee claim fee in ETH
+    * @notice Called by governance to set the fee for logging a claim for a
+    * bounty in any vault.
+    * @param _fee Claim fee in ETH to be transferred on any call of logClaim
     */
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
     }
 
+    /**
+    * @notice Called by governance to set the time during which a claim can be
+    * challenged by the arbitrator
+    * @param _challengePeriod Time period after claim submittion during
+    * which the claim can be challenged
+    */
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
         if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
         if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
@@ -245,6 +275,12 @@ contract HATVaultsRegistry is Ownable {
         emit SetChallengePeriod(_challengePeriod);
     }
 
+    /**
+    * @notice Called by governance to set time after which a challenged claim 
+    * is automatically dismissed
+    * @param _challengeTimeOutPeriod Time period after claim has been
+    * challenged where the only possible action is dismissal
+    */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
         if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
         if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
@@ -253,9 +289,16 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-     * @notice setWithdrawSafetyPeriod - called by hats governance to set Withdraw Period
-     * @param _withdrawPeriod withdraw enable period
-     * @param _safetyPeriod withdraw disable period
+    * @notice Called by governance to set the withdraw period and safety
+    * period, which are always interchanging.
+    * The safety period is time that the committee can submit claims for 
+    * bounty payouts, and during which withdrawals are disabled and the bounty
+    * split cannot be changed.
+    * @param _withdrawPeriod Amount of time during which withdrawals are
+    * enabled, and the bounty split can be changed by the governance. Must be
+    * at least 1 hour.
+    * @param _safetyPeriod Amount of time during which claims for bounties 
+    * can be submitted and withdrawals are disabled. Must be at most 6 hours.
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner {
         if (1 hours > _withdrawPeriod) revert WithdrawPeriodTooShort();
@@ -266,10 +309,11 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice setHatVestingParams - set vesting params for rewarding claim reporters with rewardToken, for all vaults
-    * the function can be called only by governance.
-    * @param _duration duration of the vesting period
-    * @param _periods the vesting periods
+    * @notice Called by governance to set vesting params for rewarding claim
+    * reporters with rewardToken, for all vaults
+    * @param _duration Duration of the vesting period. Must be less than 180 days.
+    * @param _periods The number of vesting periods. Must be more than 0 and 
+    * less then the vesting duration.
     */
     function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         if (_duration >= 180 days) revert VestingDurationTooLong();
@@ -281,9 +325,9 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Set the timelock delay for setting the max bounty
-    * (the time between setPendingMaxBounty and setMaxBounty)
-    * @param _delay The delay time
+    * @notice Called by governance to set the timelock delay for setting the
+    * max bounty (the time between setPendingMaxBounty and setMaxBounty)
+    * @param _delay The time period for the delay. Must be at least 2 days.
     */
     function setMaxBountyDelay(uint256 _delay)
     external
@@ -293,26 +337,37 @@ contract HATVaultsRegistry is Ownable {
         emit SetMaxBountyDelay(_delay);
     }
 
+    /**
+    * @notice Called by governance to add or remove address from the whitelist
+    * of routers that can be used for token swapping.
+    * @param _router The address of the swapping router
+    * @param _isWhitelisted Is this router approved to be used for swapping
+    */
     function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
         whitelistedRouters[_router] = _isWhitelisted;
         emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 
     /**
-    * @notice Create a new vault.
-    * @param _asset The vault's token
-    * @param _committee The vault's committee addres
-    * @param _maxBounty The vault's max bounty.
-    * @param _bountySplit The way to split the bounty between the hacker, committee and governance.
-        Each entry is a number between 0 and `HUNDRED_PERCENT`.
-        Total splits should be equal to `HUNDRED_PERCENT`.
-        Bounty must be specified for the hacker (direct or vested in vault's token).
-    * @param _descriptionHash the hash of the vault description.
-    * @param _bountyVestingParams vesting params for the bounty
+    * @notice Create a new vault
+    * @param _asset The vault's native token
+    * @param _committee The address of the vault's committee 
+    * @param _rewardController The reward controller for the vault
+    * @param _maxBounty The maximum percentage of the vault that can be paid
+    * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
+    * @param _bountySplit The way to split the bounty between the hacker, 
+    * committee and governance.
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be equal to `HUNDRED_PERCENT`.
+    *   Bounty larger than 0 must be specified for the hacker (direct or 
+    *   vested in vault's native token).
+    * @param _descriptionHash Hash of the vault description.
+    * @param _bountyVestingParams Vesting params for the bounty
     *        _bountyVestingParams[0] - vesting duration
     *        _bountyVestingParams[1] - vesting periods
+    * @param _isPaused Whether to initialize the vault with deposits disabled
+    * @return vault The address of the new vault
     */
-
     function createVault(
         IERC20 _asset,
         address _committee,
@@ -375,6 +430,19 @@ contract HATVaultsRegistry is Ownable {
         emit SetVaultDescription(_vault, _descriptionHash);
     }
 
+    /**
+    * @notice Transfer the part of the bounty that is supposed to be swapped
+    * into HAT tokens from the HATVault to the registry, and keep track of the
+    * amounts to be swapped and sent/burnt in a later transaction
+    * @param _asset The vault's native token
+    * @param _hacker The address of the beneficiary of the bounty
+    * @param _swapAndBurn The amount of the vault's native token to be swapped
+    * to HATntokens and burnt
+    * @param _hackersHatReward The amount of the vault's native token to be
+    * swapped to HAT tokens and sent to the hacker via a vesting contract
+    * @param _governanceHatReward The amount of the vault's native token to be
+    * swapped to HAT tokens and sent to governance
+    */
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
@@ -388,14 +456,16 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Swap the vault's token to HATs.
-    * Send to beneficiary and governance their HATs rewards.
-    * Only governance is authorized to call this function.
-    * @param _beneficiaries beneficiaries to swap for
-    * @param _amountOutMinimum minimum output of HAT tokens at swap
-    * @param _routingContract routing contract to call for the swap
-    * @param _routingPayload payload to send to the _routingContract for the swap
-    **/
+    * @notice Called by governance to swap vault's native tokens to HAT tokens
+    * and distribute the HAT tokens: Send to governance their share and send to
+    * beneficiaries their share through a vesting contract.
+    * @param _asset The vault's native token
+    * @param _beneficiaries Addresses of beneficiaries
+    * @param _amountOutMinimum Minimum amount of HAT tokens at swap
+    * @param _routingContract Routing contract to call for the swap
+    * @param _routingPayload Payload to send to the _routingContract for the
+    * swap
+    */
     function swapAndSend(
         address _asset,
         address[] calldata _beneficiaries,
@@ -444,6 +514,15 @@ contract HATVaultsRegistry is Ownable {
         _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
     }
 
+    /**
+    * @dev Use the given routing contract to swap the given token to HAT token
+    * @param _asset The token to swap
+    * @param _amount Amount of token to swap
+    * @param _amountOutMinimum Minimum amount of HAT tokens at swap
+    * @param _routingContract Routing contract to call for the swap
+    * @param _routingPayload Payload to send to the _routingContract for the 
+    * swap
+    */
     function swapTokenForHAT(
         IERC20 _asset,
         uint256 _amount,
@@ -474,10 +553,34 @@ contract HATVaultsRegistry is Ownable {
         IERC20(_asset).safeApprove(address(_routingContract), 0);
     }
 
+    /**
+    * @notice Returns the general parameters for all vaults
+    * @return generalParameters: 
+    *   hatVestingDuration - vesting duration for the part of the bounty given
+    *   to the hacker in HAT tokens
+    *   hatVestingPeriods - vesting periods for the part of the bounty given
+    *   to the hacker in HAT tokens
+    *   withdrawPeriod - withdraw enable period. safetyPeriod starts when
+    *   finished.
+    *   safetyPeriod - withdraw disable period - time for the committee to
+    *   gather and decide on actions, withdrawals are not possible in this
+    *   time. withdrawPeriod starts when finished.
+    *   withdrawRequestEnablePeriod - period of time after 
+    *   withdrawRequestPendingPeriod where it is possible to withdraw (after 
+    *   the withdraw request expires)
+    *   withdrawRequestPendingPeriod - period of time that has to pass after
+    *   withdraw request until withdrawal is possible
+    *   setMaxBountyDelay - period of time that has to pass after setting a
+    *   pending max bounty before it can be set as the new max bounty
+    *   claimFee - fee in ETH to be transferred with every logging of a claim
+    */    
     function getGeneralParameters() external view returns(GeneralParameters memory) {
         return generalParameters;
     }
 
+    /**
+    * @notice Returns the number of vaults that have been previously created 
+    */
     function getNumberOfVaults() external view returns(uint256) {
         return hatVaults.length;
     }

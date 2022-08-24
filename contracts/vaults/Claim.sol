@@ -7,11 +7,13 @@ contract Claim is Base {
     using SafeERC20 for IERC20;
 
     /**
-    * @notice Called by a committee to submit a claim for a bounty.
-    * The submitted claim needs to be approved or dismissed by the Hats governance.
-    * This function should be called only on a safety period, where withdrawals are disabled.
-    * Upon a call to this function by the committee the vault's withdrawals will be disabled
-    * until the Hats governance will approve or dismiss this claim.
+    * @notice Called by the committee to submit a claim for a bounty payout.
+    * This function should be called only on a safety period, when withdrawals
+    * are disabled.
+    * Upon a call to this function by the committee the vault's withdrawals
+    * will be disabled until the claim is approved or dismissed. Also from the
+    * time of this call the arbitrator will have a period of 
+    *`HATVaultsRegistry.challengePeriod` to challenge the claim.
     * @param _beneficiary The submitted claim's beneficiary
     * @param _bountyPercentage The submitted claim's bug requested reward percentage
     */
@@ -49,8 +51,11 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Called by a the arbitrator to challenge the active claim
-    * This will pause the vault for withdrawals until the claim is resolved
+    * @notice Called by the arbitrator to challenge a claim for a bounty
+    * payout that had been previously submitted by the committee.
+    * Can only be called during the challenge period after submission of the
+    * claim.
+    * @param _claimId The claim ID
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
@@ -62,11 +67,17 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Approve the active claim for a bounty submitted by a committee, and transfer bounty to hacker and committee.
-    * callable by the arbitrator, if claim is challenged, untiil the challenge timeout period has passed
-    * Callable by anyone after challengePeriod is passed and claim is not challenged
-    * @param _bountyPercentage The percentage of the vault's balance that will be send as a bounty.
-    * The value for _bountyPercentage will be ignored if the caller is not the arbitrator
+    * @notice Approve a claim for a bounty submitted by a committee, and
+    * pay out bounty to hacker and committee. Also transfer to the 
+    * HATVaultsRegistry the part of the bounty that will be swapped to HAT 
+    * tokens.
+    * If the claim had been previously challenged, this is only callable by
+    * the arbitrator. Otherwise, callable by anyone after challengePeriod had
+    * passed.
+    * @param _claimId The claim ID
+    * @param _bountyPercentage The percentage of the vault's balance that will
+    * be sent as a bounty. This value will be ignored if the caller is not the
+    * arbitrator.
     */
     function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
@@ -110,6 +121,8 @@ contract Claim is Base {
         asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
         asset.safeTransfer(claim.committee, claimBounty.committee);
 
+        // send to the registry the amount of tokens which should be swapped 
+        // to HAT so it could call swapAndSend in a separate tx.
         asset.safeApprove(address(registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
         registry.addTokensToSwap(
             asset,
@@ -117,6 +130,7 @@ contract Claim is Base {
             claimBounty.hackerHatVested,
             claimBounty.governanceHat
         );
+
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,
@@ -143,7 +157,13 @@ contract Claim is Base {
         emit DismissClaim(_claimId);
     }
 
-
+    /**
+    * @dev calculate the specific bounty payout distribution, according to the
+    * predefined bounty split and the current bounty percentage
+    * @param _bountyPercentage The percentage of the vault's funds to be paid
+    * out as bounty
+    * @return claimBounty The bounty distribution for this specific claim
+    */
     function calcClaimBounty(uint256 _bountyPercentage)
     public
     view

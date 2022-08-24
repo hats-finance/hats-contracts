@@ -69,10 +69,15 @@ error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
 // Challenged claim can only be approved by arbitrator before the challenge timeout period
 error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
 error ChallengePeriodEnded();
+// Only callable if challenged
 error OnlyCallableIfChallenged();
+// Cannot deposit to another user with withdraw request
 error CannotDepositToAnotherUserWithWithdrawRequest();
+// Withdraw amount must be greater than zero
 error WithdrawMustBeGreaterThanZero();
+// Withdraw amount cannot be more than maximum for user
 error WithdrawMoreThanMax();
+// Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
 
 contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
@@ -92,7 +97,8 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         uint256 hackerHatVested;
     }
 
-    // How to divide a bounty for a claim that has been approved, in amounts of the vault's token
+    // How to divide a bounty for a claim that has been approved, in amounts
+    // of the vault's native token
     struct ClaimBounty {
         uint256 hacker;
         uint256 hackerVested;
@@ -223,6 +229,15 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
+    /** 
+    * @dev Check that a given bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be equal to `HUNDRED_PERCENT`.
+    *   Bounty larger then 0 must be specified for the hacker (direct or 
+    *   vested in vault's native token).
+    * function will revert in case the bounty split is not legal.
+    * @param _bountySplit The bounty split to check
+    */
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
