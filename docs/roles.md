@@ -27,7 +27,6 @@ The `owner` of a hatvault created by the registry is the same registry owner.
 - can call `setVaultDescription` to change the vault's description hash
 - can call `setDepositPause` to pause and unpause deposits to the vault
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 - can call `setClaimFee` set fee for submitting a vulnerability
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
