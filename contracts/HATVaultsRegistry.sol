@@ -113,7 +113,7 @@ contract HATVaultsRegistry is Ownable {
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
     // the token into which a part of the the bounty will be swapped into
-    ERC20Burnable public immutable HAT;
+    IERC20 public immutable HAT;
 
     // asset => hacker address => amount
     mapping(address => mapping(address => uint256)) public hackersHatReward;
