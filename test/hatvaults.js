@@ -3697,49 +3697,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, accounts[1], payload, {
-        from: accounts[0],
-      });
-      assert(false, "can only use whitelisted routers");
-    } catch (ex) {
-      assertVMException(ex, "RoutingContractNotWhitelisted");
-    }
-
-    try {
-      await hatVaultsRegistry.setRouterWhitelistStatus(router.address, false, {
-        from: accounts[3],
-      });
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
-
-    tx = await hatVaultsRegistry.setRouterWhitelistStatus(router.address, false, {
-      from: accounts[0],
-    });
-
-    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
-    assert.equal(tx.logs[0].args._router, router.address);
-    assert.equal(tx.logs[0].args._status, false);
-
-    try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, router.address, payload, {
-        from: accounts[0],
-      });
-      assert(false, "can only use whitelisted routers");
-    } catch (ex) {
-      assertVMException(ex, "RoutingContractNotWhitelisted");
-    }
-
-    tx = await hatVaultsRegistry.setRouterWhitelistStatus(router.address, true, {
-      from: accounts[0],
-    });
-
-    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
-    assert.equal(tx.logs[0].args._router, router.address);
-    assert.equal(tx.logs[0].args._status, true);
-
     tx = await hatVaultsRegistry.swapBurnSend(
       stakingToken.address, 
       [accounts[1]],

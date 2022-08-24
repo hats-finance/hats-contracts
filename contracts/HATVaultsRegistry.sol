@@ -34,8 +34,6 @@ error DelayTooShort();
 error AmountToSwapIsZero();
 // Swap was not successful
 error SwapFailed();
-// Routing contract must be whitelisted
-error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
 // Challenge period too short
@@ -120,7 +118,6 @@ contract HATVaultsRegistry is Ownable {
     // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
     // typically be HATs
     ERC20Burnable public immutable HAT;
-    mapping(address => bool) public whitelistedRouters;
 
     // asset => amount
     mapping(address => uint256) public swapAndBurn;
@@ -142,7 +139,6 @@ contract HATVaultsRegistry is Ownable {
     event SetWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod);
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
     event SetMaxBountyDelay(uint256 _delay);
-    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event SetVaultVisibility(address indexed _vault, bool indexed _visible);
     event SetVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
@@ -172,8 +168,6 @@ contract HATVaultsRegistry is Ownable {
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _whitelistedRouters Initial list of whitelisted routers allowed
-    * to be used to swap tokens for HAT token.
     * @param _tokenLockFactory Address of the token lock factory to be used
     * to create a vesting contract for the approved claim reporter.
     */
@@ -181,16 +175,12 @@ contract HATVaultsRegistry is Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        address[] memory _whitelistedRouters,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = ERC20Burnable(_HAT);
 
-        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
-            whitelistedRouters[_whitelistedRouters[i]] = true;
-        }
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -345,17 +335,6 @@ contract HATVaultsRegistry is Ownable {
         if (_delay < 2 days) revert DelayTooShort();
         generalParameters.setMaxBountyDelay = _delay;
         emit SetMaxBountyDelay(_delay);
-    }
-
-    /**
-    * @notice Called by governance to add or remove address from the whitelist
-    * of routers that can be used for token swapping.
-    * @param _router The address of the swapping router
-    * @param _isWhitelisted Is this router approved to be used for swapping
-    */
-    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
-        whitelistedRouters[_router] = _isWhitelisted;
-        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
     }
 
     /**
@@ -555,8 +534,7 @@ contract HATVaultsRegistry is Ownable {
         if (_asset == address(_HAT)) {
             return _amount;
         }
-        if (!whitelistedRouters[_routingContract])
-            revert RoutingContractNotWhitelisted();
+
         IERC20(_asset).safeApprove(_routingContract, _amount);
         uint256 balanceBefore = _HAT.balanceOf(address(this));
 
