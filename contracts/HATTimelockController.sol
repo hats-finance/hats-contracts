@@ -50,7 +50,7 @@ contract HATTimelockController is TimelockController {
         _vault.setCommittee(_committee);
     }
 
-    function swapBurnSend(
+    function swapAndSend(
         HATVaultsRegistry _registry,
         address _asset,
         address[] calldata _beneficiaries,
@@ -60,7 +60,7 @@ contract HATTimelockController is TimelockController {
     )
     external
     onlyRole(PROPOSER_ROLE) {
-        _registry.swapBurnSend(
+        _registry.swapAndSend(
             _asset,
             _beneficiaries,
             _amountOutMinimum,

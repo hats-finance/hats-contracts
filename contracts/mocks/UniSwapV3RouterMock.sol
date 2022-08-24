@@ -19,6 +19,8 @@ contract UniSwapV3RouterMock {
     ReturnType public returnType;
     address public immutable WETH9;
 
+    bool public usePartialAmountFlag;
+
     constructor(
         ReturnType _returnType,
         address _weth9
@@ -28,10 +30,18 @@ contract UniSwapV3RouterMock {
         WETH9 = _weth9;
     }
 
+    function setUsePartialAmountFlag(bool _usePartialAmountFlag) external {
+        usePartialAmountFlag = _usePartialAmountFlag;
+    }
+
     function exactInput(
         ISwapRouter.ExactInputParams memory _params
     ) external returns (uint256 amount) {
         uint256 amountToSendBack;
+
+        if (usePartialAmountFlag) {
+            _params.amountIn = _params.amountIn * 80 / 100;
+        }
 
         if (returnType == ReturnType.ONE_TO_ONE) {
             amountToSendBack = _params.amountIn;
