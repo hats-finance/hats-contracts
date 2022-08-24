@@ -4608,7 +4608,6 @@ contract("HatVaults", (accounts) => {
 
   it("update vault before setting reward controller alloc points", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
-    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -4650,7 +4649,6 @@ contract("HatVaults", (accounts) => {
 
   it("add/set vault on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
-    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
