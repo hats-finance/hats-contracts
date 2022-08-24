@@ -152,7 +152,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
 
     mapping(address => uint256) public withdrawEnableStartTime;
     
-    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         bytes32 indexed _claimId,
         address indexed _committee,
