@@ -227,9 +227,9 @@ contract HATVaultsRegistry is Ownable {
     * @notice Called by governance to set the fee setter role
     * @param _feeSetter Address of new fee setter
     */
-    function setFeeSetter(address _newFeeSetter) external onlyOwner {
-        feeSetter = _newFeeSetter;
-        emit SetFeeSetter(_newFeeSetter);
+    function setFeeSetter(address _feeSetter) external onlyOwner {
+        feeSetter = _feeSetter;
+        emit SetFeeSetter(_feeSetter);
     }
 
     /**
