@@ -430,13 +430,13 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await vault.setPendingMaxBounty(9901, { from: accounts[1] });
-      assert(false, "max bounty can't be more than 9900");
+      await vault.setPendingMaxBounty(9001, { from: accounts[1] });
+      assert(false, "max bounty can't be more than 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
     try {
-      await vault.setPendingMaxBounty(9900, { from: accounts[2] });
+      await vault.setPendingMaxBounty(9000, { from: accounts[2] });
       assert(false, "only committee");
     } catch (ex) {
       assertVMException(ex, "OnlyCommittee");
@@ -448,22 +448,22 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "NoPendingMaxBounty");
     }
 
-    // bountylevel can be 9900 without throwing an error
-    await vault.setPendingMaxBounty(9900, {
+    // bountylevel can be 9000 without throwing an error
+    await vault.setPendingMaxBounty(9000, {
       from: accounts[1],
     });
 
     try {
-      await vault.setPendingMaxBounty(9901, { from: accounts[1] });
-      assert(false, "bounty level should be less than or equal to 9900");
+      await vault.setPendingMaxBounty(9001, { from: accounts[1] });
+      assert(false, "bounty level should be less than or equal to 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
-    let tx = await vault.setPendingMaxBounty(9900, {
+    let tx = await vault.setPendingMaxBounty(9000, {
       from: accounts[1],
     });
     assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
-    assert.equal(tx.logs[0].args._maxBounty, 9900);
+    assert.equal(tx.logs[0].args._maxBounty, 9000);
 
     await utils.increaseTime(1);
     try {
@@ -481,7 +481,7 @@ contract("HatVaults", (accounts) => {
     }
     tx = await vault.setMaxBounty({ from: accounts[1] });
     assert.equal(tx.logs[0].event, "SetMaxBounty");
-    assert.equal(tx.logs[0].args._maxBounty, 9900);
+    assert.equal(tx.logs[0].args._maxBounty, 9000);
 
     await advanceToNonSafetyPeriod();
 
@@ -494,7 +494,7 @@ contract("HatVaults", (accounts) => {
     await vault.setBountySplit([6000, 0, 1000, 2200, 0, 800]);
     assert.equal(
       (await vault.maxBounty()).toString(),
-      "9900"
+      "9000"
     );
     assert.equal(
       (await vault.bountySplit()).hacker.toString(),
@@ -520,7 +520,7 @@ contract("HatVaults", (accounts) => {
     await advanceToSafetyPeriod();
     tx = await vault.submitClaim(
       accounts[2],
-      9900,
+      9000,
       "description hash",
       {
         from: accounts[1],

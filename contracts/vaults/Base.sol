@@ -127,7 +127,7 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
-    uint256 public constant MAX_BOUNTY_LIMIT = 9900; // Max bounty can be uup to 99%
+    uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
