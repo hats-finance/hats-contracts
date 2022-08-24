@@ -6,8 +6,16 @@ import "./Base.sol";
 contract Deposits is Base {
     using SafeERC20 for IERC20;
 
-    // @note: Vaults should not use tokens which does not guarantee
-    // that the amount specified is the amount transferred
+    /**
+    * @dev Deposit funds to the vault. Can only be called if the committee had
+    * checked in and deposits are not paused.
+    * NOTE: Vaults should not use tokens which do not guarantee that the 
+    * amount specified is the amount transferred
+    * @param caller Caller of the action (msg.sender)
+    * @param receiver Reciever of the shares from the deposit
+    * @param assets Amount of vault's native token to deposit
+    * @param shares Respective amount of shares to be received
+    */
     function _deposit(
         address caller,
         address receiver,
