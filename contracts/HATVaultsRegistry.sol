@@ -5,7 +5,6 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IRewardController.sol";
@@ -69,7 +68,6 @@ error ChallengeTimeOutPeriodTooLong();
 */
 contract HATVaultsRegistry is Ownable {
     using SafeERC20 for IERC20;
-    using SafeERC20 for ERC20Burnable;
 
     struct GeneralParameters {
         // vesting duration for the part of the bounty given to the hacker in HAT tokens
@@ -96,9 +94,8 @@ contract HATVaultsRegistry is Ownable {
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
-        uint256 swapAndBurn;
+        uint256 amountUnused;
         uint256 hatsReceived;
-        uint256 burntHats;
         uint256 totalHackerReward;
     }
 
@@ -117,13 +114,10 @@ contract HATVaultsRegistry is Ownable {
     address public feeSetter;
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address public arbitrator;
-    // the token into which a part of the the bounty will be swapped-into-and-burnt - this will
-    // typically be HATs
-    ERC20Burnable public immutable HAT;
+    // the token into which a part of the the bounty will be swapped into
+    IERC20 public immutable HAT;
     mapping(address => bool) public whitelistedRouters;
 
-    // asset => amount
-    mapping(address => uint256) public swapAndBurn;
     // asset => hacker address => amount
     mapping(address => mapping(address => uint256)) public hackersHatReward;
     // asset => amount
@@ -156,10 +150,6 @@ contract HATVaultsRegistry is Ownable {
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods
     );
-    event SwapAndBurn(
-        uint256 _amountSwapped,
-        uint256 _amountBurned
-    );
     event SwapAndSend(
         address indexed _beneficiary,
         uint256 _amountSwapped,
@@ -186,7 +176,7 @@ contract HATVaultsRegistry is Ownable {
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
-        HAT = ERC20Burnable(_HAT);
+        HAT = IERC20(_HAT);
 
         for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
             whitelistedRouters[_whitelistedRouters[i]] = true;
@@ -446,8 +436,6 @@ contract HATVaultsRegistry is Ownable {
     * amounts to be swapped and sent/burnt in a later transaction
     * @param _asset The vault's native token
     * @param _hacker The address of the beneficiary of the bounty
-    * @param _swapAndBurn The amount of the vault's native token to be swapped
-    * to HATntokens and burnt
     * @param _hackersHatReward The amount of the vault's native token to be
     * swapped to HAT tokens and sent to the hacker via a vesting contract
     * @param _governanceHatReward The amount of the vault's native token to be
@@ -456,12 +444,10 @@ contract HATVaultsRegistry is Ownable {
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
-        uint256 _swapAndBurn,
         uint256 _hackersHatReward,
         uint256 _governanceHatReward
     ) external {
-        uint256 amount = _swapAndBurn + _hackersHatReward + _governanceHatReward;
-        swapAndBurn[address(_asset)] += _swapAndBurn;
+        uint256 amount = _hackersHatReward + _governanceHatReward;
         hackersHatReward[address(_asset)][_hacker] += _hackersHatReward;
         governanceHatReward[address(_asset)] += _governanceHatReward;
         _asset.safeTransferFrom(msg.sender, address(this), amount);
@@ -469,8 +455,8 @@ contract HATVaultsRegistry is Ownable {
 
     /**
     * @notice Called by governance to swap vault's native tokens to HAT tokens
-    * and distribute the HAT tokens: Send to governance their share, send to
-    * beneficiaries their share through a vesting contract and burn the rest.
+    * and distribute the HAT tokens: Send to governance their share and send to
+    * beneficiaries their share through a vesting contract.
     * @param _asset The vault's native token
     * @param _beneficiaries Addresses of beneficiaries
     * @param _amountOutMinimum Minimum amount of HAT tokens at swap
@@ -478,7 +464,7 @@ contract HATVaultsRegistry is Ownable {
     * @param _routingPayload Payload to send to the _routingContract for the
     * swap
     */
-    function swapBurnSend(
+    function swapAndSend(
         address _asset,
         address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
@@ -487,27 +473,20 @@ contract HATVaultsRegistry is Ownable {
     ) external onlyOwner {
         // Needed to avoid a stack too deep error
         SwapData memory swapData;
-        swapData.swapAndBurn = swapAndBurn[_asset];
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             swapData.totalHackersHatReward += hackersHatReward[_asset][_beneficiaries[i]];
         }
-        swapData.amount = swapAndBurn[_asset] + swapData.totalHackersHatReward + governanceHatReward[_asset];
+        swapData.amount = swapData.totalHackersHatReward + governanceHatReward[_asset];
         if (swapData.amount == 0) revert AmountToSwapIsZero();
-        ERC20Burnable _HAT = HAT;
-        swapData.hatsReceived = swapTokenForHAT(_asset, swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
-        swapData.burntHats = swapData.hatsReceived * swapAndBurn[_asset] / swapData.amount;
-        if (swapData.burntHats > 0) {
-            _HAT.burn(swapData.burntHats);
-        }
-        emit SwapAndBurn(swapData.amount, swapData.burntHats);
+        IERC20 _HAT = HAT;
+        (swapData.hatsReceived, swapData.amountUnused) = swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
 
-        swapAndBurn[_asset] = 0;
-        governanceHatReward[_asset] = 0;
+        governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = 0;
+            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
@@ -530,7 +509,7 @@ contract HATVaultsRegistry is Ownable {
             }
             emit SwapAndSend(_beneficiaries[i], swapData.amount, hackerReward, tokenLock);
         }
-        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward - swapData.burntHats);
+        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
     }
 
     /**
@@ -543,27 +522,29 @@ contract HATVaultsRegistry is Ownable {
     * swap
     */
     function swapTokenForHAT(
-        address _asset,
+        IERC20 _asset,
         uint256 _amount,
         uint256 _amountOutMinimum,
         address _routingContract,
         bytes calldata _routingPayload)
     internal
-    returns (uint256 hatsReceived)
+    returns (uint256 hatsReceived, uint256 amountUnused)
     {
-        ERC20Burnable _HAT = HAT;
-        if (_asset == address(_HAT)) {
-            return _amount;
+        IERC20 _HAT = HAT;
+        if (_asset == _HAT) {
+            return (_amount, 0);
         }
         if (!whitelistedRouters[_routingContract])
             revert RoutingContractNotWhitelisted();
         IERC20(_asset).safeApprove(_routingContract, _amount);
         uint256 balanceBefore = _HAT.balanceOf(address(this));
+        uint256 assetBalanceBefore = _asset.balanceOf(address(this));
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = _routingContract.call(_routingPayload);
         if (!success) revert SwapFailed();
         hatsReceived = _HAT.balanceOf(address(this)) - balanceBefore;
+        amountUnused = _amount - (assetBalanceBefore - _asset.balanceOf(address(this)));
         if (hatsReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
             

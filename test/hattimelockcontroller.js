@@ -35,7 +35,7 @@ const setup = async function(
   challengePeriod=60 * 60 * 24,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [6000, 2000, 500, 0, 1000, 500],
+  bountySplit = [6000, 2000, 500, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -254,7 +254,7 @@ contract("HatTimelockController", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
   });
 
-  it("swapBurnSend", async () => {
+  it("swapAndSend", async () => {
     await setup(accounts);
     var staker = accounts[4];
     var staker2 = accounts[3];
@@ -302,21 +302,18 @@ contract("HatTimelockController", (accounts) => {
       ["address", "uint24", "address"],
       [stakingToken.address, 0, hatToken.address]
     );
-    let amountToSwapAndBurn = await hatVaultsRegistry.swapAndBurn(stakingToken.address);
     let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
       stakingToken.address,
       accounts[1]
     );
-    let amount = amountToSwapAndBurn
-      .add(amountForHackersHatRewards)
-      .add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
     let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
     let payload = ISwapRouter.encodeFunctionData("exactInput", [
       [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
     ]);
 
     try {
-      await hatTimelockController.swapBurnSend(
+      await hatTimelockController.swapAndSend(
         hatVaultsRegistry.address,
         stakingToken.address,
         [accounts[1]],
@@ -333,13 +330,13 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.swapBurnSend(stakingToken.address, [accounts[1]], 0, router.address, payload);
+      await hatVaultsRegistry.swapAndSend(stakingToken.address, [accounts[1]], 0, router.address, payload);
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex);
     }
 
-    tx = await hatTimelockController.swapBurnSend(
+    tx = await hatTimelockController.swapAndSend(
       hatVaultsRegistry.address,
       stakingToken.address,
       [accounts[1]],
@@ -348,42 +345,8 @@ contract("HatTimelockController", (accounts) => {
       payload,
       { from: accounts[0] }
     );
+
     let log = (
-      await hatVaultsRegistry.getPastEvents("SwapAndBurn", {
-        fromBlock: tx.blockNumber,
-        toBlock: "latest",
-      })
-    )[0];
-    assert.equal(log.event, "SwapAndBurn");
-    assert.equal(
-      log.args._amountSwapped.toString(),
-      new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
-        .mul(
-          new web3.utils.BN(
-            (await vault.bountySplit()).swapAndBurn
-          ).add(
-            new web3.utils.BN(
-              (await vault.bountySplit()).governanceHat
-            )
-          )
-        )
-        .div(new web3.utils.BN("10000"))
-        .div(new web3.utils.BN("10000"))
-        .toString()
-    );
-    assert.equal(
-      log.args._amountBurned.toString(),
-      new web3.utils.BN(web3.utils.toWei(bountyPercentage.toString()))
-        .mul(
-          new web3.utils.BN(
-            (await vault.bountySplit()).swapAndBurn
-          )
-        )
-        .div(new web3.utils.BN("10000"))
-        .div(new web3.utils.BN("10000"))
-        .toString()
-    );
-    log = (
       await hatVaultsRegistry.getPastEvents("SwapAndSend", {
         fromBlock: tx.blockNumber,
         toBlock: "latest",
@@ -436,7 +399,7 @@ contract("HatTimelockController", (accounts) => {
 
     //creat another vault with a different committee
     let maxBounty = 8000;
-    let bountySplit = [6000, 2000, 500, 0, 1000, 500];
+    let bountySplit = [6000, 2000, 500, 1000, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
