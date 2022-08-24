@@ -65,7 +65,7 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [6000, 2000, 500, 0, 1000, 500],
+  bountySplit = [6000, 2000, 500, 1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
