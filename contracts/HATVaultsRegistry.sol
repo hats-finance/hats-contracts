@@ -436,8 +436,6 @@ contract HATVaultsRegistry is Ownable {
     * amounts to be swapped and sent/burnt in a later transaction
     * @param _asset The vault's native token
     * @param _hacker The address of the beneficiary of the bounty
-    * @param _swapAndBurn The amount of the vault's native token to be swapped
-    * to HATntokens and burnt
     * @param _hackersHatReward The amount of the vault's native token to be
     * swapped to HAT tokens and sent to the hacker via a vesting contract
     * @param _governanceHatReward The amount of the vault's native token to be
