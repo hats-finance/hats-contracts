@@ -81,7 +81,7 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by the vault's committee to set a pending request for the
+    * @notice Called by the vault's owner to set a pending request for the
     * maximum percentage of the vault that can be paid out as a bounty.
     * Cannot be called if there is an active claim that has been submitted.
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`.
@@ -92,7 +92,7 @@ contract Params is Base {
     */
     function setPendingMaxBounty(uint256 _maxBounty)
     external
-    onlyCommittee noActiveClaim {
+    onlyOwner noActiveClaim {
         if (_maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
@@ -102,14 +102,14 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by the vault's committee to set the vault's max bounty to
+    * @notice Called by the vault's owner to set the vault's max bounty to
     * the already pending max bounty.
     * Cannot be called if there are active claims that have been submitted.
     * Can only be called if there is a max bounty pending approval, and the
     * time delay since setting the pending max bounty had passed.
     * Max bounty should be less than or equal to `MAX_BOUNTY_LIMIT`
     */
-    function setMaxBounty() external onlyCommittee noActiveClaim {
+    function setMaxBounty() external onlyOwner noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -145,7 +145,7 @@ contract Params is Base {
     * @notice setArbitrator - called by vault owner to set arbitrator
     * @param _arbitrator New arbitrator.
     */
-    function setArbitrator(address _arbitrator) external onlyOwner {
+    function setArbitrator(address _arbitrator) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
         arbitrator = _arbitrator;
         emit SetArbitrator(_arbitrator);
     }
@@ -156,7 +156,7 @@ contract Params is Base {
     * @param _challengePeriod Time period after claim submittion during
     * which the claim can be challenged
     */
-    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
+    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
         if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
         if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
@@ -169,7 +169,7 @@ contract Params is Base {
     * @param _challengeTimeOutPeriod Time period after claim has been
     * challenged where the only possible action is dismissal
     */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
         if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
         if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
