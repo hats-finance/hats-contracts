@@ -471,7 +471,7 @@ contract HATVaultsRegistry is Ownable {
                 // hacker gets her reward via vesting contract
                 tokenLock = tokenLockFactory.createTokenLock(
                     address(_HAT),
-                    0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                    0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                     _beneficiaries[i],
                     hackerReward,
                     // solhint-disable-next-line not-rely-on-time
