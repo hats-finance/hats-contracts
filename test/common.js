@@ -65,7 +65,8 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [6000, 2000, 500, 1000, 500],
+  bountySplit = [7500, 2000, 500],
+  hatBountySplit = [1500, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -90,6 +91,7 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
+    hatBountySplit,
     tokenLockFactory.address,
     true
   );
@@ -123,7 +125,7 @@ const setup = async function(
     [86400, 10],
     false
   )).logs[1].args._vault);
-  await advanceToNonSafetyPeriod();
+  await advanceToNonSafetyPeriod(hatVaultsRegistry);
   await vault.setChallengePeriod(challengePeriod);
 
   await rewardController.setAllocPoint(

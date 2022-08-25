@@ -58,7 +58,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty
     * @param _bountySplit The way to split the bounty between the hacker, 
-    * committee and governance.
+    * hacekr vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     * @param _asset The vault's native token
@@ -81,11 +81,12 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
         rewardController = _rewardController;
         _setVestingParams(_vestingDuration, _vestingPeriods);
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         maxBounty = _maxBounty;
         bountySplit = _bountySplit;
+        (hatBountySplit.governanceHat, hatBountySplit.hackerHatVested) = _registry.hatBountySplit();
         committee = _committee;
         depositPause = _isPaused;
-        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         registry = _registry;
         __ReentrancyGuard_init();
         _transferOwnership(_registry.owner());
@@ -106,7 +107,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         uint256 assets,
         address receiver
     ) public override(ERC4626Upgradeable) returns (uint256){
-        super.deposit(assets, receiver);
+       return super.deposit(assets, receiver);
     }
 
 

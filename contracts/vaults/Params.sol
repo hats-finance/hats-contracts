@@ -47,8 +47,8 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by governance to set the vault token bounty split upon an
-    * approval.
+    * @notice Called by the vault's owner to set the vault token bounty split
+    * upon an approval.
     * Can only be called if is no active claim and not during safety periods.
     * @param _bountySplit The bounty split
     */
@@ -58,6 +58,20 @@ contract Params is Base {
         validateSplit(_bountySplit);
         bountySplit = _bountySplit;
         emit SetBountySplit(_bountySplit);
+    }
+
+    /**
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval.
+    * Can only be called if is no active claim and not during safety periods.
+    * @param _hatBountySplit The HAT bounty split
+    */
+    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit)
+    external
+    onlyRegistryOwner noActiveClaim noSafetyPeriod {
+        registry.validateHATSplit(_hatBountySplit);
+        hatBountySplit = _hatBountySplit;
+        emit SetHATBountySplit(_hatBountySplit);
     }
 
     /**

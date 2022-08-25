@@ -93,6 +93,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     using SafeERC20 for IERC20;
 
     // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
+    // The precentages are out of what is left after deducting the HATVaultsRegistry.HATBountySplit
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
         uint256 hackerVested;
@@ -100,10 +101,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 hacker;
         // the percentage of the total bounty to be sent to the committee
         uint256 committee;
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-        uint256 hackerHatVested;
     }
 
     // How to divide a bounty for a claim that has been approved, in amounts
@@ -145,6 +142,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     IRewardController public rewardController;
 
     BountySplit public bountySplit;
+    HATVaultsRegistry.HATBountySplit public hatBountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
@@ -193,6 +191,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
+    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
     event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
@@ -254,17 +253,13 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @dev Check that a given bounty split is legal, meaning that:
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    *   Bounty larger then 0 must be specified for the hacker (direct or 
-    *   vested in vault's native token).
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
-            _bountySplit.committee +
-            _bountySplit.governanceHat +
-            _bountySplit.hackerHatVested != HUNDRED_PERCENT)
+            _bountySplit.committee != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
     }
 }

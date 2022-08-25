@@ -173,20 +173,26 @@ contract Claim is Base {
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
+
+        uint256 governanceHat =
+        totalBountyAmount * hatBountySplit.governanceHat
+        / HUNDRED_PERCENT_SQRD;
+        uint256 hackerHatVested =
+        totalBountyAmount * hatBountySplit.hackerHatVested
+        / HUNDRED_PERCENT_SQRD;
+
+        totalBountyAmount -= (governanceHat + hackerHatVested) * HUNDRED_PERCENT;
+
+        claimBounty.governanceHat = governanceHat;
+        claimBounty.hackerHatVested = hackerHatVested;
         claimBounty.hackerVested =
         totalBountyAmount * bountySplit.hackerVested
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
         claimBounty.hacker =
         totalBountyAmount * bountySplit.hacker
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
         claimBounty.committee =
         totalBountyAmount * bountySplit.committee
-        / (HUNDRED_PERCENT_SQRD);
-        claimBounty.governanceHat =
-        totalBountyAmount * bountySplit.governanceHat
-        / (HUNDRED_PERCENT_SQRD);
-        claimBounty.hackerHatVested =
-        totalBountyAmount * bountySplit.hackerHatVested
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
     }
 }
