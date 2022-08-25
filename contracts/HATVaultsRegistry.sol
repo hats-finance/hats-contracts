@@ -233,7 +233,7 @@ contract HATVaultsRegistry is Ownable {
     onlyOwner {
         if (90 days < _withdrawRequestPendingPeriod)
             revert WithdrawRequestPendingPeriodTooLong();
-        if (6 hours > _withdrawRequestEnablePeriod)
+        if (_withdrawRequestEnablePeriod < 6 hours )
             revert WithdrawRequestEnabledPeriodTooShort();
         if (100 days < _withdrawRequestEnablePeriod)
             revert WithdrawRequestEnabledPeriodTooLong();
@@ -259,8 +259,8 @@ contract HATVaultsRegistry is Ownable {
     * which the claim can be challenged
     */
     function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
     }
@@ -272,8 +272,8 @@ contract HATVaultsRegistry is Ownable {
     * challenged where the only possible action is dismissal
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
+        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
@@ -291,7 +291,7 @@ contract HATVaultsRegistry is Ownable {
     * can be submitted and withdrawals are disabled. Must be at most 6 hours.
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner {
-        if (1 hours > _withdrawPeriod) revert WithdrawPeriodTooShort();
+        if (_withdrawPeriod < 1 hours) revert WithdrawPeriodTooShort();
         if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
         generalParameters.safetyPeriod = _safetyPeriod;
