@@ -99,6 +99,7 @@ contract HATVaultsRegistry is Ownable {
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
+    mapping(address => bool) public isVaultVisible;
 
     // PARAMETERS FOR ALL VAULTS
     // time during which a claim can be challenged by the arbitrator
@@ -396,6 +397,7 @@ contract HATVaultsRegistry is Ownable {
     * This parameter can be used by the UI to include or exclude the vault
     */
     function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
+        isVaultVisible[_vault] = _visible;
         emit SetVaultVisibility(_vault, _visible);
     }
 

@@ -3454,6 +3454,7 @@ contract("HatVaults", (accounts) => {
 
   it("Update vault description", async () => {
     await setup(accounts);
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);
 
     try {
       await hatVaultsRegistry.setVaultVisibility(vault.address, true, { from: accounts[1] });
@@ -3465,6 +3466,7 @@ contract("HatVaults", (accounts) => {
     let tx = await hatVaultsRegistry.setVaultVisibility(vault.address, true);
     assert.equal(tx.logs[0].event, "SetVaultVisibility");
     assert.equal(tx.logs[0].args._visible, true);
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), true);
 
     try {
       await hatVaultsRegistry.setVaultDescription(vault.address, "_descriptionHash", { from: accounts[1] });
