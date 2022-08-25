@@ -80,6 +80,9 @@ contract Claim is Base {
     * arbitrator.
     */
     function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
+        uint256 totalSupply = totalAssets();
+        if (totalSupply == 0) revert VaultBalanceIsZero();
+        
         Claim memory claim = activeClaim;
         delete activeClaim;
 
@@ -168,8 +171,6 @@ contract Claim is Base {
     public
     view
     returns(ClaimBounty memory claimBounty) {
-        uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
