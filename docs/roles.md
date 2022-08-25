@@ -14,7 +14,6 @@ The contracts in this repository define a number of different roles that have th
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setMaxBountyDelay` to set the timelock delay for setting the max bounty
-- can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
 - can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
 ## `HATVaultsRegistry.arbitrator`
@@ -43,7 +42,6 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setBountySplit` set how the bounty is split betwen security researcher, committee and governance
-- can call `setRouterWhitelistStatus` add or remove address from the whitelist of routers that can be used for token swapping
 - can call `setVestingParams` set vesting parameters for bounty paid
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels

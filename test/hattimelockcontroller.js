@@ -58,7 +58,6 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    [router.address],
     tokenLockFactory.address,
     true
   );

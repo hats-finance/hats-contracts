@@ -56,7 +56,6 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    [router.address],
     tokenLockFactory.address,
     true
   );
@@ -3532,49 +3531,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    try {
-      await hatVaultsRegistry.swapAndSend(stakingToken.address, [accounts[1]], 0, accounts[1], payload, {
-        from: accounts[0],
-      });
-      assert(false, "can only use whitelisted routers");
-    } catch (ex) {
-      assertVMException(ex, "RoutingContractNotWhitelisted");
-    }
-
-    try {
-      await hatVaultsRegistry.setRouterWhitelistStatus(router.address, false, {
-        from: accounts[3],
-      });
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
-
-    tx = await hatVaultsRegistry.setRouterWhitelistStatus(router.address, false, {
-      from: accounts[0],
-    });
-
-    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
-    assert.equal(tx.logs[0].args._router, router.address);
-    assert.equal(tx.logs[0].args._status, false);
-
-    try {
-      await hatVaultsRegistry.swapAndSend(stakingToken.address, [accounts[1]], 0, router.address, payload, {
-        from: accounts[0],
-      });
-      assert(false, "can only use whitelisted routers");
-    } catch (ex) {
-      assertVMException(ex, "RoutingContractNotWhitelisted");
-    }
-
-    tx = await hatVaultsRegistry.setRouterWhitelistStatus(router.address, true, {
-      from: accounts[0],
-    });
-
-    assert.equal(tx.logs[0].event, "RouterWhitelistStatusChanged");
-    assert.equal(tx.logs[0].args._router, router.address);
-    assert.equal(tx.logs[0].args._status, true);
-
     tx = await hatVaultsRegistry.swapAndSend(
       stakingToken.address, 
       [accounts[1]],
@@ -4638,7 +4594,6 @@ contract("HatVaults", (accounts) => {
 
   it("update vault before setting reward controller alloc points", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
-    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -4649,7 +4604,6 @@ contract("HatVaults", (accounts) => {
       10,
       vaultsManager.address,
       hatToken1.address,
-      [router1.address],
       tokenLockFactory1.address,
       true
     );
@@ -4681,7 +4635,6 @@ contract("HatVaults", (accounts) => {
 
   it("add/set vault on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
-    let router1 = await UniSwapV3RouterMock.new(0, utils.NULL_ADDRESS);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -4692,7 +4645,6 @@ contract("HatVaults", (accounts) => {
       10,
       vaultsManager.address,
       hatToken1.address,
-      [router1.address],
       tokenLockFactory1.address,
       true
     );
