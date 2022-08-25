@@ -50,8 +50,8 @@ error VaultBalanceIsZero();
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
 error InvalidWithdrawRequest();
-// Max bounty cannot be more than `HUNDRED_PERCENT`
-error MaxBountyCannotBeMoreThanHundredPercent();
+// Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
+error MaxBountyCannotBeMoreThanMaxBountyLimit();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -124,6 +124,7 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
