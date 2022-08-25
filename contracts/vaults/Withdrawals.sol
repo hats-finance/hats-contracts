@@ -39,15 +39,10 @@ contract Withdrawals is Base {
         uint256 shares,
         uint256 fee
     ) internal nonReentrant {
-        // TODO: If a user gives allowance to another user, that other user can spam to some extent the allowing user's withdraw request
-        // Should consider disallowing withdraw from another user.
-        checkWithdrawAndResetWithdrawEnableStartTime(owner);
         if (assets == 0) revert WithdrawMustBeGreaterThanZero();
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
-
-        rewardController.updateVaultBalance(owner, shares, false);
 
         _burn(owner, shares);
 

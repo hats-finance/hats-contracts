@@ -130,21 +130,21 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         address to,
         uint256 amount
     ) internal virtual override {
-        if (from == address(0) || to == address(0)) {
-            return;
+        if (to != address(0)) {
+            // Users can only deposit for themselves if an active withdraw request exists
+            if (withdrawEnableStartTime[to] != 0) {
+                HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+                // solhint-disable-next-line not-rely-on-time
+                if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
+                    revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
+            }
+            rewardController.updateVaultBalance(to, amount, true);
         }
-        // Users can only deposit for themselves if an active withdraw request exists
-        if (withdrawEnableStartTime[to] != 0) {
-            HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-            // solhint-disable-next-line not-rely-on-time
-            if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
-                revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
+        
+        if (from != address(0)) {
+            checkWithdrawAndResetWithdrawEnableStartTime(from);
+            rewardController.updateVaultBalance(from, amount, false);
         }
-
-        checkWithdrawAndResetWithdrawEnableStartTime(from);
-
-        rewardController.updateVaultBalance(to, amount, true);
-        rewardController.updateVaultBalance(from, amount, false);
     }
 
     /** 
