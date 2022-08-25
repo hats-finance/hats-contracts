@@ -150,6 +150,9 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
 
     bool public depositPause;
 
+    // Time of when withdrawal period starts for every user that has an
+    // active withdraw request. (time when last withdraw request pending 
+    // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
     
     event SubmitClaim(

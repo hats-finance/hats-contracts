@@ -80,9 +80,6 @@ contract Claim is Base {
     * arbitrator.
     */
     function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
-        uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) revert VaultBalanceIsZero();
-        
         Claim memory claim = activeClaim;
         delete activeClaim;
 
@@ -146,8 +143,11 @@ contract Claim is Base {
     }
 
     /**
-    * @notice Dismiss the active claim for a bounty submitted by a committee.
-    * Called either by the arbitrator, or by anyone if the claim is after the challenge timeout period.
+    * @notice Dismiss the active claim for bounty payout submitted by the
+    * committee. Can only be called if the claim has been challanged.
+    * Called either by the arbitrator, or by anyone if the claim is after the
+    * challenge timeout period.
+    * @param _claimId The claim ID
     */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
@@ -162,7 +162,7 @@ contract Claim is Base {
 
     /**
     * @dev calculate the specific bounty payout distribution, according to the
-    * predefined bounty split and the current bounty percentage
+    * predefined bounty split and the given bounty percentage
     * @param _bountyPercentage The percentage of the vault's funds to be paid
     * out as bounty
     * @return claimBounty The bounty distribution for this specific claim
@@ -171,6 +171,8 @@ contract Claim is Base {
     public
     view
     returns(ClaimBounty memory claimBounty) {
+        int256 totalSupply = totalAssets();
+        if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
