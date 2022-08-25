@@ -25,7 +25,7 @@ contract Deposits is Base {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
         if (shares == 0) revert AmountToDepositIsZero();
-        // Users can only deposit for themselves if withdraw request exists
+        // Users can only deposit for themselves if an active withdraw request exists
         if (withdrawEnableStartTime[receiver] != 0 && receiver != caller) {
             HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
             // solhint-disable-next-line not-rely-on-time

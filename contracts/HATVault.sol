@@ -133,7 +133,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         if (from == address(0) || to == address(0)) {
             return;
         }
-        // Users can only deposit for themselves if withdraw request exists
+        // Users can only deposit for themselves if an active withdraw request exists
         if (withdrawEnableStartTime[to] != 0) {
             HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
             // solhint-disable-next-line not-rely-on-time
