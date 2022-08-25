@@ -93,6 +93,7 @@ const setup = async function(
   // setting challengeClaim period to 0 will make running tests a bit easier
   vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
+    await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
     maxBounty,
@@ -283,6 +284,7 @@ contract("HatVaults", (accounts) => {
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[3],
       rewardController.address,
       maxBounty,
@@ -659,6 +661,7 @@ contract("HatVaults", (accounts) => {
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -715,6 +718,7 @@ contract("HatVaults", (accounts) => {
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -3347,6 +3351,7 @@ contract("HatVaults", (accounts) => {
     var staker = accounts[4];
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       hatToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -3461,6 +3466,7 @@ contract("HatVaults", (accounts) => {
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -4027,6 +4033,7 @@ contract("HatVaults", (accounts) => {
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -4614,6 +4621,7 @@ contract("HatVaults", (accounts) => {
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[0],
       rewardController.address,
       8000,
@@ -4667,6 +4675,7 @@ contract("HatVaults", (accounts) => {
     try {
       await hatVaultsRegistry.createVault(
         stakingToken2.address,
+        await hatVaultsRegistry.owner(),
         accounts[1],
         rewardController.address,
         8000,
@@ -4683,6 +4692,7 @@ contract("HatVaults", (accounts) => {
     try {
       await hatVaultsRegistry.createVault(
         stakingToken2.address,
+        await hatVaultsRegistry.owner(),
         accounts[1],
         rewardController.address,
         8000,
@@ -4699,6 +4709,7 @@ contract("HatVaults", (accounts) => {
     try {
       await hatVaultsRegistry.createVault(
         stakingToken2.address,
+        await hatVaultsRegistry.owner(),
         accounts[1],
         rewardController.address,
         8000,
@@ -4713,6 +4724,7 @@ contract("HatVaults", (accounts) => {
     }
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -4776,6 +4788,7 @@ contract("HatVaults", (accounts) => {
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     const vault1 = await HATVault.at((await hatVaultsRegistry1.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController1.address,
       8000,
@@ -4929,6 +4942,7 @@ contract("HatVaults", (accounts) => {
     //10
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,
@@ -5015,6 +5029,7 @@ contract("HatVaults", (accounts) => {
     var staker2 = accounts[5];
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       hatToken.address,
+      await hatVaultsRegistry.owner(),
       accounts[1],
       rewardController.address,
       8000,

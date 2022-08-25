@@ -47,49 +47,56 @@ import "./vaults/Withdrawals.sol";
 * @dev HATVault implements the ERC4626 standard
 */
 contract HATVault is Claim, Deposits, Params, Withdrawals {
-
     /**
-    * @notice Initialize a vault instance
-    * @param _rewardController The reward controller for the vault
-    * @param _vestingDuration Duration of the vesting period of the vault's
+    * @param rewardController The reward controller for the vault
+    * @param vestingDuration Duration of the vesting period of the vault's
     * token vested part of the bounty
-    * @param _vestingPeriods The number of vesting periods of the vault's token
+    * @param vestingPeriods The number of vesting periods of the vault's token
     * vested part of the bounty
-    * @param _maxBounty The maximum percentage of the vault that can be paid
+    * @param maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty
-    * @param _bountySplit The way to split the bounty between the hacker, 
+    * @param bountySplit The way to split the bounty between the hacker, 
     * hacekr vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param _asset The vault's native token
-    * @param _committee The address of the vault's committee 
-    * @param _isPaused Whether to initialize the vault with deposits disabled
+    * @param asset The vault's native token
+    * @param owner The address of the vault's owner 
+    * @param committee The address of the vault's committee 
+    * @param isPaused Whether to initialize the vault with deposits disabled
     */
-    function initialize(
-        IRewardController _rewardController,
-        uint256 _vestingDuration,
-        uint256 _vestingPeriods,
-        uint256 _maxBounty,
-        BountySplit memory _bountySplit,
-        IERC20 _asset,
-        address _committee,
-        bool _isPaused
-    ) external initializer {
-        if (_maxBounty > MAX_BOUNTY_LIMIT)
+    // Needed to avoid a stack too deep error
+    struct VaultInitParams {
+        IRewardController rewardController;
+        uint256 vestingDuration;
+        uint256 vestingPeriods;
+        uint256 maxBounty;
+        BountySplit bountySplit;
+        IERC20 asset;
+        address owner;
+        address committee;
+        bool isPaused;
+    }
+
+    /**
+    * @notice Initialize a vault instance
+    * @param _params The vault initialize parameters
+    */
+    function initialize(VaultInitParams memory _params) external initializer {
+        if (_params.maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
-        validateSplit(_bountySplit);
-        __ERC4626_init(IERC20MetadataUpgradeable(address(_asset)));
-        rewardController = _rewardController;
-        _setVestingParams(_vestingDuration, _vestingPeriods);
+        validateSplit(_params.bountySplit);
+        __ERC4626_init(IERC20MetadataUpgradeable(address(_params.asset)));
+        rewardController = _params.rewardController;
+        _setVestingParams(_params.vestingDuration, _params.vestingPeriods);
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
-        maxBounty = _maxBounty;
-        bountySplit = _bountySplit;
+        maxBounty = _params.maxBounty;
+        bountySplit = _params.bountySplit;
         (hatBountySplit.governanceHat, hatBountySplit.hackerHatVested) = _registry.hatBountySplit();
-        committee = _committee;
-        depositPause = _isPaused;
+        committee = _params.committee;
+        depositPause = _params.isPaused;
         registry = _registry;
         __ReentrancyGuard_init();
-        _transferOwnership(_registry.owner());
+        _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
         arbitrator = _registry.owner();
         challengePeriod = 3 days;

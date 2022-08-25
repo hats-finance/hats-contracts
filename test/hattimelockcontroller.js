@@ -87,6 +87,7 @@ const setup = async function(
   );
   vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
+    await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
     maxBounty,
@@ -411,6 +412,7 @@ contract("HatTimelockController", (accounts) => {
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[3],
       rewardController.address,
       maxBounty,

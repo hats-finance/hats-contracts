@@ -338,6 +338,7 @@ contract HATVaultsRegistry is Ownable {
     */
     function createVault(
         IERC20 _asset,
+        address _owner,
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
@@ -352,14 +353,17 @@ contract HATVaultsRegistry is Ownable {
         vault = Clones.clone(hatVaultImplementation);
 
         HATVault(vault).initialize(
-            _rewardController,
-            _bountyVestingParams[0],
-            _bountyVestingParams[1],
-            _maxBounty,
-            _bountySplit,
-            _asset,
-            _committee,
-            _isPaused
+            HATVault.VaultInitParams({
+                rewardController: _rewardController,
+                vestingDuration: _bountyVestingParams[0],
+                vestingPeriods: _bountyVestingParams[1],
+                maxBounty: _maxBounty,
+                bountySplit: _bountySplit,
+                asset: _asset,
+                owner: _owner,
+                committee: _committee,
+                isPaused: _isPaused
+            })
         );
 
         hatVaults.push(vault);

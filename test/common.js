@@ -117,6 +117,7 @@ const setup = async function(
   // setting challengeClaim period to 0 will make running tests a bit easier
   let vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
+    await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
     maxBounty,
