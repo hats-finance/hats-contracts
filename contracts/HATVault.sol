@@ -91,7 +91,6 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         maxBounty = _params.maxBounty;
         bountySplit = _params.bountySplit;
-        (hatBountySplit.governanceHat, hatBountySplit.hackerHatVested) = _registry.hatBountySplit();
         committee = _params.committee;
         depositPause = _params.isPaused;
         registry = _registry;

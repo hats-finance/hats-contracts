@@ -172,27 +172,19 @@ contract Claim is Base {
         if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
+
+        HATVaultsRegistry.HATBountySplit memory hatBountySplit = registry.getHATBountySplit(address(this));
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
-        uint256 governanceHat =
-        totalBountyAmount * hatBountySplit.governanceHat
-        / HUNDRED_PERCENT_SQRD;
-        uint256 hackerHatVested =
-        totalBountyAmount * hatBountySplit.hackerHatVested
-        / HUNDRED_PERCENT_SQRD;
+        uint256 governanceHatAmount = totalBountyAmount * hatBountySplit.governanceHat / HUNDRED_PERCENT_SQRD;
+        uint256 hackerHatVesteAmount = totalBountyAmount * hatBountySplit.hackerHatVested / HUNDRED_PERCENT_SQRD;
 
-        totalBountyAmount -= (governanceHat + hackerHatVested) * HUNDRED_PERCENT;
+        totalBountyAmount -= (governanceHatAmount + hackerHatVesteAmount) * HUNDRED_PERCENT;
 
-        claimBounty.governanceHat = governanceHat;
-        claimBounty.hackerHatVested = hackerHatVested;
-        claimBounty.hackerVested =
-        totalBountyAmount * bountySplit.hackerVested
-        / HUNDRED_PERCENT_SQRD;
-        claimBounty.hacker =
-        totalBountyAmount * bountySplit.hacker
-        / HUNDRED_PERCENT_SQRD;
-        claimBounty.committee =
-        totalBountyAmount * bountySplit.committee
-        / HUNDRED_PERCENT_SQRD;
+        claimBounty.governanceHat = governanceHatAmount;
+        claimBounty.hackerHatVested = hackerHatVesteAmount;
+        claimBounty.hackerVested = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
+        claimBounty.hacker = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
+        claimBounty.committee = totalBountyAmount * bountySplit.committee / HUNDRED_PERCENT_SQRD;
     }
 }

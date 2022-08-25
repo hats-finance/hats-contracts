@@ -142,7 +142,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     IRewardController public rewardController;
 
     BountySplit public bountySplit;
-    HATVaultsRegistry.HATBountySplit public hatBountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
@@ -191,7 +190,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
-    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
     event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);

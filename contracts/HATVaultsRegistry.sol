@@ -92,6 +92,13 @@ contract HATVaultsRegistry is Ownable {
         uint256 hackerHatVested;
     }
 
+    struct HATBountySplitConfig {
+        // the HATBountySplit of the vault
+        HATBountySplit hatBountySplit;
+        // use the value saved or the default vaule of the registry
+        bool useVaultSpecific;
+    }
+
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
@@ -120,7 +127,8 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
-    HATBountySplit public hatBountySplit;
+    HATBountySplit public defaultHATBountySplit;
+    mapping(address => HATBountySplitConfig) internal hatBountySplitConfig;
 
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
@@ -150,14 +158,16 @@ contract HATVaultsRegistry is Ownable {
         uint256 _amountReceived,
         address indexed _tokenLock
     );
-    event SetDefaultHATBountySplit(HATBountySplit _hatBountySplit);
+    event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
+    event SetHATBountySplit(address _vault, HATVaultsRegistry.HATBountySplit _hatBountySplit, bool _useVaultSpecific);
 
     /**
     * @notice initialize -
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _hatBountySplit The way to split the hat bounty betweeen the hacker and the governance
+    * @param _defaultHATBountySplit The default way to split the hat bounty betweeen
+    * the hacker and the governance
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be less than `HUNDRED_PERCENT`.
     * @param _tokenLockFactory Address of the token lock factory to be used
@@ -167,15 +177,15 @@ contract HATVaultsRegistry is Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        HATBountySplit memory _hatBountySplit,
+        HATBountySplit memory _defaultHATBountySplit,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = IERC20(_HAT);
 
-        validateHATSplit(_hatBountySplit);
-        hatBountySplit = _hatBountySplit;
+        validateHATSplit(_defaultHATBountySplit);
+        defaultHATBountySplit = _defaultHATBountySplit;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -196,7 +206,7 @@ contract HATVaultsRegistry is Ownable {
     * function will revert in case the bounty split is not legal.
     * @param _hatBountySplit The bounty split to check
     */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+    function validateHATSplit(HATBountySplit memory _hatBountySplit) internal pure {
         if (_hatBountySplit.governanceHat +
             _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
@@ -221,12 +231,50 @@ contract HATVaultsRegistry is Ownable {
     /**
     * @notice Called by governance to set the default HAT token bounty split upon
     * an approval. This default vaule is used when creating a new vault.
-    * @param _hatBountySplit The HAT bounty split
+    * @param _defaultHATBountySplit The HAT bounty split
     */
-    function setDefaultHATBountySplit(HATBountySplit memory _hatBountySplit) external onlyOwner {
-        validateHATSplit(_hatBountySplit);
-        hatBountySplit = _hatBountySplit;
-        emit SetDefaultHATBountySplit(_hatBountySplit);
+    function setDefaultHATBountySplit(HATBountySplit memory _defaultHATBountySplit) external onlyOwner {
+        validateHATSplit(_defaultHATBountySplit);
+        defaultHATBountySplit = _defaultHATBountySplit;
+        emit SetDefaultHATBountySplit(_defaultHATBountySplit);
+    }
+
+    /**
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval. Either sets it to the value passed, marking the useVaultSpecific flags to
+    * as true, or make the vault always use the default value.
+    * @param _vault The vault to set the HAT bounty split for
+    * @param _hatBountySplit The HAT bounty split
+    * @param _useVaultSpecific Whether to use the registry default value or the value passed
+    */
+    function setHATBountySplit(
+        address _vault,
+        HATVaultsRegistry.HATBountySplit memory _hatBountySplit,
+        bool _useVaultSpecific
+    ) external onlyOwner {
+        if (_useVaultSpecific) {
+            validateHATSplit(_hatBountySplit);
+            hatBountySplitConfig[_vault].hatBountySplit = _hatBountySplit;
+        } else {
+            delete hatBountySplitConfig[_vault].hatBountySplit;
+            _hatBountySplit = defaultHATBountySplit;
+        }
+
+        hatBountySplitConfig[_vault].useVaultSpecific = _useVaultSpecific;
+        emit SetHATBountySplit(_vault, _hatBountySplit, _useVaultSpecific);
+    }
+
+    /** 
+    * @notice Returns the 
+    * Can only be called if is no active claim and not during safety periods.
+    * @param _vault The vault to get the HAT bounty split of
+    */
+    function getHATBountySplit(address _vault) external view returns(HATBountySplit memory) {
+        if (hatBountySplitConfig[_vault].useVaultSpecific) {
+            return hatBountySplitConfig[_vault].hatBountySplit;
+        } else {
+            return defaultHATBountySplit;
+        }
     }
    
     /**
