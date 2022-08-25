@@ -171,7 +171,7 @@ contract Claim is Base {
     public
     view
     returns(ClaimBounty memory claimBounty) {
-        int256 totalSupply = totalAssets();
+        uint256 totalSupply = totalAssets();
         if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
