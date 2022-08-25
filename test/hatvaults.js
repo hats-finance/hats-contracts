@@ -3085,7 +3085,7 @@ contract("HatVaults", (accounts) => {
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       await vestingTokenLock.owner(),
-      "0x000000000000000000000000000000000000dEaD"
+      "0x0000000000000000000000000000000000000000"
     );
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
@@ -3399,7 +3399,7 @@ contract("HatVaults", (accounts) => {
     let vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       await vestingTokenLock.owner(),
-      "0x000000000000000000000000000000000000dEaD"
+      "0x0000000000000000000000000000000000000000"
     );
     assert.equal(
       await vestingTokenLock.beneficiary(),
@@ -3422,7 +3422,7 @@ contract("HatVaults", (accounts) => {
     vestingTokenLock = await HATTokenLock.at(tx.logs[3].args._tokenLock);
     assert.equal(
       await vestingTokenLock.owner(),
-      "0x000000000000000000000000000000000000dEaD"
+      "0x0000000000000000000000000000000000000000"
     );
     assert.equal(
       await vestingTokenLock.beneficiary(),
