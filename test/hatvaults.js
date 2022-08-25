@@ -14,6 +14,7 @@ const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const {
   assertVMException,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
+  advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
   rewardPerEpoch,
 } = require("./common.js");
 
@@ -26,6 +27,15 @@ var stakingToken;
 var tokenLockFactory;
 let safeWithdrawBlocksIncrement = 3;
 let rewardControllerExpectedHatsBalance;
+
+
+async function advanceToSafetyPeriod() {
+  return advanceToSafetyPeriod_(hatVaultsRegistry);
+}
+
+async function advanceToNonSafetyPeriod() {
+  return advanceToNonSafetyPeriod_(hatVaultsRegistry);
+}
 
 const setup = async function(
   accounts,
@@ -89,6 +99,7 @@ const setup = async function(
     [86400, 10],
     false
   )).logs[1].args._vault);
+  await advanceToNonSafetyPeriod();
   await vault.setChallengePeriod(challengePeriod);
   await rewardController.setAllocPoint(
     vault.address,
@@ -157,28 +168,6 @@ contract("HatVaults", (accounts) => {
       );
     }
     return await vault.withdraw(amount, staker, withdrawFrom, { from: staker });
-  }
-
-  async function advanceToSafetyPeriod() {
-    return advanceToSafetyPeriod_(hatVaultsRegistry);
-  }
-
-  //advanced time to a withdraw enable period
-  async function advanceToNonSafetyPeriod() {
-    let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-    let withdrawPeriod = (
-      await hatVaultsRegistry.generalParameters()
-    ).withdrawPeriod.toNumber();
-    let safetyPeriod = (
-      await hatVaultsRegistry.generalParameters()
-    ).safetyPeriod.toNumber();
-    if (currentTimeStamp % (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
-      await utils.increaseTime(
-        (currentTimeStamp % (withdrawPeriod + safetyPeriod)) +
-          safetyPeriod -
-          withdrawPeriod
-      );
-    }
   }
 
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0, currentVault=vault) {
@@ -425,56 +414,51 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await vault.setPendingMaxBounty(9001, { from: accounts[1] });
+      await vault.setPendingMaxBounty(9001);
       assert(false, "max bounty can't be more than 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
     try {
-      await vault.setPendingMaxBounty(9000, { from: accounts[2] });
-      assert(false, "only committee");
+      await vault.setPendingMaxBounty(9000, { from: accounts[1] });
+      assert(false, "only owner");
     } catch (ex) {
-      assertVMException(ex, "OnlyCommittee");
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
     try {
-      await vault.setMaxBounty({ from: accounts[1] });
+      await vault.setMaxBounty();
       assert(false, "no pending");
     } catch (ex) {
       assertVMException(ex, "NoPendingMaxBounty");
     }
 
-    // bountylevel can be 9000 without throwing an error
-    await vault.setPendingMaxBounty(9000, {
-      from: accounts[1],
-    });
-
     try {
-      await vault.setPendingMaxBounty(9001, { from: accounts[1] });
+      await vault.setPendingMaxBounty(9001);
       assert(false, "bounty level should be less than or equal to 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
-    let tx = await vault.setPendingMaxBounty(9000, {
-      from: accounts[1],
-    });
+
+    // bountylevel can be 9000 without throwing an error
+    let tx = await vault.setPendingMaxBounty(9000);
     assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 9000);
 
     await utils.increaseTime(1);
     try {
-      await vault.setMaxBounty({ from: accounts[1] });
+      await vault.setMaxBounty();
       assert(false, "no delay yet");
     } catch (ex) {
       assertVMException(ex, "DelayPeriodForSettingMaxBountyHadNotPassed");
     }
     await utils.increaseTime(3600 * 24 * 2);
     try {
-      await vault.setMaxBounty({ from: accounts[0] });
-      assert(false, "onlyCommittee");
+      await vault.setMaxBounty({ from: accounts[1] });
+      assert(false, "only owner");
     } catch (ex) {
-      assertVMException(ex, "OnlyCommittee");
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
-    tx = await vault.setMaxBounty({ from: accounts[1] });
+    tx = await vault.setMaxBounty();
     assert.equal(tx.logs[0].event, "SetMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 9000);
 
@@ -522,7 +506,7 @@ contract("HatVaults", (accounts) => {
 
     await vault.challengeClaim(claimId);
     try {
-      await vault.setPendingMaxBounty(8000, { from: accounts[1] });
+      await vault.setPendingMaxBounty(8000);
       assert(false, "there is already pending approval");
     } catch (ex) {
       assertVMException(ex, "ActiveClaimExists");
@@ -547,10 +531,10 @@ contract("HatVaults", (accounts) => {
 
     await vault.setBountySplit([6000, 1000, 1000, 1200, 800]);
 
-    await vault.setPendingMaxBounty(8000, { from: accounts[1] });
+    await vault.setPendingMaxBounty(8000);
 
     await utils.increaseTime(24 * 3600 * 2);
-    await vault.setMaxBounty({ from: accounts[1] });
+    await vault.setMaxBounty();
     assert.equal((await vault.maxBounty()).toString(), "8000");
   });
 
@@ -4968,4 +4952,5 @@ module.exports = {
   setup,
   rewardPerEpoch,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
+  advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
 };

@@ -123,6 +123,7 @@ const setup = async function(
     [86400, 10],
     false
   )).logs[1].args._vault);
+  await advanceToNonSafetyPeriod();
   await vault.setChallengePeriod(challengePeriod);
 
   await rewardController.setAllocPoint(
@@ -155,6 +156,24 @@ async function advanceToSafetyPeriod(hatVaultsRegistry) {
   }
 }
 
+//advanced time to a withdraw enable period
+async function advanceToNonSafetyPeriod(hatVaultsRegistry) {
+  let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+  let withdrawPeriod = (
+    await hatVaultsRegistry.generalParameters()
+  ).withdrawPeriod.toNumber();
+  let safetyPeriod = (
+    await hatVaultsRegistry.generalParameters()
+  ).safetyPeriod.toNumber();
+  if (currentTimeStamp % (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
+    await utils.increaseTime(
+      (currentTimeStamp % (withdrawPeriod + safetyPeriod)) +
+        safetyPeriod -
+        withdrawPeriod
+    );
+  }
+}
+
 async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
   const tx = await vault.submitClaim(
     accounts[2],
@@ -181,6 +200,7 @@ module.exports = {
   rewardPerEpoch,
   assertVMException,
   advanceToSafetyPeriod,
+  advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
 };

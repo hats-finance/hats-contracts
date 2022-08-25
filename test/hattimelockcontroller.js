@@ -24,6 +24,7 @@ const {
   assertVMException,
   rewardPerEpoch,
   advanceToSafetyPeriod,
+  advanceToNonSafetyPeriod,
 } = require("./hatvaults.js");
 const {
   submitClaim,
@@ -92,6 +93,7 @@ const setup = async function(
     [86400, 10],
     false
   )).receipt.rawLogs[0].address);
+  await advanceToNonSafetyPeriod();
   await vault.setArbitrator(hatTimelockController.address);
   await vault.setChallengePeriod(challengePeriod);
 
