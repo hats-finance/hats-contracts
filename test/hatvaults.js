@@ -858,9 +858,40 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "ERC4626: mint more than max");
     }
     await vault.setDepositPause(false);
+
+    tx = await hatVaultsRegistry.setEmergencyPaused(true);
+    assert.equal(tx.logs[0].event, "SetEmergencyPaused");
+    assert.equal(tx.logs[0].args._isEmergencyPaused, true);
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      assert(false, "cannot deposit during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    await hatVaultsRegistry.setEmergencyPaused(false);
+
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
+
+    await hatVaultsRegistry.setEmergencyPaused(true);
+    try {
+      await vault.submitClaim(
+        accounts[2],
+        8000,
+        "description hash",
+        {
+          from: accounts[1],
+        }
+      );
+      assert(false, "cannot submit claims during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    tx = await hatVaultsRegistry.setEmergencyPaused(false);
+    assert.equal(tx.logs[0].event, "SetEmergencyPaused");
+    assert.equal(tx.logs[0].args._isEmergencyPaused, false);
 
     tx = await vault.submitClaim(
       accounts[2],
@@ -870,6 +901,9 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    // can challenge and dismiss claims and withdraw during emergency pause
+    await hatVaultsRegistry.setEmergencyPaused(true);
 
     let claimId = tx.logs[0].args._claimId;
     await vault.challengeClaim(claimId);
@@ -3007,6 +3041,15 @@ contract("HatVaults", (accounts) => {
 
     await vault.challengeClaim(claimId);
     await vault.dismissClaim(claimId);
+
+    await hatVaultsRegistry.setEmergencyPaused(true);
+    try {
+      await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
+      assert(false, "cannot transfer during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    await hatVaultsRegistry.setEmergencyPaused(false);
 
     tx = await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
     assert.equal(tx.logs[0].event, "Transfer");

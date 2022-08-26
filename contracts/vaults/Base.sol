@@ -88,6 +88,8 @@ error ChallengePeriodTooLong();
 error ChallengeTimeOutPeriodTooShort();
 // Challenge timeout period too long
 error ChallengeTimeOutPeriodTooLong();
+// System is in emergency pause
+error SystemInEmergencyPause();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
@@ -225,6 +227,11 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     modifier onlyArbitrator() {
         if (arbitrator != msg.sender) revert OnlyArbitrator();
+        _;
+    }
+
+    modifier notEmergencyPaused() {
+        if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
         _;
     }
 
