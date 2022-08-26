@@ -528,24 +528,7 @@ contract HATVaultsRegistry is Ownable {
 
     /**
     * @notice Returns the general parameters for all vaults
-    * @return generalParameters: 
-    *   hatVestingDuration - vesting duration for the part of the bounty given
-    *   to the hacker in HAT tokens
-    *   hatVestingPeriods - vesting periods for the part of the bounty given
-    *   to the hacker in HAT tokens
-    *   withdrawPeriod - withdraw enable period. safetyPeriod starts when
-    *   finished.
-    *   safetyPeriod - withdraw disable period - time for the committee to
-    *   gather and decide on actions, withdrawals are not possible in this
-    *   time. withdrawPeriod starts when finished.
-    *   withdrawRequestEnablePeriod - period of time after 
-    *   withdrawRequestPendingPeriod where it is possible to withdraw (after 
-    *   the withdraw request expires)
-    *   withdrawRequestPendingPeriod - period of time that has to pass after
-    *   withdraw request until withdrawal is possible
-    *   setMaxBountyDelay - period of time that has to pass after setting a
-    *   pending max bounty before it can be set as the new max bounty
-    *   claimFee - fee in ETH to be transferred with every logging of a claim
+    * @return generalParameters: See { HATVaultsRegistry-generalParameters }
     */    
     function getGeneralParameters() external view returns(GeneralParameters memory) {
         return generalParameters;

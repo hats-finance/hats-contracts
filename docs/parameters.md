@@ -31,8 +31,7 @@
 
 | parameter  | default | limits  | applies to | | 
 |-|-|-|-|-|
-|withdrawalFee| 0| < 2% |`vault.setWithdrawalFee`
-
+|`withdrawalFee`| 0| < 2% |`vault.setWithdrawalFee`
 
 ## Settings owned by Vault owner
 
