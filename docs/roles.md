@@ -88,7 +88,7 @@ And the following settings:
 ## `HATTimelockController.EXECUTOR_ROLE`
 
 - set to "anyone"
-- can call `execute` and `executeBatch` to execute a scheduled operation
+- can call `execute` and `executeBatch` to execute a scheduled operation
 
 ## `HATTimelockController.CANCELLER_ROLE`
 
@@ -96,7 +96,7 @@ And the following settings:
 - can call `cancel` and cancel any pending operation
 
 
-## The following functions in HATVaults are **not** subject to a timelock:
+## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
   - `setVaultVisibility`
   - `setVaultDescription`
