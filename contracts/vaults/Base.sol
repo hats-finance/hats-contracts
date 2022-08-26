@@ -80,15 +80,6 @@ error WithdrawMustBeGreaterThanZero();
 error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
-// Challenge period too short
-error ChallengePeriodTooShort();
-// Challenge period too long
-error ChallengePeriodTooLong();
-// Challenge timeout period too short
-error ChallengeTimeOutPeriodTooShort();
-// Challenge timeout period too long
-error ChallengeTimeOutPeriodTooLong();
-// System is in emergency pause
 error SystemInEmergencyPause();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
@@ -131,6 +122,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 timestamp;
     }
 
+    uint256 public constant NULL_UINT = type(uint256).max;
+    address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
@@ -144,7 +137,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     IRewardController public rewardController;
 
     BountySplit public bountySplit;
-    HATVaultsRegistry.HATBountySplit public hatBountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
@@ -160,14 +152,18 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     bool public depositPause;
 
-    // address of the arbitrator - which can dispute claims and override the committee's decisions
-    address public arbitrator;
-    // time during which a claim can be challenged by the arbitrator
-    uint256 public challengePeriod;
-    // time after which a challenged claim is automatically dismissed
-    uint256 public challengeTimeOutPeriod;
-
     mapping(address => uint256) public withdrawEnableStartTime;
+
+    // the HATBountySplit of the vault
+    HATVaultsRegistry.HATBountySplit internal hatBountySplit;
+
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
+    address internal arbitrator;
+    // time during which a claim can be challenged by the arbitrator
+    uint256 internal challengePeriod;
+    // time after which a challenged claim is automatically dismissed
+    uint256 internal challengeTimeOutPeriod;
+
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
@@ -193,7 +189,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
-    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
     event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
@@ -201,9 +196,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
+    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrator(address indexed _arbitrator);
 
     event WithdrawRequest(
         address indexed _beneficiary,
@@ -226,7 +222,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     modifier onlyArbitrator() {
-        if (arbitrator != msg.sender) revert OnlyArbitrator();
+        if (getArbitrator() != msg.sender) revert OnlyArbitrator();
         _;
     }
 
@@ -254,6 +250,54 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
         if (activeClaim.claimId != _claimId) revert WrongClaimId();
         _;
+    }
+
+    /** 
+    * @notice Returns the vault HAT bounty split
+    */
+    function getHATBountySplit() public view returns(HATVaultsRegistry.HATBountySplit memory) {
+        if (hatBountySplit.governanceHat != NULL_UINT) {
+            return hatBountySplit;
+        } else {
+            (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
+            return HATVaultsRegistry.HATBountySplit({
+                governanceHat: governanceHat,
+                hackerHatVested: hackerHatVested
+            });
+        }
+    }
+
+    /** 
+    * @notice Returns the vault arbitrator
+    */
+    function getArbitrator() public view returns(address) {
+        if (arbitrator != NULL_ADDRESS) {
+            return arbitrator;
+        } else {
+            return registry.defaultArbitrator();
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge period
+    */
+    function getChallengePeriod() public view returns(uint256) {
+        if (challengePeriod != NULL_UINT) {
+            return challengePeriod;
+        } else {
+            return registry.defaultChallengePeriod();
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge timeout period
+    */
+    function getChallengeTimeOutPeriod() public view returns(uint256) {
+        if (challengeTimeOutPeriod != NULL_UINT) {
+            return challengeTimeOutPeriod;
+        } else {
+            return registry.defaultChallengeTimeOutPeriod();
+        }
     }
 
     /** 

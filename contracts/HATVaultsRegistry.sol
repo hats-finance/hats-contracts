@@ -37,6 +37,14 @@ error SwapFailed();
 error AmountSwappedLessThanMinimum();
 // Hats bounty split should be less than `HUNDRED_PERCENT`
 error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
@@ -121,7 +129,11 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
-    HATBountySplit public hatBountySplit;
+    HATBountySplit public defaultHATBountySplit;
+
+    address public defaultArbitrator;
+    uint256 public defaultChallengePeriod;
+    uint256 public defaultChallengeTimeOutPeriod;
 
     bool public isEmergencyPaused;
 
@@ -153,15 +165,20 @@ contract HATVaultsRegistry is Ownable {
         uint256 _amountReceived,
         address indexed _tokenLock
     );
-    event SetDefaultHATBountySplit(HATBountySplit _hatBountySplit);
+    event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
+    event SetDefaultArbitrator(address indexed _arbitrator);
+    event SetDefaultChallengePeriod(uint256 _challengePeriod);
+    event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
     event SetEmergencyPaused(bool _isEmergencyPaused);
+
 
     /**
     * @notice initialize -
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _hatBountySplit The way to split the hat bounty betweeen the hacker and the governance
+    * @param _defaultHATBountySplit The default way to split the hat bounty betweeen
+    * the hacker and the governance
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be less than `HUNDRED_PERCENT`.
     * @param _tokenLockFactory Address of the token lock factory to be used
@@ -171,15 +188,15 @@ contract HATVaultsRegistry is Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        HATBountySplit memory _hatBountySplit,
+        HATBountySplit memory _defaultHATBountySplit,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = IERC20(_HAT);
 
-        validateHATSplit(_hatBountySplit);
-        hatBountySplit = _hatBountySplit;
+        validateHATSplit(_defaultHATBountySplit);
+        defaultHATBountySplit = _defaultHATBountySplit;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -191,19 +208,10 @@ contract HATVaultsRegistry is Ownable {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-    }
 
-    /** 
-    * @dev Check that a given hats bounty split is legal, meaning that:
-    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
-    * function will revert in case the bounty split is not legal.
-    * @param _hatBountySplit The bounty split to check
-    */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
-        if (_hatBountySplit.governanceHat +
-            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
-            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+        defaultArbitrator = _hatGovernance;
+        defaultChallengePeriod = 3 days;
+        defaultChallengeTimeOutPeriod = 5 weeks;
     }
 
     /**
@@ -234,12 +242,64 @@ contract HATVaultsRegistry is Ownable {
     /**
     * @notice Called by governance to set the default HAT token bounty split upon
     * an approval. This default vaule is used when creating a new vault.
-    * @param _hatBountySplit The HAT bounty split
+    * @param _defaultHATBountySplit The HAT bounty split
     */
-    function setDefaultHATBountySplit(HATBountySplit memory _hatBountySplit) external onlyOwner {
-        validateHATSplit(_hatBountySplit);
-        hatBountySplit = _hatBountySplit;
-        emit SetDefaultHATBountySplit(_hatBountySplit);
+    function setDefaultHATBountySplit(HATBountySplit memory _defaultHATBountySplit) external onlyOwner {
+        validateHATSplit(_defaultHATBountySplit);
+        defaultHATBountySplit = _defaultHATBountySplit;
+        emit SetDefaultHATBountySplit(_defaultHATBountySplit);
+    }
+
+    /** 
+    * @dev Check that a given hats bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
+    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * function will revert in case the bounty split is not legal.
+    * @param _hatBountySplit The bounty split to check
+    */
+    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+        if (_hatBountySplit.governanceHat +
+            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
+            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    }
+
+    /**
+    * @notice Called by governance to set the default arbitrator.
+    * @param _defaultArbitrator The default arbitrator address
+    */
+    function setDefaultArbitrator(address _defaultArbitrator) external onlyOwner {
+        defaultArbitrator = _defaultArbitrator;
+        emit SetDefaultArbitrator(_defaultArbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the default challenge period
+    * @param _defaultChallengePeriod The default challenge period
+    */
+    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
+        validateChallengePeriod(_defaultChallengePeriod);
+        defaultChallengePeriod = _defaultChallengePeriod;
+        emit SetDefaultChallengePeriod(_defaultChallengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set the default challenge timeout
+    * @param _defaultChallengeTimeOutPeriod The Default challenge timeout
+    */
+    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
+        validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+        defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
+        emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+    }
+
+    function validateChallengePeriod(uint256 _challengePeriod) public pure {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+    }
+
+    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
     }
    
     /**
