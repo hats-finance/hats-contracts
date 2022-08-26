@@ -16,6 +16,8 @@ const {
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
   rewardPerEpoch,
 } = require("./common.js");
+const { assert } = require("chai");
+const { web3 } = require("hardhat");
 
 var hatVaultsRegistry;
 var vault;
@@ -968,7 +970,7 @@ contract("HatVaults", (accounts) => {
     var tx = await hatVaultsRegistry.setWithdrawRequestParams(1, 60 * 24 * 3600, {
       from: accounts[0],
     });
-    assert.equal(
+    ssert.equal(
       (await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod,
       1
     );
@@ -981,7 +983,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("deposit cancel withdrawn request ", async () => {
+  it("deposit should cancel withdraw request ", async () => {
     await setup(accounts);
     var staker = accounts[1];
 
@@ -998,12 +1000,22 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
+
+    // no withdraw request exists
+    assert.equal(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
     await vault.withdrawRequest({ from: staker });
+    // there is a withdraw request:
+    assert.notEqual(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
+
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    // dpeosit cancels the withdraw request:
+    assert.equal(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
+    
+    // check that we indeed cannot redeem
     await utils.increaseTime(7 * 24 * 3600);
     try {
       await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
-      assert(false, "deposit cancel withdrawRequest");
+      assert(false, "deposit should cancel withdrawRequest");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
     }

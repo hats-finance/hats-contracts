@@ -131,7 +131,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         uint256 amount
     ) internal virtual override {
         if (to != address(0)) {
-            // Users can only deposit for themselves if an active withdraw request exists
+            // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             if (withdrawEnableStartTime[to] != 0) {
                 HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
                 // solhint-disable-next-line not-rely-on-time
@@ -140,7 +140,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
             }
             rewardController.updateVaultBalance(to, amount, true);
         }
-        
+
         if (from != address(0)) {
             checkWithdrawAndResetWithdrawEnableStartTime(from);
             rewardController.updateVaultBalance(from, amount, false);
