@@ -490,14 +490,14 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.setHATBountySplit(vault.address, [5000, 5001], true);
+      await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[5000, 5001], true]);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
 
     try {
-      await hatVaultsRegistry.setHATBountySplit(vault.address, [5000, 5000], true);
+      await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[5000, 5000], true]);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
@@ -511,14 +511,14 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.setHATBountySplit(vault.address, [0, 800], true, { from: accounts[1] });
+      await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[0, 800], true], { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
     await vault.setBountySplit([6000, 2200, 1800]);
-    await hatVaultsRegistry.setHATBountySplit(vault.address, [0, 800], true);
+    await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[0, 800], true]);
     assert.equal(
       (await vault.maxBounty()).toString(),
       "9000"
@@ -585,7 +585,7 @@ contract("HatVaults", (accounts) => {
     await advanceToNonSafetyPeriod();
 
     await vault.setBountySplit([6000, 3000, 1000]);
-    await hatVaultsRegistry.setHATBountySplit(vault.address, [1, 800], true);
+    await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[1, 800], true]);
 
     await vault.setPendingMaxBounty(8000);
 
@@ -636,7 +636,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await hatVaultsRegistry.setHATBountySplit(vault.address, [1500, 500], true);
+    await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[1500, 500], true]);
 
     await hatVaultsRegistry.setDefaultHATBountySplit([200, 800]);
 
@@ -680,7 +680,7 @@ contract("HatVaults", (accounts) => {
       "500"
     );
 
-    await hatVaultsRegistry.setHATBountySplit(vault.address, [1500, 500], false);
+    await hatVaultsRegistry.setHATBountySplitConfig(vault.address, [[1500, 500], false]);
 
     assert.equal(
       (await hatVaultsRegistry.getHATBountySplit(vault.address)).governanceHat.toString(),
@@ -3497,7 +3497,7 @@ contract("HatVaults", (accounts) => {
       false
     )).logs[1].args._vault);
 
-    await hatVaultsRegistry.setHATBountySplit(newVault.address, [500, 400], true);
+    await hatVaultsRegistry.setHATBountySplitConfig(newVault.address, [[500, 400], true]);
 
     await rewardController.setAllocPoint(
       newVault.address,

@@ -152,7 +152,6 @@ contract HATVaultsRegistry is Ownable {
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
-
     mapping(address => ArbitrationConfig) internal arbitrationConfig;
 
     event LogClaim(address indexed _claimer, string _descriptionHash);
@@ -184,7 +183,7 @@ contract HATVaultsRegistry is Ownable {
         address indexed _tokenLock
     );
     event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
-    event SetHATBountySplit(address indexed _vault, HATVaultsRegistry.HATBountySplit _hatBountySplit, bool _useVaultSpecific);
+    event SetHATBountySplitConfig(address indexed _vault, HATBountySplitConfig _hatBountySplitConfig);
     event SetDefaultArbitrator(address indexed _arbitrator);
     event SetDefaultChallengePeriod(uint256 _challengePeriod);
     event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -277,24 +276,21 @@ contract HATVaultsRegistry is Ownable {
     * an approval. Either sets it to the value passed, marking the useVaultSpecific flags to
     * as true, or make the vault always use the default value.
     * @param _vault The vault to set the HAT bounty split for
-    * @param _hatBountySplit The HAT bounty split
-    * @param _useVaultSpecific Whether to use the registry default value or the value passed
+    * @param _hatBountySplitConfig The HAT bounty split config
     */
-    function setHATBountySplit(
-        address _vault,
-        HATVaultsRegistry.HATBountySplit memory _hatBountySplit,
-        bool _useVaultSpecific
-    ) external onlyOwner {
-        if (_useVaultSpecific) {
-            validateHATSplit(_hatBountySplit);
-            hatBountySplitConfig[_vault].hatBountySplit = _hatBountySplit;
+    function setHATBountySplitConfig(address _vault, HATBountySplitConfig memory _hatBountySplitConfig) external onlyOwner {
+        if (_hatBountySplitConfig.useVaultSpecific) {
+            validateHATSplit(_hatBountySplitConfig.hatBountySplit);
+            hatBountySplitConfig[_vault] = _hatBountySplitConfig;
         } else {
-            delete hatBountySplitConfig[_vault].hatBountySplit;
-            _hatBountySplit = defaultHATBountySplit;
+            delete hatBountySplitConfig[_vault];
+            _hatBountySplitConfig = HATBountySplitConfig({
+                hatBountySplit: defaultHATBountySplit,
+                useVaultSpecific: false
+            });
         }
 
-        hatBountySplitConfig[_vault].useVaultSpecific = _useVaultSpecific;
-        emit SetHATBountySplit(_vault, _hatBountySplit, _useVaultSpecific);
+        emit SetHATBountySplitConfig(_vault, _hatBountySplitConfig);
     }
 
     /** 
