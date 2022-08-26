@@ -24,6 +24,7 @@ const {
   assertVMException,
   rewardPerEpoch,
   advanceToSafetyPeriod,
+  advanceToNonSafetyPeriod,
 } = require("./hatvaults.js");
 const {
   submitClaim,
@@ -35,7 +36,8 @@ const setup = async function(
   challengePeriod=60 * 60 * 24,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [6000, 2000, 500, 1000, 500],
+  bountySplit = [7000, 2500, 500],
+  hatBountySplit = [1000, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -58,12 +60,11 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    [router.address],
+    hatBountySplit,
     tokenLockFactory.address,
     true
   );
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
-  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
   rewardController = await RewardController.at(
     deployment.rewardController.address
   );
@@ -72,9 +73,7 @@ const setup = async function(
     [accounts[0]],
     [accounts[0]]
   );
-  await hatVaultsRegistry.setArbitrator(hatTimelockController.address);
-  tx = await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
-  tx = await rewardController.transferOwnership(hatTimelockController.address);
+
   await utils.setMinter(
     hatToken,
     accounts[0],
@@ -88,6 +87,7 @@ const setup = async function(
   );
   vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
+    await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
     maxBounty,
@@ -96,6 +96,14 @@ const setup = async function(
     [86400, 10],
     false
   )).receipt.rawLogs[0].address);
+  await advanceToNonSafetyPeriod(hatVaultsRegistry);
+  await vault.setArbitrator(hatTimelockController.address);
+  await vault.setChallengePeriod(challengePeriod);
+
+  await vault.transferOwnership(hatTimelockController.address);
+  await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
+  await rewardController.transferOwnership(hatTimelockController.address);
+
   await hatTimelockController.setAllocPoint(
     vault.address,
     allocPoint
@@ -137,6 +145,7 @@ contract("HatTimelockController", (accounts) => {
     await setup(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), hatTimelockController.address);
+    assert.equal(await vault.owner(), hatTimelockController.address);
     assert.equal(
       await hatTimelockController.hasRole(
         await hatTimelockController.PROPOSER_ROLE(),
@@ -170,7 +179,9 @@ contract("HatTimelockController", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);
     await hatTimelockController.setVaultVisibility(vault.address, true);
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
@@ -209,7 +220,7 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await hatVaultsRegistry.setVaultDescription(vault.address, "descHash");
+      await vault.setVaultDescription("descHash");
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
@@ -399,10 +410,11 @@ contract("HatTimelockController", (accounts) => {
 
     //creat another vault with a different committee
     let maxBounty = 8000;
-    let bountySplit = [6000, 2000, 500, 1000, 500];
+    let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken2.address,
+      await hatVaultsRegistry.owner(),
       accounts[3],
       rewardController.address,
       maxBounty,

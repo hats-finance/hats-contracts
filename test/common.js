@@ -65,7 +65,8 @@ const setup = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
-  bountySplit = [6000, 2000, 500, 1000, 500],
+  bountySplit = [7500, 2000, 500],
+  hatBountySplit = [1500, 500],
   halvingAfterBlock = 10,
   routerReturnType = 0,
   allocPoint = 100,
@@ -90,7 +91,7 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    [router.address],
+    hatBountySplit,
     tokenLockFactory.address,
     true
   );
@@ -114,9 +115,9 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  await hatVaultsRegistry.setChallengePeriod(challengePeriod);
   let vault = await HATVault.at((await hatVaultsRegistry.createVault(
     stakingToken.address,
+    await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
     maxBounty,
@@ -124,7 +125,10 @@ const setup = async function(
     "_descriptionHash",
     [86400, 10],
     false
-  )).logs[0].args._vault);
+  )).logs[1].args._vault);
+  await advanceToNonSafetyPeriod(hatVaultsRegistry);
+  await vault.setChallengePeriod(challengePeriod);
+
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
@@ -155,6 +159,24 @@ async function advanceToSafetyPeriod(hatVaultsRegistry) {
   }
 }
 
+//advanced time to a withdraw enable period
+async function advanceToNonSafetyPeriod(hatVaultsRegistry) {
+  let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+  let withdrawPeriod = (
+    await hatVaultsRegistry.generalParameters()
+  ).withdrawPeriod.toNumber();
+  let safetyPeriod = (
+    await hatVaultsRegistry.generalParameters()
+  ).safetyPeriod.toNumber();
+  if (currentTimeStamp % (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
+    await utils.increaseTime(
+      (currentTimeStamp % (withdrawPeriod + safetyPeriod)) +
+        safetyPeriod -
+        withdrawPeriod
+    );
+  }
+}
+
 async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
   const tx = await vault.submitClaim(
     accounts[2],
@@ -181,6 +203,7 @@ module.exports = {
   rewardPerEpoch,
   assertVMException,
   advanceToSafetyPeriod,
+  advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
 };

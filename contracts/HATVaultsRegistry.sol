@@ -33,18 +33,10 @@ error DelayTooShort();
 error AmountToSwapIsZero();
 // Swap was not successful
 error SwapFailed();
-// Routing contract must be whitelisted
-error RoutingContractNotWhitelisted();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
-// Challenge period too short
-error ChallengePeriodTooShort();
-// Challenge period too long
-error ChallengePeriodTooLong();
-// Challenge timeout period too short
-error ChallengeTimeOutPeriodTooShort();
-// Challenge timeout period too long
-error ChallengeTimeOutPeriodTooLong();
+// Hats bounty split should be less than `HUNDRED_PERCENT`
+error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
@@ -91,6 +83,15 @@ contract HATVaultsRegistry is Ownable {
         uint256 claimFee;  
     }
 
+    // How to divide the hats bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
+    // The precentages are taken from the total bounty
+    struct HATBountySplit {
+        // the percentage of the total bounty to be swapped to HATs and sent to governance
+        uint256 governanceHat;
+        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+        uint256 hackerHatVested;
+    }
+
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
@@ -99,35 +100,33 @@ contract HATVaultsRegistry is Ownable {
         uint256 totalHackerReward;
     }
 
+    uint256 public constant HUNDRED_PERCENT = 10000;
+
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
+    mapping(address => bool) public isVaultVisible;
 
     // PARAMETERS FOR ALL VAULTS
-    // time during which a claim can be challenged by the arbitrator
-    uint256 public challengePeriod;
-    // time after which a challenged claim is automatically dismissed
-    uint256 public challengeTimeOutPeriod;
     // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
-    // address of the arbitrator - which can dispute claims and override the committee's decisions
-    address public arbitrator;
+
     // the token into which a part of the the bounty will be swapped into
     IERC20 public immutable HAT;
-    mapping(address => bool) public whitelistedRouters;
 
     // asset => hacker address => amount
     mapping(address => mapping(address => uint256)) public hackersHatReward;
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
+    HATBountySplit public hatBountySplit;
+
+    bool public isEmergencyPaused;
+
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
-    event SetChallengePeriod(uint256 _challengePeriod);
-    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrator(address indexed _arbitrator);
     event SetWithdrawRequestParams(
         uint256 _withdrawRequestPendingPeriod,
         uint256 _withdrawRequestEnablePeriod
@@ -136,9 +135,7 @@ contract HATVaultsRegistry is Ownable {
     event SetWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod);
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
     event SetMaxBountyDelay(uint256 _delay);
-    event RouterWhitelistStatusChanged(address indexed _router, bool _status);
     event SetVaultVisibility(address indexed _vault, bool indexed _visible);
-    event SetVaultDescription(address indexed _vault, string _descriptionHash);
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
@@ -156,14 +153,17 @@ contract HATVaultsRegistry is Ownable {
         uint256 _amountReceived,
         address indexed _tokenLock
     );
+    event SetDefaultHATBountySplit(HATBountySplit _hatBountySplit);
+    event SetEmergencyPaused(bool _isEmergencyPaused);
 
     /**
     * @notice initialize -
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _whitelistedRouters Initial list of whitelisted routers allowed
-    * to be used to swap tokens for HAT token.
+    * @param _hatBountySplit The way to split the hat bounty betweeen the hacker and the governance
+    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Total splits should be less than `HUNDRED_PERCENT`.
     * @param _tokenLockFactory Address of the token lock factory to be used
     * to create a vesting contract for the approved claim reporter.
     */
@@ -171,16 +171,15 @@ contract HATVaultsRegistry is Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        address[] memory _whitelistedRouters,
+        HATBountySplit memory _hatBountySplit,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = IERC20(_HAT);
 
-        for (uint256 i = 0; i < _whitelistedRouters.length; i++) {
-            whitelistedRouters[_whitelistedRouters[i]] = true;
-        }
+        validateHATSplit(_hatBountySplit);
+        hatBountySplit = _hatBountySplit;
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -192,9 +191,28 @@ contract HATVaultsRegistry is Ownable {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
-        arbitrator = _hatGovernance;
-        challengePeriod = 3 days;
-        challengeTimeOutPeriod = 5 weeks;
+    }
+
+    /** 
+    * @dev Check that a given hats bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
+    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * function will revert in case the bounty split is not legal.
+    * @param _hatBountySplit The bounty split to check
+    */
+    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+        if (_hatBountySplit.governanceHat +
+            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
+            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    }
+
+    /**
+    * @notice Called by governance to pause/ unpause the system in case of an emergency
+    * @param _isEmergencyPaused Is the system in an emergency pause
+    */
+    function setEmergencyPaused(bool _isEmergencyPaused) external onlyOwner {
+        isEmergencyPaused = _isEmergencyPaused;
+        emit SetEmergencyPaused(_isEmergencyPaused);
     }
 
     /**
@@ -212,6 +230,17 @@ contract HATVaultsRegistry is Ownable {
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }
+
+    /**
+    * @notice Called by governance to set the default HAT token bounty split upon
+    * an approval. This default vaule is used when creating a new vault.
+    * @param _hatBountySplit The HAT bounty split
+    */
+    function setDefaultHATBountySplit(HATBountySplit memory _hatBountySplit) external onlyOwner {
+        validateHATSplit(_hatBountySplit);
+        hatBountySplit = _hatBountySplit;
+        emit SetDefaultHATBountySplit(_hatBountySplit);
+    }
    
     /**
     * @notice Called by governance to set the fee setter role
@@ -220,15 +249,6 @@ contract HATVaultsRegistry is Ownable {
     function setFeeSetter(address _feeSetter) external onlyOwner {
         feeSetter = _feeSetter;
         emit SetFeeSetter(_feeSetter);
-    }
-
-    /**
-    * @notice Called by governance to set the arbitrator role
-    * @param _arbitrator Address of new arbitrator
-    */
-    function setArbitrator(address _arbitrator) external onlyOwner {
-        arbitrator = _arbitrator;
-        emit SetArbitrator(_arbitrator);
     }
 
     /**
@@ -260,32 +280,6 @@ contract HATVaultsRegistry is Ownable {
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
-    }
-
-    /**
-    * @notice Called by governance to set the time during which a claim can be
-    * challenged by the arbitrator
-    * @param _challengePeriod Time period after claim submittion during
-    * which the claim can be challenged
-    */
-    function setChallengePeriod(uint256 _challengePeriod) external onlyOwner {
-        if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
-        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
-        challengePeriod = _challengePeriod;
-        emit SetChallengePeriod(_challengePeriod);
-    }
-
-    /**
-    * @notice Called by governance to set time after which a challenged claim 
-    * is automatically dismissed
-    * @param _challengeTimeOutPeriod Time period after claim has been
-    * challenged where the only possible action is dismissal
-    */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyOwner {
-        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
-        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
-        challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
     /**
@@ -338,17 +332,6 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Called by governance to add or remove address from the whitelist
-    * of routers that can be used for token swapping.
-    * @param _router The address of the swapping router
-    * @param _isWhitelisted Is this router approved to be used for swapping
-    */
-    function setRouterWhitelistStatus(address _router, bool _isWhitelisted) external onlyOwner {
-        whitelistedRouters[_router] = _isWhitelisted;
-        emit RouterWhitelistStatusChanged(_router, _isWhitelisted);
-    }
-
-    /**
     * @notice Create a new vault
     * @param _asset The vault's native token
     * @param _committee The address of the vault's committee 
@@ -356,11 +339,9 @@ contract HATVaultsRegistry is Ownable {
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
     * @param _bountySplit The way to split the bounty between the hacker, 
-    * committee and governance.
+    * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    *   Bounty larger than 0 must be specified for the hacker (direct or 
-    *   vested in vault's native token).
     * @param _descriptionHash Hash of the vault description.
     * @param _bountyVestingParams Vesting params for the bounty
     *        _bountyVestingParams[0] - vesting duration
@@ -370,6 +351,7 @@ contract HATVaultsRegistry is Ownable {
     */
     function createVault(
         IERC20 _asset,
+        address _owner,
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
@@ -384,14 +366,17 @@ contract HATVaultsRegistry is Ownable {
         vault = Clones.clone(hatVaultImplementation);
 
         HATVault(vault).initialize(
-            _rewardController,
-            _bountyVestingParams[0],
-            _bountyVestingParams[1],
-            _maxBounty,
-            _bountySplit,
-            _asset,
-            _committee,
-            _isPaused
+            HATVault.VaultInitParams({
+                rewardController: _rewardController,
+                vestingDuration: _bountyVestingParams[0],
+                vestingPeriods: _bountyVestingParams[1],
+                maxBounty: _maxBounty,
+                bountySplit: _bountySplit,
+                asset: _asset,
+                owner: _owner,
+                committee: _committee,
+                isPaused: _isPaused
+            })
         );
 
         hatVaults.push(vault);
@@ -417,17 +402,8 @@ contract HATVaultsRegistry is Ownable {
     * This parameter can be used by the UI to include or exclude the vault
     */
     function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
+        isVaultVisible[_vault] = _visible;
         emit SetVaultVisibility(_vault, _visible);
-    }
-
-    /**
-    * @notice change the description of a vault
-    * only calleable by the owner of the contract
-    * @param _vault the vault to update
-    * @param _descriptionHash the hash of the vault's description.
-    */
-    function setVaultDescription(address _vault, string memory _descriptionHash) external onlyOwner {
-        emit SetVaultDescription(_vault, _descriptionHash);
     }
 
     /**
@@ -492,7 +468,7 @@ contract HATVaultsRegistry is Ownable {
                 // hacker gets her reward via vesting contract
                 tokenLock = tokenLockFactory.createTokenLock(
                     address(_HAT),
-                    0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                    0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                     _beneficiaries[i],
                     hackerReward,
                     // solhint-disable-next-line not-rely-on-time
@@ -534,8 +510,7 @@ contract HATVaultsRegistry is Ownable {
         if (_asset == _HAT) {
             return (_amount, 0);
         }
-        if (!whitelistedRouters[_routingContract])
-            revert RoutingContractNotWhitelisted();
+
         IERC20(_asset).safeApprove(_routingContract, _amount);
         uint256 balanceBefore = _HAT.balanceOf(address(this));
         uint256 assetBalanceBefore = _asset.balanceOf(address(this));

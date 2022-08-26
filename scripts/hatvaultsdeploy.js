@@ -31,7 +31,7 @@ async function main(
   epochLength = "195200",
   governance = ADDRESSES[network.name].governance,
   HAT = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
-  whitelistedRouters = ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
+  hatBountySplit = [1000, 500],
   tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3",
   silent = false
 ) {
@@ -79,7 +79,7 @@ async function main(
     hatVaultImplementation.address,
     deployerAddress,
     HAT,
-    whitelistedRouters,
+    hatBountySplit,
     tokenLockFactory,
   );
 

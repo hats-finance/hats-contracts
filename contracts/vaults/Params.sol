@@ -14,7 +14,7 @@ contract Params is Base {
     function setCommittee(address _committee)
     external {
         // governance can update committee only if committee was not checked in yet.
-        if (msg.sender == registry.owner() && committee != msg.sender) {
+        if (msg.sender == owner() && committee != msg.sender) {
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();
         } else {
@@ -38,7 +38,7 @@ contract Params is Base {
     }
 
     function _setVestingParams(uint256 _duration, uint256 _periods) internal {
-        if (_duration >= 120 days) revert VestingDurationTooLong();
+        if (_duration > 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         vestingDuration = _duration;
@@ -47,8 +47,8 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by governance to set the vault token bounty split upon an
-    * approval.
+    * @notice Called by the vault's owner to set the vault token bounty split
+    * upon an approval.
     * Can only be called if is no active claim and not during safety periods.
     * @param _bountySplit The bounty split
     */
@@ -58,6 +58,20 @@ contract Params is Base {
         validateSplit(_bountySplit);
         bountySplit = _bountySplit;
         emit SetBountySplit(_bountySplit);
+    }
+
+    /**
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval.
+    * Can only be called if is no active claim and not during safety periods.
+    * @param _hatBountySplit The HAT bounty split
+    */
+    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit)
+    external
+    onlyRegistryOwner noActiveClaim noSafetyPeriod {
+        registry.validateHATSplit(_hatBountySplit);
+        hatBountySplit = _hatBountySplit;
+        emit SetHATBountySplit(_hatBountySplit);
     }
 
     /**
@@ -81,19 +95,20 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by the vault's committee to set a pending request for the
+    * @notice Called by the vault's owner to set a pending request for the
     * maximum percentage of the vault that can be paid out as a bounty.
     * Cannot be called if there is an active claim that has been submitted.
     * Max bounty should be less than or equal to `HUNDRED_PERCENT`.
     * The pending value can later be set after the time delay (of 
     * HATVaultsRegistry.GeneralParameters.setMaxBountyDelay) had passed.
+    * Max bounty should be less than or equal to `MAX_BOUNTY_LIMIT`
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
     function setPendingMaxBounty(uint256 _maxBounty)
     external
-    onlyCommittee noActiveClaim {
-        if (_maxBounty > HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanHundredPercent();
+    onlyOwner noActiveClaim {
+        if (_maxBounty > MAX_BOUNTY_LIMIT)
+            revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty.timestamp = block.timestamp;
@@ -101,13 +116,14 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by the vault's committee to set the vault's max bounty to
+    * @notice Called by the vault's owner to set the vault's max bounty to
     * the already pending max bounty.
     * Cannot be called if there are active claims that have been submitted.
     * Can only be called if there is a max bounty pending approval, and the
     * time delay since setting the pending max bounty had passed.
+    * Max bounty should be less than or equal to `MAX_BOUNTY_LIMIT`
     */
-    function setMaxBounty() external onlyCommittee noActiveClaim {
+    function setMaxBounty() external onlyOwner noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -131,11 +147,55 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by governance to set the vault's reward controller
-    * @param _rewardController The new reward controller
+    * @notice change the description of the vault
+    * only calleable by the owner of the vault
+    * @param _descriptionHash the hash of the vault's description.
     */
-    function setRewardController(IRewardController _rewardController) external onlyOwner {
-        rewardController = _rewardController;
-        emit SetRewardController(_rewardController);
+    function setVaultDescription(string memory _descriptionHash) external onlyOwner {
+        emit SetVaultDescription(_descriptionHash);
+    }
+
+    /**
+    * @notice setArbitrator - called by vault owner to set arbitrator
+    * @param _arbitrator New arbitrator.
+    */
+    function setArbitrator(address _arbitrator) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the time during which a claim can be
+    * challenged by the arbitrator
+    * @param _challengePeriod Time period after claim submittion during
+    * which the claim can be challenged
+    */
+    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        challengePeriod = _challengePeriod;
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set time after which a challenged claim 
+    * is automatically dismissed
+    * @param _challengeTimeOutPeriod Time period after claim has been
+    * challenged where the only possible action is dismissal
+    */
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
+    }
+
+    /**
+    * @notice Called by vault's owner to set the vault's reward controller
+    * @param _newRewardController The new reward controller
+    */
+    function setRewardController(IRewardController _newRewardController) external onlyOwner {
+        rewardController = _newRewardController;
+        emit SetRewardController(_newRewardController);
     }
 }
