@@ -4,6 +4,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -16,8 +17,6 @@ import "../HATVaultsRegistry.sol";
 // Errors:
 // Only committee
 error OnlyCommittee();
-// Only owner of the registry
-error OnlyOwner();
 // Active claim exists
 error ActiveClaimExists();
 // Safety period
@@ -52,6 +51,8 @@ error TotalSplitPercentageShouldBeHundredPercent();
 error InvalidWithdrawRequest();
 // Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
 error MaxBountyCannotBeMoreThanMaxBountyLimit();
+// Only registry owner
+error OnlyRegistryOwner();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -72,18 +73,29 @@ error ChallengePeriodEnded();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
 // Cannot deposit to another user with withdraw request
-error CannotDepositToAnotherUserWithWithdrawRequest();
+error CannotTransferToAnotherUserWithActiveWithdrawRequest();
 // Withdraw amount must be greater than zero
 error WithdrawMustBeGreaterThanZero();
 // Withdraw amount cannot be more than maximum for user
 error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
+// System is in emergency pause
+error SystemInEmergencyPause();
 
-contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
+contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
+    // The precentages are out of what is left after deducting the HATVaultsRegistry.HATBountySplit
     struct BountySplit {
         //the percentage of the total bounty to reward the hacker via vesting contract
         uint256 hackerVested;
@@ -91,10 +103,6 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         uint256 hacker;
         // the percentage of the total bounty to be sent to the committee
         uint256 committee;
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-        uint256 hackerHatVested;
     }
 
     // How to divide a bounty for a claim that has been approved, in amounts
@@ -136,6 +144,7 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     IRewardController public rewardController;
 
     BountySplit public bountySplit;
+    HATVaultsRegistry.HATBountySplit public hatBountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
@@ -150,6 +159,13 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     PendingMaxBounty public pendingMaxBounty;
 
     bool public depositPause;
+
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
+    address public arbitrator;
+    // time during which a claim can be challenged by the arbitrator
+    uint256 public challengePeriod;
+    // time after which a challenged claim is automatically dismissed
+    uint256 public challengeTimeOutPeriod;
 
     mapping(address => uint256) public withdrawEnableStartTime;
     
@@ -177,20 +193,25 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
         uint256 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
+    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
     event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
+    event SetVaultDescription(string _descriptionHash);
+    event SetChallengePeriod(uint256 _challengePeriod);
+    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitrator(address indexed _arbitrator);
 
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
 
-    modifier onlyOwner() {
-        if (registry.owner() != msg.sender) revert OnlyOwner();
+    modifier onlyRegistryOwner() {
+        if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
         _;
     }
 
@@ -205,7 +226,12 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyArbitrator() {
-        if (registry.arbitrator() != msg.sender) revert OnlyArbitrator();
+        if (arbitrator != msg.sender) revert OnlyArbitrator();
+        _;
+    }
+
+    modifier notEmergencyPaused() {
+        if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
         _;
     }
 
@@ -234,17 +260,13 @@ contract Base is ERC4626Upgradeable, ReentrancyGuardUpgradeable {
     * @dev Check that a given bounty split is legal, meaning that:
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    *   Bounty larger then 0 must be specified for the hacker (direct or 
-    *   vested in vault's native token).
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */
     function validateSplit(BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
-            _bountySplit.committee +
-            _bountySplit.governanceHat +
-            _bountySplit.hackerHatVested != HUNDRED_PERCENT)
+            _bountySplit.committee != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
     }
 }

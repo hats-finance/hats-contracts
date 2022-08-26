@@ -19,8 +19,9 @@ contract Claim is Base {
     */
     function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
     external
-    onlyCommittee()
-    noActiveClaim()
+    onlyCommittee
+    noActiveClaim
+    notEmergencyPaused
     returns (bytes32 claimId)
     {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -59,7 +60,7 @@ contract Claim is Base {
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + registry.challengePeriod())
+        if (block.timestamp > activeClaim.createdAt + challengePeriod)
             revert ChallengePeriodEnded();
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
@@ -85,12 +86,12 @@ contract Claim is Base {
 
         if (claim.challengedAt != 0) {
             // solhint-disable-next-line not-rely-on-time
-            if (msg.sender != registry.arbitrator() || block.timestamp > claim.challengedAt + registry.challengeTimeOutPeriod())
+            if (msg.sender != arbitrator || block.timestamp > claim.challengedAt + challengeTimeOutPeriod)
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
             // solhint-disable-next-line not-rely-on-time
-            if (block.timestamp <= claim.createdAt + registry.challengePeriod()) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            if (block.timestamp <= claim.createdAt + challengePeriod) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;
@@ -131,6 +132,9 @@ contract Claim is Base {
             claimBounty.governanceHat
         );
 
+        // make sure to reset approval
+        asset.safeApprove(address(registry), 0);
+
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,
@@ -150,7 +154,7 @@ contract Claim is Base {
         Claim memory claim = activeClaim;
         if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.challengedAt + registry.challengeTimeOutPeriod() && msg.sender != registry.arbitrator())
+        if (block.timestamp < claim.challengedAt + challengeTimeOutPeriod && msg.sender != arbitrator)
             revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
@@ -173,20 +177,26 @@ contract Claim is Base {
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
+
+        uint256 governanceHat =
+        totalBountyAmount * hatBountySplit.governanceHat
+        / HUNDRED_PERCENT_SQRD;
+        uint256 hackerHatVested =
+        totalBountyAmount * hatBountySplit.hackerHatVested
+        / HUNDRED_PERCENT_SQRD;
+
+        totalBountyAmount -= (governanceHat + hackerHatVested) * HUNDRED_PERCENT;
+
+        claimBounty.governanceHat = governanceHat;
+        claimBounty.hackerHatVested = hackerHatVested;
         claimBounty.hackerVested =
         totalBountyAmount * bountySplit.hackerVested
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
         claimBounty.hacker =
         totalBountyAmount * bountySplit.hacker
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
         claimBounty.committee =
         totalBountyAmount * bountySplit.committee
-        / (HUNDRED_PERCENT_SQRD);
-        claimBounty.governanceHat =
-        totalBountyAmount * bountySplit.governanceHat
-        / (HUNDRED_PERCENT_SQRD);
-        claimBounty.hackerHatVested =
-        totalBountyAmount * bountySplit.hackerHatVested
-        / (HUNDRED_PERCENT_SQRD);
+        / HUNDRED_PERCENT_SQRD;
     }
 }
