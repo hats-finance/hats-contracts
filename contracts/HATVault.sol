@@ -91,16 +91,21 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         maxBounty = _params.maxBounty;
         bountySplit = _params.bountySplit;
-        (hatBountySplit.governanceHat, hatBountySplit.hackerHatVested) = _registry.hatBountySplit();
         committee = _params.committee;
         depositPause = _params.isPaused;
         registry = _registry;
         __ReentrancyGuard_init();
         _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
-        arbitrator = _registry.owner();
-        challengePeriod = 3 days;
-        challengeTimeOutPeriod = 5 weeks;
+
+        // Set vault to use default registry values where applicable
+        hatBountySplit = HATVaultsRegistry.HATBountySplit({
+            governanceHat: NULL_UINT,
+            hackerHatVested: 0
+        });
+        arbitrator = NULL_ADDRESS;
+        challengePeriod = NULL_UINT;
+        challengeTimeOutPeriod = NULL_UINT;
     }
 
     /**

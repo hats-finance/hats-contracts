@@ -61,20 +61,6 @@ contract Params is Base {
     }
 
     /**
-    * @notice Called by governance to set the vault HAT token bounty split upon
-    * an approval.
-    * Can only be called if is no active claim and not during safety periods.
-    * @param _hatBountySplit The HAT bounty split
-    */
-    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit)
-    external
-    onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        registry.validateHATSplit(_hatBountySplit);
-        hatBountySplit = _hatBountySplit;
-        emit SetHATBountySplit(_hatBountySplit);
-    }
-
-    /**
     * @notice Called by the fee setter to set the fee for withdrawals from the
     * vault.
     * @param _fee The new fee. Must be smaller then `MAX_FEE`
@@ -156,46 +142,63 @@ contract Params is Base {
     }
 
     /**
-    * @notice setArbitrator - called by vault owner to set arbitrator
-    * @param _arbitrator New arbitrator.
-    */
-    function setArbitrator(address _arbitrator) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        arbitrator = _arbitrator;
-        emit SetArbitrator(_arbitrator);
-    }
-
-    /**
-    * @notice Called by governance to set the time during which a claim can be
-    * challenged by the arbitrator
-    * @param _challengePeriod Time period after claim submittion during
-    * which the claim can be challenged
-    */
-    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
-        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
-        challengePeriod = _challengePeriod;
-        emit SetChallengePeriod(_challengePeriod);
-    }
-
-    /**
-    * @notice Called by governance to set time after which a challenged claim 
-    * is automatically dismissed
-    * @param _challengeTimeOutPeriod Time period after claim has been
-    * challenged where the only possible action is dismissal
-    */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
-        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
-        challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
-    }
-
-    /**
     * @notice Called by vault's owner to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
     function setRewardController(IRewardController _newRewardController) external onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
+    }
+
+    /**
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval. Either sets it to the value passed, or to the special "null" vaule, 
+    * making it always use the registry's default value.
+    * @param _hatBountySplit The HAT bounty split
+    */
+    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit) external onlyRegistryOwner {
+        if (_hatBountySplit.governanceHat != NULL_UINT) {
+            registry.validateHATSplit(_hatBountySplit);
+        }
+        hatBountySplit = _hatBountySplit;
+
+        emit SetHATBountySplit(_hatBountySplit);
+    }
+
+    /**
+    * @notice Called by governance to set the vault arbiitrator
+    * @param _arbitrator The vault's arbitrator
+    */
+    function setArbitrator(address _arbitrator) external onlyRegistryOwner {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the vault challenge period
+    * @param _challengePeriod The vault's challenge period
+    */
+    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner {
+        if (_challengePeriod != NULL_UINT) {
+            registry.validateChallengePeriod(_challengePeriod);
+        }
+
+        challengePeriod = _challengePeriod;
+        
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set the vault challenge timeout period
+    * @param _challengeTimeOutPeriod The vault's challenge timeout period
+    */
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner {
+        if (_challengeTimeOutPeriod != NULL_UINT) {
+            registry.validateChallengeTimeOutPeriod(_challengeTimeOutPeriod);
+        }
+
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 }
