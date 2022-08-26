@@ -9,9 +9,15 @@ The contracts in this repository define a number of different roles that have th
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setClaimFee` set fee for submitting a vulnerability
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
+- can call `setVaultVisibility` to change the vault's visibility in the UI
 - can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setMaxBountyDelay` to set the timelock delay for setting the max bounty
-- can call `setHATBountySplit` set how the HAT bounty is split betwen security researcher and governance
+- can call `setDefaultHATBountySplit` set how the HAT bounty is split betwen security researcher and governance
+- can call `setDefaultArbitrator` set the default arbitrator role
+- can call `setDefaultChallengePeriod` to set the default time during which a claim can be challenged by the arbitrator
+- can call `setDefaultChallengeTimeOutPeriod` to set the default time after which a challenged claim is automatically dismissed
+- can call `setHATBountySplit` set how the HAT bounty is split betwen security researcher and governance, or wethever it should use the registry defaults
+- can call `setArbitrationConfig` set the arbotrator and challenge periods of a vault, or wethever it should use the registry defaults
 - can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
 ## `HATVaultsRegistry.arbitrator`
@@ -32,24 +38,19 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 
 - can call `transferOwnership` and `renounceOwnership` of `HATVaults`
 - can call `createVault` to create a new vault
-- can call `setVaultVisibility` to change the vault's visibility in the UI
 - can call `setVaultDescription` to change the vault's description hash
 - can call `setDepositPause` to pause and unpause deposits to the vault
 - can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `setClaimFee` set fee for submitting a vulnerability
 - can call `setWithdrawRequestParams` set time limits for withdrawal requests
 - can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - can call `setBountySplit` set how the bounty is split betwen security researcher and committee
 - can call `setVestingParams` set vesting parameters for bounty paid
-- can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
 - can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
 - setMaxBountyDelay - Set the timelock delay for setting the max bounty
-- can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
+- can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
+- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
 - can call `setRewardController`  and set the reward controller
-- can call `setDefaultArbitrator` set the default arbitrator role
-- can call `setDefaultChallengePeriod` to set the default time during which a claim can be challenged by the arbitrator
-- can call `setDefaultChallengeTimeOutPeriod` to set the default time after which a challenged claim is automatically dismissed
 
 ## `HATVault.committee` (committee of each vault, set on creation)
 
@@ -57,8 +58,6 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 - can call `committeeCheckIn` to claim it's role - only after the committee has checked in, deposits to the vault are enabled
 - can call `setCommittee` - set new committee address. Can be called by existing committee if it had checked in, or by the governance otherwise.
 - can call `submitClaim` - submit a claim for a bounty payout
-- can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
-- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
 
 ## `RewardController.owner`
 
