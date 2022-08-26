@@ -88,10 +88,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     // How to divide the bounty - after deducting HATVaultsRegistry.HATBountySplit
     // values are in percentages and should add up to `HUNDRED_PERCENT`
     struct BountySplit {
-        //the percentage of tokens that are sent directly to the hacker
-        uint256 hacker;
         //the percentage of reward sent to the hacker via vesting contract
         uint256 hackerVested;
+        //the percentage of tokens that are sent directly to the hacker
+        uint256 hacker;
         // the percentage sent to the committee
         uint256 committee;
     }
