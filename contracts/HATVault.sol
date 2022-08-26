@@ -1061,9 +1061,17 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
 
         claimBounty.governanceHat = governanceHatAmount;
         claimBounty.hackerHatVested = hackerHatVestedAmount;
-        claimBounty.hackerVested = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
-        claimBounty.hacker = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
-        claimBounty.committee = totalBountyAmount * bountySplit.committee / HUNDRED_PERCENT_SQRD;
+
+        uint256 hackerVestedAmount = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
+        uint256 hackerAmount = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
+
+        totalBountyAmount -= (hackerVestedAmount + hackerAmount) * HUNDRED_PERCENT;
+
+        claimBounty.hackerVested = hackerVestedAmount;
+        claimBounty.hacker = hackerAmount;
+
+        // give all the tokens left to the committee to avoid rounding errors
+        claimBounty.committee = totalBountyAmount / HUNDRED_PERCENT;
     }
 
     /** 
