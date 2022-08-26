@@ -20,6 +20,7 @@ contract VaultsManagerMock {
 
         for (uint256 i=0; i < _assets.length; i++) {
             address vault = _hatVaults.createVault(_assets[i],
+                                _hatVaults.owner(),
                                 _committee,
                                 _rewardController,
                                 _maxBounty,
