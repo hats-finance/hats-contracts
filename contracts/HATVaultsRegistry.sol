@@ -130,6 +130,7 @@ contract HATVaultsRegistry is Ownable {
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
+    mapping(address => bool) public isVaultVisible;
 
     // PARAMETERS FOR ALL VAULTS
     // a struct with parameters for all vaults
@@ -500,7 +501,7 @@ contract HATVaultsRegistry is Ownable {
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
     * @param _bountySplit The way to split the bounty between the hacker, 
-    * hacekr vested, and committee.
+    * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     * @param _descriptionHash Hash of the vault description.
@@ -563,6 +564,7 @@ contract HATVaultsRegistry is Ownable {
     * This parameter can be used by the UI to include or exclude the vault
     */
     function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
+        isVaultVisible[_vault] = _visible;
         emit SetVaultVisibility(_vault, _visible);
     }
 
@@ -628,7 +630,7 @@ contract HATVaultsRegistry is Ownable {
                 // hacker gets her reward via vesting contract
                 tokenLock = tokenLockFactory.createTokenLock(
                     address(_HAT),
-                    0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                    0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                     _beneficiaries[i],
                     hackerReward,
                     // solhint-disable-next-line not-rely-on-time

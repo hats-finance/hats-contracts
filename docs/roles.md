@@ -20,17 +20,33 @@ The contracts in this repository define a number of different roles that have th
 - can call `setArbitrationConfig` set the arbotrator and challenge periods of a vault, or wethever it should use the registry defaults
 - can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
+The owner controls the following settings. 
+See [parameters](./parameters.md) for more info.
+
+- `claimFee` fee for submitting a vulnerability
+- `feeSetter` the feeSetter role
+- `hatVestingParams` vesting paramaters for bounty paid in hats
+- `withdrawSafetyPeriod` the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
+- `withdrawRequestParams` time limits for withdrawal requests
+- `maxBountyDelay` the timelock delay for setting the max bounty
+- `isVaultVisibile` is the vault's visibility in the UI
+- `HATBountySplit` how the HAT bounty is split betwen security researcher and governance
+- `owner` - the ownership itself 
+- `arbitrator` the arbitrator role
+- `challengePeriod` the time during which a claim can be challenged by the arbitrator
+- `challengeTimeOutPeriod` the time after which a challenged claim is automatically dismissed
+
 ## `HATVaultsRegistry.arbitrator`
 
-- can call `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `approveClaim` to approve a claim for a bounty payout that was previously challenged and change the bounty percentage (in case the claim was not challenged and the challengePeriod had ended - anyone can approve the claim without changing the bounty percentage)
-- can call `dismissClaim` to dismiss a claim for a bounty payout that was previously challenged (in case the claim was challenged and the challengeTimeOutPeriod had ended - anyone can dismiss the claim)
+- `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
+- `approveClaim` to approve a claim for a bounty payout that was previously challenged and change the bounty percentage (in case the claim was not challenged and the challengePeriod had ended - anyone can approve the claim without changing the bounty percentage)
+- `dismissClaim` to dismiss a claim for a bounty payout that was previously challenged (in case the claim was challenged and the challengeTimeOutPeriod had ended - anyone can dismiss the claim)
 (see [arbitrator](./arbitrator.md))
 
 ## `HATVaultsRegistry.feeSetter`
 
 - set to `HATTimeLockController`
-- can call `setWithdrawalFee` - set the fee for withdrawals from the vault
+- `setWithdrawalFee` - set the fee for withdrawals from the vault
 
 ## `HATVault.owner`
 
@@ -51,6 +67,24 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 - can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
 - can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
 - can call `setRewardController`  and set the reward controller
+
+The `owner` of a HATVault.
+See [parameters](./parameters.md) for more info.
+
+- `transferOwnership` and `renounceOwnership` of `HATVaults`
+- `createVault` to create a new vault
+- `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
+
+And the following settings:
+
+- `vaultDescription` to change the vault's description hash (only emitted as an event, not stored on-chain)
+- `depositPause` to pause and unpause deposits to the vault
+- `bountySplit` set how the bounty is split betwen security researcher and committee
+- `vestingParams` set vesting parameters for bounty paid
+- `maxBounty` (subject to timelock)
+- `setRewardController`  and set the reward controller
+- `setCommittee` but only if the committee has not checked in yet
+- `vault.owner`
 
 ## `HATVault.committee` (committee of each vault, set on creation)
 

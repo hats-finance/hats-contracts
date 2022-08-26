@@ -179,7 +179,9 @@ contract("HatTimelockController", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);
     await hatTimelockController.setVaultVisibility(vault.address, true);
+    assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
 
     var staker = accounts[4];
