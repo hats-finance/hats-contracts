@@ -171,8 +171,8 @@ contract Params is Base {
     * which the claim can be challenged
     */
     function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
         challengePeriod = _challengePeriod;
         emit SetChallengePeriod(_challengePeriod);
     }
@@ -184,8 +184,8 @@ contract Params is Base {
     * challenged where the only possible action is dismissal
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
+        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }

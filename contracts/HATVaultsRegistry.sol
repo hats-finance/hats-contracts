@@ -265,7 +265,7 @@ contract HATVaultsRegistry is Ownable {
             revert WithdrawRequestPendingPeriodTooLong();
         if (_withdrawRequestEnablePeriod < 6 hours )
             revert WithdrawRequestEnabledPeriodTooShort();
-        if (100 days < _withdrawRequestEnablePeriod)
+        if (_withdrawRequestEnablePeriod > 100 days  )
             revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
