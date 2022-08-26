@@ -19,8 +19,9 @@ contract Claim is Base {
     */
     function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
     external
-    onlyCommittee()
-    noActiveClaim()
+    onlyCommittee
+    noActiveClaim
+    notEmergencyPaused
     returns (bytes32 claimId)
     {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();

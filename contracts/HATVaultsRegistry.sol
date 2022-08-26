@@ -123,6 +123,8 @@ contract HATVaultsRegistry is Ownable {
 
     HATBountySplit public hatBountySplit;
 
+    bool public isEmergencyPaused;
+
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetWithdrawRequestParams(
@@ -152,6 +154,7 @@ contract HATVaultsRegistry is Ownable {
         address indexed _tokenLock
     );
     event SetDefaultHATBountySplit(HATBountySplit _hatBountySplit);
+    event SetEmergencyPaused(bool _isEmergencyPaused);
 
     /**
     * @notice initialize -
@@ -201,6 +204,15 @@ contract HATVaultsRegistry is Ownable {
         if (_hatBountySplit.governanceHat +
             _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    }
+
+    /**
+    * @notice Called by governance to pause/ unpause the system in case of an emergency
+    * @param _isEmergencyPaused Is the system in an emergency pause
+    */
+    function setEmergencyPaused(bool _isEmergencyPaused) external onlyOwner {
+        isEmergencyPaused = _isEmergencyPaused;
+        emit SetEmergencyPaused(_isEmergencyPaused);
     }
 
     /**

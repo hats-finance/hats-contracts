@@ -143,6 +143,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         uint256 amount
     ) internal virtual override {
         if (to != address(0)) {
+            if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             if (withdrawEnableStartTime[to] != 0) {
                 HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
