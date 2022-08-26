@@ -5,22 +5,7 @@ The contracts in this repository define a number of different roles that have th
 
 ## `HATVaultsRegistry.owner`
 
-- can call `setFeeSetter` set the feeSetter role
-- can call `setWithdrawRequestParams` set time limits for withdrawal requests
-- can call `setClaimFee` set fee for submitting a vulnerability
-- can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
-- can call `setVaultVisibility` to change the vault's visibility in the UI
-- can call `setHatVestingParams` set vesting paramaters for bounty paid in hats
-- can call `setMaxBountyDelay` to set the timelock delay for setting the max bounty
-- can call `setDefaultHATBountySplit` set how the HAT bounty is split betwen security researcher and governance
-- can call `setDefaultArbitrator` set the default arbitrator role
-- can call `setDefaultChallengePeriod` to set the default time during which a claim can be challenged by the arbitrator
-- can call `setDefaultChallengeTimeOutPeriod` to set the default time after which a challenged claim is automatically dismissed
-- can call `setHATBountySplit` set how the HAT bounty is split betwen security researcher and governance, or wethever it should use the registry defaults
-- can call `setArbitrator` set the arbitrator of a vault, or wethever it should use the registry defaults
-- can call `setChallengePeriod` set the challenge period of a vault, or wethever it should use the registry defaults
-- can call `setChallengeTimeOutPeriod` set the challenge timeout period of a vault, or wethever it should use the registry defaults
-- can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
+- `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
 The owner controls the following settings. 
 See [parameters](./parameters.md) for more info.
@@ -38,6 +23,8 @@ See [parameters](./parameters.md) for more info.
 - `challengePeriod` the time during which a claim can be challenged by the arbitrator
 - `challengeTimeOutPeriod` the time after which a challenged claim is automatically dismissed
 
+
+
 ## `HATVaultsRegistry.arbitrator`
 
 - `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
@@ -51,24 +38,6 @@ See [parameters](./parameters.md) for more info.
 - `setWithdrawalFee` - set the fee for withdrawals from the vault
 
 ## `HATVault.owner`
-
-The `owner` of a HATVault created by the registry is the same registry owner.
-
-- can call `transferOwnership` and `renounceOwnership` of `HATVaults`
-- can call `createVault` to create a new vault
-- can call `setVaultDescription` to change the vault's description hash
-- can call `setDepositPause` to pause and unpause deposits to the vault
-- can call `approveClaim` to approve a claim for a bounty payout that was previously submitted by a vault's committee
-- can call `setWithdrawRequestParams` set time limits for withdrawal requests
-- can call `setWithdrawSafetyPeriod` set the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
-- can call `setBountySplit` set how the bounty is split betwen security researcher and committee
-- can call `setVestingParams` set vesting parameters for bounty paid
-- can call `setBountyLevelsDelay` set how long a committee needs to wait bf changing the bounty levels
-- setMaxBountyDelay - Set the timelock delay for setting the max bounty
-- can call `setCommittee` but only if the committee has not checked in yet
-- can call `setPendingMaxBounty` - set a pending request for the maximum percentage of the vault that can be paid out as a bounty
-- can call `setMaxBounty` - set the vault's maximum bounty percentage to the already pending percentage.
-- can call `setRewardController`  and set the reward controller
 
 The `owner` of a HATVault.
 See [parameters](./parameters.md) for more info.
@@ -119,7 +88,7 @@ And the following settings:
 ## `HATTimelockController.EXECUTOR_ROLE`
 
 - set to "anyone"
-- can call `execute` and `executeBatch` to execute a scheduled operation
+- can call `execute` and `executeBatch` to execute a scheduled operation
 
 ## `HATTimelockController.CANCELLER_ROLE`
 
@@ -127,7 +96,7 @@ And the following settings:
 - can call `cancel` and cancel any pending operation
 
 
-## The following functions in HATVaults are **not** subject to a timelock:
+## The following functions in HATVaults are **not** subject to a timelock:
   - `approveClaim`
   - `setVaultVisibility`
   - `setVaultDescription`
