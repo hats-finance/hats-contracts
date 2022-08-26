@@ -37,6 +37,14 @@ error SwapFailed();
 error AmountSwappedLessThanMinimum();
 // Hats bounty split should be less than `HUNDRED_PERCENT`
 error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+// Challenge period too short
+error ChallengePeriodTooShort();
+// Challenge period too long
+error ChallengePeriodTooLong();
+// Challenge timeout period too short
+error ChallengeTimeOutPeriodTooShort();
+// Challenge timeout period too long
+error ChallengeTimeOutPeriodTooLong();
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
 * @author hats.finance
@@ -99,6 +107,17 @@ contract HATVaultsRegistry is Ownable {
         bool useVaultSpecific;
     }
 
+    struct ArbitrationConfig {
+        // address of the arbitrator - which can dispute claims and override the committee's decisions
+        address arbitrator;
+        // time during which a claim can be challenged by the arbitrator
+        uint256 challengePeriod;
+        // time after which a challenged claim is automatically dismissed
+        uint256 challengeTimeOutPeriod;
+        // use the value saved or the default vaule of the registry
+        bool useVaultSpecific;
+    }
+
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
@@ -130,6 +149,12 @@ contract HATVaultsRegistry is Ownable {
     HATBountySplit public defaultHATBountySplit;
     mapping(address => HATBountySplitConfig) internal hatBountySplitConfig;
 
+    address public defaultArbitrator;
+    uint256 public defaultChallengePeriod;
+    uint256 public defaultChallengeTimeOutPeriod;
+
+    mapping(address => ArbitrationConfig) internal arbitrationConfig;
+
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetWithdrawRequestParams(
@@ -159,7 +184,11 @@ contract HATVaultsRegistry is Ownable {
         address indexed _tokenLock
     );
     event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
-    event SetHATBountySplit(address _vault, HATVaultsRegistry.HATBountySplit _hatBountySplit, bool _useVaultSpecific);
+    event SetHATBountySplit(address indexed _vault, HATVaultsRegistry.HATBountySplit _hatBountySplit, bool _useVaultSpecific);
+    event SetDefaultArbitrator(address indexed _arbitrator);
+    event SetDefaultChallengePeriod(uint256 _challengePeriod);
+    event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitrationConfig(address indexed _vault, ArbitrationConfig _arbitrationConfig);
 
     /**
     * @notice initialize -
@@ -197,6 +226,10 @@ contract HATVaultsRegistry is Ownable {
             withdrawRequestPendingPeriod: 7 days,
             claimFee: 0
         });
+
+        defaultArbitrator = _hatGovernance;
+        defaultChallengePeriod = 3 days;
+        defaultChallengeTimeOutPeriod = 5 weeks;
     }
 
     /** 
@@ -265,8 +298,7 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /** 
-    * @notice Returns the 
-    * Can only be called if is no active claim and not during safety periods.
+    * @notice Returns the vault HAT bounty split
     * @param _vault The vault to get the HAT bounty split of
     */
     function getHATBountySplit(address _vault) external view returns(HATBountySplit memory) {
@@ -275,6 +307,104 @@ contract HATVaultsRegistry is Ownable {
         } else {
             return defaultHATBountySplit;
         }
+    }
+
+    /**
+    * @notice Called by governance to set the default arbitrator.
+    * @param _defaultArbitrator The default arbitrator address
+    */
+    function setDefaultArbitrator(address _defaultArbitrator) external onlyOwner {
+        defaultArbitrator = _defaultArbitrator;
+        emit SetDefaultArbitrator(_defaultArbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the default challenge period
+    * @param _defaultChallengePeriod The default challenge period
+    */
+    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
+        validateChallengePeriod(_defaultChallengePeriod);
+        defaultChallengePeriod = _defaultChallengePeriod;
+        emit SetDefaultChallengePeriod(_defaultChallengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set the default challenge timeout
+    * @param _defaultChallengeTimeOutPeriod The Default challenge timeout
+    */
+    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
+        validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+        defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
+        emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+    }
+
+    /**
+    * @notice Called by governance to set the vault arbitration configurations
+    * @param _vault The vault address
+    * @param _arbitrationConfig The vault's arbitration configurations
+    */
+    function setArbitrationConfig(address _vault, ArbitrationConfig memory _arbitrationConfig) external onlyOwner {
+        if (_arbitrationConfig.useVaultSpecific) {
+            validateChallengePeriod(_arbitrationConfig.challengePeriod);
+            validateChallengeTimeOutPeriod(_arbitrationConfig.challengeTimeOutPeriod);
+            arbitrationConfig[_vault] = _arbitrationConfig;
+        } else {
+            delete arbitrationConfig[_vault];
+            _arbitrationConfig = ArbitrationConfig({
+                arbitrator: defaultArbitrator,
+                challengePeriod: defaultChallengePeriod,
+                challengeTimeOutPeriod: defaultChallengeTimeOutPeriod,
+                useVaultSpecific: false
+            });
+        }
+        
+        emit SetArbitrationConfig(_vault, _arbitrationConfig);
+    }
+
+    /** 
+    * @notice Returns the vault arbitrator
+    * @param _vault The vault to get the arbitrator of
+    */
+    function getArbitrator(address _vault) external view returns(address) {
+        if (arbitrationConfig[_vault].useVaultSpecific) {
+            return arbitrationConfig[_vault].arbitrator;
+        } else {
+            return defaultArbitrator;
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge period
+    * @param _vault The vault to get the challenge period of
+    */
+    function getChallengePeriod(address _vault) external view returns(uint256) {
+        if (arbitrationConfig[_vault].useVaultSpecific) {
+            return arbitrationConfig[_vault].challengePeriod;
+        } else {
+            return defaultChallengePeriod;
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge timeout period
+    * @param _vault The vault to get the challenge timeout period of
+    */
+    function getChallengeTimeOutPeriod(address _vault) external view returns(uint256) {
+        if (arbitrationConfig[_vault].useVaultSpecific) {
+            return arbitrationConfig[_vault].challengeTimeOutPeriod;
+        } else {
+            return defaultChallengeTimeOutPeriod;
+        }
+    }
+
+    function validateChallengePeriod(uint256 _challengePeriod) internal pure {
+        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
+        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+    }
+
+    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) internal pure {
+        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
+        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
     }
    
     /**

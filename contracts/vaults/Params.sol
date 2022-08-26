@@ -142,41 +142,6 @@ contract Params is Base {
     }
 
     /**
-    * @notice setArbitrator - called by vault owner to set arbitrator
-    * @param _arbitrator New arbitrator.
-    */
-    function setArbitrator(address _arbitrator) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        arbitrator = _arbitrator;
-        emit SetArbitrator(_arbitrator);
-    }
-
-    /**
-    * @notice Called by governance to set the time during which a claim can be
-    * challenged by the arbitrator
-    * @param _challengePeriod Time period after claim submittion during
-    * which the claim can be challenged
-    */
-    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
-        challengePeriod = _challengePeriod;
-        emit SetChallengePeriod(_challengePeriod);
-    }
-
-    /**
-    * @notice Called by governance to set time after which a challenged claim 
-    * is automatically dismissed
-    * @param _challengeTimeOutPeriod Time period after claim has been
-    * challenged where the only possible action is dismissal
-    */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner noActiveClaim noSafetyPeriod {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
-        challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
-    }
-
-    /**
     * @notice Called by vault's owner to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */

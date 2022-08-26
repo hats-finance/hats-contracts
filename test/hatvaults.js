@@ -103,7 +103,7 @@ const setup = async function(
     false
   )).logs[1].args._vault);
   await advanceToNonSafetyPeriod();
-  await vault.setChallengePeriod(challengePeriod);
+  await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
   await rewardController.setAllocPoint(
     vault.address,
     allocPoint
@@ -3381,7 +3381,7 @@ contract("HatVaults", (accounts) => {
       [86400, 10],
       false
     )).logs[1].args._vault);
-    await newVault.setChallengePeriod(60 * 60 * 24);
+    await hatVaultsRegistry.setDefaultChallengePeriod(60 * 60 * 24);
 
     await rewardController.setAllocPoint(
       newVault.address,

@@ -47,9 +47,9 @@ The `owner` of a HATVault created by the registry is the same registry owner.
 - can call `setFeeSetter` set the feeSetter role
 - can call `setCommittee` but only if the committee has not checked in yet
 - can call `setRewardController`  and set the reward controller
-- can call `setArbitrator` set the arbitrator role
-- can call `setChallengePeriod` to set the time during which a claim can be challenged by the arbitrator
-- can call `setChallengeTimeOutPeriod` to set the time after which a challenged claim is automatically dismissed
+- can call `setDefaultArbitrator` set the default arbitrator role
+- can call `setDefaultChallengePeriod` to set the default time during which a claim can be challenged by the arbitrator
+- can call `setDefaultChallengeTimeOutPeriod` to set the default time after which a challenged claim is automatically dismissed
 
 ## `HATVault.committee` (committee of each vault, set on creation)
 

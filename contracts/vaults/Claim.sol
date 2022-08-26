@@ -59,7 +59,7 @@ contract Claim is Base {
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + challengePeriod)
+        if (block.timestamp > activeClaim.createdAt + registry.getChallengePeriod(address(this)))
             revert ChallengePeriodEnded();
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
@@ -84,13 +84,18 @@ contract Claim is Base {
         delete activeClaim;
 
         if (claim.challengedAt != 0) {
-            // solhint-disable-next-line not-rely-on-time
-            if (msg.sender != arbitrator || block.timestamp > claim.challengedAt + challengeTimeOutPeriod)
+            if (
+                msg.sender != registry.getArbitrator(address(this)) ||
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp > claim.challengedAt + registry.getChallengeTimeOutPeriod(address(this))
+            )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
-            // solhint-disable-next-line not-rely-on-time
-            if (block.timestamp <= claim.createdAt + challengePeriod) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            if (
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp <= claim.createdAt + registry.getChallengePeriod(address(this))
+            ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;
@@ -149,9 +154,11 @@ contract Claim is Base {
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
         if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.challengedAt + challengeTimeOutPeriod && msg.sender != arbitrator)
-            revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+        if (
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp < claim.challengedAt + registry.getChallengeTimeOutPeriod(address(this)) && 
+            msg.sender != registry.getArbitrator(address(this))
+        ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
         emit DismissClaim(_claimId);
