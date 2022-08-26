@@ -94,19 +94,19 @@ error SystemInEmergencyPause();
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    // How to divide the bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
-    // The precentages are out of what is left after deducting the HATVaultsRegistry.HATBountySplit
+    // How to divide the bounty - after deducting HATVaultsRegistry.HATBountySplit
+    // values are in percentages and should add up to `HUNDRED_PERCENT`
     struct BountySplit {
-        //the percentage of the total bounty to reward the hacker via vesting contract
-        uint256 hackerVested;
-        //the percentage of the total bounty to reward the hacker
+        //the percentage of tokens that are sent directly to the hacker
         uint256 hacker;
-        // the percentage of the total bounty to be sent to the committee
+        //the percentage of reward sent to the hacker via vesting contract
+        uint256 hackerVested;
+        // the percentage sent to the committee
         uint256 committee;
     }
 
-    // How to divide a bounty for a claim that has been approved, in amounts
-    // of the vault's native token
+    // How to divide a bounty for a claim that has been approved
+    // used internally to keep track of payouts
     struct ClaimBounty {
         uint256 hacker;
         uint256 hackerVested;
@@ -119,7 +119,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         bytes32 claimId;
         address beneficiary;
         uint256 bountyPercentage;
-        // the address of the committee at the time of the submittal, so that this committee will
+        // the address of the committee at the time of the submission, so that this committee will
         // be paid their share of the bounty in case the committee changes before claim approval
         address committee;
         uint256 createdAt;

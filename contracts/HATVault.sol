@@ -145,6 +145,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         if (to != address(0)) {
             if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
+            // because then we would need to reset their withdraw request
             if (withdrawEnableStartTime[to] != 0) {
                 HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
                 // solhint-disable-next-line not-rely-on-time
