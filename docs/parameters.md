@@ -40,16 +40,15 @@
 |-|-|-|-|
 |`vaultDescription`| | | `setVaultDescription`
 |`depositPause`| | |  `setDepositPause`
-|bountySplit.hacker| | sum(bountysplit) = 100%|`setBountySplit` 
-|bountySplit.hackerVested| |sum(bountysplit) = 100% |`setBountySplit` 
-|bountySplit.committee| | sum(bountysplit) = 100%| `setBountySplit`
-|rewardController| | | `setRewardController`
-|vestingDuration| <= 120 days| | `setVestingParams`
-|vestingPeriods|| > 0|`setVestingParams` 
-|maxBounty| | <= 90%|`setPendingMaxBounty`, `setMaxBounty` 
-|committee| | | `setComittee`
-|committee  | | | `setComittee`
-|owner| _hatGovernance | | per vault | vault.owner |`transferOwnership`, `renounceOwnership`  
+|`bountySplit.hacker`| | sum(bountysplit) = 100%|`setBountySplit` 
+|`bountySplit.hackerVested`| |sum(bountysplit) = 100% |`setBountySplit` 
+|`bountySplit.committee`| | sum(bountysplit) = 100%| `setBountySplit`
+|`rewardController`| | | `setRewardController`
+|`vestingDuration`| <= 120 days| | `setVestingParams`
+|`vestingPeriods`|| > 0|`setVestingParams` 
+|`maxBounty`| | <= 90%|`setPendingMaxBounty`, `setMaxBounty` 
+|`committee`| | | `setComittee`
+|`owner`| _hatGovernance | | per vault | vault.owner |`transferOwnership`, `renounceOwnership`  
 
 
 - `setPendingMaxBounty` only if there is no active claim
