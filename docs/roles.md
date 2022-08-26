@@ -12,7 +12,7 @@ See [parameters](./parameters.md) for more info.
 
 - `claimFee` fee for submitting a vulnerability
 - `feeSetter` the feeSetter role
-- `hatVestingParams` vesting paramaters for bounty paid in hats
+- `hatVestingParams` vesting parameters for bounty paid in HAT token
 - `withdrawSafetyPeriod` the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - `withdrawRequestParams` time limits for withdrawal requests
 - `maxBountyDelay` the timelock delay for setting the max bounty
@@ -51,7 +51,7 @@ And the following settings:
 - `vaultDescription` to change the vault's description hash (only emitted as an event, not stored on-chain)
 - `depositPause` to pause and unpause deposits to the vault
 - `bountySplit` set how the bounty is split betwen security researcher and committee
-- `vestingParams` set vesting parameters for bounty paid
+- `vestingParams` set vesting parameters for bounty paid in vault's native token
 - `maxBounty` (subject to timelock)
 - `setRewardController`  and set the reward controller
 - `setCommittee` but only if the committee has not checked in yet

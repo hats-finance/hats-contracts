@@ -321,11 +321,11 @@ contract HATVaultsRegistry is Ownable {
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
     onlyOwner {
-        if (90 days < _withdrawRequestPendingPeriod)
+        if (_withdrawRequestPendingPeriod > 90 days)
             revert WithdrawRequestPendingPeriodTooLong();
-        if (_withdrawRequestEnablePeriod < 6 hours )
+        if (_withdrawRequestEnablePeriod < 6 hours)
             revert WithdrawRequestEnabledPeriodTooShort();
-        if (_withdrawRequestEnablePeriod > 100 days  )
+        if (_withdrawRequestEnablePeriod > 100 days)
             revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
