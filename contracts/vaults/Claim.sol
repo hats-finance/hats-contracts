@@ -102,7 +102,7 @@ contract Claim is Base {
             //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(asset),
-                0x000000000000000000000000000000000000dEaD, //this address as owner, so it can do nothing.
+                0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                 claim.beneficiary,
                 claimBounty.hackerVested,
                 // solhint-disable-next-line not-rely-on-time

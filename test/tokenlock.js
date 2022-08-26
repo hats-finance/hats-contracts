@@ -58,24 +58,6 @@ contract("TokenLock", (accounts) => {
   it("initialize values", async () => {
     await setup(accounts);
     let newTokenLock = await HATTokenLock.new();
-    try {
-      await newTokenLock.initialize(
-        "0x0000000000000000000000000000000000000000",
-        await tokenLock.beneficiary(),
-        await tokenLock.token(),
-        10,
-        await tokenLock.startTime(),
-        await tokenLock.endTime(),
-        await tokenLock.periods(),
-        await tokenLock.releaseStartTime(),
-        await tokenLock.vestingCliffTime(),
-        await tokenLock.revocable(),
-        await tokenLock.canDelegate()
-      );
-      assert(false, "cannot initialize with 0 owner");
-    } catch (ex) {
-      assertVMException(ex);
-    }
 
     try {
       await newTokenLock.initialize(

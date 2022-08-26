@@ -106,7 +106,6 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         Revocability _revocable
     ) internal {
         require(!isInitialized, "Already initialized");
-        require(_tokenLockOwner != address(0), "Owner cannot be zero");
         require(_beneficiary != address(0), "Beneficiary cannot be zero");
         require(_token != address(0), "Token cannot be zero");
         require(_managedAmount > 0, "Managed tokens cannot be zero");
