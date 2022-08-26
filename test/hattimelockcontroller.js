@@ -97,8 +97,8 @@ const setup = async function(
     false
   )).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
-  await vault.setArbitrator(hatTimelockController.address);
-  await vault.setChallengePeriod(challengePeriod);
+  await hatVaultsRegistry.setDefaultArbitrator(hatTimelockController.address);
+  await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
 
   await vault.transferOwnership(hatTimelockController.address);
   await hatVaultsRegistry.transferOwnership(hatTimelockController.address);

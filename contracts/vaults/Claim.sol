@@ -60,7 +60,7 @@ contract Claim is Base {
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + challengePeriod)
+        if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
@@ -85,13 +85,18 @@ contract Claim is Base {
         delete activeClaim;
 
         if (claim.challengedAt != 0) {
-            // solhint-disable-next-line not-rely-on-time
-            if (msg.sender != arbitrator || block.timestamp > claim.challengedAt + challengeTimeOutPeriod)
+            if (
+                msg.sender != getArbitrator() ||
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp > claim.challengedAt + getChallengeTimeOutPeriod()
+            )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
-            // solhint-disable-next-line not-rely-on-time
-            if (block.timestamp <= claim.createdAt + challengePeriod) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            if (
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp <= claim.createdAt + getChallengePeriod()
+            ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;
@@ -156,9 +161,11 @@ contract Claim is Base {
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
         if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.challengedAt + challengeTimeOutPeriod && msg.sender != arbitrator)
-            revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+        if (
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
+            msg.sender != getArbitrator()
+        ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
         emit DismissClaim(_claimId);
@@ -179,27 +186,19 @@ contract Claim is Base {
         if (totalSupply == 0) revert VaultBalanceIsZero();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
+
+        HATVaultsRegistry.HATBountySplit memory hatBountySplit = getHATBountySplit();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
-        uint256 governanceHat =
-        totalBountyAmount * hatBountySplit.governanceHat
-        / HUNDRED_PERCENT_SQRD;
-        uint256 hackerHatVested =
-        totalBountyAmount * hatBountySplit.hackerHatVested
-        / HUNDRED_PERCENT_SQRD;
+        uint256 governanceHatAmount = totalBountyAmount * hatBountySplit.governanceHat / HUNDRED_PERCENT_SQRD;
+        uint256 hackerHatVesteAmount = totalBountyAmount * hatBountySplit.hackerHatVested / HUNDRED_PERCENT_SQRD;
 
-        totalBountyAmount -= (governanceHat + hackerHatVested) * HUNDRED_PERCENT;
+        totalBountyAmount -= (governanceHatAmount + hackerHatVesteAmount) * HUNDRED_PERCENT;
 
-        claimBounty.governanceHat = governanceHat;
-        claimBounty.hackerHatVested = hackerHatVested;
-        claimBounty.hackerVested =
-        totalBountyAmount * bountySplit.hackerVested
-        / HUNDRED_PERCENT_SQRD;
-        claimBounty.hacker =
-        totalBountyAmount * bountySplit.hacker
-        / HUNDRED_PERCENT_SQRD;
-        claimBounty.committee =
-        totalBountyAmount * bountySplit.committee
-        / HUNDRED_PERCENT_SQRD;
+        claimBounty.governanceHat = governanceHatAmount;
+        claimBounty.hackerHatVested = hackerHatVesteAmount;
+        claimBounty.hackerVested = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
+        claimBounty.hacker = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
+        claimBounty.committee = totalBountyAmount * bountySplit.committee / HUNDRED_PERCENT_SQRD;
     }
 }
