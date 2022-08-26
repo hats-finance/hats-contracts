@@ -151,7 +151,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     PendingMaxBounty public pendingMaxBounty;
 
     bool public depositPause;
-
+    
+    // Time of when withdrawal period starts for every user that has an
+    // active withdraw request. (time when last withdraw request pending 
+    // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
 
     // the HATBountySplit of the vault
@@ -163,9 +166,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     uint256 internal challengePeriod;
     // time after which a challenged claim is automatically dismissed
     uint256 internal challengeTimeOutPeriod;
-
     
-    event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
         bytes32 indexed _claimId,
         address indexed _committee,

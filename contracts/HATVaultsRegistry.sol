@@ -293,13 +293,13 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 
     function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
+        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
     }
    
     /**
@@ -321,11 +321,11 @@ contract HATVaultsRegistry is Ownable {
     function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
     external
     onlyOwner {
-        if (90 days < _withdrawRequestPendingPeriod)
+        if (_withdrawRequestPendingPeriod > 90 days)
             revert WithdrawRequestPendingPeriodTooLong();
-        if (6 hours > _withdrawRequestEnablePeriod)
+        if (_withdrawRequestEnablePeriod < 6 hours)
             revert WithdrawRequestEnabledPeriodTooShort();
-        if (100 days < _withdrawRequestEnablePeriod)
+        if (_withdrawRequestEnablePeriod > 100 days)
             revert WithdrawRequestEnabledPeriodTooLong();
         generalParameters.withdrawRequestPendingPeriod = _withdrawRequestPendingPeriod;
         generalParameters.withdrawRequestEnablePeriod = _withdrawRequestEnablePeriod;
@@ -355,7 +355,7 @@ contract HATVaultsRegistry is Ownable {
     * can be submitted and withdrawals are disabled. Must be at most 6 hours.
     */
     function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner {
-        if (1 hours > _withdrawPeriod) revert WithdrawPeriodTooShort();
+        if (_withdrawPeriod < 1 hours) revert WithdrawPeriodTooShort();
         if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
         generalParameters.safetyPeriod = _safetyPeriod;
