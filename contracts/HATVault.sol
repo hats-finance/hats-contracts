@@ -97,6 +97,15 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
         __ReentrancyGuard_init();
         _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
+
+        // Set vault to use default registry values where applicable
+        hatBountySplit = HATVaultsRegistry.HATBountySplit({
+            governanceHat: NULL_UINT,
+            hackerHatVested: 0
+        });
+        arbitrator = NULL_ADDRESS;
+        challengePeriod = NULL_UINT;
+        challengeTimeOutPeriod = NULL_UINT;
     }
 
     /**

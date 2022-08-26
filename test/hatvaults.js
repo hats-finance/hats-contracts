@@ -490,14 +490,14 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.setHATBountySplitConfig([[5000, 5001], true]);
+      await vault.setHATBountySplit([5000, 5001]);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
 
     try {
-      await vault.setHATBountySplitConfig([[5000, 5000], true]);
+      await vault.setHATBountySplit([5000, 5000]);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
@@ -511,18 +511,17 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.setHATBountySplitConfig([[0, 800], true], { from: accounts[1] });
+      await vault.setHATBountySplit([0, 800], { from: accounts[1] });
       assert(false, "only registry owner");
     } catch (ex) {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
     await vault.setBountySplit([6000, 2200, 1800]);
-    tx = await vault.setHATBountySplitConfig([[0, 800], true]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplitConfig");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.governanceHat, "0");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.hackerHatVested, "800");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.useVaultSpecific, true);
+    tx = await vault.setHATBountySplit([0, 800]);
+    assert.equal(tx.logs[0].event, "SetHATBountySplit");
+    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, "0");
+    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, "800");
 
     assert.equal(
       (await vault.maxBounty()).toString(),
@@ -590,11 +589,10 @@ contract("HatVaults", (accounts) => {
     await advanceToNonSafetyPeriod();
 
     await vault.setBountySplit([6000, 3000, 1000]);
-    tx = await vault.setHATBountySplitConfig([[1, 800], true]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplitConfig");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.governanceHat, "1");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.hackerHatVested, "800");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.useVaultSpecific, true);
+    tx = await vault.setHATBountySplit([1, 800]);
+    assert.equal(tx.logs[0].event, "SetHATBountySplit");
+    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, "1");
+    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, "800");
 
     await vault.setPendingMaxBounty(8000);
 
@@ -645,7 +643,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await vault.setHATBountySplitConfig([[1500, 500], true]);
+    await vault.setHATBountySplit([1500, 500]);
 
     await hatVaultsRegistry.setDefaultHATBountySplit([200, 800]);
 
@@ -689,11 +687,10 @@ contract("HatVaults", (accounts) => {
       "500"
     );
 
-    tx = await vault.setHATBountySplitConfig([[0, 0], false]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplitConfig");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.governanceHat, "200");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.hatBountySplit.hackerHatVested, "800");
-    assert.equal(tx.logs[0].args._hatBountySplitConfig.useVaultSpecific, false);
+    tx = await vault.setHATBountySplit([await vault.NULL_UINT(), 0]);
+    assert.equal(tx.logs[0].event, "SetHATBountySplit");
+    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, await vault.NULL_UINT());
+    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, 0);
 
     assert.equal(
       (await vault.getHATBountySplit()).governanceHat.toString(),
@@ -3510,7 +3507,7 @@ contract("HatVaults", (accounts) => {
       false
     )).logs[1].args._vault);
 
-    await newVault.setHATBountySplitConfig([[500, 400], true]);
+    await newVault.setHATBountySplit([500, 400]);
 
     await rewardController.setAllocPoint(
       newVault.address,

@@ -17,7 +17,9 @@ The contracts in this repository define a number of different roles that have th
 - can call `setDefaultChallengePeriod` to set the default time during which a claim can be challenged by the arbitrator
 - can call `setDefaultChallengeTimeOutPeriod` to set the default time after which a challenged claim is automatically dismissed
 - can call `setHATBountySplit` set how the HAT bounty is split betwen security researcher and governance, or wethever it should use the registry defaults
-- can call `setArbitrationConfig` set the arbotrator and challenge periods of a vault, or wethever it should use the registry defaults
+- can call `setArbitrator` set the arbitrator of a vault, or wethever it should use the registry defaults
+- can call `setChallengePeriod` set the challenge period of a vault, or wethever it should use the registry defaults
+- can call `setChallengeTimeOutPeriod` set the challenge timeout period of a vault, or wethever it should use the registry defaults
 - can call `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
 The owner controls the following settings. 

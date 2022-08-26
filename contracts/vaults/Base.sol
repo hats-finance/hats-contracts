@@ -121,24 +121,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 timestamp;
     }
 
-    struct ArbitrationConfig {
-        // address of the arbitrator - which can dispute claims and override the committee's decisions
-        address arbitrator;
-        // time during which a claim can be challenged by the arbitrator
-        uint256 challengePeriod;
-        // time after which a challenged claim is automatically dismissed
-        uint256 challengeTimeOutPeriod;
-        // use the value saved or the default vaule of the registry
-        bool useVaultSpecific;
-    }
-
-    struct HATBountySplitConfig {
-        // the HATBountySplit of the vault
-        HATVaultsRegistry.HATBountySplit hatBountySplit;
-        // use the value saved or the default vaule of the registry
-        bool useVaultSpecific;
-    }
-
+    uint256 public constant NULL_UINT = type(uint256).max;
+    address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
@@ -169,9 +153,16 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     mapping(address => uint256) public withdrawEnableStartTime;
 
-    HATBountySplitConfig internal hatBountySplitConfig;
+    // the HATBountySplit of the vault
+    HATVaultsRegistry.HATBountySplit internal hatBountySplit;
 
-    ArbitrationConfig internal arbitrationConfig;
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
+    address internal arbitrator;
+    // time during which a claim can be challenged by the arbitrator
+    uint256 internal challengePeriod;
+    // time after which a challenged claim is automatically dismissed
+    uint256 internal challengeTimeOutPeriod;
+
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
@@ -204,8 +195,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplitConfig(HATBountySplitConfig _hatBountySplitConfig);
-    event SetArbitrationConfig(ArbitrationConfig _arbitrationConfig);
+    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetArbitrator(address indexed _arbitrator);
+    event SetChallengePeriod(uint256 _challengePeriod);
+    event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
 
     event WithdrawRequest(
         address indexed _beneficiary,
@@ -257,8 +250,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @notice Returns the vault HAT bounty split
     */
     function getHATBountySplit() public view returns(HATVaultsRegistry.HATBountySplit memory) {
-        if (hatBountySplitConfig.useVaultSpecific) {
-            return hatBountySplitConfig.hatBountySplit;
+        if (hatBountySplit.governanceHat != NULL_UINT) {
+            return hatBountySplit;
         } else {
             (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
             return HATVaultsRegistry.HATBountySplit({
@@ -272,8 +265,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @notice Returns the vault arbitrator
     */
     function getArbitrator() public view returns(address) {
-        if (arbitrationConfig.useVaultSpecific) {
-            return arbitrationConfig.arbitrator;
+        if (arbitrator != NULL_ADDRESS) {
+            return arbitrator;
         } else {
             return registry.defaultArbitrator();
         }
@@ -283,8 +276,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @notice Returns the vault challenge period
     */
     function getChallengePeriod() public view returns(uint256) {
-        if (arbitrationConfig.useVaultSpecific) {
-            return arbitrationConfig.challengePeriod;
+        if (challengePeriod != NULL_UINT) {
+            return challengePeriod;
         } else {
             return registry.defaultChallengePeriod();
         }
@@ -294,8 +287,8 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     * @notice Returns the vault challenge timeout period
     */
     function getChallengeTimeOutPeriod() public view returns(uint256) {
-        if (arbitrationConfig.useVaultSpecific) {
-            return arbitrationConfig.challengeTimeOutPeriod;
+        if (challengeTimeOutPeriod != NULL_UINT) {
+            return challengeTimeOutPeriod;
         } else {
             return registry.defaultChallengeTimeOutPeriod();
         }

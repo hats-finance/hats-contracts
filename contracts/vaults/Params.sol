@@ -152,48 +152,53 @@ contract Params is Base {
 
     /**
     * @notice Called by governance to set the vault HAT token bounty split upon
-    * an approval. Either sets it to the value passed, marking the useVaultSpecific flags to
-    * as true, or make the vault always use the default value.
-    * @param _hatBountySplitConfig The HAT bounty split config
+    * an approval. Either sets it to the value passed, or to the special "null" vaule, 
+    * making it always use the registry's default value.
+    * @param _hatBountySplit The HAT bounty split
     */
-    function setHATBountySplitConfig(HATBountySplitConfig memory _hatBountySplitConfig) external onlyRegistryOwner {
-        if (_hatBountySplitConfig.useVaultSpecific) {
-            registry.validateHATSplit(_hatBountySplitConfig.hatBountySplit);
-            hatBountySplitConfig = _hatBountySplitConfig;
-        } else {
-            delete hatBountySplitConfig;
-            (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
-            _hatBountySplitConfig = HATBountySplitConfig({
-                hatBountySplit: HATVaultsRegistry.HATBountySplit({
-                    governanceHat: governanceHat,
-                    hackerHatVested: hackerHatVested
-                }),
-                useVaultSpecific: false
-            });
+    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit) external onlyRegistryOwner {
+        if (_hatBountySplit.governanceHat != NULL_UINT) {
+            registry.validateHATSplit(_hatBountySplit);
         }
+        hatBountySplit = _hatBountySplit;
 
-        emit SetHATBountySplitConfig(_hatBountySplitConfig);
+        emit SetHATBountySplit(_hatBountySplit);
     }
 
     /**
-    * @notice Called by governance to set the vault arbitration configurations
-    * @param _arbitrationConfig The vault's arbitration configurations
+    * @notice Called by governance to set the vault arbiitrator
+    * @param _arbitrator The vault's arbitrator
     */
-    function setArbitrationConfig(ArbitrationConfig memory _arbitrationConfig) external onlyRegistryOwner {
-        if (_arbitrationConfig.useVaultSpecific) {
-            registry.validateChallengePeriod(_arbitrationConfig.challengePeriod);
-            registry.validateChallengeTimeOutPeriod(_arbitrationConfig.challengeTimeOutPeriod);
-            arbitrationConfig = _arbitrationConfig;
-        } else {
-            delete arbitrationConfig;
-            _arbitrationConfig = ArbitrationConfig({
-                arbitrator: registry.defaultArbitrator(),
-                challengePeriod: registry.defaultChallengePeriod(),
-                challengeTimeOutPeriod: registry.defaultChallengeTimeOutPeriod(),
-                useVaultSpecific: false
-            });
+    function setArbitrator(address _arbitrator) external onlyRegistryOwner {
+        arbitrator = _arbitrator;
+        emit SetArbitrator(_arbitrator);
+    }
+
+    /**
+    * @notice Called by governance to set the vault challenge period
+    * @param _challengePeriod The vault's challenge period
+    */
+    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner {
+        if (_challengePeriod != NULL_UINT) {
+            registry.validateChallengePeriod(_challengePeriod);
         }
+
+        challengePeriod = _challengePeriod;
         
-        emit SetArbitrationConfig(_arbitrationConfig);
+        emit SetChallengePeriod(_challengePeriod);
+    }
+
+    /**
+    * @notice Called by governance to set the vault challenge timeout period
+    * @param _challengeTimeOutPeriod The vault's challenge timeout period
+    */
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner {
+        if (_challengeTimeOutPeriod != NULL_UINT) {
+            registry.validateChallengeTimeOutPeriod(_challengeTimeOutPeriod);
+        }
+
+        challengeTimeOutPeriod = _challengeTimeOutPeriod;
+        
+        emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 }
