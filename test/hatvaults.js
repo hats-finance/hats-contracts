@@ -4518,8 +4518,8 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     try {
-      await vault.setVestingParams(120 * 24 * 3600, 7);
-      assert(false, "duration should be less than 120 days");
+      await vault.setVestingParams(120 * 24 * 3600 + 1, 7);
+      assert(false, "duration should be less than or equal to 120 days");
     } catch (ex) {
       assertVMException(ex, "VestingDurationTooLong");
     }
