@@ -51,8 +51,6 @@ error TotalSplitPercentageShouldBeHundredPercent();
 error InvalidWithdrawRequest();
 // Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
 error MaxBountyCannotBeMoreThanMaxBountyLimit();
-// Only registry owner
-error OnlyRegistryOwner();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -187,11 +185,6 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
-
-    modifier onlyRegistryOwner() {
-        if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
-        _;
-    }
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();
