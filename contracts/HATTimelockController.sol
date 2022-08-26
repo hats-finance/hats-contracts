@@ -15,7 +15,7 @@ contract HATTimelockController is TimelockController {
     // solhint-disable-next-line no-empty-blocks
     ) TimelockController(_minDelay, _proposers, _executors) {}
     
-    // Whitelisted functions
+    // The following functions are not subject to the timelock
 
     function approveClaim(HATVault _vault, bytes32 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
         _vault.approveClaim(_claimId, _bountyPercentage);
