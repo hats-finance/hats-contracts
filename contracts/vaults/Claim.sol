@@ -131,6 +131,9 @@ contract Claim is Base {
             claimBounty.governanceHat
         );
 
+        // make sure to reset approval
+        asset.safeApprove(address(registry), 0);
+
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,

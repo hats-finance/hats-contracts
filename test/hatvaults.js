@@ -2281,8 +2281,8 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
 
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
@@ -2347,8 +2347,8 @@ contract("HatVaults", (accounts) => {
 
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
     let stakerAmount = await vault.balanceOf(staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     await safeRedeem(vault, stakerAmount, staker);
@@ -2456,8 +2456,8 @@ contract("HatVaults", (accounts) => {
     
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     assert.equal(await vault.totalSupply(), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
@@ -2570,8 +2570,8 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     await vault.withdrawRequest({ from: staker });
     //increase time for pending period
@@ -4413,9 +4413,10 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[7].args._tokenLock);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
+
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
     var expectedHackerBalance = depositValutBNAfterClaim
@@ -4427,7 +4428,7 @@ contract("HatVaults", (accounts) => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[7].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[8].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -4524,9 +4525,9 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
 
-    assert.equal(tx.logs[5].event, "ApproveClaim");
-    assert.equal(tx.logs[5].args._claimId, claimId);
-    assert.equal(tx.logs[5].args._tokenLock, utils.NULL_ADDRESS);
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._claimId, claimId);
+    assert.equal(tx.logs[6].args._tokenLock, utils.NULL_ADDRESS);
     assert.equal(
       await stakingToken.balanceOf(vault.address),
       web3.utils.toWei("0.2")
