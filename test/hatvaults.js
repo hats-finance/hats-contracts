@@ -970,7 +970,7 @@ contract("HatVaults", (accounts) => {
     var tx = await hatVaultsRegistry.setWithdrawRequestParams(1, 60 * 24 * 3600, {
       from: accounts[0],
     });
-    ssert.equal(
+    assert.equal(
       (await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod,
       1
     );
