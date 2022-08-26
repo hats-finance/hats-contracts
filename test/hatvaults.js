@@ -1490,12 +1490,6 @@ contract("HatVaults", (accounts) => {
 
     let expectedReward = await calculateExpectedReward(staker);
 
-    try {
-      await vault.calcClaimBounty(8001);
-      assert(false, "reward percentage is too high");
-    } catch (ex) {
-      assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
-    }
     var tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(tx.logs[1].event, "ClaimReward");
     assert.equal(tx.logs[1].args._vault, vault.address);
