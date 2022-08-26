@@ -100,24 +100,6 @@ contract HATVaultsRegistry is Ownable {
         uint256 hackerHatVested;
     }
 
-    struct HATBountySplitConfig {
-        // the HATBountySplit of the vault
-        HATBountySplit hatBountySplit;
-        // use the value saved or the default vaule of the registry
-        bool useVaultSpecific;
-    }
-
-    struct ArbitrationConfig {
-        // address of the arbitrator - which can dispute claims and override the committee's decisions
-        address arbitrator;
-        // time during which a claim can be challenged by the arbitrator
-        uint256 challengePeriod;
-        // time after which a challenged claim is automatically dismissed
-        uint256 challengeTimeOutPeriod;
-        // use the value saved or the default vaule of the registry
-        bool useVaultSpecific;
-    }
-
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
@@ -148,12 +130,10 @@ contract HATVaultsRegistry is Ownable {
     mapping(address => uint256) public governanceHatReward;
 
     HATBountySplit public defaultHATBountySplit;
-    mapping(address => HATBountySplitConfig) internal hatBountySplitConfig;
 
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
-    mapping(address => ArbitrationConfig) internal arbitrationConfig;
 
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
@@ -184,11 +164,9 @@ contract HATVaultsRegistry is Ownable {
         address indexed _tokenLock
     );
     event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
-    event SetHATBountySplitConfig(address indexed _vault, HATBountySplitConfig _hatBountySplitConfig);
     event SetDefaultArbitrator(address indexed _arbitrator);
     event SetDefaultChallengePeriod(uint256 _challengePeriod);
     event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitrationConfig(address indexed _vault, ArbitrationConfig _arbitrationConfig);
 
     /**
     * @notice initialize -
@@ -232,19 +210,6 @@ contract HATVaultsRegistry is Ownable {
         defaultChallengeTimeOutPeriod = 5 weeks;
     }
 
-    /** 
-    * @dev Check that a given hats bounty split is legal, meaning that:
-    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
-    * function will revert in case the bounty split is not legal.
-    * @param _hatBountySplit The bounty split to check
-    */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) internal pure {
-        if (_hatBountySplit.governanceHat +
-            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
-            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
-    }
-
     /**
     * @notice emit an event that includes the given _descriptionHash
     * This can be used by the claimer as evidence that she had access to the information at the time of the call
@@ -272,38 +237,17 @@ contract HATVaultsRegistry is Ownable {
         emit SetDefaultHATBountySplit(_defaultHATBountySplit);
     }
 
-    /**
-    * @notice Called by governance to set the vault HAT token bounty split upon
-    * an approval. Either sets it to the value passed, marking the useVaultSpecific flags to
-    * as true, or make the vault always use the default value.
-    * @param _vault The vault to set the HAT bounty split for
-    * @param _hatBountySplitConfig The HAT bounty split config
-    */
-    function setHATBountySplitConfig(address _vault, HATBountySplitConfig memory _hatBountySplitConfig) external onlyOwner {
-        if (_hatBountySplitConfig.useVaultSpecific) {
-            validateHATSplit(_hatBountySplitConfig.hatBountySplit);
-            hatBountySplitConfig[_vault] = _hatBountySplitConfig;
-        } else {
-            delete hatBountySplitConfig[_vault];
-            _hatBountySplitConfig = HATBountySplitConfig({
-                hatBountySplit: defaultHATBountySplit,
-                useVaultSpecific: false
-            });
-        }
-
-        emit SetHATBountySplitConfig(_vault, _hatBountySplitConfig);
-    }
-
     /** 
-    * @notice Returns the vault HAT bounty split
-    * @param _vault The vault to get the HAT bounty split of
+    * @dev Check that a given hats bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
+    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * function will revert in case the bounty split is not legal.
+    * @param _hatBountySplit The bounty split to check
     */
-    function getHATBountySplit(address _vault) external view returns(HATBountySplit memory) {
-        if (hatBountySplitConfig[_vault].useVaultSpecific) {
-            return hatBountySplitConfig[_vault].hatBountySplit;
-        } else {
-            return defaultHATBountySplit;
-        }
+    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+        if (_hatBountySplit.governanceHat +
+            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
+            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
     }
 
     /**
@@ -335,71 +279,12 @@ contract HATVaultsRegistry is Ownable {
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
     }
 
-    /**
-    * @notice Called by governance to set the vault arbitration configurations
-    * @param _vault The vault address
-    * @param _arbitrationConfig The vault's arbitration configurations
-    */
-    function setArbitrationConfig(address _vault, ArbitrationConfig memory _arbitrationConfig) external onlyOwner {
-        if (_arbitrationConfig.useVaultSpecific) {
-            validateChallengePeriod(_arbitrationConfig.challengePeriod);
-            validateChallengeTimeOutPeriod(_arbitrationConfig.challengeTimeOutPeriod);
-            arbitrationConfig[_vault] = _arbitrationConfig;
-        } else {
-            delete arbitrationConfig[_vault];
-            _arbitrationConfig = ArbitrationConfig({
-                arbitrator: defaultArbitrator,
-                challengePeriod: defaultChallengePeriod,
-                challengeTimeOutPeriod: defaultChallengeTimeOutPeriod,
-                useVaultSpecific: false
-            });
-        }
-        
-        emit SetArbitrationConfig(_vault, _arbitrationConfig);
-    }
-
-    /** 
-    * @notice Returns the vault arbitrator
-    * @param _vault The vault to get the arbitrator of
-    */
-    function getArbitrator(address _vault) external view returns(address) {
-        if (arbitrationConfig[_vault].useVaultSpecific) {
-            return arbitrationConfig[_vault].arbitrator;
-        } else {
-            return defaultArbitrator;
-        }
-    }
-
-    /** 
-    * @notice Returns the vault challenge period
-    * @param _vault The vault to get the challenge period of
-    */
-    function getChallengePeriod(address _vault) external view returns(uint256) {
-        if (arbitrationConfig[_vault].useVaultSpecific) {
-            return arbitrationConfig[_vault].challengePeriod;
-        } else {
-            return defaultChallengePeriod;
-        }
-    }
-
-    /** 
-    * @notice Returns the vault challenge timeout period
-    * @param _vault The vault to get the challenge timeout period of
-    */
-    function getChallengeTimeOutPeriod(address _vault) external view returns(uint256) {
-        if (arbitrationConfig[_vault].useVaultSpecific) {
-            return arbitrationConfig[_vault].challengeTimeOutPeriod;
-        } else {
-            return defaultChallengeTimeOutPeriod;
-        }
-    }
-
-    function validateChallengePeriod(uint256 _challengePeriod) internal pure {
+    function validateChallengePeriod(uint256 _challengePeriod) public pure {
         if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
         if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
     }
 
-    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) internal pure {
+    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
         if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
         if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
     }

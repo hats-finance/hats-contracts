@@ -59,7 +59,7 @@ contract Claim is Base {
     */
     function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + registry.getChallengePeriod(address(this)))
+        if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
@@ -85,16 +85,16 @@ contract Claim is Base {
 
         if (claim.challengedAt != 0) {
             if (
-                msg.sender != registry.getArbitrator(address(this)) ||
+                msg.sender != getArbitrator() ||
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp > claim.challengedAt + registry.getChallengeTimeOutPeriod(address(this))
+                block.timestamp > claim.challengedAt + getChallengeTimeOutPeriod()
             )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= claim.createdAt + registry.getChallengePeriod(address(this))
+                block.timestamp <= claim.createdAt + getChallengePeriod()
             ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
@@ -156,8 +156,8 @@ contract Claim is Base {
         if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
         if (
             // solhint-disable-next-line not-rely-on-time
-            block.timestamp < claim.challengedAt + registry.getChallengeTimeOutPeriod(address(this)) && 
-            msg.sender != registry.getArbitrator(address(this))
+            block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
+            msg.sender != getArbitrator()
         ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         delete activeClaim;
 
@@ -180,7 +180,7 @@ contract Claim is Base {
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 
-        HATVaultsRegistry.HATBountySplit memory hatBountySplit = registry.getHATBountySplit(address(this));
+        HATVaultsRegistry.HATBountySplit memory hatBountySplit = getHATBountySplit();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
         uint256 governanceHatAmount = totalBountyAmount * hatBountySplit.governanceHat / HUNDRED_PERCENT_SQRD;

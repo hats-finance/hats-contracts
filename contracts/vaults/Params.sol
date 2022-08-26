@@ -149,4 +149,51 @@ contract Params is Base {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
+
+    /**
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval. Either sets it to the value passed, marking the useVaultSpecific flags to
+    * as true, or make the vault always use the default value.
+    * @param _hatBountySplitConfig The HAT bounty split config
+    */
+    function setHATBountySplitConfig(HATBountySplitConfig memory _hatBountySplitConfig) external onlyRegistryOwner {
+        if (_hatBountySplitConfig.useVaultSpecific) {
+            registry.validateHATSplit(_hatBountySplitConfig.hatBountySplit);
+            hatBountySplitConfig = _hatBountySplitConfig;
+        } else {
+            delete hatBountySplitConfig;
+            (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
+            _hatBountySplitConfig = HATBountySplitConfig({
+                hatBountySplit: HATVaultsRegistry.HATBountySplit({
+                    governanceHat: governanceHat,
+                    hackerHatVested: hackerHatVested
+                }),
+                useVaultSpecific: false
+            });
+        }
+
+        emit SetHATBountySplitConfig(_hatBountySplitConfig);
+    }
+
+    /**
+    * @notice Called by governance to set the vault arbitration configurations
+    * @param _arbitrationConfig The vault's arbitration configurations
+    */
+    function setArbitrationConfig(ArbitrationConfig memory _arbitrationConfig) external onlyRegistryOwner {
+        if (_arbitrationConfig.useVaultSpecific) {
+            registry.validateChallengePeriod(_arbitrationConfig.challengePeriod);
+            registry.validateChallengeTimeOutPeriod(_arbitrationConfig.challengeTimeOutPeriod);
+            arbitrationConfig = _arbitrationConfig;
+        } else {
+            delete arbitrationConfig;
+            _arbitrationConfig = ArbitrationConfig({
+                arbitrator: registry.defaultArbitrator(),
+                challengePeriod: registry.defaultChallengePeriod(),
+                challengeTimeOutPeriod: registry.defaultChallengeTimeOutPeriod(),
+                useVaultSpecific: false
+            });
+        }
+        
+        emit SetArbitrationConfig(_arbitrationConfig);
+    }
 }

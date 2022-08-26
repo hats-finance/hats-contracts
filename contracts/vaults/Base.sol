@@ -51,6 +51,8 @@ error TotalSplitPercentageShouldBeHundredPercent();
 error InvalidWithdrawRequest();
 // Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
 error MaxBountyCannotBeMoreThanMaxBountyLimit();
+// Only registry owner
+error OnlyRegistryOwner();
 // Only fee setter
 error OnlyFeeSetter();
 // Fee must be less than or equal to 2%
@@ -119,6 +121,24 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 timestamp;
     }
 
+    struct ArbitrationConfig {
+        // address of the arbitrator - which can dispute claims and override the committee's decisions
+        address arbitrator;
+        // time during which a claim can be challenged by the arbitrator
+        uint256 challengePeriod;
+        // time after which a challenged claim is automatically dismissed
+        uint256 challengeTimeOutPeriod;
+        // use the value saved or the default vaule of the registry
+        bool useVaultSpecific;
+    }
+
+    struct HATBountySplitConfig {
+        // the HATBountySplit of the vault
+        HATVaultsRegistry.HATBountySplit hatBountySplit;
+        // use the value saved or the default vaule of the registry
+        bool useVaultSpecific;
+    }
+
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
@@ -148,6 +168,10 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     bool public depositPause;
 
     mapping(address => uint256) public withdrawEnableStartTime;
+
+    HATBountySplitConfig internal hatBountySplitConfig;
+
+    ArbitrationConfig internal arbitrationConfig;
     
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SubmitClaim(
@@ -180,11 +204,18 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
+    event SetHATBountySplitConfig(HATBountySplitConfig _hatBountySplitConfig);
+    event SetArbitrationConfig(ArbitrationConfig _arbitrationConfig);
 
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
+
+    modifier onlyRegistryOwner() {
+        if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
+        _;
+    }
 
     modifier onlyFeeSetter() {
         if (registry.feeSetter() != msg.sender) revert OnlyFeeSetter();
@@ -197,7 +228,7 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
 
     modifier onlyArbitrator() {
-        if (registry.getArbitrator(address(this)) != msg.sender) revert OnlyArbitrator();
+        if (getArbitrator() != msg.sender) revert OnlyArbitrator();
         _;
     }
 
@@ -220,6 +251,54 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
         if (activeClaim.claimId != _claimId) revert WrongClaimId();
         _;
+    }
+
+    /** 
+    * @notice Returns the vault HAT bounty split
+    */
+    function getHATBountySplit() public view returns(HATVaultsRegistry.HATBountySplit memory) {
+        if (hatBountySplitConfig.useVaultSpecific) {
+            return hatBountySplitConfig.hatBountySplit;
+        } else {
+            (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
+            return HATVaultsRegistry.HATBountySplit({
+                governanceHat: governanceHat,
+                hackerHatVested: hackerHatVested
+            });
+        }
+    }
+
+    /** 
+    * @notice Returns the vault arbitrator
+    */
+    function getArbitrator() public view returns(address) {
+        if (arbitrationConfig.useVaultSpecific) {
+            return arbitrationConfig.arbitrator;
+        } else {
+            return registry.defaultArbitrator();
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge period
+    */
+    function getChallengePeriod() public view returns(uint256) {
+        if (arbitrationConfig.useVaultSpecific) {
+            return arbitrationConfig.challengePeriod;
+        } else {
+            return registry.defaultChallengePeriod();
+        }
+    }
+
+    /** 
+    * @notice Returns the vault challenge timeout period
+    */
+    function getChallengeTimeOutPeriod() public view returns(uint256) {
+        if (arbitrationConfig.useVaultSpecific) {
+            return arbitrationConfig.challengeTimeOutPeriod;
+        } else {
+            return registry.defaultChallengeTimeOutPeriod();
+        }
     }
 
     /** 
