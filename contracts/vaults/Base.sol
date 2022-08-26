@@ -73,13 +73,14 @@ error ChallengePeriodEnded();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
 // Cannot deposit to another user with withdraw request
-error CannotDepositToAnotherUserWithWithdrawRequest();
+error CannotTransferToAnotherUserWithActiveWithdrawRequest();
 // Withdraw amount must be greater than zero
 error WithdrawMustBeGreaterThanZero();
 // Withdraw amount cannot be more than maximum for user
 error WithdrawMoreThanMax();
 // Redeem amount cannot be more than maximum for user
 error RedeemMoreThanMax();
+error SystemInEmergencyPause();
 
 contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
@@ -222,6 +223,11 @@ contract Base is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     modifier onlyArbitrator() {
         if (getArbitrator() != msg.sender) revert OnlyArbitrator();
+        _;
+    }
+
+    modifier notEmergencyPaused() {
+        if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
         _;
     }
 

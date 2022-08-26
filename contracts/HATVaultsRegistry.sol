@@ -135,6 +135,8 @@ contract HATVaultsRegistry is Ownable {
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
 
+    bool public isEmergencyPaused;
+
     event LogClaim(address indexed _claimer, string _descriptionHash);
     event SetFeeSetter(address indexed _newFeeSetter);
     event SetWithdrawRequestParams(
@@ -167,6 +169,8 @@ contract HATVaultsRegistry is Ownable {
     event SetDefaultArbitrator(address indexed _arbitrator);
     event SetDefaultChallengePeriod(uint256 _challengePeriod);
     event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetEmergencyPaused(bool _isEmergencyPaused);
+
 
     /**
     * @notice initialize -
@@ -208,6 +212,15 @@ contract HATVaultsRegistry is Ownable {
         defaultArbitrator = _hatGovernance;
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
+    }
+
+    /**
+    * @notice Called by governance to pause/ unpause the system in case of an emergency
+    * @param _isEmergencyPaused Is the system in an emergency pause
+    */
+    function setEmergencyPaused(bool _isEmergencyPaused) external onlyOwner {
+        isEmergencyPaused = _isEmergencyPaused;
+        emit SetEmergencyPaused(_isEmergencyPaused);
     }
 
     /**

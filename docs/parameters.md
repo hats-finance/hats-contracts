@@ -5,7 +5,7 @@
 |`claimFee`|0 | - |global|`setClaimFee`|
 |`feeSetter`|zero address | |global|`setFeeSetter`
 |`hatVestingDuration`|90 days | < 180 days | global |  `setHatVestingParams`
-|`hatVestingPeriods`| 90 | > 0 |global|  `setHatVestingParams`
+|`hatVestingPeriods`| 90 | > 0, <= hatVestingDuration |global|  `setHatVestingParams`
 |`withdrawPeriod`|11 hours | >= 1 hours |global|`setWithdrawSafetyPeriod`
 |`safetyPeriod`|1 hours | <= 6 hours | global ||`setWithdrawSafetyPeriod`
 |`withdrawRequestPendingPeriod`| 7 days | <= 90 days|global|`setWithdrawRequestParams`

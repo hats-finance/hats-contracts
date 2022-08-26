@@ -19,8 +19,9 @@ contract Claim is Base {
     */
     function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
     external
-    onlyCommittee()
-    noActiveClaim()
+    onlyCommittee
+    noActiveClaim
+    notEmergencyPaused
     returns (bytes32 claimId)
     {
         HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -135,6 +136,9 @@ contract Claim is Base {
             claimBounty.hackerHatVested,
             claimBounty.governanceHat
         );
+
+        // make sure to reset approval
+        asset.safeApprove(address(registry), 0);
 
         // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(

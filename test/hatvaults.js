@@ -17,6 +17,8 @@ const {
   advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
   rewardPerEpoch,
 } = require("./common.js");
+const { assert } = require("chai");
+const { web3 } = require("hardhat");
 
 var hatVaultsRegistry;
 var vault;
@@ -887,9 +889,40 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "ERC4626: mint more than max");
     }
     await vault.setDepositPause(false);
+
+    tx = await hatVaultsRegistry.setEmergencyPaused(true);
+    assert.equal(tx.logs[0].event, "SetEmergencyPaused");
+    assert.equal(tx.logs[0].args._isEmergencyPaused, true);
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      assert(false, "cannot deposit during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    await hatVaultsRegistry.setEmergencyPaused(false);
+
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
+
+    await hatVaultsRegistry.setEmergencyPaused(true);
+    try {
+      await vault.submitClaim(
+        accounts[2],
+        8000,
+        "description hash",
+        {
+          from: accounts[1],
+        }
+      );
+      assert(false, "cannot submit claims during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    tx = await hatVaultsRegistry.setEmergencyPaused(false);
+    assert.equal(tx.logs[0].event, "SetEmergencyPaused");
+    assert.equal(tx.logs[0].args._isEmergencyPaused, false);
 
     tx = await vault.submitClaim(
       accounts[2],
@@ -899,6 +932,9 @@ contract("HatVaults", (accounts) => {
         from: accounts[1],
       }
     );
+
+    // can challenge and dismiss claims and withdraw during emergency pause
+    await hatVaultsRegistry.setEmergencyPaused(true);
 
     let claimId = tx.logs[0].args._claimId;
     await vault.challengeClaim(claimId);
@@ -1149,7 +1185,7 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("deposit cancel withdrawn request ", async () => {
+  it("deposit should cancel withdraw request ", async () => {
     await setup(accounts);
     var staker = accounts[1];
 
@@ -1166,12 +1202,22 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
+
+    // no withdraw request exists
+    assert.equal(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
     await vault.withdrawRequest({ from: staker });
+    // there is a withdraw request:
+    assert.notEqual(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
+
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    // dpeosit cancels the withdraw request:
+    assert.equal(await vault.withdrawEnableStartTime(staker), web3.utils.toWei("0"));
+    
+    // check that we indeed cannot redeem
     await utils.increaseTime(7 * 24 * 3600);
     try {
       await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
-      assert(false, "deposit cancel withdrawRequest");
+      assert(false, "deposit should cancel withdrawRequest");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
     }
@@ -2300,8 +2346,8 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
 
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
@@ -2366,8 +2412,8 @@ contract("HatVaults", (accounts) => {
 
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
     let stakerAmount = await vault.balanceOf(staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     await safeRedeem(vault, stakerAmount, staker);
@@ -2475,8 +2521,8 @@ contract("HatVaults", (accounts) => {
     
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     assert.equal(await vault.totalSupply(), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
@@ -2589,8 +2635,8 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
 
     await vault.withdrawRequest({ from: staker });
     //increase time for pending period
@@ -2681,18 +2727,21 @@ contract("HatVaults", (accounts) => {
       await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
       assert(false, "cannot deposit for user with a withdraw request");
     } catch (ex) {
-      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+      assertVMException(ex, "CannotTransferToAnotherUserWithActiveWithdrawRequest");
     }
 
-    tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestEnablePeriod.toString()));
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.caller, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
 
-    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
-    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
     assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
     assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));    
   });
@@ -2742,18 +2791,21 @@ contract("HatVaults", (accounts) => {
       await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
       assert(false, "cannot deposit for user with a withdraw request");
     } catch (ex) {
-      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+      assertVMException(ex, "CannotTransferToAnotherUserWithActiveWithdrawRequest");
     }
 
-    tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker });
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestEnablePeriod.toString()));
+
+    tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.caller, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
 
-    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("0"));
-    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+    assert.equal((await stakingToken.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
     assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
     assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));    
   });
@@ -2974,10 +3026,29 @@ contract("HatVaults", (accounts) => {
       await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
       assert(false, "cannot transfer to user with a withdraw request");
     } catch (ex) {
-      assertVMException(ex, "CannotDepositToAnotherUserWithWithdrawRequest");
+      assertVMException(ex, "CannotTransferToAnotherUserWithActiveWithdrawRequest");
     }
-    
+
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestEnablePeriod.toString()));
+    await vault.withdrawRequest({ from: staker2 });
+    //increase time for pending period
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
+
+    tx = await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
+
+    assert.equal(tx.logs[0].event, "Transfer");
+    assert.equal(tx.logs[0].args.from, staker2);
+    assert.equal(tx.logs[0].args.to, staker);
+    assert.equal(tx.logs[0].args.value.toString(), web3.utils.toWei("1"));
+    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+
     await advanceToSafetyPeriod();
+
+    await vault.withdrawRequest({ from: staker });
+    //increase time for pending period
+    await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
 
     tx = await vault.submitClaim(
       accounts[2],
@@ -3002,12 +3073,21 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
     await vault.dismissClaim(claimId);
 
-    tx = await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker2 });
+    await hatVaultsRegistry.setEmergencyPaused(true);
+    try {
+      await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
+      assert(false, "cannot transfer during an emergency pause");
+    } catch (ex) {
+      assertVMException(ex, "SystemInEmergencyPause");
+    }
+    await hatVaultsRegistry.setEmergencyPaused(false);
+
+    tx = await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
     assert.equal(tx.logs[0].event, "Transfer");
-    assert.equal(tx.logs[0].args.from, staker2);
+    assert.equal(tx.logs[0].args.from, staker);
     assert.equal(tx.logs[0].args.to, staker3);
     assert.equal(tx.logs[0].args.value.toString(), web3.utils.toWei("1"));
-    assert.equal((await vault.balanceOf(staker2)).toString(), web3.utils.toWei("0"));
+    assert.equal((await vault.balanceOf(staker)).toString(), web3.utils.toWei("0"));
     assert.equal((await vault.balanceOf(staker3)).toString(), web3.utils.toWei("1"));
   });
 
@@ -4407,9 +4487,10 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
-    assert.equal(tx.logs[7].event, "ApproveClaim");
-    assert.equal(tx.logs[7].args._claimId, claimId);
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[7].args._tokenLock);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
+
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
     var expectedHackerBalance = depositValutBNAfterClaim
@@ -4421,7 +4502,7 @@ contract("HatVaults", (accounts) => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[7].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[8].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -4518,9 +4599,9 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
     tx = await vault.approveClaim(claimId, 8000);
 
-    assert.equal(tx.logs[5].event, "ApproveClaim");
-    assert.equal(tx.logs[5].args._claimId, claimId);
-    assert.equal(tx.logs[5].args._tokenLock, utils.NULL_ADDRESS);
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._claimId, claimId);
+    assert.equal(tx.logs[6].args._tokenLock, utils.NULL_ADDRESS);
     assert.equal(
       await stakingToken.balanceOf(vault.address),
       web3.utils.toWei("0.2")
