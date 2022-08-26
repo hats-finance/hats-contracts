@@ -56,7 +56,7 @@ contract HATVault is Claim, Deposits, Params, Withdrawals {
     * @param maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty
     * @param bountySplit The way to split the bounty between the hacker, 
-    * hacekr vested, and committee.
+    * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     * @param asset The vault's native token

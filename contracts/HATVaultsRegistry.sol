@@ -327,7 +327,7 @@ contract HATVaultsRegistry is Ownable {
     * @param _maxBounty The maximum percentage of the vault that can be paid
     * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
     * @param _bountySplit The way to split the bounty between the hacker, 
-    * hacekr vested, and committee.
+    * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     * @param _descriptionHash Hash of the vault description.
