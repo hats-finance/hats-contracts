@@ -38,7 +38,7 @@ contract Params is Base {
     }
 
     function _setVestingParams(uint256 _duration, uint256 _periods) internal {
-        if (_duration >= 120 days) revert VestingDurationTooLong();
+        if (_duration > 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
         vestingDuration = _duration;
