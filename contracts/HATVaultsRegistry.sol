@@ -293,13 +293,13 @@ contract HATVaultsRegistry is Ownable {
     }
 
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
-        if (1 days > _challengePeriod) revert ChallengePeriodTooShort();
-        if (5 days < _challengePeriod) revert ChallengePeriodTooLong();
+        if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 
     function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
-        if (2 days > _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooShort();
-        if (85 days < _challengeTimeOutPeriod) revert ChallengeTimeOutPeriodTooLong();
+        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
+        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
     }
    
     /**
