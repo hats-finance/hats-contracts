@@ -1,11 +1,7 @@
 {
     "extends": "solhint:recommended",
     "rules": {
-      "indent": ["error", 4],
-      "compiler-fixed": "off",
       "max-states-count": ["warn", 25],
-      "no-simple-event-func-name": "off",
-      "two-lines-top-level-separator": "off",
       "mark-callable-contracts": "off",
       "reason-string": ["error", {"maxLength": 64}],
       "compiler-version": ["error", "^0.8.6"],

@@ -27,7 +27,7 @@ jobs:
       - run: cp .env.example .env
       - name: Solidity Lint
         run: |
-          npx hardhat check
+           npx solhint contracts/**/*.sol
       - name: JS Lint
         run: |
           npx eslint .
