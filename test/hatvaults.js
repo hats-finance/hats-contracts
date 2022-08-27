@@ -214,7 +214,7 @@ contract("HatVaults", (accounts) => {
     return await vault.withdraw(amount, staker, staker, { from: staker });
   }
 
-  it.only("constructor", async () => {
+  it("constructor", async () => {
     await setupPositionalArgs(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), accounts[0]);
