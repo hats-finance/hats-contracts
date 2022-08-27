@@ -377,19 +377,9 @@ contract("Registry Arbitrator", (accounts) => {
     });
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    // challengeClaim will fail if no active claim exists
-    await assertFunctionRaisesException(
-      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
-      "NoActiveClaimExists"
-    );
+
 
     let claimId = await submitClaim(vault, { accounts });
-
-    // challengeClaim will fail if no active claim exists
-    await assertFunctionRaisesException(
-      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
-      "WrongClaimId"
-    );
 
     // only arbitrator can challenge the claim
     await assertFunctionRaisesException(
@@ -536,6 +526,37 @@ contract("Registry Arbitrator", (accounts) => {
     await vault.dismissClaim(claimId, { from: owner });
   });
 
+  it("only active claim can be challenged", async () => {
+    const {registry, vault } = await setup(accounts);
+    const committee = accounts[1];
+    const arbitrator = accounts[2];
+    await registry.setDefaultArbitrator(arbitrator);
+    await advanceToSafetyPeriod(registry);
+
+    // challengeClaim will fail if no active claim exists
+    await assertFunctionRaisesException(
+      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
+      "NoActiveClaimExists"
+    );
+    
+
+
+    let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
+    const claimId1 = tx.logs[0].args._claimId;
+    await assertFunctionRaisesException(
+      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
+      "ClaimIdIsNotActive"
+    );
+
+    await vault.challengeClaim(claimId1, { from: arbitrator });
+    await vault.dismissClaim(claimId1, { from: arbitrator });
+
+    await assertFunctionRaisesException(
+        vault.challengeClaim(claimId1, { from: arbitrator }),
+        "NoActiveClaimExists"
+    );
+  });
+
 
   it("claim can be challenged only once", async () => {
     const {registry, vault } = await setup(accounts);
@@ -543,15 +564,7 @@ contract("Registry Arbitrator", (accounts) => {
     const arbitrator = accounts[2];
     await registry.setDefaultArbitrator(arbitrator);
     await advanceToSafetyPeriod(registry);
-    let tx = await vault.submitClaim(
-      committee,
-      8000,
-      "description hash",
-      {
-        from: committee,
-      }
-    );
-
+    let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
     const claimId1 = tx.logs[0].args._claimId;
     await vault.challengeClaim(claimId1, { from: arbitrator });
     // challenging claim 1 a second time will revert 

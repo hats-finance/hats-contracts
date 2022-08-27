@@ -29,7 +29,7 @@ error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
 // Claim Id specified is not the active claim Id
-error WrongClaimId();
+error ClaimIdIsNotActive();
 // Not enough fee paid
 error NotEnoughFeePaid();
 // No pending max bounty
@@ -317,7 +317,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
 
     modifier isActiveClaim(bytes32 _claimId) {
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
-        if (activeClaim.claimId != _claimId) revert WrongClaimId();
+        if (activeClaim.claimId != _claimId) revert ClaimIdIsNotActive();
         _;
     }
 
