@@ -470,10 +470,10 @@ interface IHATVaultsRegistry {
     ) external;
 
     /**
-     * @notice Called by governance to swap the given asset to HAT tokens and
+     * @notice Called by governance to swap the given asset to HAT tokens and 
      * distribute the HAT tokens: Send to governance their share and send to
      * beneficiaries their share through a vesting contract.
-     * @param _asset The address of vault's native token
+     * @param _asset The address of the token to be swapped to HAT tokens
      * @param _beneficiaries Addresses of beneficiaries
      * @param _amountOutMinimum Minimum amount of HAT tokens at swap
      * @param _routingContract Routing contract to call for the swap
