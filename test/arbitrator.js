@@ -465,11 +465,6 @@ contract("Registry Arbitrator", (accounts) => {
     await advanceToSafetyPeriod(registry);
     let claimId = await submitClaim(vault, { accounts });
 
-    await assertFunctionRaisesException(
-      vault.dismissClaim(claimId, { from: arbitrator }),
-      "OnlyCallableIfChallenged"
-    );
-
     await vault.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
@@ -496,11 +491,6 @@ contract("Registry Arbitrator", (accounts) => {
     await registry.setDefaultArbitrator(arbitrator);
     await advanceToSafetyPeriod(registry);
     let claimId = await submitClaim(vault, { accounts });
-
-    await assertFunctionRaisesException(
-      vault.dismissClaim(claimId, { from: arbitrator }),
-      "OnlyCallableIfChallenged"
-    );
 
     await vault.challengeClaim(claimId, { from: arbitrator });
     // now that the claim is challenged, only arbitrator can accept or dismiss
@@ -612,11 +602,8 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("only active claim can be approved", async () => {
-    const {registry, vault } = await setup(accounts);
-    const committee = accounts[1];
-    const arbitrator = accounts[2];
-    await registry.setDefaultArbitrator(arbitrator);
-    await advanceToSafetyPeriod(registry);
+    const {committee, registry, vault, arbitrator } = await setup(accounts);
+   await advanceToSafetyPeriod(registry);
 
     // challengeClaim will fail if no active claim exists
     await assertFunctionRaisesException(
@@ -625,27 +612,36 @@ contract("Registry Arbitrator", (accounts) => {
     );
 
     let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
-    const claimId1 = tx.logs[0].args._claimId;
+    const claimId = tx.logs[0].args._claimId;
     await assertFunctionRaisesException(
       vault.approveClaim(web3.utils.randomHex(32), 8, { from: accounts[2] }),
       "ClaimIdIsNotActive"
     );
 
-    await vault.challengeClaim(claimId1, { from: arbitrator });
-    await vault.dismissClaim(claimId1, { from: arbitrator });
+    await vault.challengeClaim(claimId, { from: arbitrator });
+    await vault.dismissClaim(claimId, { from: arbitrator });
 
     await assertFunctionRaisesException(
-        vault.approveClaim(claimId1, 8, { from: arbitrator }),
+        vault.approveClaim(claimId, 8, { from: arbitrator }),
         "NoActiveClaimExists"
     );
   });
 
+  it("only challenged claim can be approved", async () => {
+    const { registry, vault } = await setup(accounts);
+    console.log(registry);
+    await advanceToSafetyPeriod(registry);
 
+    const claimId = await submitClaim(vault, {accounts});
+    await assertFunctionRaisesException(
+      vault.approveClaim(claimId, 8, { from: accounts[2] }),
+      "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod"
+    );
+  });
+
+ 
   it("only active claim can be dismissed", async () => {
-    const {registry, vault } = await setup(accounts);
-    const committee = accounts[1];
-    const arbitrator = accounts[2];
-    await registry.setDefaultArbitrator(arbitrator);
+    const {registry, vault, arbitrator, committee } = await setup(accounts);
     await advanceToSafetyPeriod(registry);
 
     // challengeClaim will fail if no active claim exists
@@ -653,8 +649,6 @@ contract("Registry Arbitrator", (accounts) => {
       vault.dismissClaim(web3.utils.randomHex(32), { from: accounts[2] }),
       "NoActiveClaimExists"
     );
-    
-
 
     let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
     const claimId1 = tx.logs[0].args._claimId;
@@ -672,7 +666,14 @@ contract("Registry Arbitrator", (accounts) => {
     );
   });
 
-  
+   it("only challenged claim can be dismissed", async () => {
+    const { registry, vault, arbitrator } = await setup(accounts);
+    await advanceToSafetyPeriod(registry);
 
-
+    const claimId = await submitClaim(vault, {accounts});
+    await assertFunctionRaisesException(
+      vault.dismissClaim(claimId, { from: arbitrator }),
+      "OnlyCallableIfChallenged"
+    );
+  });
 });

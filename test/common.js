@@ -137,12 +137,17 @@ const setup = async function(
     allocPoint
   );
   await vault.committeeCheckIn({ from: committee });
+  const arbitrator = accounts[2];
+  const registry = hatVaultsRegistry;
+  await registry.setDefaultArbitrator(arbitrator);
+
   return {
-    registry: hatVaultsRegistry,
-    vault,
+    arbitrator,
+    committee,
+    registry,
     hatToken,
     stakingToken,
-    committee
+    vault,
   };
 };
 
