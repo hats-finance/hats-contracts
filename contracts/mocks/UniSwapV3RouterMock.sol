@@ -7,14 +7,14 @@ import "../interfaces/ISwapRouter.sol";
 
 contract UniSwapV3RouterMock {
 
+    enum ReturnType {ONE_TO_ONE, MINIMUM, BELOW_MINIMUM}
+
    /// @notice The length of the bytes encoded address
     uint256 private constant ADDR_SIZE = 20;
    /// @notice The length of the bytes encoded fee
     uint256 private constant FEE_SIZE = 3;
     /// @notice The offset of a single token address and pool fee
     uint256 private constant NEXT_OFFSET = ADDR_SIZE + FEE_SIZE;
-
-    enum ReturnType {ONE_TO_ONE, MINIMUM, BELOW_MINIMUM}
 
     ReturnType public returnType;
     address public immutable WETH9;
