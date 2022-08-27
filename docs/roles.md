@@ -16,7 +16,7 @@ See [parameters](./parameters.md) for more info.
 - `withdrawSafetyPeriod` the amount of time during which claims can be submitted; during this time the vault users can not withdraw their funds. Must be less than 6 hours
 - `withdrawRequestParams` time limits for withdrawal requests
 - `maxBountyDelay` the timelock delay for setting the max bounty
-- `isVaultVisibile` is the vault's visibility in the UI
+- `isVaultVisible` is the vault's visible in the UI
 - `HATBountySplit` how the HAT bounty is split betwen security researcher and governance
 - `owner` - the ownership itself 
 - `arbitrator` the arbitrator role
