@@ -12,10 +12,12 @@ const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 const {
+  assertFunctionRaisesException,
   assertVMException,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
   advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
   rewardPerEpoch,
+
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
@@ -39,6 +41,13 @@ async function advanceToNonSafetyPeriod() {
   return advanceToNonSafetyPeriod_(hatVaultsRegistry);
 }
 
+/*
+  setup will:
+  - deploy a registry
+  - create a new vault
+  - set accounts[1] to be the committee of the vault
+  - ...
+*/
 const setup = async function(
   accounts,
   startBlock = 0,

@@ -69,6 +69,8 @@ error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
 // Challenged claim can only be approved by arbitrator before the challenge timeout period
 error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
 error ChallengePeriodEnded();
+// claim can be challenged only once
+error ClaimAlreadyChallenged();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
 // Cannot deposit to another user with withdraw request
@@ -408,6 +410,9 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
+        if (activeClaim.challengedAt != 0) {
+            revert ClaimAlreadyChallenged();
+        } 
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
         emit ChallengeClaim(_claimId);

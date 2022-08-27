@@ -137,7 +137,7 @@ const setup = async function(
   );
   await vault.committeeCheckIn({ from: accounts[1] });
   return {
-    hatVaultsRegistry,
+    registry: hatVaultsRegistry,
     vault,
     hatToken,
     stakingToken,

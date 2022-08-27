@@ -29,28 +29,27 @@
 
 ## Settings owned by feeSetter
 
-| parameter  | default | limits  | applies to | | 
+| parameter  | default | limits  | | | 
 |-|-|-|-|-|
-|`withdrawalFee`| 0| < 2% |`vault.setWithdrawalFee`
+|`withdrawalFee`| 0| `<= 200` (<= 2%) |set per vault |`vault.setWithdrawalFee`
 
 ## Settings owned by Vault owner
 
-| parameter  | default | limits  | | 
-|-|-|-|-|
+| parameter  | default | limits  | | |
+|-|-|-|-|-|
 |`vaultDescription`| | | `setVaultDescription`
 |`depositPause`| | |  `setDepositPause`
 |`bountySplit.hacker`| | sum(bountysplit) = 100%|`setBountySplit` 
 |`bountySplit.hackerVested`| |sum(bountysplit) = 100% |`setBountySplit` 
 |`bountySplit.committee`| | sum(bountysplit) = 100%| `setBountySplit`
 |`rewardController`| | | `setRewardController`
-|`vestingDuration`| <= 120 days| | `setVestingParams`
+|`vestingDuration`| |<= 120 days, `< vestingPeriods`|  `setVestingParams`
 |`vestingPeriods`|| > 0|`setVestingParams` 
-|`maxBounty`| | <= 90%|`setPendingMaxBounty`, `setMaxBounty` 
-|`committee`| | | `setComittee`
-|`owner`| _hatGovernance | | per vault | vault.owner |`transferOwnership`, `renounceOwnership`  
+|`maxBounty`| | `<= 9000` (<= 90%)|`setPendingMaxBounty`, `setMaxBounty` 
+|`committee`| | | `setComittee` | if committee has not checked in yet
+|`owner`| _hatGovernance | |  `transferOwnership`, `renounceOwnership`  
 
 
-- `setPendingMaxBounty` only if there is no active claim
 -  `setCommittee` only if comittee has not checked in yet 
 -  `setBountySplit` only if there is no active claim and no safetyperiod, 
 - `vestingDuration < vestingPeriods`
