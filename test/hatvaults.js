@@ -18,7 +18,7 @@ const {
   advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
   rewardPerEpoch,
   setup,
-
+  submitClaim,
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
@@ -33,12 +33,14 @@ let safeWithdrawBlocksIncrement = 3;
 let rewardControllerExpectedHatsBalance;
 
 
-async function advanceToSafetyPeriod() {
-  return advanceToSafetyPeriod_(hatVaultsRegistry);
+async function advanceToSafetyPeriod(registry) {
+  if (!registry) registry = hatVaultsRegistry;
+  return advanceToSafetyPeriod_(registry);
 }
 
 async function advanceToNonSafetyPeriod() {
-  return advanceToNonSafetyPeriod_(hatVaultsRegistry);
+  if (!registry) registry = hatVaultsRegistry;
+  return advanceToNonSafetyPeriod_(registry);
 }
 
 /*
@@ -72,6 +74,7 @@ const setupPositionalArgs = async function(
     weth,
     rewardInVaults,
     challengePeriod,
+    setDefaultArbitrator: false
   });
 
   // copy global variables
@@ -1080,6 +1083,7 @@ contract("HatVaults", (accounts) => {
     rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(stakeVaule));
     let expectedReward = stakeVaule.mul(rewardPerShare).div(onee12);
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    await rewardController.claimReward(vault.address, staker, { from: staker});
     //staker  get stake back
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(
@@ -2894,23 +2898,38 @@ contract("HatVaults", (accounts) => {
 
   it("redeeming and transfer is locked while an active claim exists", async () => {
     // cannot transfer if an active claim exists
-    const { vault } = await setup(accounts);
-    await advanceToNonSafetyPeriod(registry);
+    const { vault, registry, stakingToken, someAccount } = await setup(accounts);
+    await advanceToSafetyPeriod(registry);
     await submitClaim(vault, { accounts });
     // there is an active claim, so call to transfer or redeem will be
-    var staker = accounts[1];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
-      from: staker,
+      from: someAccount,
     });
-    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(someAccount, web3.utils.toWei("1"));
 
-    // deposit some tokens so we can test for redeeming later
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    // deposit some tokens so we can test for redeeming later (depositing still works with an active claim)
+    await vault.deposit(web3.utils.toWei("1"), someAccount, { from: someAccount });
   
+
     await assertFunctionRaisesException(
-      vault.transfer(someAccountl, web3.utils.toWei("1"), { from: staker }),
+      vault.transfer(accounts[6], web3.utils.toWei("1"), { from: someAccount }),
       "ActiveClaimExists"
     );
+    await assertFunctionRaisesException(
+      vault.redeem(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      "RedeemMoreThanMax"
+    );
+    await assertFunctionRaisesException(
+      vault.redeem(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      "RedeemMoreThanMax"
+    );
+    await assertFunctionRaisesException(
+      vault.withdraw(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      "WithdrawMoreThanMax"
+    );
+
+
+
 
 
 
