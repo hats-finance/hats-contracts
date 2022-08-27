@@ -526,6 +526,24 @@ contract("Registry Arbitrator", (accounts) => {
     await vault.dismissClaim(claimId, { from: owner });
   });
 
+  it("claim can only be submitted during safety period", async () => {
+    const {registry, vault } = await setup(accounts);
+    const committee = accounts[1];
+    const arbitrator = accounts[2];
+    await registry.setDefaultArbitrator(arbitrator);
+
+   
+    await advanceToNonSafetyPeriod(registry);
+    // challengeClaim will fail if no active claim exists
+    await assertFunctionRaisesException(
+      vault.submitClaim(committee, 8, "", { from: committee, }),
+      "NotSafetyPeriod"
+    );
+ 
+
+  });
+
+
   it("only active claim can be challenged", async () => {
     const {registry, vault } = await setup(accounts);
     const committee = accounts[1];

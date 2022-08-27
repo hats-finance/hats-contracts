@@ -572,19 +572,17 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     await vault.challengeClaim(claimId);
-    try {
-      await vault.setPendingMaxBounty(8000);
-      assert(false, "there is already pending approval");
-    } catch (ex) {
-      assertVMException(ex, "ActiveClaimExists");
-    }
 
-    try {
-      await vault.setBountySplit([6000, 3000, 1000]);
-      assert(false, "cannot set split while there is pending approval");
-    } catch (ex) {
-      assertVMException(ex, "ActiveClaimExists");
-    }
+    await assertFunctionRaisesException(
+      vault.setPendingMaxBounty(8000),
+      "ActiveClaimExists"
+    );
+    await assertFunctionRaisesException(
+      vault.setBountySplit([6000, 3000, 1000]),
+      "ActiveClaimExists"
+    );
+
+
 
     tx = await vault.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
@@ -903,12 +901,11 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetEmergencyPaused");
     assert.equal(tx.logs[0].args._isEmergencyPaused, true);
 
-    try {
-      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-      assert(false, "cannot deposit during an emergency pause");
-    } catch (ex) {
-      assertVMException(ex, "SystemInEmergencyPause");
-    }
+    // can not deposit during emergeny pause
+    await assertFunctionRaisesException(
+      vault.deposit(web3.utils.toWei("1"), staker, { from: staker }),
+      "SystemInEmergencyPause"
+    );
     await hatVaultsRegistry.setEmergencyPaused(false);
 
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -916,19 +913,20 @@ contract("HatVaults", (accounts) => {
     await advanceToSafetyPeriod();
 
     await hatVaultsRegistry.setEmergencyPaused(true);
-    try {
-      await vault.submitClaim(
+    
+    // can not submit a claim during emergency pause
+    const committee = accounts[1];
+    await assertFunctionRaisesException(
+      vault.submitClaim(
         accounts[2],
         8000,
         "description hash",
         {
-          from: accounts[1],
+          from: committee,
         }
-      );
-      assert(false, "cannot submit claims during an emergency pause");
-    } catch (ex) {
-      assertVMException(ex, "SystemInEmergencyPause");
-    }
+      ),
+      "SystemInEmergencyPause"
+    );
     tx = await hatVaultsRegistry.setEmergencyPaused(false);
     assert.equal(tx.logs[0].event, "SetEmergencyPaused");
     assert.equal(tx.logs[0].args._isEmergencyPaused, false);
@@ -2305,14 +2303,13 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
     }
 
-    try {
-      await vault.submitClaim(accounts[2], 8000, "description hash", {
+    // only the comittee can submit a claim
+    await assertFunctionRaisesException(
+      vault.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[2],
-      });
-      assert(false, "only committee");
-    } catch (ex) {
-      assertVMException(ex, "OnlyCommittee");
-    }
+      }),
+      "OnlyCommittee"
+    );
 
     try {
       await vault.approveClaim(web3.utils.randomHex(32), 8000);
@@ -2327,14 +2324,14 @@ contract("HatVaults", (accounts) => {
 
     claimId = tx.logs[0].args._claimId;
 
-    try {
-      await vault.submitClaim(accounts[2], 8000, "description hash", {
+    // cannot submit a claim if an active claim already exists
+    await assertFunctionRaisesException(
+      vault.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[1],
-      });
-      assert(false, "there is already pending approval");
-    } catch (ex) {
-      assertVMException(ex, "ActiveClaimExists");
-    }
+      }),
+      "ActiveClaimExists"
+    );
+ 
     assert.equal(tx.logs[0].event, "SubmitClaim");
     assert.equal(tx.logs[0].args._committee, accounts[1]);
     assert.equal(tx.logs[0].args._beneficiary, accounts[2]);
@@ -3064,12 +3061,10 @@ contract("HatVaults", (accounts) => {
 
     await advanceToNonSafetyPeriod();
 
-    try {
-      await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker2 });
-      assert(false, "cannot transfer when active claim exists");
-    } catch (ex) {
-      assertVMException(ex, "ActiveClaimExists");
-    }
+    await assertFunctionRaisesException(
+      vault.transfer(staker3, web3.utils.toWei("1"), { from: staker2 }),
+      "ActiveClaimExists"
+    );
 
     let claimId = tx.logs[0].args._claimId;
 
@@ -3077,12 +3072,12 @@ contract("HatVaults", (accounts) => {
     await vault.dismissClaim(claimId);
 
     await hatVaultsRegistry.setEmergencyPaused(true);
-    try {
-      await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
-      assert(false, "cannot transfer during an emergency pause");
-    } catch (ex) {
-      assertVMException(ex, "SystemInEmergencyPause");
-    }
+    await assertFunctionRaisesException(
+      vault.transfer(staker3, web3.utils.toWei("1"), { from: staker }),
+      "SystemInEmergencyPause"
+
+    );
+
     await hatVaultsRegistry.setEmergencyPaused(false);
 
     tx = await vault.transfer(staker3, web3.utils.toWei("1"), { from: staker });
