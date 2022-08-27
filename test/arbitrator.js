@@ -466,7 +466,6 @@ contract("Registry Arbitrator", (accounts) => {
     // set challenge period to one day
     const someAccount = accounts[4];
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
-    const owner = accounts[0];
     await registry.setDefaultArbitrator(arbitrator);
     await advanceToSafetyPeriod(registry);
     let claimId = await submitClaim(vault, { accounts });

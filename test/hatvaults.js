@@ -2190,7 +2190,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + stake + exit", async () => {
-    const { committee } = await setUpGlobalVars(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -4561,7 +4561,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("no vesting", async () => {
-    await setUpGlobalVars (accounts, 0, 8000, [0, 10000, 0], [0, 0]);
+    await setUpGlobalVars(accounts, 0, 8000, [0, 10000, 0], [0, 0]);
 
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {

@@ -9,7 +9,6 @@ const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
-const { defaultAbiCoder } = require("ethers/lib/utils.js");
 
 let rewardPerEpoch = [
   web3.utils.toWei("441.3"),
