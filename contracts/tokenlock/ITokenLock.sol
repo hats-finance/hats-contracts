@@ -8,6 +8,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface ITokenLock {
     enum Revocability { NotSet, Enabled, Disabled }
 
+    // -- Value Transfer --
+
+    function release() external;
+
+    function withdrawSurplus(uint256 _amount) external;
+
+    function revoke() external;
+
     // -- Balances --
 
     function currentBalance() external view returns (uint256);
@@ -39,12 +47,4 @@ interface ITokenLock {
     function totalOutstandingAmount() external view returns (uint256);
 
     function surplusAmount() external view returns (uint256);
-
-    // -- Value Transfer --
-
-    function release() external;
-
-    function withdrawSurplus(uint256 _amount) external;
-
-    function revoke() external;
 }

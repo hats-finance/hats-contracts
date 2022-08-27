@@ -250,19 +250,6 @@ contract HATVaultsRegistry is Ownable {
         emit SetDefaultHATBountySplit(_defaultHATBountySplit);
     }
 
-    /** 
-    * @dev Check that a given hats bounty split is legal, meaning that:
-    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
-    * function will revert in case the bounty split is not legal.
-    * @param _hatBountySplit The bounty split to check
-    */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
-        if (_hatBountySplit.governanceHat +
-            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
-            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
-    }
-
     /**
     * @notice Called by governance to set the default arbitrator.
     * @param _defaultArbitrator The default arbitrator address
@@ -290,16 +277,6 @@ contract HATVaultsRegistry is Ownable {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
-    }
-
-    function validateChallengePeriod(uint256 _challengePeriod) public pure {
-        if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
-        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
-    }
-
-    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
-        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
-        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
     }
    
     /**
@@ -515,7 +492,7 @@ contract HATVaultsRegistry is Ownable {
         swapData.amount = swapData.totalHackersHatReward + governanceHatReward[_asset];
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
-        (swapData.hatsReceived, swapData.amountUnused) = swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
+        (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
 
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
@@ -549,6 +526,44 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
+    * @notice Returns the general parameters for all vaults
+    * @return generalParameters: See { HATVaultsRegistry-generalParameters }
+    */    
+    function getGeneralParameters() external view returns(GeneralParameters memory) {
+        return generalParameters;
+    }
+
+    /**
+    * @notice Returns the number of vaults that have been previously created 
+    */
+    function getNumberOfVaults() external view returns(uint256) {
+        return hatVaults.length;
+    }
+
+    /** 
+    * @dev Check that a given hats bounty split is legal, meaning that:
+    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
+    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * function will revert in case the bounty split is not legal.
+    * @param _hatBountySplit The bounty split to check
+    */
+    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+        if (_hatBountySplit.governanceHat +
+            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
+            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    }
+
+    function validateChallengePeriod(uint256 _challengePeriod) public pure {
+        if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
+    }
+
+    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
+        if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
+        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
+    }
+
+    /**
     * @dev Use the given routing contract to swap the given token to HAT token
     * @param _asset The token to swap
     * @param _amount Amount of token to swap
@@ -557,7 +572,7 @@ contract HATVaultsRegistry is Ownable {
     * @param _routingPayload Payload to send to the _routingContract for the 
     * swap
     */
-    function swapTokenForHAT(
+    function _swapTokenForHAT(
         IERC20 _asset,
         uint256 _amount,
         uint256 _amountOutMinimum,
@@ -584,20 +599,5 @@ contract HATVaultsRegistry is Ownable {
             revert AmountSwappedLessThanMinimum();
             
         IERC20(_asset).safeApprove(address(_routingContract), 0);
-    }
-
-    /**
-    * @notice Returns the general parameters for all vaults
-    * @return generalParameters: See { HATVaultsRegistry-generalParameters }
-    */    
-    function getGeneralParameters() external view returns(GeneralParameters memory) {
-        return generalParameters;
-    }
-
-    /**
-    * @notice Returns the number of vaults that have been previously created 
-    */
-    function getNumberOfVaults() external view returns(uint256) {
-        return hatVaults.length;
     }
 }

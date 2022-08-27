@@ -9,6 +9,7 @@
       "max-line-length": ["warn", 179],
       "no-unused-vars": "warn",
       "ordering": "warn",
-      "visibility-modifier-order": "warn"
+      "visibility-modifier-order": "warn",
+      "var-name-mixedcase": "off"
     }
   }
