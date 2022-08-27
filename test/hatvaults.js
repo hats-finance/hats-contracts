@@ -50,7 +50,7 @@ async function advanceToNonSafetyPeriod(registry) {
   - set accounts[1] to be the committee of the vault
   - ...
 */
-const setupPositionalArgs = async function(
+const setUpGlobalVars = async function(
   accounts,
   startBlock = 0,
   maxBounty = 8000,
@@ -215,14 +215,14 @@ contract("HatVaults", (accounts) => {
   }
 
   it("constructor", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), accounts[0]);
     assert.equal(await vault.owner(), accounts[0]);
   });
 
   it("Set reward controller", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal((await vault.rewardController()), rewardController.address);
 
     try {
@@ -238,7 +238,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("setCommittee", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(await vault.committee(), accounts[1]);
 
     await vault.setCommittee(accounts[2], { from: accounts[1] });
@@ -311,7 +311,7 @@ contract("HatVaults", (accounts) => {
 
   it("dismiss can be called by anyone after 5 weeks delay", async () => {
     var staker = accounts[1];
-    await setupPositionalArgs(accounts, 0, 9000, [9000, 0, 1000], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
+    await setUpGlobalVars(accounts, 0, 9000, [9000, 0, 1000], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
 
     await advanceToSafetyPeriod();
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -348,41 +348,41 @@ contract("HatVaults", (accounts) => {
 
   it("custom bountySplit, hatBountySplit, and max bounty", async () => {
     try {
-      await setupPositionalArgs(accounts, 0, 9000, [9000, 0, 1000], [5000, 5000]);
+      await setUpGlobalVars(accounts, 0, 9000, [9000, 0, 1000], [5000, 5000]);
       assert(false, "cannot init with hat bounty split <= 10000");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await setupPositionalArgs(accounts, 0, 9000, [9000, 0, 1000], [5000, 5001]);
+      await setUpGlobalVars(accounts, 0, 9000, [9000, 0, 1000], [5000, 5001]);
       assert(false, "cannot init with hat bounty split <= 10000");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await setupPositionalArgs(accounts, 0, 9000, [9000, 1, 1000], [100, 800]);
+      await setUpGlobalVars(accounts, 0, 9000, [9000, 1, 1000], [100, 800]);
       assert(false, "cannot init with rewardSplit > 10000");
     } catch (ex) {
       assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
 
     try {
-      await setupPositionalArgs(accounts, 0, 9000, [9000, 0, 999], [100, 800]);
+      await setUpGlobalVars(accounts, 0, 9000, [9000, 0, 999], [100, 800]);
       assert(false, "cannot init with rewardSplit < 10000");
     } catch (ex) {
       assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
 
     try {
-      await setupPositionalArgs(accounts, 0, 9901, [8000, 1000, 1000], [100, 800]);
+      await setUpGlobalVars(accounts, 0, 9901, [8000, 1000, 1000], [100, 800]);
       assert(false, "cannot init with max bounty > 10000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
 
-    await setupPositionalArgs(accounts, 0, 9000, [8000, 1500, 500], [200, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
+    await setUpGlobalVars(accounts, 0, 9000, [8000, 1500, 500], [200, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     assert.equal((await vault.maxBounty()).toString(), "9000");
     assert.equal(
       (await vault.bountySplit()).hacker.toString(),
@@ -574,7 +574,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("update default hatBountySplit", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
 
     assert.equal(
       (await vault.getHATBountySplit()).governanceHat.toString(),
@@ -695,7 +695,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("zero totalAllocPoints", async () => {
-    await setupPositionalArgs(accounts, 0, 9000, [8000, 1000, 1000], [1000, 500], 10, 0, 0);
+    await setUpGlobalVars(accounts, 0, 9000, [8000, 1000, 1000], [1000, 500], 10, 0, 0);
 
     var staker = accounts[1];
 
@@ -715,7 +715,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("anyone can create a vault", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
 
     assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "1");
 
@@ -787,7 +787,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit cannot be 0", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -820,7 +820,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdrawn", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
+    await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -954,7 +954,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdraw cannot be 0", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -989,7 +989,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("setWithdrawSafetyPeriod", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
+    await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     try {
       await hatVaultsRegistry.setWithdrawSafetyPeriod(60 * 60, 60 * 30, {
         from: accounts[1],
@@ -1099,7 +1099,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("set withdrawn request params", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(
       (await hatVaultsRegistry.generalParameters()).withdrawRequestEnablePeriod,
       7 * 24 * 3600
@@ -1157,7 +1157,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit should cancel withdraw request ", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
@@ -1195,7 +1195,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdrawn request ", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
@@ -1272,7 +1272,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Set fee and fee setter", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     try {
       await hatVaultsRegistry.setFeeSetter(accounts[1], {
         from: accounts[1],
@@ -1373,7 +1373,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("stake", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
     try {
       await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -1438,7 +1438,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("claim reward", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1481,7 +1481,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("claim reward before deposit", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1546,7 +1546,7 @@ contract("HatVaults", (accounts) => {
 
 
   it("cannot claim the same reward twice", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1586,7 +1586,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("multiple stakes from same account", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1682,7 +1682,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("claim reward from vault with existing funds claims only from user deposit time", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1754,7 +1754,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("claim reward after partial withdraw", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1849,7 +1849,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("hat reward withdraw all balance if reward larger than balance", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -1943,7 +1943,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("getRewardForBlocksRange - from below startblock will revert ", async () => {
-    await setupPositionalArgs(accounts, 1);
+    await setUpGlobalVars(accounts, 1);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -1960,7 +1960,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
-    await setupPositionalArgs(accounts, 0);
+    await setUpGlobalVars(accounts, 0);
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
@@ -1975,7 +1975,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("getRewardForBlocksRange - from must be <= to", async () => {
-    await setupPositionalArgs(accounts, 0);
+    await setUpGlobalVars(accounts, 0);
     try {
       await rewardController.getRewardForBlocksRange(1, 0, 0, 1000);
       assert(false, "from must be <= to");
@@ -1994,7 +1994,7 @@ contract("HatVaults", (accounts) => {
     var rewardPerEpochRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
-    await setupPositionalArgs(accounts, 0);
+    await setUpGlobalVars(accounts, 0);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2078,7 +2078,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("getMultiplier - ", async () => {
-    await setupPositionalArgs(accounts, 0);
+    await setUpGlobalVars(accounts, 0);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2144,7 +2144,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("getPendingReward + getRewardPerBlock", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
     assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
     await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
@@ -2190,7 +2190,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + stake + exit", async () => {
-    const { committee } = await setupPositionalArgs(
+    const { committee } = await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2340,7 +2340,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve+ stake simple check rewards", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10000);
+    await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10000);
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: staker,
@@ -2388,7 +2388,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdraw all after approve and check reward", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10000);
+    await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10000);
     var staker = accounts[1];
     var staker2 = accounts[3];
     await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
@@ -2431,7 +2431,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit mint withdraw redeem after approve claim", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2545,7 +2545,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdraw all and claim reward after approve", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2637,7 +2637,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit for another user", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2701,7 +2701,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("mint for another user", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2765,7 +2765,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdraw from another user", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2831,7 +2831,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("redeem from another user", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2936,7 +2936,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("transfer shares", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -3079,7 +3079,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("transferFrom shares", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -3139,7 +3139,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("enable farming + 2xapprove+ exit", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: staker,
@@ -3204,13 +3204,13 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Update pool before start time", async () => {
-    await setupPositionalArgs(accounts, (await web3.eth.getBlock("latest")).number + 10);
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number + 10);
     assert.equal(await rewardController.getPendingReward(vault.address, accounts[0]), 0);
     await rewardController.updateVault(vault.address);
   });
 
   it("deposit + withdraw after time end (bdp bug)", async () => {
-    await setupPositionalArgs(accounts, (await web3.eth.getBlock("latest")).number);
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let hatsAvailable = await hatToken.balanceOf(rewardController.address);
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -3257,7 +3257,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + swapAndSend", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: staker,
@@ -3373,7 +3373,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + swapAndSend weth vault", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       0,
       8000,
@@ -3445,7 +3445,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve+ swapAndSend with HAT vault", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[4];
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       hatToken.address,
@@ -3560,7 +3560,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + swapAndSend 2 vaults with same token", async () => {
-    await setupPositionalArgs(accounts, 0, 8000, [8000, 2000, 0], [600, 400]);
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [600, 400]);
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
@@ -3712,7 +3712,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Update vault description", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);
 
     try {
@@ -3739,7 +3739,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("swapAndSend", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[4];
     var staker2 = accounts[3];
 
@@ -3886,7 +3886,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("swapAndSend router uses partial amount", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[4];
     var staker2 = accounts[3];
 
@@ -4129,7 +4129,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("swapAndSend 2 vaults with same token", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
       stakingToken.address,
@@ -4283,7 +4283,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("swapAndSend return below than minimum should revert", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       9000,
@@ -4350,7 +4350,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("swapAndSend with bad call should revert", async () => {
-    await setupPositionalArgs(accounts, (await web3.eth.getBlock("latest")).number, 9000,
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number, 9000,
     [
       8400,
       1500,
@@ -4408,7 +4408,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("log claim", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     let someHash = "0x00000000000000000000000000000000000001";
     let fee = web3.utils.toWei("1");
     var tx = await hatVaultsRegistry.logClaim(someHash, { from: accounts[3] });
@@ -4445,7 +4445,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("vesting", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[4];
     var staker2 = accounts[3];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -4561,7 +4561,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("no vesting", async () => {
-    await setupPositionalArgs (accounts, 0, 8000, [0, 10000, 0], [0, 0]);
+    await setUpGlobalVars (accounts, 0, 8000, [0, 10000, 0], [0, 0]);
 
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -4600,7 +4600,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("set vesting params", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(await vault.vestingDuration(), 86400);
     assert.equal(await vault.vestingPeriods(), 10);
 
@@ -4638,7 +4638,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("set hat vesting params", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     assert.equal(
       (await hatVaultsRegistry.generalParameters()).hatVestingDuration,
       90 * 3600 * 24
@@ -4682,7 +4682,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("unSafeWithdraw", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var staker = accounts[1];
 
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -4717,7 +4717,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("createVault with zero alloc point", async () => {
-    await setupPositionalArgs(accounts, (await web3.eth.getBlock("latest")).number);
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
@@ -4757,7 +4757,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("creat vault x2 v2", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -4964,7 +4964,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("stop in the middle", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -5018,7 +5018,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("check deep alloc history", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -5078,7 +5078,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("deposit twice on the same block", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     var vaultsManagerMock = await VaultsManagerMock.new();
     await stakingToken.mint(vaultsManagerMock.address, web3.utils.toWei("2"));
     await vaultsManagerMock.depositTwice(
@@ -5093,7 +5093,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("set pending bounty level delay", async () => {
-    await setupPositionalArgs(accounts);
+    await setUpGlobalVars(accounts);
     try {
       await hatVaultsRegistry.setMaxBountyDelay(24 * 3600 * 2, {
         from: accounts[1],
@@ -5125,7 +5125,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("withdraw+ deposit + addition HAT ", async () => {
-    await setupPositionalArgs(accounts, (await web3.eth.getBlock("latest")).number);
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
@@ -5198,7 +5198,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("transferReward to fail if not enough reward tokens", async () => {
-    await setupPositionalArgs(
+    await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
