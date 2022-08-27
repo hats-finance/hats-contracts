@@ -456,11 +456,10 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("challenge - dismiss claim by arbitrator", async () => {
-    const { registry, vault } = await setup(accounts);
+    const { registry, vault, arbitrator } = await setup(accounts);
     // set challenge period to one day
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
     const owner = accounts[0];
-    const arbitrator = accounts[1];
     await registry.setDefaultArbitrator(arbitrator);
     await advanceToSafetyPeriod(registry);
     let claimId = await submitClaim(vault, { accounts });
@@ -482,12 +481,11 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("challenge - dismiss claim by anyone after timeout", async () => {
-    const { registry, vault } = await setup(accounts);
+    const { registry, vault, arbitrator } = await setup(accounts);
     // set challenge period to one day
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
     await registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 2);
     const owner = accounts[0];
-    const arbitrator = accounts[1];
     await registry.setDefaultArbitrator(arbitrator);
     await advanceToSafetyPeriod(registry);
     let claimId = await submitClaim(vault, { accounts });
