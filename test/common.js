@@ -9,6 +9,7 @@ const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { defaultAbiCoder } = require("ethers/lib/utils.js");
 
 let rewardPerEpoch = [
   web3.utils.toWei("441.3"),
@@ -63,36 +64,42 @@ function assertVMException(error, expectedError = "") {
 
 const setup = async function(
   accounts,
-  startBlock = 0,
-  maxBounty = 8000,
-  bountySplit = [7500, 2000, 500],
-  hatBountySplit = [1500, 500],
-  halvingAfterBlock = 10,
-  routerReturnType = 0,
-  allocPoint = 100,
-  weth = false,
-  rewardInVaults = 2500000,
-  challengePeriod = 60 * 60 * 24
+  options = {}
+
 ) {
+  const defaultOptions = {
+    startBlock : 0,
+    maxBounty : 8000,
+    bountySplit : [7500, 2000, 500],
+    hatBountySplit : [1500, 500],
+    halvingAfterBlock : 10,
+    routerReturnType : 0,
+    allocPoint : 100,
+    weth : false,
+    rewardInVaults : 2500000,
+    challengePeriod: 60 * 60 * 24,
+    setDefaultArbitrator: true
+  };
+  options = { ...defaultOptions, ...options};
   const committee = accounts[1];
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
-  var wethAddress = utils.NULL_ADDRESS;
-  if (weth) {
+  let wethAddress = utils.NULL_ADDRESS;
+  if (options.weth) {
     wethAddress = stakingToken.address;
   }
-  router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
+  router = await UniSwapV3RouterMock.new(options.routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
 
   let deployment = await deployHatVaults(
     hatToken.address,
-    startBlock,
+    options.startBlock,
     rewardPerEpoch,
-    halvingAfterBlock,
+    options.halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    hatBountySplit,
+    options.hatBountySplit,
     tokenLockFactory.address,
     true
   );
@@ -105,15 +112,15 @@ const setup = async function(
   await utils.setMinter(
     hatToken,
     accounts[0],
-    web3.utils.toWei((2500000 + rewardInVaults).toString())
+    web3.utils.toWei((2500000 + options.rewardInVaults).toString())
   );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
-  await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
+  await hatToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
   await hatToken.transfer(
     rewardController.address,
-    web3.utils.toWei(rewardInVaults.toString())
+    web3.utils.toWei(options.rewardInVaults.toString())
   );
-  hatVaultsExpectedHatsBalance = rewardInVaults;
+  hatVaultsExpectedHatsBalance = options.rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
   let vault = await HATVault.at((await hatVaultsRegistry.createVault(
@@ -121,27 +128,32 @@ const setup = async function(
     await hatVaultsRegistry.owner(),
     accounts[1],
     rewardController.address,
-    maxBounty,
-    bountySplit,
+    options.maxBounty,
+    options.bountySplit,
     "_descriptionHash",
     [86400, 10],
     false
   )).logs[1].args._vault);
 
-  if (challengePeriod) {
-    await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
+  if (options.challengePeriod) {
+    await hatVaultsRegistry.setDefaultChallengePeriod(options.challengePeriod);
   }
 
   await rewardController.setAllocPoint(
     vault.address,
-    allocPoint
+    options.allocPoint
   );
   await vault.committeeCheckIn({ from: committee });
-  const arbitrator = accounts[2];
   const registry = hatVaultsRegistry;
-  await registry.setDefaultArbitrator(arbitrator);
+  let arbitrator;
+  if (options.setDefaultArbitrator) {
+    arbitrator = accounts[2];
+    await registry.setDefaultArbitrator(arbitrator);
+
+  }
 
   return {
+    owner: accounts[0],
     arbitrator,
     committee,
     registry,
