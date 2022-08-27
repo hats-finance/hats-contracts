@@ -153,14 +153,18 @@ const setup = async function(
   }
 
   return {
-    owner: accounts[0],
     arbitrator,
     committee,
-    registry,
     hatToken,
+    owner: accounts[0],
+    registry,
+    rewardController,
+    hatVaultsExpectedHatsBalance,
+    router,
+    someAccount: accounts[5], // an account without any special role
     stakingToken,
     vault,
-    someAccount: accounts[5] // an account without any special role
+    rewardControllerExpectedHatsBalance: options.rewardInVaults
   };
 };
 
