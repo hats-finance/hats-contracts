@@ -2225,7 +2225,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("approve + stake + exit", async () => {
-    await setup(
+    const { committee } = await setup(
       accounts,
       (await web3.eth.getBlock("latest")).number,
       8000,
@@ -2264,13 +2264,6 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
     await utils.increaseTime(60 * 60 * 24 * 3 + 1);
 
-    try {
-      await vault.approveClaim(claimId, 8000);
-      assert(false, "lpbalance is zero");
-    } catch (ex) {
-      assertVMException(ex, "VaultBalanceIsZero");
-    }
-
     tx = await vault.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
@@ -2294,14 +2287,12 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "NotSafetyPeriod");
     }
     await advanceToSafetyPeriod();
-    try {
+    await assertFunctionRaisesException(
       await vault.submitClaim(accounts[2], 8001, "description hash", {
-        from: accounts[1],
-      });
-      assert(false, "percentage requested too high");
-    } catch (ex) {
-      assertVMException(ex, "BountyPercentageHigherThanMaxBounty");
-    }
+        from: committee
+      }),
+      "BountyPercentageHigherThanMaxBounty"
+    );
 
     // only the comittee can submit a claim
     await assertFunctionRaisesException(

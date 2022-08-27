@@ -42,8 +42,6 @@ error CommitteeAlreadyCheckedIn();
 error PendingWithdrawRequestExists();
 // Amount to deposit is zero
 error AmountToDepositIsZero();
-// Vault balance is zero
-error VaultBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
@@ -1052,7 +1050,9 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     */
     function _calcClaimBounty(uint256 _bountyPercentage) internal view returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) revert VaultBalanceIsZero();
+        if (totalSupply == 0) {
+          return claimBounty;
+        }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 

@@ -24,3 +24,4 @@ artifacts
 remix-compiler.config.js
 .DS_Store
 .openzeppelin
+audit

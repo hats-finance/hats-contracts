@@ -74,6 +74,7 @@ const setup = async function(
   rewardInVaults = 2500000,
   challengePeriod = 60 * 60 * 24
 ) {
+  const committee = accounts[1];
   hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
   stakingToken = await ERC20Mock.new("Staking", "STK");
   var wethAddress = utils.NULL_ADDRESS;
@@ -135,12 +136,13 @@ const setup = async function(
     vault.address,
     allocPoint
   );
-  await vault.committeeCheckIn({ from: accounts[1] });
+  await vault.committeeCheckIn({ from: committee });
   return {
     registry: hatVaultsRegistry,
     vault,
     hatToken,
     stakingToken,
+    committee
   };
 };
 

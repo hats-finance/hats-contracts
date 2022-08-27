@@ -345,6 +345,7 @@ contract("Registry Arbitrator", (accounts) => {
     // go and pass the challenge period
     await utils.increaseTime(60 * 60 * 24);
 
+    // claim can only be challanged during the challenge period
     await assertFunctionRaisesException(
       vault.challengeClaim(claimId, { from: accounts[3] }),
       "ChallengePeriodEnded"
@@ -361,7 +362,7 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("challenge - approve Claim ", async () => {
-    const { registry, vault, stakingToken } = await setup(accounts);
+    const { registry, vault, stakingToken, committee } = await setup(accounts);
     // set challenge period to one day
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
     const owner = accounts[0];
@@ -383,9 +384,11 @@ contract("Registry Arbitrator", (accounts) => {
 
     // only arbitrator can challenge the claim
     await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: accounts[1] }),
+      vault.challengeClaim(claimId, { from: committee }),
       "OnlyArbitrator"
     );
+
+    // only arbitrator can challenge the claim
     await assertFunctionRaisesException(
       vault.challengeClaim(claimId, { from: owner }),
       "OnlyArbitrator"
@@ -605,11 +608,71 @@ contract("Registry Arbitrator", (accounts) => {
     await vault.dismissClaim(claimId1, { from: arbitrator });
     let tx2 = await vault.submitClaim(committee, 8, "", { from: committee, });
     const claimId2 = tx2.logs[0].args._claimId;
-    console.log(claimId1);
-    console.log(claimId2);
     assert.notEqual(claimId1, claimId2, "second claim id is the same as the first");
   });
 
+  it("only active claim can be approved", async () => {
+    const {registry, vault } = await setup(accounts);
+    const committee = accounts[1];
+    const arbitrator = accounts[2];
+    await registry.setDefaultArbitrator(arbitrator);
+    await advanceToSafetyPeriod(registry);
+
+    // challengeClaim will fail if no active claim exists
+    await assertFunctionRaisesException(
+      vault.approveClaim(web3.utils.randomHex(32), 8, { from: accounts[2] }),
+      "NoActiveClaimExists"
+    );
+
+    let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
+    const claimId1 = tx.logs[0].args._claimId;
+    await assertFunctionRaisesException(
+      vault.approveClaim(web3.utils.randomHex(32), 8, { from: accounts[2] }),
+      "ClaimIdIsNotActive"
+    );
+
+    await vault.challengeClaim(claimId1, { from: arbitrator });
+    await vault.dismissClaim(claimId1, { from: arbitrator });
+
+    await assertFunctionRaisesException(
+        vault.approveClaim(claimId1, 8, { from: arbitrator }),
+        "NoActiveClaimExists"
+    );
+  });
+
+
+  it("only active claim can be dismissed", async () => {
+    const {registry, vault } = await setup(accounts);
+    const committee = accounts[1];
+    const arbitrator = accounts[2];
+    await registry.setDefaultArbitrator(arbitrator);
+    await advanceToSafetyPeriod(registry);
+
+    // challengeClaim will fail if no active claim exists
+    await assertFunctionRaisesException(
+      vault.dismissClaim(web3.utils.randomHex(32), { from: accounts[2] }),
+      "NoActiveClaimExists"
+    );
+    
+
+
+    let tx = await vault.submitClaim(committee, 8, "", { from: committee, });
+    const claimId1 = tx.logs[0].args._claimId;
+    await assertFunctionRaisesException(
+      vault.challengeClaim(web3.utils.randomHex(32), { from: accounts[2] }),
+      "ClaimIdIsNotActive"
+    );
+
+    await vault.challengeClaim(claimId1, { from: arbitrator });
+    await vault.approveClaim(claimId1, 1, { from: arbitrator });
+
+    await assertFunctionRaisesException(
+        vault.dismissClaim(claimId1, { from: arbitrator }),
+        "NoActiveClaimExists"
+    );
+  });
+
+  
 
 
 });
