@@ -38,7 +38,7 @@ async function advanceToSafetyPeriod(registry) {
   return advanceToSafetyPeriod_(registry);
 }
 
-async function advanceToNonSafetyPeriod() {
+async function advanceToNonSafetyPeriod(registry) {
   if (!registry) registry = hatVaultsRegistry;
   return advanceToNonSafetyPeriod_(registry);
 }
@@ -214,7 +214,7 @@ contract("HatVaults", (accounts) => {
     return await vault.withdraw(amount, staker, staker, { from: staker });
   }
 
-  it("constructor", async () => {
+  it.only("constructor", async () => {
     await setupPositionalArgs(accounts);
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), accounts[0]);
