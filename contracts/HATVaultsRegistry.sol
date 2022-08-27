@@ -327,7 +327,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     {
         if (_duration >= 180 days) revert HatVestingDurationTooLong();
         if (_periods == 0) revert HatVestingPeriodsCannotBeZero();
-        if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
+        if (_duration < _periods) revert HatVestingDurationSmallerThanPeriods();
         generalParameters.hatVestingDuration = _duration;
         generalParameters.hatVestingPeriods = _periods;
         emit SetHatVestingParams(_duration, _periods);
