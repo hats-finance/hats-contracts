@@ -227,48 +227,37 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
 
-  it("No challenge - approve claim", async () => {
-    const { registry, vault, stakingToken } = await setup(accounts);
+  it("No challenge, claim times out: anyone can approve claim", async () => {
+    const { registry, vault, someAccount } = await setup(accounts);
+    
     await advanceToNonSafetyPeriod(registry);
     // set challenge period to 1 day
-    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+    const challengePeriod = 60*60*24;
+    await registry.setDefaultChallengePeriod(challengePeriod);
 
-    const staker = accounts[1];
     await registry.setDefaultArbitrator(accounts[3]);
-
-    // we send some funds to the vault so we can pay out later when approveClaim is called
-    await stakingToken.mint(staker, web3.utils.toWei("2"));
-    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
-      from: staker,
-    });
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     await advanceToSafetyPeriod(registry);
 
     let claimId = await submitClaim(vault, { accounts });
 
     await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8000, { from: accounts[2] }),
-      "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod"
-    );
-
-    await assertFunctionRaisesException(
-      vault.approveClaim(claimId, 8000, { from: accounts[3] }),
+      vault.approveClaim(claimId, 8000, { from: someAccount }),
       "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod"
     );
 
     // go and pass the challenge period
-    await utils.increaseTime(60 * 60 * 24);
-
+    await utils.increaseTime(challengePeriod);
     // challenge period is over
     // anyone can now approve the claim, accepting the claim with the same amount is fine
     const tx = await vault.approveClaim(claimId, 1234, {
-      from: accounts[2],
+      from: someAccount,
     });
 
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
-    assert.equal(tx.logs[8].args._bountyPercentage.toString(), "8000");
+    assert.equal(tx.logs[6].event, "ApproveClaim");
+    assert.equal(tx.logs[6].args._claimId, claimId);
+    // the fact that approveclaim was called with a different percentage is ignored
+    assert.equal(tx.logs[6].args._bountyPercentage.toString(), "8000");
   });
 
   it("Arbitrator can only change bounty if claim is challenged", async () => {

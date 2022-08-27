@@ -78,7 +78,7 @@ const setup = async function(
     weth : false,
     rewardInVaults : 2500000,
     challengePeriod: 60 * 60 * 24,
-    setDefaultArbitrator: true
+    setDefaultArbitrator: true,
   };
   options = { ...defaultOptions, ...options};
   const committee = accounts[1];
@@ -160,6 +160,7 @@ const setup = async function(
     hatToken,
     stakingToken,
     vault,
+    someAccount: accounts[5] // an account without any special role
   };
 };
 
