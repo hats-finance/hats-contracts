@@ -137,7 +137,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         emit SetRewardPerEpoch(_rewardPerEpoch);
     }
 
-    function _updateVaultBalance(
+    function _commitUserBalance(
         address _vault,
         address _user,
         uint256 _sharesChange,
@@ -159,8 +159,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
     }
 
-    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
-        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit);
+    function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
+        _commitUserBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
@@ -169,7 +169,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
      * @param _user The user address to claim for
      */
     function claimReward(address _vault, address _user) external {
-        _updateVaultBalance(_vault, _user, 0, true);
+        _commitUserBalance(_vault, _user, 0, true);
 
         uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
