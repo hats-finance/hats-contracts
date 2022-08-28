@@ -16,7 +16,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
     struct VaultInfo {
         uint256 rewardPerShare;
-        uint256 lastProcessedTotalAllocPoint;
+        uint256 lastProcessedVaultUpdate;
         uint256 lastRewardBlock;
         uint256 allocPoint;
     }
@@ -103,7 +103,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }
 
         if (globalVaultsUpdates.length != 0) {
-            vaultInfo[_vault].lastProcessedTotalAllocPoint = globalVaultsUpdates.length - 1;
+            vaultInfo[_vault].lastProcessedVaultUpdate = globalVaultsUpdates.length - 1;
         }
     }
 
@@ -168,7 +168,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     */
     function getVaultReward(address _vault, uint256 _fromBlock) public view returns(uint256 reward) {
         uint256 vaultAllocPoint = vaultInfo[_vault].allocPoint;
-        uint256 i = vaultInfo[_vault].lastProcessedTotalAllocPoint;
+        uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
         for (; i < globalVaultsUpdates.length-1; i++) {
             uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
             reward =
