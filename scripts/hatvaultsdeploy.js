@@ -2,7 +2,7 @@ const ADDRESSES = require("./addresses.js");
 async function main(
   rewardsToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365",
   startBlock = null,
-  rewardPerEpoch = [
+  epochRewardPerBlock = [
     web3.utils.toWei("441.3"),
     web3.utils.toWei("441.3"),
     web3.utils.toWei("882.5"),
@@ -70,7 +70,7 @@ async function main(
     deployerAddress,
     startBlock,
     epochLength,
-    rewardPerEpoch
+    epochRewardPerBlock
   ]);
 
   await rewardController.deployed();

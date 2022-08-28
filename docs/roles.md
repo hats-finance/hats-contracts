@@ -67,7 +67,7 @@ And the following settings:
 ## `RewardController.owner`
 
 - set to HATS governance (not timelocked)
-- can call `setRewardPerEpoch`
+- can call `setEpochRewardPerBlock`
 - can call `setAllocPoints`
 
 ## `RewardController - proxy.owner`
