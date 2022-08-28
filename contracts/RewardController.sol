@@ -36,8 +36,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     uint256 public epochLength;
     // the ERC20 contract in which rewards are distributed
     IERC20Upgradeable public rewardToken;
-    // Rewards
-    uint256[24] public rewardPerEpoch;
+    // amount of tokens rewarded in each block, per epoch
+    uint256[24] public epochRewardPerBlock;
     VaultUpdate[] public globalVaultsUpdates;
     mapping(address => VaultInfo) public vaultInfo;
     // vault address => user address => reward debt amount
@@ -45,7 +45,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
 
-    event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
+    event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     function initialize(
@@ -53,13 +53,13 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         address _hatGovernance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
-        uint256[24] memory _rewardPerEpoch
+        uint256[24] memory _epochRewardPerBlock
     ) external initializer {
         if (_epochLength == 0) revert EpochLengthZero();
         rewardToken = IERC20Upgradeable(_rewardToken);
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
-        rewardPerEpoch = _rewardPerEpoch;
+        epochRewardPerBlock = _epochRewardPerBlock;
         _transferOwnership(_hatGovernance);
     }
 
@@ -112,11 +112,11 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
     /**
      * @notice Called by owner to set reward per epoch
-     * @param _rewardPerEpoch reward mper epoch
+     * @param _epochRewardPerBlock reward mper epoch
     */
-    function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
-        rewardPerEpoch = _rewardPerEpoch;
-        emit SetRewardPerEpoch(_rewardPerEpoch);
+    function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
+        epochRewardPerBlock = _epochRewardPerBlock;
+        emit SetEpochRewardPerBlock(_epochRewardPerBlock);
     }
 
     function _updateVaultBalance(
@@ -202,10 +202,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 if (_toBlock <= endBlock) {
                     break;
                 }
-                result += (endBlock - _fromBlock) * rewardPerEpoch[i-1];
+                result += (endBlock - _fromBlock) * epochRewardPerBlock[i-1];
                 _fromBlock = endBlock;
             }
-            result += (_toBlock - _fromBlock) * (i > NUMBER_OF_EPOCHS ? 0 : rewardPerEpoch[i-1]);
+            result += (_toBlock - _fromBlock) * (i > NUMBER_OF_EPOCHS ? 0 : epochRewardPerBlock[i-1]);
             reward = result * _allocPoint / _totalAllocPoint;
         }
     }

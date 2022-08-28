@@ -22,7 +22,7 @@ var tokenLockFactory;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
 const {
   assertVMException,
-  rewardPerEpoch,
+  epochRewardPerBlock,
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
 } = require("./hatvaults.js");
@@ -56,7 +56,7 @@ const setup = async function(
   let deployment = await deployHatVaults(
     hatToken.address,
     startBlock,
-    rewardPerEpoch,
+    epochRewardPerBlock,
     halvingAfterBlock,
     accounts[0],
     hatToken.address,

@@ -16,7 +16,7 @@ const {
   assertVMException,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
   advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
-  rewardPerEpoch,
+  epochRewardPerBlock,
   setup,
   submitClaim,
 } = require("./common.js");
@@ -1954,7 +1954,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
         accounts[0],
         0,
         0,
-        rewardPerEpoch
+        epochRewardPerBlock
       ),
       "EpochLengthZero"
     );
@@ -1964,7 +1964,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       accounts[0],
       0,
       1,
-      rewardPerEpoch
+      epochRewardPerBlock
     );
   });
 
@@ -1977,7 +1977,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let deployment = await deployHatVaults(
       hatToken1.address,
       1,
-      rewardPerEpoch,
+      epochRewardPerBlock,
       10,
       vaultsManager.address,
       hatToken1.address,
@@ -2045,8 +2045,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
   });
 
-  it("setRewardPerEpoch", async () => {
-    var rewardPerEpochRandom = [...Array(24)].map(() =>
+  it("setEpochRewardPerBlock", async () => {
+    var epochRewardPerBlockRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
     await setUpGlobalVars(accounts, 0);
@@ -2056,7 +2056,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
     try {
-      await rewardController.setRewardPerEpoch(rewardPerEpochRandom, {
+      await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -2064,12 +2064,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    let tx = await rewardController.setRewardPerEpoch(rewardPerEpochRandom);
-    assert.equal(tx.logs[0].event, "SetRewardPerEpoch");
-    let eventRewardPerEpoch = tx.logs[0].args._rewardPerEpoch;
-    for (let i = 0; i < eventRewardPerEpoch.length; i++) {
-      eventRewardPerEpoch[i] = parseInt(eventRewardPerEpoch[i].toString());
-      assert.equal(tx.logs[0].args._rewardPerEpoch[i], rewardPerEpochRandom[i]);
+    let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
+    assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
+    let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
+    for (let i = 0; i < eventEpochRewardPerBlock.length; i++) {
+      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+      assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
 
     assert.equal(
@@ -2081,7 +2081,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpochRandom[0])
+      new web3.utils.BN(epochRewardPerBlockRandom[0])
         .mul(new web3.utils.BN(10))
         .toString()
     );
@@ -2094,10 +2094,10 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpochRandom[0])
+      new web3.utils.BN(epochRewardPerBlockRandom[0])
         .mul(new web3.utils.BN(10))
         .add(
-          new web3.utils.BN(rewardPerEpochRandom[1]).mul(new web3.utils.BN(5))
+          new web3.utils.BN(epochRewardPerBlockRandom[1]).mul(new web3.utils.BN(5))
         )
         .toString()
     );
@@ -2110,14 +2110,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpochRandom[0])
-        .add(new web3.utils.BN(rewardPerEpochRandom[1]))
+      new web3.utils.BN(epochRewardPerBlockRandom[0])
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[1]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
     for (let i = 0; i < 24; i++) {
-      multiplier = multiplier.add(new web3.utils.BN(rewardPerEpochRandom[i]));
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
     }
     assert.equal(
       (
@@ -2148,7 +2148,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpoch[0]).mul(new web3.utils.BN(10)).toString()
+      new web3.utils.BN(epochRewardPerBlock[0]).mul(new web3.utils.BN(10)).toString()
     );
     assert.equal(
       (
@@ -2159,9 +2159,9 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpoch[0])
+      new web3.utils.BN(epochRewardPerBlock[0])
         .mul(new web3.utils.BN(10))
-        .add(new web3.utils.BN(rewardPerEpoch[1]).mul(new web3.utils.BN(5)))
+        .add(new web3.utils.BN(epochRewardPerBlock[1]).mul(new web3.utils.BN(5)))
         .toString()
     );
     assert.equal(
@@ -2173,14 +2173,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           totalAllocPoint
         )
       ).toString(),
-      new web3.utils.BN(rewardPerEpoch[0])
-        .add(new web3.utils.BN(rewardPerEpoch[1]))
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
     for (let i = 0; i < 24; i++) {
-      multiplier = multiplier.add(new web3.utils.BN(rewardPerEpoch[i]));
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
     }
 
     assert.equal(
@@ -4926,7 +4926,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let deployment = await deployHatVaults(
       hatToken1.address,
       1,
-      rewardPerEpoch,
+      epochRewardPerBlock,
       10,
       vaultsManager.address,
       hatToken1.address,
@@ -4969,7 +4969,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let deployment = await deployHatVaults(
       hatToken1.address,
       1,
-      rewardPerEpoch,
+      epochRewardPerBlock,
       10,
       vaultsManager.address,
       hatToken1.address,
@@ -5299,7 +5299,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
 module.exports = {
   assertVMException,
   setup,
-  rewardPerEpoch,
+  epochRewardPerBlock,
   advanceToSafetyPeriod: advanceToSafetyPeriod_,
   advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
 };
