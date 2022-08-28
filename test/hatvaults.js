@@ -1941,6 +1941,33 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+
+it("getVaultReward - no vault updates will retrun 0 ", async () => {
+    await setUpGlobalVars(accounts);
+    const RewardControllerFactory = await ethers.getContractFactory("RewardController");
+    rewardController = await RewardControllerFactory.deploy();
+    await rewardController.deployed();
+
+    await assertFunctionRaisesException(
+      rewardController.initialize(
+        hatToken.address,
+        accounts[0],
+        0,
+        0,
+        rewardPerEpoch
+      ),
+      "EpochLengthZero"
+    );
+
+    await rewardController.initialize(
+      hatToken.address,
+      accounts[0],
+      0,
+      1,
+      rewardPerEpoch
+    );
+  });
+
   it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
     let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);

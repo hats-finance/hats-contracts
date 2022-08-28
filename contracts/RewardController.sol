@@ -8,6 +8,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IRewardController.sol";
 
+error EpochLengthZero();
+
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -53,6 +55,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _epochLength,
         uint256[24] memory _rewardPerEpoch
     ) external initializer {
+        if (_epochLength == 0) revert EpochLengthZero();
         rewardToken = IERC20Upgradeable(_rewardToken);
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
