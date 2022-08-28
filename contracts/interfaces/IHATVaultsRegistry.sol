@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.16;
 
-import "./interfaces/IRewardController.sol";
+import "./IRewardController.sol";
 
 /** @title Interface for the Hats.finance Vault Registry
  * @author hats.finance
