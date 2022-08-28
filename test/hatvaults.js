@@ -2049,7 +2049,9 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var epochRewardPerBlockRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
-    await setUpGlobalVars(accounts, 1000);
+
+    var startBlock = (await web3.eth.getBlock("latest")).number + 1000;
+    await setUpGlobalVars(accounts, startBlock);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2075,8 +2077,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          1000,
-          1010,
+          startBlock,
+          startBlock + 10,
           allocPoint,
           totalAllocPoint
         )
@@ -2088,8 +2090,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          1000,
-          1015,
+          startBlock,
+          startBlock + 15,
           allocPoint,
           totalAllocPoint
         )
@@ -2104,8 +2106,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          1000,
-          1020,
+          startBlock,
+          startBlock + 20,
           allocPoint,
           totalAllocPoint
         )
@@ -2122,8 +2124,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          1000,
-          2000,
+          startBlock,
+          startBlock + 1000,
           allocPoint,
           totalAllocPoint
         )
@@ -2136,7 +2138,9 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var epochRewardPerBlockRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
-    await setUpGlobalVars(accounts, 0);
+
+    var startBlock = (await web3.eth.getBlock("latest")).number;
+    await setUpGlobalVars(accounts, startBlock);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2165,8 +2169,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          10,
+          startBlock,
+          startBlock + 10,
           allocPoint,
           totalAllocPoint
         )
@@ -2178,8 +2182,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          20,
+          startBlock,
+          startBlock + 20,
           allocPoint,
           totalAllocPoint
         )
@@ -2192,8 +2196,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          30,
+          startBlock,
+          startBlock + 30,
           allocPoint,
           totalAllocPoint
         )
@@ -2209,8 +2213,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          40,
+          startBlock,
+          startBlock + 40,
           allocPoint,
           totalAllocPoint
         )
@@ -2232,8 +2236,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1000,
+          startBlock,
+          startBlock + 1000,
           allocPoint,
           totalAllocPoint
         )
