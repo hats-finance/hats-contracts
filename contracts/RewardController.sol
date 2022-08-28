@@ -44,12 +44,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => mapping(address => uint256)) public unclaimedReward;
 
     event SetRewardPerEpoch(uint256[24] _rewardPerEpoch);
-    event SafeTransferReward(
-        address indexed user,
-        address indexed vault,
-        uint256 amount,
-        address rewardToken
-    );
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     function initialize(
@@ -82,22 +76,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }
 
         vaultInfo[_vault].allocPoint = _allocPoint;
-    }
-
-    /**
-    * @notice Safe HAT transfer function, transfer rewards from the contract only if there are enough
-    * rewards available.
-    * @param _to The address to transfer the reward to
-    * @param _amount The amount of rewards to transfer
-    * @param _vault The vault address
-   */
-    function safeTransferReward(address _to, uint256 _amount, address _vault) internal {
-        if (rewardToken.balanceOf(address(this)) < _amount)
-            revert NotEnoughRewardsToTransferToUser();
-            
-        rewardToken.safeTransfer(_to, _amount);
-
-        emit SafeTransferReward(_to, _vault, _amount, address(rewardToken));
     }
 
     /**
@@ -175,7 +153,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
             unclaimedReward[_vault][_user] = 0;
-            safeTransferReward(_user, userUnclaimedReward, _vault);
+            rewardToken.safeTransfer(_user, userUnclaimedReward);
         }
 
         emit ClaimReward(_vault, _user, userUnclaimedReward);
