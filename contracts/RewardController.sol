@@ -89,7 +89,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @param _to The address to transfer the reward to
     * @param _amount The amount of rewards to transfer
     * @param _vault The vault address
-   */
+    */
     function safeTransferReward(address _to, uint256 _amount, address _vault) internal {
         if (rewardToken.balanceOf(address(this)) < _amount)
             revert NotEnoughRewardsToTransferToUser();
@@ -129,8 +129,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice Called by owner to set reward multipliers
-     * @param _rewardPerEpoch reward multipliers
+    * @notice Called by owner to set reward per epoch
+    * @param _epochRewardPerBlock reward per epoch
     */
     function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
         rewardPerEpoch = _rewardPerEpoch;
@@ -159,15 +159,22 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
     }
 
+    /**
+    * @notice Called by the vault to update a user claimable reward after deposit or withdraw.
+    * This call should never revert
+    * @param _user The user address to updare rewards for
+    * @param _sharesChange The user of shared the user deposited or withdrew
+    * @param _isDeposit Whether user deposited or withdrew
+    */
     function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
         _commitUserBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
-     * @notice Transfer to the specified user their pending share of rewards.
-     * @param _vault The vault address
-     * @param _user The user address to claim for
-     */
+    * @notice Transfer to the specified user their pending share of rewards.
+    * @param _vault The vault address
+    * @param _user The user address to claim for
+    */
     function claimReward(address _vault, address _user) external {
         _commitUserBalance(_vault, _user, 0, true);
 
@@ -180,7 +187,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         emit ClaimReward(_vault, _user, userUnclaimedReward);
     }
 
-     /**
+    /**
     * @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,
     * and sum up all rewards periods from vault.lastRewardBlock until current block number.
     * @param _vault The vault address
@@ -226,9 +233,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
-     * @param _vault the vault address
-     * @param _user the account for which the reward is calculated
+    * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
+    * @param _vault the vault address
+    * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         VaultInfo memory vault = vaultInfo[_vault];
