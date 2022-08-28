@@ -80,7 +80,6 @@ const setUpGlobalVars = async function(
   // copy global variables
   hatVaultsRegistry = setupVars.registry;
   vault = setupVars.vault;
-  vault = setupVars.vault;
   stakingToken = setupVars.stakingToken;
   hatToken = setupVars.hatToken;
   router = setupVars.router;
