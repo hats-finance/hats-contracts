@@ -69,6 +69,7 @@ error ChallengeTimeOutPeriodTooLong();
 contract HATVaultsRegistry is Ownable {
     using SafeERC20 for IERC20;
 
+    // a struct with parameters for all vaults
     struct GeneralParameters {
         // vesting duration for the part of the bounty given to the hacker in HAT tokens
         uint256 hatVestingDuration;
@@ -112,10 +113,10 @@ contract HATVaultsRegistry is Ownable {
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
+    
+    // vault address => bool
     mapping(address => bool) public isVaultVisible;
 
-    // PARAMETERS FOR ALL VAULTS
-    // a struct with parameters for all vaults
     GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
@@ -130,7 +131,6 @@ contract HATVaultsRegistry is Ownable {
     mapping(address => uint256) public governanceHatReward;
 
     HATBountySplit public defaultHATBountySplit;
-
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
