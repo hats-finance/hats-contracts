@@ -309,8 +309,8 @@ interface IHATVault is IERC4626 {
     /**
     * @notice Called by the registry's owner to set the vault HAT token bounty 
     * split upon an approval.
-    * Either sets it to the value passed, or if the value passed is the
-    * special "null" value it will use the registry's default value.
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
     * @param _hatBountySplit The HAT bounty split
     * @dev see {HATVaultsRegistry-HATBountySplit} for more details
     */
@@ -321,16 +321,18 @@ interface IHATVault is IERC4626 {
 
     /**
     * @notice Called by the registry's owner to set the vault arbitrator
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
     * @param _arbitrator The address of vault's arbitrator
     */
     function setArbitrator(address _arbitrator) external;
 
     /**
     * @notice Called by the registry's owner to set the period of time after
-    * a cliam for a bounty payout has been submitted that it can be challenged
+    * a claim for a bounty payout has been submitted that it can be challenged
     * by the arbitrator.
-    * Either sets it to the value passed, or if the value passed is the
-    * special "null" value it will use the registry's default value.
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
     * @param _challengePeriod The vault's challenge period
     */
     function setChallengePeriod(uint256 _challengePeriod) external;
@@ -338,8 +340,8 @@ interface IHATVault is IERC4626 {
     /**
     * @notice Called by the registry's owner to set the period of time after
     * which a claim for a bounty payout can be dismissed by anyone.
-    * Either sets it to the value passed, or if the value passed is the
-    * special "null" value it will use the registry's default value.
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
     * @param _challengeTimeOutPeriod The vault's challenge timeout period
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
