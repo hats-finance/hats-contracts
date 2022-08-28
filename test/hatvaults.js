@@ -2045,11 +2045,11 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
   });
 
-  it("setEpochRewardPerBlock", async () => {
+  it("setEpochRewardPerBlock - can set all before start block", async () => {
     var epochRewardPerBlockRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
-    await setUpGlobalVars(accounts, 0);
+    await setUpGlobalVars(accounts, 1000);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2075,8 +2075,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          10,
+          1000,
+          1010,
           allocPoint,
           totalAllocPoint
         )
@@ -2088,8 +2088,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          15,
+          1000,
+          1015,
           allocPoint,
           totalAllocPoint
         )
@@ -2104,8 +2104,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          20,
+          1000,
+          1020,
           allocPoint,
           totalAllocPoint
         )
@@ -2117,6 +2117,116 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
     var multiplier = new web3.utils.BN("0");
     for (let i = 0; i < 24; i++) {
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
+    }
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          1000,
+          2000,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      multiplier.mul(new web3.utils.BN(10)).toString()
+    );
+  });
+
+  it("setEpochRewardPerBlock - can set only epoch that have not started", async () => {
+    var epochRewardPerBlockRandom = [...Array(24)].map(() =>
+      web3.utils.toWei(((Math.random() * 100) | 0).toString())
+    );
+    await setUpGlobalVars(accounts, 0);
+    let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
+    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
+    try {
+      await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
+    assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
+    
+    // Should now be in the 3rd epoch
+
+    let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
+    for (let i = 0; i < eventEpochRewardPerBlock.length; i++) {
+      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+      assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
+    }
+
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          0,
+          10,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          0,
+          20,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          0,
+          30,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+
+    // Only 4th period and above should have change
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          0,
+          40,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[3]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    var multiplier = new web3.utils.BN("0");
+    for (let i = 0; i < 3; i++) {
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
+    }
+    for (let i = 3; i < 24; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
     }
     assert.equal(
