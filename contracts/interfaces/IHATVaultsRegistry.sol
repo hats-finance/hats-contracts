@@ -231,7 +231,7 @@ interface IHATVaultsRegistry {
      * @param _amountSwapped Amount of vault's native tokens that was swapped
      * @param _amountSent Amount of HAT tokens sent to beneficiary
      * @param _tokenLock Address of the token lock contract that holds the HAT
-     * tokens
+     * tokens (address(0) if no token lock is used)
      */
     event SwapAndSend(
         address indexed _beneficiary,
