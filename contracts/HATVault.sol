@@ -387,7 +387,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
+                block.timestamp < claim.challengedAt + _challengeTimeOutPeriod && 
                 msg.sender != getArbitrator()
             ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         }

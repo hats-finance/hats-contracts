@@ -388,13 +388,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
     }
 
-    /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
+    /** @notice See {IHATVaultsRegistry-validateChallengePeriod}. */
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
         if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
         if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 
-    /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
+    /** @notice See {IHATVaultsRegistry-validateChallengeTimeOutPeriod}. */
     function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
         if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
         if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
