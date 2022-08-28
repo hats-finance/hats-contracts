@@ -29,7 +29,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     uint256 public constant REWARD_PRECISION = 1e12;
-    uint256 public constant MULTIPLIERS_LENGTH = 24;
+    uint256 public constant NUMBER_OF_EPOCHS = 24;
 
     // Block from which the vaults contract will start rewarding.
     uint256 public startBlock;
@@ -197,7 +197,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if (_fromBlock >= startBlock && _totalAllocPoint > 0) {
             uint256 result;
             uint256 i = (_fromBlock - startBlock) / epochLength + 1;
-            for (; i <= MULTIPLIERS_LENGTH; i++) {
+            for (; i <= NUMBER_OF_EPOCHS; i++) {
                 uint256 endBlock = epochLength * i + startBlock;
                 if (_toBlock <= endBlock) {
                     break;
@@ -205,7 +205,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 result += (endBlock - _fromBlock) * rewardPerEpoch[i-1];
                 _fromBlock = endBlock;
             }
-            result += (_toBlock - _fromBlock) * (i > MULTIPLIERS_LENGTH ? 0 : rewardPerEpoch[i-1]);
+            result += (_toBlock - _fromBlock) * (i > NUMBER_OF_EPOCHS ? 0 : rewardPerEpoch[i-1]);
             reward = result * _allocPoint / _totalAllocPoint;
         }
     }

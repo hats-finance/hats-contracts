@@ -3275,7 +3275,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     var timeToFinishRewardPlan =
       (await rewardController.epochLength()) *
-      (await rewardController.MULTIPLIERS_LENGTH());
+      (await rewardController.NUMBER_OF_EPOCHS());
     await utils.increaseTime(timeToFinishRewardPlan);
 
     // TODO: Create new massUpdatePools
