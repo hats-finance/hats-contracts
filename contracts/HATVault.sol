@@ -29,7 +29,7 @@ error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
 // No active claim exists
 error NoActiveClaimExists();
 // Claim Id specified is not the active claim Id
-error WrongClaimId();
+error ClaimIdIsNotActive();
 // Not enough fee paid
 error NotEnoughFeePaid();
 // No pending max bounty
@@ -42,8 +42,6 @@ error CommitteeAlreadyCheckedIn();
 error PendingWithdrawRequestExists();
 // Amount to deposit is zero
 error AmountToDepositIsZero();
-// Vault balance is zero
-error VaultBalanceIsZero();
 // Total bounty split % should be `HUNDRED_PERCENT`
 error TotalSplitPercentageShouldBeHundredPercent();
 // Withdraw request is invalid
@@ -68,7 +66,11 @@ error OnlyArbitrator();
 error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
 // Challenged claim can only be approved by arbitrator before the challenge timeout period
 error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+// Claim has expired
+error ClaimExpired();
 error ChallengePeriodEnded();
+// claim can be challenged only once
+error ClaimAlreadyChallenged();
 // Only callable if challenged
 error OnlyCallableIfChallenged();
 // Cannot deposit to another user with withdraw request
@@ -315,7 +317,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
 
     modifier isActiveClaim(bytes32 _claimId) {
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
-        if (activeClaim.claimId != _claimId) revert WrongClaimId();
+        if (activeClaim.claimId != _claimId) revert ClaimIdIsNotActive();
         _;
     }
 
@@ -408,6 +410,9 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
+        if (activeClaim.challengedAt != 0) {
+            revert ClaimAlreadyChallenged();
+        } 
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
         emit ChallengeClaim(_claimId);
@@ -430,18 +435,23 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         Claim memory claim = activeClaim;
         delete activeClaim;
 
+        uint256 _challengePeriod = getChallengePeriod();
+        uint256 _challengeTimeOutPeriod = getChallengeTimeOutPeriod();
+        
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp >= claim.createdAt + _challengePeriod + _challengeTimeOutPeriod) revert ClaimExpired();
         if (claim.challengedAt != 0) {
             if (
                 msg.sender != getArbitrator() ||
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp > claim.challengedAt + getChallengeTimeOutPeriod()
+                block.timestamp > claim.challengedAt + _challengeTimeOutPeriod
             )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= claim.createdAt + getChallengePeriod()
+                block.timestamp <= claim.createdAt + _challengePeriod
             ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
@@ -506,12 +516,17 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
-        if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
-        if (
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
-            msg.sender != getArbitrator()
-        ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+
+        uint256 _challengeTimeOutPeriod = getChallengeTimeOutPeriod();
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp < claim.createdAt + getChallengePeriod() + _challengeTimeOutPeriod) {
+            if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
+            if (
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
+                msg.sender != getArbitrator()
+            ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+        }
         delete activeClaim;
 
         emit DismissClaim(_claimId);
@@ -1047,7 +1062,9 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     */
     function _calcClaimBounty(uint256 _bountyPercentage) internal view returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) revert VaultBalanceIsZero();
+        if (totalSupply == 0) {
+          return claimBounty;
+        }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 
