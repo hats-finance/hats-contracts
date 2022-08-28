@@ -145,21 +145,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultChallengeTimeOutPeriod = 5 weeks;
     }
 
-    /**
-    * @notice Called by governance to pause/unpause the system in case of an emergency
-    * @param _isEmergencyPaused Is the system in an emergency pause
-    */
+    /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */
     function setEmergencyPaused(bool _isEmergencyPaused) external onlyOwner {
         isEmergencyPaused = _isEmergencyPaused;
         emit SetEmergencyPaused(_isEmergencyPaused);
     }
 
-    /**
-    * @notice emit an event that includes the given _descriptionHash
-    * This can be used by the claimer as evidence that she had access to the information at the time of the call
-    * if a claimFee > 0, the caller must send claimFee Ether for the claim to succeed
-    * @param _descriptionHash - a hash of an ipfs encrypted file which describes the claim.
-    */
+    /** @notice See {IHATVaultsRegistry-logClaim}. */
     function logClaim(string memory _descriptionHash) external payable {
         if (generalParameters.claimFee > 0) {
             if (msg.value < generalParameters.claimFee)
@@ -170,62 +162,40 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit LogClaim(msg.sender, _descriptionHash);
     }
 
-    /**
-    * @notice Called by governance to set the default HAT token bounty split upon
-    * an approval. This default value is used when creating a new vault.
-    * @param _defaultHATBountySplit The HAT bounty split
-    */
+    /** @notice See {IHATVaultsRegistry-setDefaultHATBountySplit}. */
     function setDefaultHATBountySplit(HATBountySplit memory _defaultHATBountySplit) external onlyOwner {
         validateHATSplit(_defaultHATBountySplit);
         defaultHATBountySplit = _defaultHATBountySplit;
         emit SetDefaultHATBountySplit(_defaultHATBountySplit);
     }
-
-    /**
-    * @notice Called by governance to set the default arbitrator.
-    * @param _defaultArbitrator The default arbitrator address
-    */
+   
+    /** @notice See {IHATVaultsRegistry-setDefaultArbitrator}. */
     function setDefaultArbitrator(address _defaultArbitrator) external onlyOwner {
         defaultArbitrator = _defaultArbitrator;
         emit SetDefaultArbitrator(_defaultArbitrator);
     }
 
-    /**
-    * @notice Called by governance to set the default challenge period
-    * @param _defaultChallengePeriod The default challenge period
-    */
+    /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
     function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
         validateChallengePeriod(_defaultChallengePeriod);
         defaultChallengePeriod = _defaultChallengePeriod;
         emit SetDefaultChallengePeriod(_defaultChallengePeriod);
     }
 
-    /**
-    * @notice Called by governance to set the default challenge timeout
-    * @param _defaultChallengeTimeOutPeriod The Default challenge timeout
-    */
+    /** @notice See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}. */
     function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
     }
    
-    /**
-    * @notice Called by governance to set the fee setter role
-    * @param _feeSetter Address of new fee setter
-    */
+    /** @notice See {IHATVaultsRegistry-setFeeSetter}. */
     function setFeeSetter(address _feeSetter) external onlyOwner {
         feeSetter = _feeSetter;
         emit SetFeeSetter(_feeSetter);
     }
 
-    /**
-    * @notice Called by governance to set time limits for withdraw requests
-    * @param _withdrawRequestPendingPeriod Time period where the withdraw
-    * request is pending
-    * @param _withdrawRequestEnablePeriod Time period after the peding period
-    * has ended during which withdrawal is enabled
-    */
+    /** @notice See {IHATVaultsRegistry-setWithdrawRequestParams}. */
     function setWithdrawRequestParams(
         uint256 _withdrawRequestPendingPeriod, 
         uint256  _withdrawRequestEnablePeriod
@@ -244,28 +214,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit SetWithdrawRequestParams(_withdrawRequestPendingPeriod, _withdrawRequestEnablePeriod);
     }
 
-    /**
-    * @notice Called by governance to set the fee for logging a claim for a
-    * bounty in any vault.
-    * @param _fee Claim fee in ETH to be transferred on any call of {logClaim}
-    */
+    /** @notice See {IHATVaultsRegistry-setClaimFee}. */
     function setClaimFee(uint256 _fee) external onlyOwner {
         generalParameters.claimFee = _fee;
         emit SetClaimFee(_fee);
     }
 
-    /**
-    * @notice Called by governance to set the withdraw period and safety
-    * period, which are always interchanging.
-    * The safety period is time that the committee can submit claims for 
-    * bounty payouts, and during which withdrawals are disabled and the bounty
-    * split cannot be changed.
-    * @param _withdrawPeriod Amount of time during which withdrawals are
-    * enabled, and the bounty split can be changed by the governance. Must be
-    * at least 1 hour.
-    * @param _safetyPeriod Amount of time during which claims for bounties 
-    * can be submitted and withdrawals are disabled. Must be at most 6 hours.
-    */
+    /** @notice See {IHATVaultsRegistry-setWithdrawSafetyPeriod}. */
     function setWithdrawSafetyPeriod(
         uint256 _withdrawPeriod,
         uint256 _safetyPeriod
@@ -280,14 +235,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit SetWithdrawSafetyPeriod(_withdrawPeriod, _safetyPeriod);
     }
 
-    /**
-    * @notice Called by governance to set vesting params for rewarding hackers
-    * with rewardToken, for all vaults
-    * @param _duration Duration of the vesting period. Must be less than 180 
-    * days.
-    * @param _periods The number of vesting periods. Must be more than 0 and 
-    * less then the vesting duration.
-    */
+    /** @notice See {IHATVaultsRegistry-setHatVestingParams}. */
     function setHatVestingParams(uint256 _duration, uint256 _periods) 
         external
         onlyOwner
@@ -300,36 +248,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit SetHatVestingParams(_duration, _periods);
     }
 
-    /**
-    * @notice Called by governance to set the timelock delay for setting the
-    * max bounty (the time between setPendingMaxBounty and setMaxBounty)
-    * @param _delay The time period for the delay. Must be at least 2 days.
-    */
+    /** @notice See {IHATVaultsRegistry-setMaxBountyDelay}. */
     function setMaxBountyDelay(uint256 _delay) external onlyOwner {
         if (_delay < 2 days) revert DelayTooShort();
         generalParameters.setMaxBountyDelay = _delay;
         emit SetMaxBountyDelay(_delay);
     }
 
-    /**
-    * @notice Create a new vault
-    * @param _asset The vault's native token
-    * @param _committee The address of the vault's committee 
-    * @param _rewardController The reward controller for the vault
-    * @param _maxBounty The maximum percentage of the vault that can be paid
-    * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
-    * @param _bountySplit The way to split the bounty between the hacker, 
-    * hacker vested, and committee.
-    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-    *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param _descriptionHash Hash of the vault description.
-    * @param _bountyVestingParams Vesting params for the part of the bounty
-    * that is paid vested in the vault's native token:
-    *        _bountyVestingParams[0] - vesting duration
-    *        _bountyVestingParams[1] - vesting periods
-    * @param _isPaused Whether to initialize the vault with deposits disabled
-    * @return vault The address of the new vault
-    */
+    /** @notice See {IHATVaultsRegistry-createVault}. */
     function createVault(
         IERC20 _asset,
         address _owner,
@@ -375,28 +301,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         );
     }
 
-    /**
-    * @notice Called by governance to change the UI visibility of a vault
-    * @param _vault The address of the vault to update
-    * @param _visible Is this vault visible in the UI
-    * This parameter can be used by the UI to include or exclude the vault
-    */
+    /** @notice See {IHATVaultsRegistry-setVaultVisibility}. */
     function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
         isVaultVisible[_vault] = _visible;
         emit SetVaultVisibility(_vault, _visible);
     }
 
-    /**
-    * @notice Transfer the part of the bounty that is supposed to be swapped
-    * into HAT tokens from the HATVault to the registry, and keep track of the
-    * amounts to be swapped and sent/burnt in a later transaction
-    * @param _asset The vault's native token
-    * @param _hacker The address of the beneficiary of the bounty
-    * @param _hackersHatReward The amount of the vault's native token to be
-    * swapped to HAT tokens and sent to the hacker via a vesting contract
-    * @param _governanceHatReward The amount of the vault's native token to be
-    * swapped to HAT tokens and sent to governance
-    */
+    /** @notice See {IHATVaultsRegistry-addTokensToSwap}. */
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
@@ -409,17 +320,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         _asset.safeTransferFrom(msg.sender, address(this), amount);
     }
 
-    /**
-    * @notice Called by governance to swap the given asset to HAT tokens and 
-    * distribute the HAT tokens: Send to governance their share and send to
-    * beneficiaries their share through a vesting contract.
-    * @param _asset The address of the token to be swapped to HAT tokens
-    * @param _beneficiaries Addresses of beneficiaries
-    * @param _amountOutMinimum Minimum amount of HAT tokens at swap
-    * @param _routingContract Routing contract to call for the swap
-    * @param _routingPayload Payload to send to the _routingContract for the
-    * swap
-    */
+    /** @notice See {IHATVaultsRegistry-swapAndSend}. */
     function swapAndSend(
         address _asset,
         address[] calldata _beneficiaries,
@@ -468,49 +369,30 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
     }
 
-    /**
-    * @notice Returns the general parameters for all vaults
-    * @return generalParameters: See { HATVaultsRegistry-generalParameters }
-    */    
+    /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   
     function getGeneralParameters() external view returns(GeneralParameters memory) {
         return generalParameters;
     }
 
-    /**
-    * @notice Returns the number of vaults that have been previously created 
-    */
+    /** @notice See {IHATVaultsRegistry-getNumberOfVaults}. */
     function getNumberOfVaults() external view returns(uint256) {
         return hatVaults.length;
     }
 
-    /** 
-    * @dev Check that a given hats bounty split is legal, meaning that:
-    *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
-    * function will revert in case the bounty split is not legal.
-    * @param _hatBountySplit The bounty split to check
-    */
+    /** @notice See {IHATVaultsRegistry-validateHATSplit}. */
     function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
         if (_hatBountySplit.governanceHat +
             _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
     }
 
-   /**
-     * @notice Check that the given challenge period is legal, meaning
-     * that it is greater than 1 day and less than 5 days.
-     * @param _challengeTimeOutPeriod The challenge timeout period to check
-     */
+    /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
         if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
         if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 
-    /**
-     * @notice Check that the given challenge timeout period is legal, meaning
-     * that it is greater than 2 days and less than 85 days.
-     * @param _challengeTimeOutPeriod The challenge timeout period to check
-     */
+    /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
     function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
         if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
         if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
