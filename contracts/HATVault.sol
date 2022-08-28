@@ -645,7 +645,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by governance to disable all deposits to the vault
+    * @notice Called by the vault's owner to disable all deposits to the vault
     * @param _depositPause Are deposits paused
     */
     function setDepositPause(bool _depositPause) external onlyOwner {
@@ -957,7 +957,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
             revert CommitteeNotCheckedInYet();
         if (shares == 0) revert AmountToDepositIsZero();
         if (withdrawEnableStartTime[receiver] != 0 && receiver == caller) {
-            // clear withdraw request
+            // clear withdraw request if caller deposits in her own account
             withdrawEnableStartTime[receiver] = 0;
         }
 
