@@ -26,6 +26,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 totalAllocPoint; //totalAllocPoint
     }
 
+    uint256 public constant REWARD_PRECISION = 1e12;
     uint256 public constant MULTIPLIERS_LENGTH = 24;
 
     // Block from which the vaults contract will start rewarding.
@@ -120,7 +121,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         if (totalShares != 0) {
             uint256 reward = getVaultReward(_vault, lastRewardBlock);
-            vault.rewardPerShare += (reward * 1e12 / totalShares);
+            vault.rewardPerShare += (reward * REWARD_PRECISION / totalShares);
         }
 
         if (globalVaultsUpdates.length != 0) {
@@ -147,7 +148,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        unclaimedReward[_vault][_user] += userShares * rewardPerShare / 1e12 - rewardDebt[_vault][_user];
+        unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
 
         if (_sharesChange != 0) {
             if (_isDeposit) {
@@ -156,7 +157,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 userShares -= _sharesChange;
             }
         }
-        rewardDebt[_vault][_user] = userShares * rewardPerShare / 1e12;
+        rewardDebt[_vault][_user] = userShares * rewardPerShare / REWARD_PRECISION;
     }
 
     function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
@@ -237,10 +238,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         if (vault.lastRewardBlock != 0 && block.number > vault.lastRewardBlock && totalShares > 0) {
             uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
-            rewardPerShare += (reward * 1e12 / totalShares);
+            rewardPerShare += (reward * REWARD_PRECISION / totalShares);
         }
 
-        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / 1e12 + 
+        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / REWARD_PRECISION + 
                 unclaimedReward[_vault][_user] -
                 rewardDebt[_vault][_user];
     }
