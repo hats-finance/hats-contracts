@@ -260,6 +260,38 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[6].args._bountyPercentage.toString(), "8000");
   });
 
+  it("Claim expires: anyone can dismiss", async () => {
+    const { registry, vault, someAccount } = await setup(accounts);
+
+    await advanceToNonSafetyPeriod(registry);
+    // set challenge period to 1 day
+    const challengePeriod = 60*60*24;
+    const challengeTimeOutPeriod = 60*60*24*5;
+    const arbitrator = accounts[3];
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+
+    await registry.setDefaultArbitrator(arbitrator);
+
+    await advanceToSafetyPeriod(registry);
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    // go and pass the expiration time
+    await utils.increaseTime(challengePeriod);
+    await utils.increaseTime(challengeTimeOutPeriod);
+    // the claim has expired
+    // anyone can now dismiss the claim, it cannot be approved anymore
+    await assertFunctionRaisesException(
+      vault.approveClaim(claimId, 6000, { from: arbitrator }),
+      "ClaimExpired"
+    );
+
+    tx = await vault.dismissClaim(claimId);
+    assert.equal(tx.logs[0].event, "DismissClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+  });
+
   it("Arbitrator can only change bounty if claim is challenged", async () => {
     const { registry, vault, stakingToken } = await setup(accounts);
     await advanceToNonSafetyPeriod(registry);
