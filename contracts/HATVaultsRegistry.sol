@@ -12,25 +12,27 @@ import "./interfaces/IHATVaultsRegistry.sol";
 import "./HATVault.sol";
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
-* @author hats.finance
-* @notice Hats.finance is a proactive bounty protocol for white hat hackers
-* and auditors, where projects, community members, and stakeholders
-* incentivize protocol security and responsible disclosure.
-* Hats create scalable vaults using the project’s own token. The value of the
-* bounty increases with the success of the token and project.
-*
-* The HATVaultsRegistry defines a few roles which are relevant to all vaults:
-* Governance - The owner of HATVaultsRegistry and every HATVault created, has
-* the permission to set the feeSetter and arbitrator roles, to set time limits
-* and bounty parameters and change vaults' info.
-* Arbitrator - Can challenge submitted claims for bounty payouts, approve them
-* with a different bounty percentage or dismiss them.
-* FeeSetter - The only address which can set the fee on withdrawals on all
-* vaults.
-*
-* This project is open-source and can be found at:
-* https://github.com/hats-finance/hats-contracts
-*/
+ * @author Hats.finance
+ * @notice Hats.finance is a proactive bounty protocol for white hat hackers and
+ * security experts, where projects, community members, and stakeholders
+ * incentivize protocol security and responsible disclosure.
+ * Hats create scalable vaults using the project’s own token. The value of the
+ * bounty increases with the success of the token and project.
+ *
+ * The owner of the registry has the permission to set time limits and bounty
+ * parameters and change vaults' info, and to set the other registry roles -
+ * fee setter and arbitrator.
+ * The arbitrator can challenge submitted claims for bounty payouts made by
+ * vaults' committees, approve them with a different bounty percentage or
+ * dismiss them.
+ * The fee setter can set the fee on withdrawals on all vaults.
+ *
+ * This project is open-source and can be found at:
+ * https://github.com/hats-finance/hats-contracts
+ *
+ * @dev New hats.finance vaults should be created through a call to {createVault}
+ * so that they are linked to the registry
+ */
 contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     using SafeERC20 for IERC20;
 

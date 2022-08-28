@@ -9,8 +9,8 @@ pragma solidity 0.8.16;
  * vaults and manage shared parameters.
  *
  * Hats.finance is a proactive bounty protocol for white hat hackers and
- * auditors, where projects, community members, and stakeholders incentivize
- * protocol security and responsible disclosure.
+ * security experts, where projects, community members, and stakeholders
+ * incentivize protocol security and responsible disclosure.
  * Hats create scalable vaults using the project’s own token. The value of the
  * bounty increases with the success of the token and project.
  *
@@ -25,7 +25,7 @@ pragma solidity 0.8.16;
  * This project is open-source and can be found at:
  * https://github.com/hats-finance/hats-contracts
  *
- * @dev Hats.finance vaults should be created through a call to {createVault}
+ * @dev New hats.finance vaults should be created through a call to {createVault}
  * so that they are linked to the registry
  */
 interface IHATVaultsRegistry {
@@ -412,6 +412,8 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Create a new vault
+     * NOTE: Vaults should not use tokens which do not guarantee that the 
+     * amount specified is the amount transferred
      * @param _asset The vault's native token
      * @param _committee The address of the vault's committee 
      * @param _rewardController The reward controller for the vault
