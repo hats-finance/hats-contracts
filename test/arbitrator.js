@@ -261,7 +261,7 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("Claim expires: anyone can dismiss", async () => {
-    const { registry, vault, someAccount } = await setup(accounts);
+    const { registry, vault } = await setup(accounts);
 
     await advanceToNonSafetyPeriod(registry);
     // set challenge period to 1 day
