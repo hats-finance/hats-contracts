@@ -373,7 +373,6 @@ interface IHATVaultsRegistry {
      * {logClaim}
      */
     function setClaimFee(uint256 _fee) external;
-    }
 
     /**
      * @notice Called by governance to set the withdraw period and safety
