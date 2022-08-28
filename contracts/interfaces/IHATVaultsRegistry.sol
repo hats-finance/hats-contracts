@@ -4,6 +4,7 @@
 pragma solidity 0.8.16;
 
 import "./IRewardController.sol";
+import "./IHATVault.sol";
 
 /** @title Interface for the Hats.finance Vault Registry
  * @author hats.finance
@@ -31,6 +32,38 @@ import "./IRewardController.sol";
  * so that they are linked to the registry
  */
 interface IHATVaultsRegistry {
+
+    // a struct with parameters for all vaults
+    struct GeneralParameters {
+        // vesting duration for the part of the bounty given to the hacker in HAT tokens
+        uint256 hatVestingDuration;
+        // vesting periods for the part of the bounty given to the hacker in HAT tokens
+        uint256 hatVestingPeriods;
+        // withdraw enable period. safetyPeriod starts when finished.
+        uint256 withdrawPeriod;
+        // withdraw disable period - time for the committee to gather and decide on actions,
+        // withdrawals are not possible in this time. withdrawPeriod starts when finished.
+        uint256 safetyPeriod;
+        // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
+        // (after which withdrawals are not possible)
+        uint256 withdrawRequestEnablePeriod;
+        // period of time that has to pass after withdraw request until withdraw is possible
+        uint256 withdrawRequestPendingPeriod;
+        // period of time that has to pass after setting a pending max
+        // bounty before it can be set as the new max bounty
+        uint256 setMaxBountyDelay;
+        // fee in ETH to be transferred with every logging of a claim
+        uint256 claimFee;  
+    }
+
+    // How to divide the HAT part of bounties, in percentages (out of {HUNDRED_PERCENT})
+    // The precentages are taken from the total bounty
+    struct HATBountySplit {
+        // the percentage of the total bounty to be swapped to HATs and sent to governance
+        uint256 governanceHat;
+        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+        uint256 hackerHatVested;
+    }
 
     /**
      * @notice Raised on {setWithdrawSafetyPeriod} if the withdraw period to
@@ -205,11 +238,11 @@ interface IHATVaultsRegistry {
      * @param _committee The address of the vault's committee 
      * @param _rewardController The reward controller for the vault
      * @param _maxBounty The maximum percentage of the vault that can be paid
-     * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
+     * out as a bounty. Must be between 0 and 100% (defined as 10000)
      * @param _bountySplit The way to split the bounty between the hacker, 
      * hacker vested, and committee.
-     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-     *   Total splits should be equal to `HUNDRED_PERCENT`.
+     *   Each entry is a number between 0 and 100%
+     *   Total splits should be equal to 100%
      * @param _descriptionHash Hash of the vault description.
      * @param _bountyVestingDuration The duration of the vesting period of
      * the part of the bounty that is vested in vault's native token.
@@ -221,7 +254,7 @@ interface IHATVaultsRegistry {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        HATVault.BountySplit _bountySplit,
+        IHATVault.BountySplit _bountySplit,
         string _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods
@@ -250,7 +283,7 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Emitted when a new default arbitrator is set
-     * @param _arbitrator The address of the new arbitrator
+     * @param _defaultArbitrator The address of the new arbitrator
      */
     event SetDefaultArbitrator(address indexed _defaultArbitrator);
 
@@ -334,9 +367,9 @@ interface IHATVaultsRegistry {
         external;
 
     /**
-     * @notice Check that the given challenge period is legal, meaning
-     * that it is greater than 1 day and less than 5 days.
-     * @param _challengeTimeOutPeriod The challenge timeout period to check
+     * @notice Check that the given challenge period is legal, meaning that it
+     * is greater than 1 day and less than 5 days.
+     * @param _challengePeriod The challenge period to check
      */
     function validateChallengePeriod(uint256 _challengePeriod) external pure;
 
@@ -438,7 +471,7 @@ interface IHATVaultsRegistry {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        HATVault.BountySplit memory _bountySplit,
+        IHATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
         uint256[2] memory _bountyVestingParams,
         bool _isPaused
@@ -493,7 +526,7 @@ interface IHATVaultsRegistry {
   
     /**
      * @notice Returns the general parameters for all vaults
-     * @return generalParameters: See { HATVaultsRegistry-generalParameters }
+     * @return {GeneralParameters} General parameters for all vaults
      */    
     function getGeneralParameters()
         external 

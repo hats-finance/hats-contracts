@@ -42,6 +42,17 @@ pragma solidity 0.8.16;
  */
 interface IHATVault is IERC4626 {
 
+    // How to divide the bounty - after deducting {IHATVaultsRegistry.HATBountySplit}
+    // values are in percentages and should add up to 100% (defined as 10000)
+    struct BountySplit {
+        // the percentage of reward sent to the hacker via vesting contract
+        uint256 hackerVested;
+        // the percentage of tokens that are sent directly to the hacker
+        uint256 hacker;
+        // the percentage sent to the committee
+        uint256 committee;
+    }
+
     // Only committee
     error OnlyCommittee();
     // Active claim exists
@@ -148,7 +159,7 @@ interface IHATVault is IERC4626 {
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetHATBountySplit(IHATVaultsRegistry.HATBountySplit _hatBountySplit);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -273,7 +284,7 @@ interface IHATVault is IERC4626 {
     * Cannot be called if there is an active claim that has been submitted.
     * Max bounty should be less than or equal to 90% (defined as 9000).
     * The pending value can be set by the owner after the time delay (of 
-    * {HATVaultsRegistry-GeneralParameters.setMaxBountyDelay}) had passed.
+    * {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
     function setPendingMaxBounty(uint256 _maxBounty) external;
@@ -315,7 +326,7 @@ interface IHATVault is IERC4626 {
     * @dev see {HATVaultsRegistry-HATBountySplit} for more details
     */
     function setHATBountySplit(
-        HATVaultsRegistry.HATBountySplit memory _hatBountySplit
+        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
     ) 
         external;
 
@@ -356,9 +367,9 @@ interface IHATVault is IERC4626 {
     * The request will only be approved if there is no previous active
     * withdraw request.
     * The request will be pending for a period of
-    * {HATVaultsRegistry-GeneralParameters.withdrawRequestPendingPeriod`},
+    * {HATVaultsRegistry.generalParameters.withdrawRequestPendingPeriod},
     * after which a withdraw will be possible for a duration of
-    * {HATVaultsRegistry-GeneralParameters.withdrawRequestEnablePeriod}
+    * {HATVaultsRegistry.generalParameters.withdrawRequestEnablePeriod}
     */
     function withdrawRequest() external;
 
@@ -451,7 +462,7 @@ interface IHATVault is IERC4626 {
     function getHATBountySplit() 
         external
         view
-        returns(HATVaultsRegistry.HATBountySplit memory);
+        returns(IHATVaultsRegistry.HATBountySplit memory);
 
     /** 
     * @notice Returns the address of the vault's arbitrator

@@ -51,17 +51,6 @@ import "./HATVaultsRegistry.sol";
 contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    // How to divide the bounty - after deducting HATVaultsRegistry.HATBountySplit
-    // values are in percentages and should add up to `HUNDRED_PERCENT`
-    struct BountySplit {
-        // the percentage of reward sent to the hacker via vesting contract
-        uint256 hackerVested;
-        // the percentage of tokens that are sent directly to the hacker
-        uint256 hacker;
-        // the percentage sent to the committee
-        uint256 committee;
-    }
-
     // How to divide a bounty for a claim that has been approved
     // used internally to keep track of payouts
     struct ClaimBounty {
@@ -111,7 +100,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 vestingDuration;
         uint256 vestingPeriods;
         uint256 maxBounty;
-        BountySplit bountySplit;
+        IHATVault.BountySplit bountySplit;
         IERC20 asset;
         address owner;
         address committee;
@@ -132,7 +121,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     IRewardController public rewardController;
 
-    BountySplit public bountySplit;
+    IHATVault.BountySplit public bountySplit;
     uint256 public maxBounty;
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
@@ -154,7 +143,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     mapping(address => uint256) public withdrawEnableStartTime;
 
     // the HATBountySplit of the vault
-    HATVaultsRegistry.HATBountySplit internal hatBountySplit;
+    IHATVaultsRegistry.HATBountySplit internal hatBountySplit;
 
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address internal arbitrator;
@@ -229,7 +218,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         tokenLockFactory = _registry.tokenLockFactory();
 
         // Set vault to use default registry values where applicable
-        hatBountySplit = HATVaultsRegistry.HATBountySplit({
+        hatBountySplit = IHATVaultsRegistry.HATBountySplit({
             governanceHat: NULL_UINT,
             hackerHatVested: 0
         });
@@ -424,7 +413,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setBountySplit}. */
-    function setBountySplit(BountySplit memory _bountySplit)
+    function setBountySplit(IHATVault.BountySplit memory _bountySplit)
         external
         onlyOwner 
         noActiveClaim 
@@ -502,7 +491,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setHATBountySplit}. */
     function setHATBountySplit(
-        HATVaultsRegistry.HATBountySplit memory _hatBountySplit
+        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
     ) 
         external 
         onlyRegistryOwner 
@@ -660,12 +649,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* --------------------------------- Getters -------------------------------------- */
 
     /** @notice See {IHATVault-getHATBountySplit}. */
-    function getHATBountySplit() public view returns(HATVaultsRegistry.HATBountySplit memory) {
+    function getHATBountySplit() public view returns(IHATVaultsRegistry.HATBountySplit memory) {
         if (hatBountySplit.governanceHat != NULL_UINT) {
             return hatBountySplit;
         } else {
             (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
-            return HATVaultsRegistry.HATBountySplit({
+            return IHATVaultsRegistry.HATBountySplit({
                 governanceHat: governanceHat,
                 hackerHatVested: hackerHatVested
             });
@@ -832,7 +821,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 
-        HATVaultsRegistry.HATBountySplit memory _hatBountySplit = getHATBountySplit();
+        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit = getHATBountySplit();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
         uint256 governanceHatAmount = totalBountyAmount * _hatBountySplit.governanceHat / HUNDRED_PERCENT_SQRD;
@@ -862,7 +851,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */
-    function _validateSplit(BountySplit memory _bountySplit) internal pure {
+    function _validateSplit(IHATVault.BountySplit memory _bountySplit) internal pure {
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee != HUNDRED_PERCENT)

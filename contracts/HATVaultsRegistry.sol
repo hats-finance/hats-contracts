@@ -36,37 +36,6 @@ import "./HATVault.sol";
 contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     using SafeERC20 for IERC20;
 
-    struct GeneralParameters {
-        // vesting duration for the part of the bounty given to the hacker in HAT tokens
-        uint256 hatVestingDuration;
-        // vesting periods for the part of the bounty given to the hacker in HAT tokens
-        uint256 hatVestingPeriods;
-        // withdraw enable period. safetyPeriod starts when finished.
-        uint256 withdrawPeriod;
-        // withdraw disable period - time for the committee to gather and decide on actions,
-        // withdrawals are not possible in this time. withdrawPeriod starts when finished.
-        uint256 safetyPeriod;
-        // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
-        // (after which withdrawals are not possible)
-        uint256 withdrawRequestEnablePeriod;
-        // period of time that has to pass after withdraw request until withdraw is possible
-        uint256 withdrawRequestPendingPeriod;
-        // period of time that has to pass after setting a pending max
-        // bounty before it can be set as the new max bounty
-        uint256 setMaxBountyDelay;
-        // fee in ETH to be transferred with every logging of a claim
-        uint256 claimFee;  
-    }
-
-    // How to divide the HAT part of bounties, in percentages (out of {HUNDRED_PERCENT})
-    // The precentages are taken from the total bounty
-    struct HATBountySplit {
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-        uint256 hackerHatVested;
-    }
-
     // Used in {swapAndSend} to avoid a "stack too deep" error
     struct SwapData {
         uint256 totalHackersHatReward;
@@ -83,8 +52,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     mapping(address => bool) public isVaultVisible;
 
     // PARAMETERS FOR ALL VAULTS
-    // a struct with parameters for all vaults
-    GeneralParameters public generalParameters;
+    IHATVaultsRegistry.GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
@@ -97,7 +65,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
-    HATBountySplit public defaultHATBountySplit;
+    IHATVaultsRegistry.HATBountySplit public defaultHATBountySplit;
 
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
@@ -121,7 +89,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        HATBountySplit memory _defaultHATBountySplit,
+        IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
@@ -131,7 +99,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         validateHATSplit(_defaultHATBountySplit);
         defaultHATBountySplit = _defaultHATBountySplit;
         tokenLockFactory = _tokenLockFactory;
-        generalParameters = GeneralParameters({
+        generalParameters = IHATVaultsRegistry.GeneralParameters({
             hatVestingDuration: 90 days,
             hatVestingPeriods: 90,
             withdrawPeriod: 11 hours,
@@ -165,27 +133,43 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultHATBountySplit}. */
-    function setDefaultHATBountySplit(HATBountySplit memory _defaultHATBountySplit) external onlyOwner {
+    function setDefaultHATBountySplit(
+        IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit
+    ) 
+        external
+        onlyOwner
+    {
         validateHATSplit(_defaultHATBountySplit);
         defaultHATBountySplit = _defaultHATBountySplit;
         emit SetDefaultHATBountySplit(_defaultHATBountySplit);
     }
    
     /** @notice See {IHATVaultsRegistry-setDefaultArbitrator}. */
-    function setDefaultArbitrator(address _defaultArbitrator) external onlyOwner {
+    function setDefaultArbitrator(address _defaultArbitrator) 
+        external
+        onlyOwner
+    {
         defaultArbitrator = _defaultArbitrator;
         emit SetDefaultArbitrator(_defaultArbitrator);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
-    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
+    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod)
+        external
+        onlyOwner
+    {
         validateChallengePeriod(_defaultChallengePeriod);
         defaultChallengePeriod = _defaultChallengePeriod;
         emit SetDefaultChallengePeriod(_defaultChallengePeriod);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}. */
-    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
+    function setDefaultChallengeTimeOutPeriod(
+        uint256 _defaultChallengeTimeOutPeriod
+    )
+        external
+        onlyOwner
+    {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
@@ -374,7 +358,11 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   
-    function getGeneralParameters() external view returns(GeneralParameters memory) {
+    function getGeneralParameters() 
+        external
+        view
+        returns(IHATVaultsRegistry.GeneralParameters memory)
+    {
         return generalParameters;
     }
 
@@ -384,7 +372,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-validateHATSplit}. */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
+    function validateHATSplit(
+        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
+    )
+        public
+        pure
+    {
         if (_hatBountySplit.governanceHat +
             _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
