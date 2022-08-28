@@ -3,6 +3,8 @@
 
 pragma solidity 0.8.16;
 
+import "@openzeppelin/contracts/interfaces/IERC4626.sol";
+
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
  * @notice A HATVault holds the funds for a specific project's bug bounties.
