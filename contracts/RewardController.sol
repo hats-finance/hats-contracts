@@ -167,6 +167,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @return reward
     */
     function getVaultReward(address _vault, uint256 _fromBlock) public view returns(uint256 reward) {
+        if (globalVaultsUpdates.length == 0) {
+            return 0;
+        }
         uint256 vaultAllocPoint = vaultInfo[_vault].allocPoint;
         uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
         for (; i < globalVaultsUpdates.length-1; i++) {
@@ -188,7 +191,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     public
     view
     returns (uint256 reward) {
-        if (_totalAllocPoint > 0) {
+        if (_fromBlock >= startBlock && _totalAllocPoint > 0) {
             uint256 result;
             uint256 i = (_fromBlock - startBlock) / epochLength + 1;
             for (; i <= MULTIPLIERS_LENGTH; i++) {

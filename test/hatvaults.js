@@ -1941,24 +1941,53 @@ contract("HatVaults", (accounts) => {
     );
   });
 
-  it("getRewardForBlocksRange - from below startblock will revert ", async () => {
+  it("getVaultReward - no vault updates will retrun 0 ", async () => {
+    await setUpGlobalVars(accounts);
+    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    var tokenLock1 = await HATTokenLock.new();
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    var vaultsManager = await VaultsManagerMock.new();
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      rewardPerEpoch,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      [1000, 500],
+      tokenLockFactory1.address,
+      true
+    );
+
+    hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
+    rewardController1 = await RewardController.at(
+      deployment.rewardController.address
+    );
+    assert.equal(
+      await rewardController1.getVaultReward(
+        vault.address,
+        0,
+      ),
+      "0"
+    );
+  });
+
+  it("getRewardForBlocksRange - from below startblock will retrun 0 ", async () => {
     await setUpGlobalVars(accounts, 1);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
       await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
-    try {
+    assert.equal(
       await rewardController.getRewardForBlocksRange(
         0,
         1,
         allocPoint,
         totalAllocPoint
-      );
-      assert(false, "from below startblock will revert ");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+      ),
+      "0"
+    );
     await setUpGlobalVars(accounts, 0);
     assert.equal(
       (
