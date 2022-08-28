@@ -36,7 +36,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     uint256 public epochLength;
     // the ERC20 contract in which rewards are distributed
     IERC20Upgradeable public rewardToken;
-    // Reward Multipliers
+    // Rewards
     uint256[24] public rewardPerEpoch;
     VaultUpdate[] public globalVaultsUpdates;
     mapping(address => VaultInfo) public vaultInfo;
@@ -111,8 +111,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice Called by owner to set reward multipliers
-     * @param _rewardPerEpoch reward multipliers
+     * @notice Called by owner to set reward per epoch
+     * @param _rewardPerEpoch reward mper epoch
     */
     function setRewardPerEpoch(uint256[24] memory _rewardPerEpoch) external onlyOwner {
         rewardPerEpoch = _rewardPerEpoch;
