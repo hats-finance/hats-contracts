@@ -3,6 +3,8 @@
 
 pragma solidity 0.8.16;
 
+import "./interfaces/IRewardController.sol";
+
 /** @title Interface for the Hats.finance Vault Registry
  * @author hats.finance
  * @notice The Hats.finance Vault Registry is used to deploy Hats.finance
@@ -178,8 +180,8 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Emitted when new HAT vesting parameters are set
-     * @param _vestingDuration The duration of the vesting period
-     * @param _vestingPeriods The number of vesting periods
+     * @param _duration The duration of the vesting period
+     * @param _periods The number of vesting periods
      */
     event SetHatVestingParams(uint256 _duration, uint256 _periods);
 
@@ -250,20 +252,20 @@ interface IHATVaultsRegistry {
      * @notice Emitted when a new default arbitrator is set
      * @param _arbitrator The address of the new arbitrator
      */
-    event SetDefaultArbitrator(address indexed _arbitrator);
+    event SetDefaultArbitrator(address indexed _defaultArbitrator);
 
     /**
      * @notice Emitted when a new default challenge period is set
      * @param _defaultChallengePeriod The new default challenge period
      */ 
-    event SetDefaultChallengePeriod(uint256 _challengePeriod);
+    event SetDefaultChallengePeriod(uint256 _defaultChallengePeriod);
 
     /**
      * @notice Emitted when a new default challenge timeout period is set
      * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
      * period
      */
-    event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod);
 
     /** @notice Emitted when the system is put into emergency pause/unpause
      * @param _isEmergencyPaused Is the system in an emergency pause
