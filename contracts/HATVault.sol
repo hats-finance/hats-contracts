@@ -206,7 +206,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     modifier isActiveClaim(bytes32 _claimId) {
         if (activeClaim.createdAt == 0) revert NoActiveClaimExists();
-        if (activeClaim.claimId != _claimId) revert WrongClaimId();
+        if (activeClaim.claimId != _claimId) revert ClaimIdIsNotActive();
         _;
     }
 
@@ -288,6 +288,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
+        if (activeClaim.challengedAt != 0) {
+            revert ClaimAlreadyChallenged();
+        } 
         // solhint-disable-next-line not-rely-on-time
         activeClaim.challengedAt = block.timestamp;
         emit ChallengeClaim(_claimId);
@@ -302,18 +305,23 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         Claim memory claim = activeClaim;
         delete activeClaim;
 
+        uint256 _challengePeriod = getChallengePeriod();
+        uint256 _challengeTimeOutPeriod = getChallengeTimeOutPeriod();
+        
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp >= claim.createdAt + _challengePeriod + _challengeTimeOutPeriod) revert ClaimExpired();
         if (claim.challengedAt != 0) {
             if (
                 msg.sender != getArbitrator() ||
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp > claim.challengedAt + getChallengeTimeOutPeriod()
+                block.timestamp > claim.challengedAt + _challengeTimeOutPeriod
             )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             claim.bountyPercentage = _bountyPercentage;
         } else {
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= claim.createdAt + getChallengePeriod()
+                block.timestamp <= claim.createdAt + _challengePeriod
             ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
@@ -372,12 +380,17 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-dismissClaim}. */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
-        if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
-        if (
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
-            msg.sender != getArbitrator()
-        ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+
+        uint256 _challengeTimeOutPeriod = getChallengeTimeOutPeriod();
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp < claim.createdAt + getChallengePeriod() + _challengeTimeOutPeriod) {
+            if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
+            if (
+                // solhint-disable-next-line not-rely-on-time
+                block.timestamp < claim.challengedAt + getChallengeTimeOutPeriod() && 
+                msg.sender != getArbitrator()
+            ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+        }
         delete activeClaim;
 
         emit DismissClaim(_claimId);
@@ -813,7 +826,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     */
     function _calcClaimBounty(uint256 _bountyPercentage) internal view returns(ClaimBounty memory claimBounty) {
         uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) revert VaultBalanceIsZero();
+        if (totalSupply == 0) {
+          return claimBounty;
+        }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 

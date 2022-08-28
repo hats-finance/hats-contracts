@@ -15,9 +15,24 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 
 More precisely:
 
-1. The `committee` calls `submitClaim(beneficiary, bountyPercentage)`. This will create a new `claimId`
+1. `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
+  - `submitClaim` can only be called by the committee
+  - `submitClaim` can only be called during the safety period
+  - `submitClaim` can only be called if no other active claim exists
+  - only the committe can call `submitClaim`
+  - emergencyPause is not in effect
 2. The `arbitrator` can call `challengeClaim(_claimId)` at any time during the `challengePeriod`
-3. If `challengePeriod` has passed and the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
+  - _claimId must be the id of the active claim
+  - the claim has not been challenged before
+  - challengePeriod must not have expired
+  - only the arbitrator can call challengeClaim
+3. `approveClaim(_claimId, bountyPercentage)`
+  - During the challengePeriod:
+    - the claim must be challenged
+    - only arbitrator can call aproveClaim
+  - After the challenge period:
+    - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
+    - the bountyPercentage must be that of the original claim
 4. If the claim is challenged, `arbitrator` can either call `approveClaim(_claimId, bountyPercentage)` (and set a new bounty percentage) or can call `dismissClaim` to reject the claim alltogether
 5. If the claim is challenged, and if `challengeTimeOutPeriod` passed, anyone can call `dismissClaim` and dismiss the claim
 
