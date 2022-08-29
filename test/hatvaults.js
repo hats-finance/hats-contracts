@@ -1399,7 +1399,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await registry.feeSetter(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetFeeSetter");
-    assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
+    assert.equal(tx.logs[0].args._feeSetter, accounts[1]);
 
     await assertFunctionRaisesException(
       vault.setWithdrawalFee(100),
@@ -3620,14 +3620,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
-      tx.logs[1].args._amountReceived.toString()
+      tx.logs[1].args._amountSent.toString()
     );
     var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN(9))
       .div(new web3.utils.BN(2))
       .div(new web3.utils.BN(100));
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       expectedHackerReward.toString()
     );
     assert.equal(await vestingTokenLock.canDelegate(), true);
@@ -3711,13 +3711,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
-      tx.logs[1].args._amountReceived.toString()
+      tx.logs[1].args._amountSent.toString()
     );
     var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN(4))
       .div(new web3.utils.BN(100));
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       expectedHackerReward.toString()
     );
   });
@@ -3814,13 +3814,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
-      tx.logs[1].args._amountReceived.toString()
+      tx.logs[1].args._amountSent.toString()
     );
     var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("1"))
       .mul(new web3.utils.BN(4))
       .div(new web3.utils.BN(100));
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       expectedHackerReward.toString()
     );
     assert.equal(await vestingTokenLock.canDelegate(), true);
@@ -3944,13 +3944,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
-      tx.logs[1].args._amountReceived.toString()
+      tx.logs[1].args._amountSent.toString()
     );
     let expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
       .mul(new web3.utils.BN(4))
       .div(new web3.utils.BN(100));
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       expectedHackerReward.toString()
     );
 
@@ -3967,13 +3967,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
     assert.equal(
       (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
-      tx.logs[3].args._amountReceived.toString()
+      tx.logs[3].args._amountSent.toString()
     );
     expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.4"))
       .mul(new web3.utils.BN(4))
       .div(new web3.utils.BN(100));
     assert.equal(
-      tx.logs[3].args._amountReceived.toString(),
+      tx.logs[3].args._amountSent.toString(),
       expectedHackerReward.toString()
     );
 
@@ -4081,7 +4081,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       }
     );
     assert.equal(tx.logs[0].event, "SwapAndSend");
-    assert.equal(tx.logs[0].args._amountReceived.toString(), "0");
+    assert.equal(tx.logs[0].args._amountSent.toString(), "0");
     // Not real beneficiary should not get tokens
     let afterBountyBalance = (
       await hatToken.balanceOf(tx.logs[0].args._tokenLock)
@@ -4112,7 +4112,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
@@ -4126,7 +4126,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await hatToken.balanceOf(tx.logs[1].args._tokenLock)
     ).toString();
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       afterBountyBalance
     );
 
@@ -4234,7 +4234,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
@@ -4246,7 +4246,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
     );
 
@@ -4296,7 +4296,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
@@ -4308,7 +4308,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
     );
 
@@ -4361,7 +4361,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       new web3.utils.BN(web3.utils.toWei("0.032"))
         .mul(
           new web3.utils.BN(
@@ -4373,7 +4373,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       (await hatToken.balanceOf(tx.logs[1].args._tokenLock)).toString()
     );
 
@@ -4497,7 +4497,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       }
     );
     assert.equal(tx.logs[0].event, "SwapAndSend");
-    assert.equal(tx.logs[0].args._amountReceived.toString(), "0");
+    assert.equal(tx.logs[0].args._amountSent.toString(), "0");
     // Not real beneficiary should not get tokens
     let afterBountyBalance = (
       await hatToken.balanceOf(tx.logs[0].args._tokenLock)
@@ -4507,7 +4507,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       "0x0000000000000000000000000000000000000000"
     );
     assert.equal(
-      tx.logs[0].args._amountReceived.toString(),
+      tx.logs[0].args._amountSent.toString(),
       afterBountyBalance
     );
 
@@ -4535,7 +4535,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
 
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
@@ -4555,7 +4555,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await hatToken.balanceOf(tx.logs[1].args._tokenLock)
     ).toString();
     assert.equal(
-      tx.logs[1].args._amountReceived.toString(),
+      tx.logs[1].args._amountSent.toString(),
       afterBountyBalance
     );
   });
@@ -4933,19 +4933,19 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await hatVaultsRegistry.setHatVestingParams(21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
-      assertVMException(ex, "VestingPeriodsCannotBeZero");
+      assertVMException(ex, "HatVestingPeriodsCannotBeZero");
     }
     try {
       await hatVaultsRegistry.setHatVestingParams(180 * 24 * 3600, 7);
       assert(false, "duration should be less than 180 days");
     } catch (ex) {
-      assertVMException(ex, "VestingDurationTooLong");
+      assertVMException(ex, "HatVestingDurationTooLong");
     }
     try {
       await hatVaultsRegistry.setHatVestingParams(6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
-      assertVMException(ex, "VestingDurationSmallerThanPeriods");
+      assertVMException(ex, "HatVestingDurationSmallerThanPeriods");
     }
     var tx = await hatVaultsRegistry.setHatVestingParams(21000, 7);
     assert.equal(tx.logs[0].event, "SetHatVestingParams");

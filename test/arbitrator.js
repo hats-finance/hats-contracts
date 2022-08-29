@@ -27,7 +27,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultArbitrator(), accounts[1]);
     assert.equal(await vault.getArbitrator(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetDefaultArbitrator");
-    assert.equal(tx.logs[0].args._arbitrator, accounts[1]);
+    assert.equal(tx.logs[0].args._defaultArbitrator, accounts[1]);
   });
 
   it("Set default challenge period", async () => {
@@ -59,14 +59,14 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultChallengePeriod(), 60 * 60 * 24);
     assert.equal(await vault.getChallengePeriod(), 60 * 60 * 24);
     assert.equal(tx.logs[0].event, "SetDefaultChallengePeriod");
-    assert.equal(tx.logs[0].args._challengePeriod, 60 * 60 * 24);
+    assert.equal(tx.logs[0].args._defaultChallengePeriod, 60 * 60 * 24);
 
     tx = await registry.setDefaultChallengePeriod(60 * 60 * 24 * 5);
 
     assert.equal(await registry.defaultChallengePeriod(), 60 * 60 * 24 * 5);
     assert.equal(await vault.getChallengePeriod(), 60 * 60 * 24 * 5);
     assert.equal(tx.logs[0].event, "SetDefaultChallengePeriod");
-    assert.equal(tx.logs[0].args._challengePeriod, 60 * 60 * 24 * 5);
+    assert.equal(tx.logs[0].args._defaultChallengePeriod, 60 * 60 * 24 * 5);
   });
 
   it("Set default challengeTimeOutPeriod", async () => {
@@ -95,14 +95,14 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 2);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 2);
     assert.equal(tx.logs[0].event, "SetDefaultChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 2);
+    assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 2);
 
     tx = await registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 85);
 
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
     assert.equal(tx.logs[0].event, "SetDefaultChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 85);
+    assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 85);
   });
 
 
