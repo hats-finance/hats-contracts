@@ -5,7 +5,7 @@
 |`isEmergencyPaused`|global|0 | - |`setEmergencyPaused`|
 |`defaultHATBountySplit.governanceHAT`|global ||  |`registry.setDefaultHATBountySplit`
 |`bountySplit.governanceHAT`|vault || |`vault.setHATBountySplit`
-|`defaultHATBountySplit.hackerHATVested`|vault || |`registry.setDefaultHATBountySplit`
+|`defaultHATBountySplit.hackerHATVested`|global|| |`registry.setDefaultHATBountySplit`
 |`bountySplit.hackerHATVested`|vault || |`vault.setHATBountySplit`
 |`defaultArbitrator`|global|registry.owner| | `registry.setDefaulttArbitrator`
 |`abitrator`|vault|registry.owner| |  `vault.setArbitrator`
@@ -51,10 +51,9 @@
 
 -  `setCommittee` only if comittee has not checked in yet 
 -  `setBountySplit` only if there is no active claim and no safetyperiod, 
-- `vestingDuration < vestingPeriods`
 
 
-## Settings owned by comittee
+## Settings managed by vault's Comittee
 |parameter|scope|default|limits|setter| 
 |-|-|-|-|-|
 |`committee`|vault| || `vault.setComittee`
