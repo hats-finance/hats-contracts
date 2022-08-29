@@ -25,7 +25,7 @@ const {
   epochRewardPerBlock,
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
-} = require("./hatvaults.js");
+} = require("./common.js");
 const {
   submitClaim,
   assertFunctionRaisesException,

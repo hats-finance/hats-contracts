@@ -19,6 +19,7 @@ const {
   epochRewardPerBlock,
   setup,
   submitClaim,
+  ZERO_ADDRESS
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
@@ -222,18 +223,126 @@ contract("HatVaults", (accounts) => {
 
   it("Set reward controller", async () => {
     await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
     assert.equal((await vault.rewardController()), rewardController.address);
 
     try {
       await vault.setRewardController(accounts[2], { from: accounts[1] });
-      assert(false, "only gov");
+      assert(false, "only governance");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyRegistryOwner");
     }
 
-    await vault.setRewardController(accounts[2]);
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
+
+    try {
+      await vault.setRewardController(accounts[2]);
+      assert(false, "cannot propose new reward controller while active claim exists");
+    } catch (ex) {
+      assertVMException(ex, "ActiveClaimExists");
+    }
+
+    await vault.dismissClaim(claimId);
+
+    tx = await vault.setRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 
     assert.equal((await vault.rewardController()), accounts[2]);
+
+    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await rewardController.setAllocPoint(vault.address, 100);
+      assert(false, "cannot reward a vault that terminated the reward controller");
+    } catch (ex) {
+      assertVMException(ex, "CannotAddTerminatedVault");
+    }
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount, 0);
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+  });
+
+  it("Set reward controller for vault with no alloc point", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal((await vault.rewardController()), rewardController.address);
+    await rewardController.setAllocPoint(vault.address, 0);
+
+    tx = await vault.setRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
+
+    assert.equal((await vault.rewardController()), accounts[2]);
+
+    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await rewardController.setAllocPoint(vault.address, 100);
+      assert(false, "cannot reward a vault that terminated the reward controller");
+    } catch (ex) {
+      assertVMException(ex, "CannotAddTerminatedVault");
+    }
   });
 
   it("setCommittee", async () => {
@@ -1333,52 +1442,54 @@ contract("HatVaults", (accounts) => {
     await vault.withdrawRequest({ from: staker });
   });
 
-  it("Set fee and fee setter", async () => {
-    await setUpGlobalVars(accounts);
-    try {
-      await hatVaultsRegistry.setFeeSetter(accounts[1], {
-        from: accounts[1],
-      });
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
+  it("Set feeSetter", async () => {
+    let tx;
+    const {vault, registry}= await setUpGlobalVars(accounts);
+    
+    assert.equal(await registry.feeSetter(), ZERO_ADDRESS);
+    
+    await assertFunctionRaisesException(
+      registry.setFeeSetter(accounts[1],  { from: accounts[1]}),
+        "Ownable: caller is not the owner"
+    );
 
-    await hatVaultsRegistry.setFeeSetter(accounts[0]);
-    var tx = await vault.setWithdrawalFee(100);
-    assert.equal(await vault.withdrawalFee(), 100);
-    assert.equal(tx.logs[0].event, "SetWithdrawalFee");
-    assert.equal(tx.logs[0].args._newFee, 100);
+    await registry.setFeeSetter(accounts[0]);
+    
+    // the default account can set the withdrawal fee no problem
+    await vault.setWithdrawalFee(100);
 
-    tx = await hatVaultsRegistry.setFeeSetter(accounts[1]);
+    tx = await registry.setFeeSetter(accounts[1]);
 
-    assert.equal(await hatVaultsRegistry.feeSetter(), accounts[1]);
+    assert.equal(await registry.feeSetter(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetFeeSetter");
     assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
 
-    try {
-      await vault.setWithdrawalFee(100);
-      assert(false, "only fee setter");
-    } catch (ex) {
-      assertVMException(ex, "OnlyFeeSetter");
-    }
+    await assertFunctionRaisesException(
+      vault.setWithdrawalFee(100),
+      "OnlyFeeSetter"
+  );
 
-    try {
-      await vault.setWithdrawalFee(201, {
-        from: accounts[1],
-      });
-      assert(false, "fee must be lower than or equal to 2%");
-    } catch (ex) {
-      assertVMException(ex, "WithdrawalFeeTooBig");
-    }
+    await assertFunctionRaisesException(
+      vault.setWithdrawalFee(201, { from: accounts[1]}),
+      "WithdrawalFeeTooBig"
+    );
 
     tx = await vault.setWithdrawalFee(200, {
       from: accounts[1],
     });
 
-    assert.equal(await vault.withdrawalFee(), 200);
     assert.equal(tx.logs[0].event, "SetWithdrawalFee");
     assert.equal(tx.logs[0].args._newFee, 200);
+    assert.equal(await vault.withdrawalFee(), 200);
+  });
+
+  it("Withdrawal fee is paid correctly", async () => {
+    await setUpGlobalVars(accounts);
+    await hatVaultsRegistry.setFeeSetter(accounts[1]);
+
+    await vault.setWithdrawalFee(200, {
+      from: accounts[1],
+    });
 
     var staker = accounts[2];
     var staker2 = accounts[3];
@@ -1396,12 +1507,12 @@ contract("HatVaults", (accounts) => {
     let governanceBalance = await stakingToken.balanceOf(accounts[0]);
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
-    // Staker got back the reward minus the fee
+    // Staker got back the reward minus the 2% fee
     assert.equal(
       await stakingToken.balanceOf(staker),
       web3.utils.toWei("0.98")
     );
-    // Governance received the fee
+    // Governance received the fee of 2%
     assert.equal(
       (await stakingToken.balanceOf(accounts[0])).toString(),
       governanceBalance
@@ -1412,12 +1523,11 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("0.02"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
-    try {
-      await safeWithdraw(vault, web3.utils.toWei("0.99"), staker);
-      assert(false, "cannot withdraw more than max");
-    } catch (ex) {
-      assertVMException(ex, "WithdrawMoreThanMax");
-    }
+    
+    await assertFunctionRaisesException(
+      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
+      "WithdrawMoreThanMax"
+    );
 
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
@@ -2093,14 +2203,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
   });
 
-  it("getRewardForBlocksRange - from must be <= to", async () => {
+  it("getRewardForBlocksRange - from <= to will return 0", async () => {
     await setUpGlobalVars(accounts, 0);
-    try {
-      await rewardController.getRewardForBlocksRange(1, 0, 0, 1000);
-      assert(false, "from must be <= to");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(1, 0, 0, 1000)
+      ).toNumber(),
+      0
+    );
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(0, 0, 0, 1000)
@@ -2109,11 +2219,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
   });
 
-  it("setEpochRewardPerBlock", async () => {
+  it("setEpochRewardPerBlock - can set all before start block", async () => {
     var epochRewardPerBlockRandom = [...Array(24)].map(() =>
       web3.utils.toWei(((Math.random() * 100) | 0).toString())
     );
-    await setUpGlobalVars(accounts, 0);
+
+    var startBlock = (await web3.eth.getBlock("latest")).number + 1000;
+    await setUpGlobalVars(accounts, startBlock);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
@@ -2139,8 +2251,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          10,
+          startBlock,
+          startBlock + 10,
           allocPoint,
           totalAllocPoint
         )
@@ -2152,8 +2264,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          15,
+          startBlock,
+          startBlock + 15,
           allocPoint,
           totalAllocPoint
         )
@@ -2168,8 +2280,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          20,
+          startBlock,
+          startBlock + 20,
           allocPoint,
           totalAllocPoint
         )
@@ -2186,8 +2298,125 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1000,
+          startBlock,
+          startBlock + 1000,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      multiplier.mul(new web3.utils.BN(10)).toString()
+    );
+  });
+
+  it("setEpochRewardPerBlock - can set only epoch that have not started", async () => {
+    var epochRewardPerBlockRandom = [...Array(24)].map(() =>
+      web3.utils.toWei(((Math.random() * 100) | 0).toString())
+    );
+
+    var startBlock = (await web3.eth.getBlock("latest")).number;
+    await setUpGlobalVars(accounts, startBlock);
+    let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
+    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
+    let totalAllocPoint = (
+      await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
+    ).totalAllocPoint;
+    try {
+      await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
+    assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
+    
+    // Should now be in the 3rd epoch
+
+    let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
+    for (let i = 0; i < 3; i++) {
+      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+      assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlock[i]);
+    }
+
+    for (let i = 3; i < eventEpochRewardPerBlock.length; i++) {
+      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+      assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
+    }
+
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          startBlock,
+          startBlock + 10,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          startBlock,
+          startBlock + 20,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          startBlock,
+          startBlock + 30,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+
+    // Only 4th period and above should have change
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          startBlock,
+          startBlock + 40,
+          allocPoint,
+          totalAllocPoint
+        )
+      ).toString(),
+      new web3.utils.BN(epochRewardPerBlock[0])
+        .add(new web3.utils.BN(epochRewardPerBlock[1]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[3]))
+        .mul(new web3.utils.BN(10))
+        .toString()
+    );
+    var multiplier = new web3.utils.BN("0");
+    for (let i = 0; i < 3; i++) {
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
+    }
+    for (let i = 3; i < 24; i++) {
+      multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
+    }
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(
+          startBlock,
+          startBlock + 1000,
           allocPoint,
           totalAllocPoint
         )
@@ -3046,12 +3275,6 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       vault.withdraw(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
       "WithdrawMoreThanMax"
     );
-
-
-
-
-
-
   });
 
   it("transfer shares", async () => {
@@ -5363,10 +5586,4 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 });
 
-module.exports = {
-  assertVMException,
-  setup,
-  epochRewardPerBlock,
-  advanceToSafetyPeriod: advanceToSafetyPeriod_,
-  advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
-};
+

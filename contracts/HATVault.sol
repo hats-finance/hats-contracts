@@ -160,7 +160,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         uint256 maxBounty;
         uint256 timestamp;
     }
-    
+
     /**
     * @param rewardController The reward controller for the vault
     * @param vestingDuration Duration of the vesting period of the vault's
@@ -665,10 +665,11 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by vault's owner to set the vault's reward controller
+    * @notice Called by governance to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
-    function setRewardController(IRewardController _newRewardController) external onlyOwner {
+    function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
+        rewardController.terminateVaultRewards();
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
@@ -1033,7 +1034,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
                 if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
-            rewardController.updateVaultBalance(to, amount, true);
+            rewardController.commitUserBalance(to, amount, true);
         }
 
         if (from != address(0)) {
@@ -1044,7 +1045,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
             // will have to be made before next withdrawal
             withdrawEnableStartTime[from] = 0;
 
-            rewardController.updateVaultBalance(from, amount, false);
+            rewardController.commitUserBalance(from, amount, false);
         }
     }
 

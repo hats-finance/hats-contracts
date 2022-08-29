@@ -3,9 +3,11 @@ pragma solidity 0.8.16;
 
 
 interface IRewardController {
-    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external;
+    function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external;
 
     function setAllocPoint(address _vault, uint256 _allocPoint) external;
 
     function claimReward(address _vault, address _user) external;
+
+    function terminateVaultRewards() external;
 }
