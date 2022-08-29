@@ -5095,8 +5095,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
         8000,
         [7000, 2500, 500],
         "_descriptionHash",
-        86400,
         10,
+        86400,
         false
       );
       assert(false, "vesting duration smaller than period");
