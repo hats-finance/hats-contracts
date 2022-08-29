@@ -35,8 +35,8 @@ error AmountToSwapIsZero();
 error SwapFailed();
 // Wrong amount received
 error AmountSwappedLessThanMinimum();
-// Hats bounty split should be less than `HUNDRED_PERCENT`
-error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+// Hats bounty split should be less than `MAX_HAT_SPLIT`
+error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
 // Challenge period too short
 error ChallengePeriodTooShort();
 // Challenge period too long
@@ -100,6 +100,7 @@ contract HATVaultsRegistry is Ownable {
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -564,8 +565,8 @@ contract HATVaultsRegistry is Ownable {
     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
     function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) public pure {
-        if (_bountyGovernanceHAT + _bountyHackerHATVested >= HUNDRED_PERCENT)
-            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+        if (_bountyGovernanceHAT + _bountyHackerHATVested > MAX_HAT_SPLIT)
+            revert TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
     }
 
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
