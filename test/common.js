@@ -10,6 +10,7 @@ const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 let epochRewardPerBlock = [
   web3.utils.toWei("441.3"),
   web3.utils.toWei("441.3"),
@@ -231,4 +232,5 @@ module.exports = {
   advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
+  ZERO_ADDRESS
 };

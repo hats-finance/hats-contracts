@@ -21,20 +21,22 @@ More precisely:
   - `submitClaim` can only be called if no other active claim exists
   - only the committe can call `submitClaim`
   - emergencyPause is not in effect
-2. The `arbitrator` can call `challengeClaim(_claimId)` at any time during the `challengePeriod`
+1. The `arbitrator` can call `challengeClaim(_claimId)` at any time during the `challengePeriod`
   - _claimId must be the id of the active claim
   - the claim has not been challenged before
   - challengePeriod must not have expired
   - only the arbitrator can call challengeClaim
-3. `approveClaim(_claimId, bountyPercentage)`
+1. `approveClaim(_claimId, bountyPercentage)`
+
   - During the challengePeriod:
     - the claim must be challenged
     - only arbitrator can call aproveClaim
   - After the challenge period:
     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
     - the bountyPercentage must be that of the original claim
-4. If the claim is challenged, `arbitrator` can either call `approveClaim(_claimId, bountyPercentage)` (and set a new bounty percentage) or can call `dismissClaim` to reject the claim alltogether
-5. If the claim is challenged, and if `challengeTimeOutPeriod` passed, anyone can call `dismissClaim` and dismiss the claim
+  - _claimId must be the id of the active claim
+1. `dismissClaim(_claimId)`
+  - 
 
 During the time from submitting a claim to its resolution, the vault will be locked for withdrawals. 
 
