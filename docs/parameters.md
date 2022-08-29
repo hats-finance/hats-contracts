@@ -7,8 +7,8 @@
 |`bountySplit.governanceHAT`|vault || |`vault.setHATBountySplit`
 |`defaultHATBountySplit.hackerHATVested`|global|| |`registry.setDefaultHATBountySplit`
 |`bountySplit.hackerHATVested`|vault || |`vault.setHATBountySplit`
-|`defaultArbitrator`|global|registry.owner| | `registry.setDefaulttArbitrator`
-|`abitrator`|vault|registry.owner| |  `vault.setArbitrator`
+|`defaultArbitrator`|global|registry.owner| | `registry.setDefaultArbitrator`
+|`abitrator`|vault|| |  `vault.setArbitrator`
 |`defaultChallengePeriod`|global| 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod`
 |`challengePeriod`|vault|3 days | >= 1 days, <= 5 days |`vault.setChallengePeriod`
 |`defaultChallengeTimeOutPeriod`|global| 5 weeks | >= 2 days, <= 85 days|  `registry.setDefaultChallengeTimeOutPeriod`
