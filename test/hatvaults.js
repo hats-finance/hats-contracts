@@ -233,17 +233,10 @@ contract("HatVaults", (accounts) => {
     assert.equal((await vault.rewardController()), rewardController.address);
 
     try {
-      await vault.setRewardController();
-      assert(false, "no pending reward controller");
+      await vault.setRewardController(accounts[2], { from: accounts[1] });
+      assert(false, "only governance");
     } catch (ex) {
-      assertVMException(ex, "NoPendingRewardController");
-    }
-
-    try {
-      await vault.setPendingRewardController(accounts[2], { from: accounts[1] });
-      assert(false, "only owner");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyRegistryOwner");
     }
 
     await advanceToSafetyPeriod();
@@ -261,7 +254,7 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
 
     try {
-      await vault.setPendingRewardController(accounts[2]);
+      await vault.setRewardController(accounts[2]);
       assert(false, "cannot propose new reward controller while active claim exists");
     } catch (ex) {
       assertVMException(ex, "ActiveClaimExists");
@@ -269,27 +262,7 @@ contract("HatVaults", (accounts) => {
 
     await vault.dismissClaim(claimId);
 
-    tx = await vault.setPendingRewardController(accounts[2]);
-    assert.equal(tx.logs[0].event, "SetPendingRewardController");
-    assert.equal(tx.logs[0].args._pendingRewardController, accounts[2]);
-
-    try {
-      await vault.setRewardController();
-      assert(false, "reward controller delay did not yet pass");
-    } catch (ex) {
-      assertVMException(ex, "NoPendingRewardController");
-    }
-
-    await utils.increaseTime(60 * 60 * 24 * 30);
-
-    try {
-      await vault.setRewardController({ from: accounts[1] });
-      assert(false, "only owner");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
-
-    tx = await vault.setRewardController();
+    tx = await vault.setRewardController(accounts[2]);
     assert.equal(tx.logs[0].event, "SetRewardController");
     assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 
@@ -347,27 +320,7 @@ contract("HatVaults", (accounts) => {
     assert.equal((await vault.rewardController()), rewardController.address);
     await rewardController.setAllocPoint(vault.address, 0);
 
-    tx = await vault.setPendingRewardController(accounts[2]);
-    assert.equal(tx.logs[0].event, "SetPendingRewardController");
-    assert.equal(tx.logs[0].args._pendingRewardController, accounts[2]);
-
-    try {
-      await vault.setRewardController();
-      assert(false, "reward controller delay did not yet pass");
-    } catch (ex) {
-      assertVMException(ex, "NoPendingRewardController");
-    }
-
-    await utils.increaseTime(60 * 60 * 24 * 30);
-
-    try {
-      await vault.setRewardController({ from: accounts[1] });
-      assert(false, "only owner");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
-
-    tx = await vault.setRewardController();
+    tx = await vault.setRewardController(accounts[2]);
     assert.equal(tx.logs[0].event, "SetRewardController");
     assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 

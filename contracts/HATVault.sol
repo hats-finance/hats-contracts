@@ -34,8 +34,6 @@ error ClaimIdIsNotActive();
 error NotEnoughFeePaid();
 // No pending max bounty
 error NoPendingMaxBounty();
-// No pending rewardController
-error NoPendingRewardController();
 // Delay period for setting max bounty had not passed
 error DelayPeriodForSettingMaxBountyHadNotPassed();
 // Committee already checked in
@@ -162,11 +160,6 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         uint256 timestamp;
     }
 
-    struct PendingRewardController {
-        IRewardController rewardController;
-        uint256 timestamp;
-    }
-    
     /**
     * @param rewardController The reward controller for the vault
     * @param vestingDuration Duration of the vesting period of the vault's
@@ -225,8 +218,6 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
 
     PendingMaxBounty public pendingMaxBounty;
 
-    PendingRewardController public pendingRewardController;
-
     bool public depositPause;
 
     // Time of when withdrawal period starts for every user that has an
@@ -271,7 +262,6 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
     event SetMaxBounty(uint256 _maxBounty);
-    event SetPendingRewardController(IRewardController indexed _pendingRewardController);
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
@@ -673,30 +663,13 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by vault's owner to propose a new reward controller
+    * @notice Called by governance to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
-    function setPendingRewardController (
-        IRewardController _newRewardController
-    ) external onlyOwner noActiveClaim {
-        pendingRewardController.rewardController = _newRewardController;
-        // solhint-disable-next-line not-rely-on-time
-        pendingRewardController.timestamp = block.timestamp;
-        emit SetPendingRewardController(_newRewardController);
-    }
-
-    /**
-    * @notice Called by vault's owner to set the vault's reward controller to the proposed one
-    * Can only be called after a delay from calling the setPendingRewardController
-    */
-    function setRewardController() external onlyOwner {
-        if (pendingRewardController.timestamp == 0) revert NoPendingRewardController();
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < pendingRewardController.timestamp + 30 days) revert NoPendingRewardController();
+    function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
         rewardController.terminateVaultRewards();
-        rewardController = pendingRewardController.rewardController;
-        delete pendingRewardController;
-        emit SetRewardController(rewardController);
+        rewardController = _newRewardController;
+        emit SetRewardController(_newRewardController);
     }
 
     /**
