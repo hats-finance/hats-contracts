@@ -3,7 +3,7 @@
 |who|can do|severity|addressed?|remarks
 |-|-|-|-|-|
 |registry.owner|block all transfers (including deposit/withdraw)|Critical|NOT ADDRESSED **TBD**|set reward controller to invalid address| 
-|registry.owner|block specific transfers (including deposit/withdraw)|Critical|NOT ADDRESSED **TBD**|set reward controller to  malicious address
+|vault.owner|block specific transfers (including deposit/withdraw)|Critical|NOT ADDRESSED **TBD**|set reward controller to  malicious address
 |registry.owner|take entire bounty|high|subject to timelock, which mitigates the problem, **TBD** set a limit?|set setHATBountySplit and get up to 100% of the bounty 
 | committee + **DOS on arbitrator** |empty vault|info|**??** require arbitrator approval always?|approve any payout after challengetimeoutperiod|
 |registry.owner|block logging of claims|info|**TBD** limit on claimfee?|set claim fee to a very high value
