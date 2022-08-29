@@ -268,8 +268,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetBountyGovernanceHAT(uint256 _bountyGovernanceHAT);
-    event SetBountyHackerHATVested(uint256 _bountyHackerHATVested);
+    event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -673,39 +672,20 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
-
     /**
-    * @notice Called by governance to set the percentage of each claim bounty that
-    * will be swapped for hats and sent to the governance.
-    * Either sets it to the value passed, or to the special "null" vaule, 
+    * @notice Called by governance to set the vault HAT token bounty split upon
+    * an approval. Either sets it to the value passed, or to the special "null" vaule,
     * making it always use the registry's default value.
     * @param _bountyGovernanceHAT The HAT bounty for governance
-    */
-    function setBountyGovernanceHAT(uint256 _bountyGovernanceHAT) external onlyRegistryOwner {
-        if (_bountyGovernanceHAT != NULL_UINT) {
-            registry.validateHATSplit(_bountyGovernanceHAT, getBountyHackerHATVested());
-        }
-
-        bountyGovernanceHAT = _bountyGovernanceHAT;
-
-        emit SetBountyGovernanceHAT(_bountyGovernanceHAT);
-    }
-
-    /**
-    * @notice Called by governance to set the percentage of each claim bounty that
-    * will be swapped for hats and vested for the hacker.
-    * Either sets it to the value passed, or to the special "null" vaule, 
-    * making it always use the registry's default value.
     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
-    function setBountyHackerHATVested(uint256 _bountyHackerHATVested) external onlyRegistryOwner {
-        if (_bountyHackerHATVested != NULL_UINT) {
-            registry.validateHATSplit(getBountyGovernanceHAT(), _bountyHackerHATVested);
-        }
-
+    function setHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) external onlyRegistryOwner {
+        bountyGovernanceHAT = _bountyGovernanceHAT;
         bountyHackerHATVested = _bountyHackerHATVested;
 
-        emit SetBountyHackerHATVested(_bountyHackerHATVested);
+        registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
+
+        emit SetHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
     }
 
     /**

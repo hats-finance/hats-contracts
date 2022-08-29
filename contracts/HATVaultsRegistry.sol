@@ -164,8 +164,7 @@ contract HATVaultsRegistry is Ownable {
         uint256 _amountReceived,
         address indexed _tokenLock
     );
-    event SetDefaultBountyGovernanceHAT(uint256 _bountyGovernanceHAT);
-    event SetDefaultBountyHackerHATVested(uint256 _bountyHackerHATVested);
+    event SetDefaultHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetDefaultArbitrator(address indexed _arbitrator);
     event SetDefaultChallengePeriod(uint256 _challengePeriod);
     event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -246,24 +245,18 @@ contract HATVaultsRegistry is Ownable {
 
     /**
     * @notice Called by governance to set the default percentage of each claim bounty
-    * that will be swapped for hats and sent to the governance.
+    * that will be swapped for hats and sent to the governance or vested for the hacker
     * @param _defaultBountyGovernanceHAT The HAT bounty for governance
-    */
-    function setDefaultBountyGovernanceHAT(uint256 _defaultBountyGovernanceHAT) external onlyOwner {
-        validateHATSplit(_defaultBountyGovernanceHAT, defaultBountyHackerHATVested);
-        defaultBountyGovernanceHAT = _defaultBountyGovernanceHAT;
-        emit SetDefaultBountyGovernanceHAT(_defaultBountyGovernanceHAT);
-    }
-
-    /**
-    * @notice Called by governance to set the default percentage of each claim bounty
-    * that will be swapped for hats and vested for the hacker.
     * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
     */
-    function setDefaultBountyHackerHATVested(uint256 _defaultBountyHackerHATVested) external onlyOwner {
-        validateHATSplit(defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
+    function setDefaultHATBountySplit(
+        uint256 _defaultBountyGovernanceHAT,
+        uint256 _defaultBountyHackerHATVested
+    ) external onlyOwner {
+        validateHATSplit(_defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
+        defaultBountyGovernanceHAT = _defaultBountyGovernanceHAT;
         defaultBountyHackerHATVested = _defaultBountyHackerHATVested;
-        emit SetDefaultBountyHackerHATVested(_defaultBountyHackerHATVested);
+        emit SetDefaultHATBountySplit(_defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
     }
 
     /**
