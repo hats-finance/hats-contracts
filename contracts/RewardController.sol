@@ -209,7 +209,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     public
     view
     returns (uint256 reward) {
-        if (_fromBlock >= startBlock && _totalAllocPoint > 0) {
+        if ((_fromBlock >= startBlock && _toBlock >= _fromBlock) && _totalAllocPoint > 0) {
             uint256 result;
             uint256 i = (_fromBlock - startBlock) / epochLength + 1;
             for (; i <= NUMBER_OF_EPOCHS; i++) {

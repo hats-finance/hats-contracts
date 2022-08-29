@@ -334,6 +334,63 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("Set reward controller for vault with no alloc point", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal((await vault.rewardController()), rewardController.address);
+    await rewardController.setAllocPoint(vault.address, 0);
+
+    tx = await vault.setPendingRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetPendingRewardController");
+    assert.equal(tx.logs[0].args._pendingRewardController, accounts[2]);
+
+    try {
+      await vault.setRewardController();
+      assert(false, "reward controller delay did not yet pass");
+    } catch (ex) {
+      assertVMException(ex, "NoPendingRewardController");
+    }
+
+    await utils.increaseTime(60 * 60 * 24 * 30);
+
+    try {
+      await vault.setRewardController({ from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    tx = await vault.setRewardController();
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
+
+    assert.equal((await vault.rewardController()), accounts[2]);
+
+    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await rewardController.setAllocPoint(vault.address, 100);
+      assert(false, "cannot reward a vault that terminated the reward controller");
+    } catch (ex) {
+      assertVMException(ex, "CannotAddTerminatedVault");
+    }
+  });
+
   it("setCommittee", async () => {
     await setUpGlobalVars(accounts);
     assert.equal(await vault.committee(), accounts[1]);
