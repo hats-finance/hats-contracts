@@ -10,7 +10,7 @@ const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 
-let rewardPerEpoch = [
+let epochRewardPerBlock = [
   web3.utils.toWei("441.3"),
   web3.utils.toWei("441.3"),
   web3.utils.toWei("882.5"),
@@ -94,7 +94,7 @@ const setup = async function(
   let deployment = await deployHatVaults(
     hatToken.address,
     options.startBlock,
-    rewardPerEpoch,
+    epochRewardPerBlock,
     options.halvingAfterBlock,
     accounts[0],
     hatToken.address,
@@ -225,7 +225,7 @@ async function assertFunctionRaisesException(functionCall, exceptionString) {
 }
 module.exports = {
   setup,
-  rewardPerEpoch,
+  epochRewardPerBlock,
   assertVMException,
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
