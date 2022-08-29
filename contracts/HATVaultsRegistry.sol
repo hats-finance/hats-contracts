@@ -166,7 +166,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawRequestParams}. */
-    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod) external onlyOwner {
+    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
+        external 
+        onlyOwner
+    {
         if (_withdrawRequestPendingPeriod > 90 days)
             revert WithdrawRequestPendingPeriodTooLong();
         if (_withdrawRequestEnablePeriod < 6 hours)
@@ -216,9 +219,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _owner,
         address _committee,
         IRewardController _rewardController,
+        string memory _descriptionHash,
         uint256 _maxBounty,
         HATVault.BountySplit memory _bountySplit,
-        string memory _descriptionHash,
         uint256[2] memory _bountyVestingParams,
         bool _isPaused
     ) 
