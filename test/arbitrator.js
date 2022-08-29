@@ -478,7 +478,6 @@ contract("Registry Arbitrator", (accounts) => {
     const { registry, vault, stakingToken, arbitrator } = await setup(accounts);
     // set challenge period to one day
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
-    const owner = accounts[0];
     const staker = accounts[1];
     const newArbitrator = accounts[3];
     await advanceToSafetyPeriod(registry);
