@@ -381,7 +381,7 @@ contract("Registry Arbitrator", (accounts) => {
 
     let claimId = await submitClaim(vault, { accounts });
 
-    // only arbitrator and govrnance can challenge the claim
+    // only arbitrator and governance can challenge the claim
     await assertFunctionRaisesException(
       vault.challengeClaim(claimId, { from: committee }),
       "OnlyArbitratorOrRegistryOwner"
