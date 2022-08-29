@@ -114,7 +114,7 @@ interface IHATVault is IERC4626 {
     // No active claim exists
     error NoActiveClaimExists();
     // Claim Id specified is not the active claim Id
-    error WrongClaimId();
+    error ClaimIdIsNotActive();
     // Not enough fee paid
     error NotEnoughFeePaid();
     // No pending max bounty
@@ -127,8 +127,6 @@ interface IHATVault is IERC4626 {
     error PendingWithdrawRequestExists();
     // Amount to deposit is zero
     error AmountToDepositIsZero();
-    // Vault balance is zero
-    error VaultBalanceIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
     // Withdraw request is invalid
@@ -159,8 +157,12 @@ interface IHATVault is IERC4626 {
     error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
     // Challenged claim can only be approved by arbitrator before the challenge timeout period
     error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+    // Claim has expired
+    error ClaimExpired();
     // Challenge period is over
     error ChallengePeriodEnded();
+    // claim can be challenged only once
+    error ClaimAlreadyChallenged();
     // Only callable if challenged
     error OnlyCallableIfChallenged();
     // Cannot deposit to another user with withdraw request
@@ -173,6 +175,7 @@ interface IHATVault is IERC4626 {
     error RedeemMoreThanMax();
     // System is in an emergency pause
     error SystemInEmergencyPause();
+
 
     
     event SubmitClaim(
