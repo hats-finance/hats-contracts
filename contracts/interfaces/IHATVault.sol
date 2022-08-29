@@ -47,6 +47,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IHATVault is IERC4626Upgradeable {
 
+    enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
+
     // How to divide the bounty - after deducting the part that is swapped to
     // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
     // values are in percentages and should add up to 100% (defined as 10000)
@@ -217,6 +219,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty);
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
@@ -412,6 +415,15 @@ interface IHATVault is IERC4626Upgradeable {
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
         external;
+
+    /**
+    * @notice Called by the registry's owner to set whether the arbitrator
+    * can change a claim bounty percentage
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
+    * @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage
+    */
+    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external;
 
     /* -------------------------------------------------------------------------------- */
 

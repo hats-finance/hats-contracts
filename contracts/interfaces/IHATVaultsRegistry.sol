@@ -307,6 +307,12 @@ interface IHATVaultsRegistry {
      */
     event SetDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod);
 
+    /**
+     * @notice Emitted when the default arbitrator can change bounty is set
+     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty of claims
+     */
+    event SetDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty);
+
     /** @notice Emitted when the system is put into emergency pause/unpause
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
@@ -375,6 +381,12 @@ interface IHATVaultsRegistry {
         uint256 _defaultChallengeTimeOutPeriod
     ) 
         external;
+
+    /**
+     * @notice Called by governance to set Whether the arbitrator can change bounty of claims.
+     * @param _defaultArbitratorCanChangeBounty The default for whether the arbitrator can change bounty of claims
+     */
+    function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external;
 
     /**
      * @notice Check that the given challenge period is legal, meaning that it

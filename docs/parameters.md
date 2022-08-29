@@ -13,6 +13,8 @@
 |`challengePeriod`|vault|3 days | >= 1 days, <= 5 days |`vault.setChallengePeriod`
 |`defaultChallengeTimeOutPeriod`|global| 5 weeks | >= 2 days, <= 85 days|  `registry.setDefaultChallengeTimeOutPeriod`
 |`challengeTimeOutPeriod`|vault| 5 weeks | >= 2 days, <= 85 days|`vault.setChallengeTimeOutPeriod`
+|`defaultArbitratorCanChangeBounty`|global|true| | `registry.setDefaultArbitratorCanChangeBounty`
+|`arbitratorCanChangeBounty`|vault|| |  `vault.setArbitratorCanChangeBounty`
 |`isVaultVisible`|vault| false ||`setVaultVisibility(_vault, _visible)`
 |`feeSetter`|global|zero address| |`setFeeSetter`
 |`withdrawRequestPendingPeriod`|global|7 days | <= 90 days|`setWithdrawRequestParams`

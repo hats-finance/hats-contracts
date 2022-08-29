@@ -64,6 +64,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address arbitrator;
         uint256 challengePeriod;
         uint256 challengeTimeOutPeriod;
+        bool arbitratorCanChangeBounty;
     }
 
     struct PendingMaxBounty {
@@ -118,6 +119,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 internal challengePeriod;
     // time after which a challenged claim is automatically dismissed
     uint256 internal challengeTimeOutPeriod;
+    // whether the arbitrator can change bounty of claims
+    ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -179,9 +182,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         tokenLockFactory = _registry.tokenLockFactory();
 
         // Set vault to use default registry values where applicable
+        arbitrator = NULL_ADDRESS;
         bountyGovernanceHAT = NULL_UINT;
         bountyHackerHATVested = NULL_UINT;
-        arbitrator = NULL_ADDRESS;
+        arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
         challengePeriod = NULL_UINT;
         challengeTimeOutPeriod = NULL_UINT;
     }
@@ -211,7 +215,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             bountyHackerHATVested: getBountyHackerHATVested(),
             arbitrator: getArbitrator(),
             challengePeriod: getChallengePeriod(),
-            challengeTimeOutPeriod: getChallengeTimeOutPeriod()
+            challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
+            arbitratorCanChangeBounty: getArbitratorCanChangeBounty()
         });
 
         emit SubmitClaim(
@@ -253,7 +258,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
             )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
-            claim.bountyPercentage = _bountyPercentage;
+            if(claim.arbitratorCanChangeBounty) {
+                claim.bountyPercentage = _bountyPercentage;
+            }
         } else {
             if (
                 // solhint-disable-next-line not-rely-on-time
@@ -458,6 +465,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
+    /** @notice See {IHATVault-setArbitratorCanChangeBounty}. */
+    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external onlyRegistryOwner {
+        arbitratorCanChangeBounty = _arbitratorCanChangeBounty;
+        emit SetArbitratorCanChangeBounty(_arbitratorCanChangeBounty);
+    }
+
     /* -------------------------------------------------------------------------------- */
 
     /* ---------------------------------- Vault --------------------------------------- */
@@ -601,6 +614,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             return challengeTimeOutPeriod;
         } else {
             return registry.defaultChallengeTimeOutPeriod();
+        }
+    }
+
+    /** @notice See {IHATVault-getArbitratorCanChangeBounty}. */
+    function getArbitratorCanChangeBounty() public view returns(bool) {
+        if (arbitratorCanChangeBounty != ArbitratorCanChangeBounty.DEFAULT) {
+            return arbitratorCanChangeBounty == ArbitratorCanChangeBounty.YES;
+        } else {
+            return registry.defaultArbitratorCanChangeBounty();
         }
     }
 

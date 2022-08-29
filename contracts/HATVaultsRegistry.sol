@@ -79,6 +79,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
+    bool public defaultArbitratorCanChangeBounty;
 
     bool public isEmergencyPaused;
 
@@ -126,6 +127,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultArbitrator = _hatGovernance;
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
+        defaultArbitratorCanChangeBounty = true;
     }
 
     /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */
@@ -175,6 +177,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+    }
+
+    /** @notice See {IHATVaultsRegistry-setDefaultArbitratorCanChangeBounty}. */
+    function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external onlyOwner {
+        defaultArbitratorCanChangeBounty = _defaultArbitratorCanChangeBounty;
+        emit SetDefaultArbitratorCanChangeBounty(_defaultArbitratorCanChangeBounty);
     }
    
     /** @notice See {IHATVaultsRegistry-setFeeSetter}. */
