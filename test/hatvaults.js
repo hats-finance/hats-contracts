@@ -2184,14 +2184,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
   });
 
-  it("getRewardForBlocksRange - from must be <= to", async () => {
+  it("getRewardForBlocksRange - from <= to will return 0", async () => {
     await setUpGlobalVars(accounts, 0);
-    try {
-      await rewardController.getRewardForBlocksRange(1, 0, 0, 1000);
-      assert(false, "from must be <= to");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+    assert.equal(
+      (
+        await rewardController.getRewardForBlocksRange(1, 0, 0, 1000)
+      ).toNumber(),
+      0
+    );
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(0, 0, 0, 1000)
