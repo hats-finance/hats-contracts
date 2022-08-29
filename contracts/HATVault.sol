@@ -71,6 +71,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 10000;
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
+    uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
     uint256 public constant MAX_FEE = 200; // Max fee is 2%
 
@@ -751,11 +752,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** 
     * @dev Check that a given bounty split is legal, meaning that:
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
+    *   Except committee part which is capped at maximum of
+    *   `MAX_COMMITTEE_BOUNTY`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */
     function _validateSplit(IHATVault.BountySplit memory _bountySplit) internal pure {
+        if (_bountySplit.committee > MAX_COMMITTEE_BOUNTY) revert CommitteeBountyCannotBeMoreThanMax();
         if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee != HUNDRED_PERCENT)
