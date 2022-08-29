@@ -9,6 +9,7 @@
 |registry.owner|block logging of claims|info|**TBD** limit on claimfee?|set claim fee to a very high value
 |vault.owner|block payouts|medium|**TBD** minimum on maxBounty|set maxBounty to 0
 |vault.owner|block payout to hacker||**TBD**|set the bountysplit and give the entire bounty (minus registry-set fees) to the committee
+|arbitrator (and registry.owner via setArbitrator)|control bounty size||by designbut  **not sure**|arbitrator can set the bountysize to her liking, ignoring the committee|
   
 ## KNOWN AND ACCEPTED
 
