@@ -133,43 +133,27 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultHATBountySplit}. */
-    function setDefaultHATBountySplit(
-        IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit
-    ) 
-        external
-        onlyOwner
-    {
+    function setDefaultHATBountySplit(IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit) external onlyOwner { 
         validateHATSplit(_defaultHATBountySplit);
         defaultHATBountySplit = _defaultHATBountySplit;
         emit SetDefaultHATBountySplit(_defaultHATBountySplit);
     }
    
     /** @notice See {IHATVaultsRegistry-setDefaultArbitrator}. */
-    function setDefaultArbitrator(address _defaultArbitrator) 
-        external
-        onlyOwner
-    {
+    function setDefaultArbitrator(address _defaultArbitrator) external onlyOwner {
         defaultArbitrator = _defaultArbitrator;
         emit SetDefaultArbitrator(_defaultArbitrator);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
-    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod)
-        external
-        onlyOwner
-    {
+    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
         validateChallengePeriod(_defaultChallengePeriod);
         defaultChallengePeriod = _defaultChallengePeriod;
         emit SetDefaultChallengePeriod(_defaultChallengePeriod);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}. */
-    function setDefaultChallengeTimeOutPeriod(
-        uint256 _defaultChallengeTimeOutPeriod
-    )
-        external
-        onlyOwner
-    {
+    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
@@ -182,13 +166,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawRequestParams}. */
-    function setWithdrawRequestParams(
-        uint256 _withdrawRequestPendingPeriod, 
-        uint256  _withdrawRequestEnablePeriod
-    )
-        external
-        onlyOwner
-    {
+    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod) external onlyOwner {
         if (_withdrawRequestPendingPeriod > 90 days)
             revert WithdrawRequestPendingPeriodTooLong();
         if (_withdrawRequestEnablePeriod < 6 hours)
@@ -207,13 +185,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawSafetyPeriod}. */
-    function setWithdrawSafetyPeriod(
-        uint256 _withdrawPeriod,
-        uint256 _safetyPeriod
-    ) 
-        external
-        onlyOwner
-    {
+    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner { 
         if (_withdrawPeriod < 1 hours) revert WithdrawPeriodTooShort();
         if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
@@ -222,10 +194,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setHatVestingParams}. */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) 
-        external
-        onlyOwner
-    {
+    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         if (_duration >= 180 days) revert HatVestingDurationTooLong();
         if (_periods == 0) revert HatVestingPeriodsCannotBeZero();
         if (_duration < _periods) revert HatVestingDurationSmallerThanPeriods();
@@ -356,11 +325,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   
-    function getGeneralParameters() 
-        external
-        view
-        returns(IHATVaultsRegistry.GeneralParameters memory)
-    {
+    function getGeneralParameters() external view returns (GeneralParameters memory) {
         return generalParameters;
     }
 
@@ -370,12 +335,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-validateHATSplit}. */
-    function validateHATSplit(
-        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
-    )
-        public
-        pure
-    {
+    function validateHATSplit(IHATVaultsRegistry.HATBountySplit memory _hatBountySplit) public pure {
         if (_hatBountySplit.governanceHat +
             _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
