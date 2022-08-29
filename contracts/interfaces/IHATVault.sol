@@ -154,6 +154,8 @@ interface IHATVault is IERC4626Upgradeable {
     error CommitteeNotCheckedInYet();
     // Not enough user balance
     error NotEnoughUserBalance();
+    // Only arbitrator or registry owner
+    error OnlyArbitratorOrRegistryOwner();
     // Only arbitrator
     error OnlyArbitrator();
     // Unchalleged claim can only be approved if challenge period is over
@@ -254,7 +256,7 @@ interface IHATVault is IERC4626Upgradeable {
 
    
     /**
-    * @notice Called by the arbitrator to challenge a claim for a bounty
+    * @notice Called by the arbitrator or governance to challenge a claim for a bounty
     * payout that had been previously submitted by the committee.
     * Can only be called during the challenge period after submission of the
     * claim.

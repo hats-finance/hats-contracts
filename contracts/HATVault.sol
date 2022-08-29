@@ -13,7 +13,6 @@ import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 import "./HATVaultsRegistry.sol";
-
 /** @title A Hats.finance vault which holds the funds for a specific project's
 * bug bounties
 * @author Hats.finance
@@ -130,11 +129,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _;
     }
 
-    modifier onlyArbitrator() {
-        if (getArbitrator() != msg.sender) revert OnlyArbitrator();
-        _;
-    }
-
     modifier notEmergencyPaused() {
         if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
         _;
@@ -219,8 +213,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         );
     }
 
-    /** @notice See {IHATVault-challengeClaim}. */
-    function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
+    function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
+        if (
+            registry.owner() != msg.sender &&
+            getArbitrator() != msg.sender
+        ) revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
