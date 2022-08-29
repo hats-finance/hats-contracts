@@ -741,8 +741,8 @@ contract("HatVaults", (accounts) => {
 
     let tx = await hatVaultsRegistry.setDefaultHATBountySplit(200, 800);
     assert.equal(tx.logs[0].event, "SetDefaultHATBountySplit");
-    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), "200");
-    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), "800");
+    assert.equal(tx.logs[0].args._defaultBountyGovernanceHAT.toString(), "200");
+    assert.equal(tx.logs[0].args._defaultBountyHackerHATVested.toString(), "800");
 
     assert.equal(
       (await hatVaultsRegistry.defaultBountyGovernanceHAT()).toString(),
@@ -800,8 +800,8 @@ contract("HatVaults", (accounts) => {
 
     tx = await hatVaultsRegistry.setDefaultHATBountySplit(300, 700);
     assert.equal(tx.logs[0].event, "SetDefaultHATBountySplit");
-    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), "300");
-    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), "700");
+    assert.equal(tx.logs[0].args._defaultBountyGovernanceHAT.toString(), "300");
+    assert.equal(tx.logs[0].args._defaultBountyHackerHATVested.toString(), "700");
 
     assert.equal(
       (await newVault.getBountyGovernanceHAT()).toString(),

@@ -209,7 +209,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplit(IHATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -372,11 +372,12 @@ interface IHATVault is IERC4626Upgradeable {
     * split upon an approval.
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
-    * @param _hatBountySplit The HAT bounty split
-    * @dev see {HATVaultsRegistry-HATBountySplit} for more details
+    * @param _bountyGovernanceHAT The HAT bounty for governance
+    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
     function setHATBountySplit(
-        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
+        uint256 _bountyGovernanceHAT,
+        uint256 _bountyHackerHATVested
     ) 
         external;
 
@@ -503,16 +504,20 @@ interface IHATVault is IERC4626Upgradeable {
     /* --------------------------------- Getters -------------------------------------- */
 
     /** 
-    * @notice Returns the vault HAT bounty split
+    * @notice Returns the vault HAT bounty split part that goes to the governance
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split
-    * @dev See {HATVaultsRegistry-HATBountySplit} for more details
+    * @return The vault's HAT bounty split part that goes to the governance
     */
-    function getHATBountySplit() 
-        external
-        view
-        returns(IHATVaultsRegistry.HATBountySplit memory);
+    function getBountyGovernanceHAT() external view returns(uint256);
+    
+    /** 
+    * @notice Returns the vault HAT bounty split part that is veested for the hacker
+    * If no specific value for this vault has been set, the registry's default
+    * value will be returned.
+    * @return The vault's HAT bounty split part that is veested for the hacker
+    */
+    function getBountyHackerHATVested() external view returns(uint256);
 
     /** 
     * @notice Returns the address of the vault's arbitrator

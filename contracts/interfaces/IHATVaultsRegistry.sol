@@ -138,9 +138,9 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Raised on {setDefaultHATBountySplit} if the split to be set is
-     * greater than 100% (defined as 10000)
+     * greater than 20% (defined as 2000)
      */
-    error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
 
     /**
      * @notice Raised on {setDefaultChallengePeriod} if the challenge period
@@ -283,9 +283,10 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Emitted when a new default HAT bounty split is set
-     * @param _defaultHATBountySplit The new default HAT bounty split
+     * @param _defaultBountyGovernanceHAT The new default HAT bounty part sent to governance
+     * @param _defaultBountyHackerHATVested The new default HAT bounty part vseted for the hacker
      */
-    event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
+    event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested);
 
     /**
      * @notice Emitted when a new default arbitrator is set
@@ -330,23 +331,26 @@ interface IHATVaultsRegistry {
     function logClaim(string memory _descriptionHash) external payable;
 
     /**
-     * @notice Called by governance to set the default HAT token bounty split
-     * upon an approval. This default value is used when creating a new vault.
-     * @param _defaultHATBountySplit The HAT bounty split
+     * @notice Called by governance to set the default percentage of each claim bounty
+     * that will be swapped for hats and sent to the governance or vested for the hacker
+     * @param _defaultBountyGovernanceHAT The HAT bounty for governance
+     * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
      */
     function setDefaultHATBountySplit(
-        HATBountySplit memory _defaultHATBountySplit
+        uint256 _defaultBountyGovernanceHAT,
+        uint256 _defaultBountyHackerHATVested
     ) 
         external;
 
     /** 
      * @dev Check that a given hats bounty split is legal, meaning that:
-     *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-     *   Total splits should be less than `HUNDRED_PERCENT`.
+     *   Each entry is a number between 0 and less than `MAX_HAT_SPLIT`.
+     *   Total splits should be less than `MAX_HAT_SPLIT`.
      * function will revert in case the bounty split is not legal.
-     * @param _hatBountySplit The bounty split to check
+     * @param _bountyGovernanceHAT The HAT bounty for governance
+     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
      */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit)
+    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
          external
          pure;
 
