@@ -139,7 +139,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     modifier noSafetyPeriod() {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
@@ -204,7 +204,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         notEmergencyPaused
         returns (bytes32 claimId)
     {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
@@ -417,7 +417,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function setMaxBounty() external onlyOwner noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
 
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp - pendingMaxBounty.timestamp <
@@ -506,7 +506,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-withdrawRequest}. */
     function withdrawRequest() external nonReentrant {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
         // since last withdrawRequest (meaning the last withdraw request had expired)
         // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
@@ -713,7 +713,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             // because then we would need to reset their withdraw request
             if (withdrawEnableStartTime[to] != 0) {
-                HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+                IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
                 // solhint-disable-next-line not-rely-on-time
                 if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
@@ -750,7 +750,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         internal view
         returns(bool)
     {
-        HATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod (e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp %
