@@ -1003,7 +1003,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
                 if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
-            rewardController.updateVaultBalance(to, amount, true);
+            rewardController.commitUserBalance(to, amount, true);
         }
 
         if (from != address(0)) {
@@ -1014,7 +1014,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
             // will have to be made before next withdrawal
             withdrawEnableStartTime[from] = 0;
 
-            rewardController.updateVaultBalance(from, amount, false);
+            rewardController.commitUserBalance(from, amount, false);
         }
     }
 
