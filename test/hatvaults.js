@@ -19,6 +19,7 @@ const {
   epochRewardPerBlock,
   setup,
   submitClaim,
+  ZERO_ADDRESS
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
@@ -1378,52 +1379,54 @@ contract("HatVaults", (accounts) => {
     await vault.withdrawRequest({ from: staker });
   });
 
-  it("Set fee and fee setter", async () => {
-    await setUpGlobalVars(accounts);
-    try {
-      await hatVaultsRegistry.setFeeSetter(accounts[1], {
-        from: accounts[1],
-      });
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
-    }
+  it("Set feeSetter", async () => {
+    let tx;
+    const {vault, registry}= await setUpGlobalVars(accounts);
+    
+    assert.equal(await registry.feeSetter(), ZERO_ADDRESS);
+    
+    await assertFunctionRaisesException(
+      registry.setFeeSetter(accounts[1],  { from: accounts[1]}),
+        "Ownable: caller is not the owner"
+    );
 
-    await hatVaultsRegistry.setFeeSetter(accounts[0]);
-    var tx = await vault.setWithdrawalFee(100);
-    assert.equal(await vault.withdrawalFee(), 100);
-    assert.equal(tx.logs[0].event, "SetWithdrawalFee");
-    assert.equal(tx.logs[0].args._newFee, 100);
+    await registry.setFeeSetter(accounts[0]);
+    
+    // the default account can set the withdrawal fee no problem
+    await vault.setWithdrawalFee(100);
 
-    tx = await hatVaultsRegistry.setFeeSetter(accounts[1]);
+    tx = await registry.setFeeSetter(accounts[1]);
 
-    assert.equal(await hatVaultsRegistry.feeSetter(), accounts[1]);
+    assert.equal(await registry.feeSetter(), accounts[1]);
     assert.equal(tx.logs[0].event, "SetFeeSetter");
     assert.equal(tx.logs[0].args._newFeeSetter, accounts[1]);
 
-    try {
-      await vault.setWithdrawalFee(100);
-      assert(false, "only fee setter");
-    } catch (ex) {
-      assertVMException(ex, "OnlyFeeSetter");
-    }
+    await assertFunctionRaisesException(
+      vault.setWithdrawalFee(100),
+      "OnlyFeeSetter"
+  );
 
-    try {
-      await vault.setWithdrawalFee(201, {
-        from: accounts[1],
-      });
-      assert(false, "fee must be lower than or equal to 2%");
-    } catch (ex) {
-      assertVMException(ex, "WithdrawalFeeTooBig");
-    }
+    await assertFunctionRaisesException(
+      vault.setWithdrawalFee(201, { from: accounts[1]}),
+      "WithdrawalFeeTooBig"
+    );
 
     tx = await vault.setWithdrawalFee(200, {
       from: accounts[1],
     });
 
-    assert.equal(await vault.withdrawalFee(), 200);
     assert.equal(tx.logs[0].event, "SetWithdrawalFee");
     assert.equal(tx.logs[0].args._newFee, 200);
+    assert.equal(await vault.withdrawalFee(), 200);
+  });
+
+  it("Withdrawal fee is paid correctly", async () => {
+    await setUpGlobalVars(accounts);
+    await hatVaultsRegistry.setFeeSetter(accounts[1]);
+
+    await vault.setWithdrawalFee(200, {
+      from: accounts[1],
+    });
 
     var staker = accounts[2];
     var staker2 = accounts[3];
@@ -1441,12 +1444,12 @@ contract("HatVaults", (accounts) => {
     let governanceBalance = await stakingToken.balanceOf(accounts[0]);
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
-    // Staker got back the reward minus the fee
+    // Staker got back the reward minus the 2% fee
     assert.equal(
       await stakingToken.balanceOf(staker),
       web3.utils.toWei("0.98")
     );
-    // Governance received the fee
+    // Governance received the fee of 2%
     assert.equal(
       (await stakingToken.balanceOf(accounts[0])).toString(),
       governanceBalance
@@ -1457,12 +1460,11 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("0.02"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
-    try {
-      await safeWithdraw(vault, web3.utils.toWei("0.99"), staker);
-      assert(false, "cannot withdraw more than max");
-    } catch (ex) {
-      assertVMException(ex, "WithdrawMoreThanMax");
-    }
+    
+    await assertFunctionRaisesException(
+      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
+      "WithdrawMoreThanMax"
+    );
 
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
@@ -3209,12 +3211,6 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       vault.withdraw(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
       "WithdrawMoreThanMax"
     );
-
-
-
-
-
-
   });
 
   it("transfer shares", async () => {
@@ -5523,10 +5519,4 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 });
 
-module.exports = {
-  assertVMException,
-  setup,
-  epochRewardPerBlock,
-  advanceToSafetyPeriod: advanceToSafetyPeriod_,
-  advanceToNonSafetyPeriod: advanceToNonSafetyPeriod_,
-};
+
