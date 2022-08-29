@@ -112,11 +112,21 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
     /**
     * @notice Called by owner to set reward per epoch
-    * @param _epochRewardPerBlock reward per epoch
+    * Reward can only be set for epochs which have not yet started
+    * @param _epochRewardPerBlock reward per block for each epoch
     */
     function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
-        epochRewardPerBlock = _epochRewardPerBlock;
-        emit SetEpochRewardPerBlock(_epochRewardPerBlock);
+        // if rewards have not started yet, update the full list
+        if (block.number < startBlock) {
+            epochRewardPerBlock = _epochRewardPerBlock;
+        }  else {
+            uint256 nextEpoch = (block.number - startBlock) / epochLength + 1;
+            // if rewards are ongoing, update the future rewards but keep past and current
+            for (; nextEpoch < NUMBER_OF_EPOCHS; nextEpoch++) {
+                epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch];
+            }
+        }
+        emit SetEpochRewardPerBlock(epochRewardPerBlock);
     }
 
     function _commitUserBalance(
