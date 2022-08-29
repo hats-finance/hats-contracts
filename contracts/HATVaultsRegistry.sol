@@ -38,7 +38,6 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     // Used in {swapAndSend} to avoid a "stack too deep" error
     struct SwapData {
-        uint256 totalHackersHatReward;
         uint256 amount;
         uint256 amountUnused;
         uint256 hatsReceived;
@@ -288,10 +287,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ) external onlyOwner {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
+        swapData.amount = governanceHatReward[_asset];
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            swapData.totalHackersHatReward += hackersHatReward[_asset][_beneficiaries[i]];
+            swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
         }
-        swapData.amount = swapData.totalHackersHatReward + governanceHatReward[_asset];
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
         (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
