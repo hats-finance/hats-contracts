@@ -441,10 +441,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setChallengeTimeOutPeriod}. */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) 
-        external
-        onlyRegistryOwner
-    {
+    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external onlyRegistryOwner {
         if (_challengeTimeOutPeriod != NULL_UINT) {
             registry.validateChallengeTimeOutPeriod(_challengeTimeOutPeriod);
         }
@@ -720,11 +717,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * out as bounty
     * @return claimBounty The bounty distribution for this specific claim
     */
-    function _calcClaimBounty(uint256 _bountyPercentage)
-        internal
-        view
-        returns(IHATVault.ClaimBounty memory claimBounty) 
-    {
+    function _calcClaimBounty(uint256 _bountyPercentage) internal view returns(IHATVault.ClaimBounty memory claimBounty) {
         uint256 totalSupply = totalAssets();
         if (totalSupply == 0) {
           return claimBounty;
