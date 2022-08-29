@@ -126,7 +126,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch];
             }
         }
-        emit SetEpochRewardPerBlock(_epochRewardPerBlock);
+        emit SetEpochRewardPerBlock(epochRewardPerBlock);
     }
 
     function _updateVaultBalance(
