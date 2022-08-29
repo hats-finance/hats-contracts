@@ -140,6 +140,8 @@ interface IHATVault is IERC4626Upgradeable {
     error VestingDurationSmallerThanPeriods();
     // Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
     error MaxBountyCannotBeMoreThanMaxBountyLimit();
+    // Committee bounty split cannot be more than `MAX_COMMITTEE_BOUNTY`
+    error CommitteeBountyCannotBeMoreThanMax();
     // Only registry owner
     error OnlyRegistryOwner();
     // Only fee setter
