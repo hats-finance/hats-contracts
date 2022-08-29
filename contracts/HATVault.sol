@@ -159,7 +159,7 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         uint256 maxBounty;
         uint256 timestamp;
     }
-    
+
     /**
     * @param rewardController The reward controller for the vault
     * @param vestingDuration Duration of the vesting period of the vault's
@@ -663,10 +663,11 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by vault's owner to set the vault's reward controller
+    * @notice Called by governance to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
-    function setRewardController(IRewardController _newRewardController) external onlyOwner {
+    function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
+        rewardController.terminateVaultRewards();
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
