@@ -4710,19 +4710,19 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await hatVaultsRegistry.setHatVestingParams(21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
-      assertVMException(ex, "VestingPeriodsCannotBeZero");
+      assertVMException(ex, "HatVestingPeriodsCannotBeZero");
     }
     try {
       await hatVaultsRegistry.setHatVestingParams(180 * 24 * 3600, 7);
       assert(false, "duration should be less than 180 days");
     } catch (ex) {
-      assertVMException(ex, "VestingDurationTooLong");
+      assertVMException(ex, "HatVestingDurationTooLong");
     }
     try {
       await hatVaultsRegistry.setHatVestingParams(6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
-      assertVMException(ex, "VestingDurationSmallerThanPeriods");
+      assertVMException(ex, "HatVestingDurationSmallerThanPeriods");
     }
     var tx = await hatVaultsRegistry.setHatVestingParams(21000, 7);
     assert.equal(tx.logs[0].event, "SetHatVestingParams");
