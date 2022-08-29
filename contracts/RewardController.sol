@@ -111,15 +111,15 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice Called by owner to set reward per epoch
-     * @param _epochRewardPerBlock reward mper epoch
+    * @notice Called by owner to set reward per epoch
+    * @param _epochRewardPerBlock reward per epoch
     */
     function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
         epochRewardPerBlock = _epochRewardPerBlock;
         emit SetEpochRewardPerBlock(_epochRewardPerBlock);
     }
 
-    function _updateVaultBalance(
+    function _commitUserBalance(
         address _vault,
         address _user,
         uint256 _sharesChange,
@@ -141,17 +141,24 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         rewardDebt[_vault][_user] = userShares * rewardPerShare / REWARD_PRECISION;
     }
 
-    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
-        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit);
+    /**
+    * @notice Called by the vault to update a user claimable reward after deposit or withdraw.
+    * This call should never revert
+    * @param _user The user address to updare rewards for
+    * @param _sharesChange The user of shared the user deposited or withdrew
+    * @param _isDeposit Whether user deposited or withdrew
+    */
+    function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
+        _commitUserBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
-     * @notice Transfer to the specified user their pending share of rewards.
-     * @param _vault The vault address
-     * @param _user The user address to claim for
-     */
+    * @notice Transfer to the specified user their pending share of rewards.
+    * @param _vault The vault address
+    * @param _user The user address to claim for
+    */
     function claimReward(address _vault, address _user) external {
-        _updateVaultBalance(_vault, _user, 0, true);
+        _commitUserBalance(_vault, _user, 0, true);
 
         uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
@@ -162,7 +169,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         emit ClaimReward(_vault, _user, userUnclaimedReward);
     }
 
-     /**
+    /**
     * @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,
     * and sum up all rewards periods from vault.lastRewardBlock until current block number.
     * @param _vault The vault address
@@ -211,9 +218,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
-     * @param _vault the vault address
-     * @param _user the account for which the reward is calculated
+    * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
+    * @param _vault the vault address
+    * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         VaultInfo memory vault = vaultInfo[_vault];
