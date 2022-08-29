@@ -2161,7 +2161,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     // Should now be in the 3rd epoch
 
     let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
-    for (let i = 0; i < eventEpochRewardPerBlock.length; i++) {
+    for (let i = 0; i < 3; i++) {
+      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+      assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlock[i]);
+    }
+
+    for (let i = 3; i < eventEpochRewardPerBlock.length; i++) {
       eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
