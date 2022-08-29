@@ -3,8 +3,9 @@
 
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import "./IHATVaultsRegistry.sol";
 import "./IRewardController.sol";
+import "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
@@ -45,7 +46,8 @@ import "./IRewardController.sol";
  */
 interface IHATVault is IERC4626 {
 
-    // How to divide the bounty - after deducting {IHATVaultsRegistry.HATBountySplit}
+    // How to divide the bounty - after deducting the part that is swapped to
+    // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
     // values are in percentages and should add up to 100% (defined as 10000)
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
