@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IRewardController.sol";
+import "./interfaces/IHATVault.sol";
 
 error EpochLengthZero();
 error CannotAddTerminatedVault();
@@ -46,7 +47,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
     // vault address => is terminated
-    mapping(address => bool) vaultRewardsTerminated;
+    mapping(address => bool) public vaultRewardsTerminated;
 
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
@@ -143,6 +144,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _sharesChange,
         bool _isDeposit
     ) internal {
+        if (IHATVault(_vault).didRenouncedRewards(_user, address(this))) {
+            return;
+        }
         updateVault(_vault);
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
@@ -241,6 +245,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
+        if (IHATVault(_vault).didRenouncedRewards(_user, address(this))) {
+            return 0;
+        }
         VaultInfo memory vault = vaultInfo[_vault];
         uint256 rewardPerShare = vault.rewardPerShare;
         uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();

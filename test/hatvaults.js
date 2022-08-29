@@ -269,9 +269,9 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await vault.rewardController()), accounts[2]);
 
-    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    let lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
     assert.equal(
-      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
       "0"
     );
     assert.equal(
@@ -327,9 +327,9 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await vault.rewardController()), accounts[2]);
 
-    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    let lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
     assert.equal(
-      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
       "0"
     );
     assert.equal(
@@ -343,6 +343,87 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "CannotAddTerminatedVault");
     }
+  });
+
+  it("Renounce rewards", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("3"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("3"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal((await vault.rewardController()), rewardController.address);
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    await vault.renounceRewardsForController(rewardController.address, { from: staker });
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
+    assert.isFalse((await rewardController.getVaultReward(vault.address, lastBlockNumber)).eq(0));
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "100"
+    );
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount, 0);
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await rewardController.getPendingReward(vault.address, accounts[0]), 0);
+
+    tx = await vault.setRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
+
+    assert.equal((await vault.rewardController()), accounts[2]);
+
+    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      assert(false, "deposit fails with bad reward controller");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await safeRedeem(vault, web3.utils.toWei("2"), staker);
+      assert(false, "withdraw fails with bad reward controller");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await vault.renounceAllRewards({ from: staker });
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await safeRedeem(vault, web3.utils.toWei("3"), staker);
   });
 
   it("setCommittee", async () => {

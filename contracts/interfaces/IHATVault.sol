@@ -371,6 +371,17 @@ interface IHATVault is IERC4626Upgradeable {
     */
     function setRewardController(IRewardController _newRewardController) external;
 
+    /** 
+    * @notice Called by a user to renounced their participation in the rewardController
+    * @param _rewardController The reward controller address to opt out from
+    */
+    function renounceRewardsForController(address _rewardController) external;
+
+    /** 
+    * @notice Called by a user to renounced their participation with any reward controller
+    */
+    function renounceAllRewards() external;
+
     /**
     * @notice Called by the registry's owner to set the vault HAT token bounty 
     * split upon an approval.
@@ -508,6 +519,12 @@ interface IHATVault is IERC4626Upgradeable {
     /* --------------------------------- Getters -------------------------------------- */
 
     /** 
+    * @notice Returns whetever a user renounced their participation in the rewardController
+    * @return The if the user renounced their participation in the rewardController
+    */
+    function didRenouncedRewards(address _user, address _rewardController) external view returns(bool);
+
+    /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
@@ -548,5 +565,4 @@ interface IHATVault is IERC4626Upgradeable {
     * @return The vault's challenge timeout period
     */
     function getChallengeTimeOutPeriod() external view returns(uint256);
-
 }

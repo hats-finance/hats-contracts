@@ -119,6 +119,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // time after which a challenged claim is automatically dismissed
     uint256 internal challengeTimeOutPeriod;
 
+    // User => reward controller address => is renounced
+    mapping(address => mapping(address => bool)) internal renouncedRewardsForController;
+    // User => is renounced
+    mapping(address => bool) internal renouncedRewards;
+
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
         _;
@@ -419,7 +424,17 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
-    
+
+    /** @notice See {IHATVault-renounceRewards}. */
+    function renounceRewardsForController(address _rewardController) external {
+        renouncedRewardsForController[msg.sender][_rewardController] = true;
+    }
+
+    /** @notice See {IHATVault-renounceAllRewards}. */
+    function renounceAllRewards() external {
+        renouncedRewards[msg.sender] = true;
+    }
+
     /** @notice See {IHATVault-setHATBountySplit}. */
     function setHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) external onlyRegistryOwner {
         bountyGovernanceHAT = _bountyGovernanceHAT;
@@ -505,7 +520,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
-        public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
+        public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         if (shares > maxRedeem(owner)) revert RedeemMoreThanMax();
 
         uint256 assets = previewRedeem(shares);
@@ -558,6 +573,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Getters -------------------------------------- */
+
+    /** @notice See {IHATVault-didRenouncedRewards}. */
+    function didRenouncedRewards(address _user, address _rewardController) public view returns(bool) {
+        return renouncedRewards[_user] || renouncedRewardsForController[_user][_rewardController];
+    }
 
     /** @notice See {IHATVault-getBountyGovernanceHAT}. */
     function getBountyGovernanceHAT() public view returns(uint256) {
@@ -672,7 +692,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
-            rewardController.commitUserBalance(to, amount, true);
+            if (!didRenouncedRewards(to, address(rewardController))) {
+                rewardController.commitUserBalance(to, amount, true);
+            }
         }
 
         if (from != address(0)) {
@@ -683,7 +705,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // will have to be made before next withdrawal
             withdrawEnableStartTime[from] = 0;
 
-            rewardController.commitUserBalance(from, amount, false);
+            if (!didRenouncedRewards(from, address(rewardController))) {
+                rewardController.commitUserBalance(from, amount, false);
+            }
         }
     }
 
