@@ -51,16 +51,6 @@ import "./HATVaultsRegistry.sol";
 contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    // How to divide a bounty for a claim that has been approved
-    // used internally to keep track of payouts
-    struct ClaimBounty {
-        uint256 hacker;
-        uint256 hackerVested;
-        uint256 committee;
-        uint256 hackerHatVested;
-        uint256 governanceHat;
-    }
-
     struct Claim {
         bytes32 claimId;
         address beneficiary;
@@ -316,7 +306,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         address tokenLock;
 
-        ClaimBounty memory claimBounty = _calcClaimBounty(claim.bountyPercentage);
+        IHATVault.ClaimBounty memory claimBounty = _calcClaimBounty(claim.bountyPercentage);
 
         IERC20 asset = IERC20(asset());
         if (claimBounty.hackerVested > 0) {
@@ -355,7 +345,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // make sure to reset approval
         asset.safeApprove(address(registry), 0);
 
-        // emit event before deleting the claim object, bcause we want to read beneficiary and bountyPercentage
         emit ApproveClaim(
             _claimId,
             msg.sender,
@@ -813,7 +802,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * out as bounty
     * @return claimBounty The bounty distribution for this specific claim
     */
-    function _calcClaimBounty(uint256 _bountyPercentage) internal view returns(ClaimBounty memory claimBounty) {
+    function _calcClaimBounty(uint256 _bountyPercentage)
+        internal
+        view
+        returns(IHATVault.ClaimBounty memory claimBounty) 
+    {
         uint256 totalSupply = totalAssets();
         if (totalSupply == 0) {
           return claimBounty;

@@ -55,6 +55,16 @@ interface IHATVault is IERC4626 {
         uint256 committee;
     }
 
+    // How to divide a bounty for a claim that has been approved
+    // used to keep track of payouts, amounts are in vault's native token
+    struct ClaimBounty {
+        uint256 hacker;
+        uint256 hackerVested;
+        uint256 committee;
+        uint256 hackerHatVested;
+        uint256 governanceHat;
+    }
+
     // Only committee
     error OnlyCommittee();
     // Active claim exists
