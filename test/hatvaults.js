@@ -372,7 +372,8 @@ contract("HatVaults", (accounts) => {
       maxBounty,
       bountySplit,
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -768,7 +769,8 @@ contract("HatVaults", (accounts) => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false,
       { from: accounts[1] }
     )).logs[1].args._vault);
@@ -862,7 +864,8 @@ contract("HatVaults", (accounts) => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false,
       { from: accounts[1] }
     )).logs[1].args._vault);
@@ -3761,7 +3764,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
     await hatVaultsRegistry.setDefaultChallengePeriod(60 * 60 * 24);
@@ -3876,7 +3880,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [8400, 1500, 100],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -4445,7 +4450,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [8400, 1500, 100],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -5034,7 +5040,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
@@ -5088,7 +5095,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
         8000,
         [7000, 2500, 500],
         "_descriptionHash",
-        [10, 86400],
+        86400,
+        10,
         false
       );
       assert(false, "vesting duration smaller than period");
@@ -5105,7 +5113,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
         8000,
         [7000, 2500, 500],
         "_descriptionHash",
-        [121 * 24 * 3600, 10],
+        121 * 24 * 3600,
+        10,
         false
       );
       assert(false, "vesting duration is too long");
@@ -5122,7 +5131,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
         8000,
         [7000, 2500, 500],
         "_descriptionHash",
-        [86400, 0],
+        86400,
+        0,
         false
       );
       assert(false, "vesting period cannot be zero");
@@ -5137,7 +5147,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -5202,7 +5213,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [8400, 1500, 100],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -5248,7 +5260,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10]
+      86400,
+      10
     );
     
     let newVault1 = await HATVault.at(await hatVaultsRegistry1.hatVaults(0));
@@ -5357,7 +5370,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 
@@ -5444,7 +5458,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).logs[1].args._vault);
 

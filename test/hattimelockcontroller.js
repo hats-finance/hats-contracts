@@ -93,7 +93,8 @@ const setup = async function(
     maxBounty,
     bountySplit,
     "_descriptionHash",
-    [86400, 10],
+    86400,
+    10,
     false
   )).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
@@ -420,7 +421,8 @@ contract("HatTimelockController", (accounts) => {
       maxBounty,
       bountySplit,
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).receipt.rawLogs[0].address);
 

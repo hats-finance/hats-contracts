@@ -478,10 +478,10 @@ interface IHATVaultsRegistry {
      *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
      *   Total splits should be equal to `HUNDRED_PERCENT`.
      * @param _descriptionHash Hash of the vault description.
-     * @param _bountyVestingParams Vesting params for the part of the bounty
-     * that is paid vested in the vault's native token:
-     *        _bountyVestingParams[0] - vesting duration
-     *        _bountyVestingParams[1] - vesting periods
+     * @param _bountyVestingDuration Vesting duration for the part of the bounty
+     * that is paid vested in the vault's native token
+     * @param _bountyVestingPeriods Vesting periods for the part of the bounty
+     * that is paid vested in the vault's native token
      * @param _isPaused Whether to initialize the vault with deposits disabled
      * @return vault The address of the new vault
      */
@@ -493,7 +493,8 @@ interface IHATVaultsRegistry {
         uint256 _maxBounty,
         IHATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
-        uint256[2] memory _bountyVestingParams,
+        uint256 _bountyVestingDuration,
+        uint256 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 

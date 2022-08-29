@@ -248,7 +248,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 _maxBounty,
         HATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
-        uint256[2] memory _bountyVestingParams,
+        uint256 _bountyVestingDuration,
+        uint256 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 
@@ -259,8 +260,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         HATVault(vault).initialize(
             IHATVault.VaultInitParams({
                 rewardController: _rewardController,
-                vestingDuration: _bountyVestingParams[0],
-                vestingPeriods: _bountyVestingParams[1],
+                vestingDuration: _bountyVestingDuration,
+                vestingPeriods: _bountyVestingPeriods,
                 maxBounty: _maxBounty,
                 bountySplit: _bountySplit,
                 asset: _asset,
@@ -280,8 +281,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _descriptionHash,
             _maxBounty,
             _bountySplit,
-            _bountyVestingParams[0],
-            _bountyVestingParams[1]
+            _bountyVestingDuration,
+            _bountyVestingPeriods
         );
     }
 

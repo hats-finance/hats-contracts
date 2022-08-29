@@ -131,7 +131,8 @@ const setup = async function(
     options.maxBounty,
     options.bountySplit,
     "_descriptionHash",
-    [86400, 10],
+    86400,
+    10,
     false
   )).logs[1].args._vault);
 

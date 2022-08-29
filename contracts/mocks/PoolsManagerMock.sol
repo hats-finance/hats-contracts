@@ -16,7 +16,8 @@ contract VaultsManagerMock {
                     uint256 _maxBounty,
                     HATVault.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256[2] memory _bountyVestingParams) external {
+                    uint256 _bountyVestingDuration,
+                    uint256 _bountyVestingPeriods) external {
 
         for (uint256 i=0; i < _assets.length; i++) {
             address vault = _hatVaults.createVault(_assets[i],
@@ -26,7 +27,8 @@ contract VaultsManagerMock {
                                 _maxBounty,
                                 _bountySplit,
                                 _descriptionHash,
-                                _bountyVestingParams,
+                                _bountyVestingDuration,
+                                _bountyVestingPeriods,
                                 false);
             _rewardController.setAllocPoint(vault, _allocPoint);
         }
