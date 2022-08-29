@@ -13,6 +13,7 @@ The contracts in this repository define a number of different roles that have th
 
 The registry owner controls a number of global settings, including a number of defautl settings that can be overridden per vault. These are listed here: [parameters](./parameters.md) 
 
+## `regstry.feeSetter`
 
 The `feeSetter` controls the withdrawal fee. 
 See here: [parameters](./parameters.md) 
