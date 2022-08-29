@@ -451,7 +451,7 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("challenge - governance can challenge claim", async () => {
-    const { registry, vault, stakingToken, committee, arbitrator } = await setup(accounts);
+    const { registry, vault, stakingToken, arbitrator } = await setup(accounts);
     // set challenge period to one day
     await registry.setDefaultChallengePeriod(60 * 60 * 24);
     const owner = accounts[0];
