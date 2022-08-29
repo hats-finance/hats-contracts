@@ -76,5 +76,6 @@ RewardController params that are not settable:
 
 ## HATs governance is mitigated by a timelock
 
-Setting that can be set immediately (i.e. not subject to timelock):
+The owner of the registry, and typically the owner of the vault as well, is controlled by an instance of `HATTimelockController`. This means that some function calls can not be executed immediately, but go through a time lock period.
+
 
