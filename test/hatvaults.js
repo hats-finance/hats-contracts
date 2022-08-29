@@ -1273,7 +1273,7 @@ contract("HatVaults", (accounts) => {
 
   it("Set feeSetter", async () => {
     let tx;
-    const { vault, registry } = await setUpGlobalVars(accounts);
+    const {vault, registry}= await setUpGlobalVars(accounts);
     
     assert.equal(await registry.feeSetter(), ZERO_ADDRESS);
     
