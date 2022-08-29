@@ -474,6 +474,59 @@ contract("Registry Arbitrator", (accounts) => {
     await vault.dismissClaim(claimId, { from: arbitrator });
   });
 
+  it("challenge - arbitrator changes after claim submitted", async () => {
+    const { registry, vault, stakingToken, arbitrator } = await setup(accounts);
+    // set challenge period to one day
+    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+    const owner = accounts[0];
+    const staker = accounts[1];
+    const newArbitrator = accounts[3];
+    await advanceToSafetyPeriod(registry);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await vault.setArbitrator(newArbitrator);
+    // only arbitrator at the time of submission and governance can challenge the claim
+    await assertFunctionRaisesException(
+      vault.challengeClaim(claimId, { from: newArbitrator }),
+      "OnlyArbitratorOrRegistryOwner"
+    );
+
+    let tx = await vault.challengeClaim(claimId, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+    
+    await assertFunctionRaisesException(
+      vault.dismissClaim(claimId, { from: newArbitrator }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await vault.dismissClaim(claimId, { from: arbitrator });
+
+    claimId = await submitClaim(vault, { accounts });
+    await assertFunctionRaisesException(
+      vault.challengeClaim(claimId, { from: arbitrator }),
+      "OnlyArbitratorOrRegistryOwner"
+    );
+    tx = await vault.challengeClaim(claimId, { from: newArbitrator });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    await assertFunctionRaisesException(
+      vault.dismissClaim(claimId, { from: arbitrator }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await vault.dismissClaim(claimId, { from: newArbitrator });
+  });
+
   it("anyone can dismiss Claim after challengeTimeOutPeriod", async () => {
     const { registry, vault, arbitrator } = await setup(accounts);
     await advanceToSafetyPeriod(registry);
