@@ -384,9 +384,7 @@ interface IHATVaultsRegistry {
      * that it is greater than 2 days and less than 85 days.
      * @param _challengeTimeOutPeriod The challenge timeout period to check
      */
-    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
-        public
-        pure;
+    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external pure;
    
     /**
      * @notice Called by governance to set the fee setter role

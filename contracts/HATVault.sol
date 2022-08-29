@@ -160,10 +160,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-initialize}. */
-    function initialize(IHATVault.VaultInitParams memory _params)
-        external
-        initializer
-    {
+    function initialize(IHATVault.VaultInitParams memory _params) external initializer {
         if (_params.maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);
@@ -193,17 +190,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* ---------------------------------- Claim --------------------------------------- */
 
     /** @notice See {IHATVault-submitClaim}. */
-    function submitClaim(
-        address _beneficiary, 
-        uint256 _bountyPercentage, 
-        string calldata _descriptionHash
-    )
-        external
-        onlyCommittee
-        noActiveClaim
-        notEmergencyPaused
-        returns (bytes32 claimId)
-    {
+    function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
+        external onlyCommittee noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
@@ -232,11 +220,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-challengeClaim}. */
-    function challengeClaim(bytes32 _claimId) 
-        external 
-        onlyArbitrator 
-        isActiveClaim(_claimId) 
-    {
+    function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
@@ -249,11 +233,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-approveClaim}. */
-    function approveClaim(bytes32 _claimId, uint256 _bountyPercentage)
-        external 
-        nonReentrant 
-        isActiveClaim(_claimId) 
-    {
+    function approveClaim(bytes32 _claimId, uint256 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
         Claim memory claim = activeClaim;
         delete activeClaim;
 
@@ -351,8 +331,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* ---------------------------------- Params -------------------------------------- */
 
     /** @notice See {IHATVault-setCommittee}. */
-    function setCommittee(address _committee)
-    external {
+    function setCommittee(address _committee) external {
         // governance can update committee only if committee was not checked in yet.
         if (msg.sender == owner() && committee != msg.sender) {
             if (committeeCheckedIn)
@@ -367,20 +346,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setVestingParams}. */
-    function setVestingParams(uint256 _duration, uint256 _periods) 
-        external 
-        onlyOwner 
-    {
+    function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
         _setVestingParams(_duration, _periods);
     }
 
     /** @notice See {IHATVault-setBountySplit}. */
-    function setBountySplit(IHATVault.BountySplit memory _bountySplit)
-        external
-        onlyOwner 
-        noActiveClaim 
-        noSafetyPeriod 
-    {
+    function setBountySplit(IHATVault.BountySplit memory _bountySplit) external onlyOwner noActiveClaim noSafetyPeriod {
         _validateSplit(_bountySplit);
         bountySplit = _bountySplit;
         emit SetBountySplit(_bountySplit);
@@ -400,11 +371,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setPendingMaxBounty}. */
-    function setPendingMaxBounty(uint256 _maxBounty)
-        external
-        onlyOwner 
-        noActiveClaim 
-    {
+    function setPendingMaxBounty(uint256 _maxBounty) external onlyOwner noActiveClaim {
         if (_maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
@@ -435,29 +402,18 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setVaultDescription}. */
-    function setVaultDescription(string memory _descriptionHash) 
-        external 
-        onlyOwner 
-    {
+    function setVaultDescription(string memory _descriptionHash) external onlyOwner {
         emit SetVaultDescription(_descriptionHash);
     }
 
     /** @notice See {IHATVault-setRewardController}. */
-    function setRewardController(IRewardController _newRewardController) 
-        external 
-        onlyOwner 
-    {
+    function setRewardController(IRewardController _newRewardController) external onlyOwner {
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
 
     /** @notice See {IHATVault-setHATBountySplit}. */
-    function setHATBountySplit(
-        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
-    ) 
-        external 
-        onlyRegistryOwner 
-    {
+    function setHATBountySplit(IHATVaultsRegistry.HATBountySplit memory _hatBountySplit) external onlyRegistryOwner {
         if (_hatBountySplit.governanceHat != NULL_UINT) {
             registry.validateHATSplit(_hatBountySplit);
         }
@@ -473,10 +429,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setChallengePeriod}. */
-    function setChallengePeriod(uint256 _challengePeriod) 
-        external 
-        onlyRegistryOwner 
-    {
+    function setChallengePeriod(uint256 _challengePeriod) external onlyRegistryOwner {
         if (_challengePeriod != NULL_UINT) {
             registry.validateChallengePeriod(_challengePeriod);
         }
@@ -522,30 +475,20 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-withdrawAndClaim}. */
-    function withdrawAndClaim(uint256 assets, address receiver, address owner)
-        external 
-        returns (uint256 shares)
-    {
+    function withdrawAndClaim(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
         shares = withdraw(assets, receiver, owner);
         rewardController.claimReward(address(this), owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
-    function redeemAndClaim(uint256 shares, address receiver, address owner)
-        external 
-        returns (uint256 assets)
-    {
+    function redeemAndClaim(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner);
         rewardController.claimReward(address(this), owner);
     }
 
     /** @notice See {IHATVault-withdraw}. */
-    function withdraw(uint256 assets, address receiver, address owner)
-        public 
-        override
-        virtual
-        returns (uint256)
-    {
+    function withdraw(uint256 assets, address receiver, address owner) 
+        public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         if (assets > maxWithdraw(owner)) revert WithdrawMoreThanMax();
 
         uint256 shares = previewWithdraw(assets);
@@ -555,13 +498,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         return shares;
     }
 
-    /** @notice See {IHATVault-redeem}. */
-    function redeem(uint256 shares, address receiver, address owner)
-        public 
-        override 
-        virtual 
-        returns (uint256)
-    {
+    /** @notice See {IERC4626Upgradeable-redeem}. */
+    function redeem(uint256 shares, address receiver, address owner) 
+        public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         if (shares > maxRedeem(owner)) revert RedeemMoreThanMax();
 
         uint256 assets = previewRedeem(shares);
@@ -571,36 +510,36 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         return assets;
     }
 
-    /** @notice See {IERC4626-maxDeposit}. */
-    function maxDeposit(address) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-maxDeposit}. */
+    function maxDeposit(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         return depositPause ? 0 : type(uint256).max;
     }
 
-    /** @notice See {IERC4626-maxMint}. */
-    function maxMint(address) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-maxMint}. */
+    function maxMint(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         return depositPause ? 0 : type(uint256).max;
     }
 
-    /** @notice See {IERC4626-maxWithdraw}. */
-    function maxWithdraw(address owner) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-maxWithdraw}. */
+    function maxWithdraw(address owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(owner)) return 0;
         return previewRedeem(balanceOf(owner));
     }
 
-    /** @notice See {IERC4626-maxRedeem}. */
-    function maxRedeem(address owner) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-maxRedeem}. */
+    function maxRedeem(address owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
     }
 
-    /** @notice See {IERC4626-previewWithdraw}. */
-    function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-previewWithdraw}. */
+    function previewWithdraw(uint256 assets) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
         return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
     }
 
-    /** @notice See {IERC4626-previewRedeem}. */
-    function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
+    /** @notice See {IERC4626Upgradeable-previewRedeem}. */
+    function previewRedeem(uint256 shares) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
         uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
         return assets - fee;
