@@ -263,7 +263,8 @@ interface IHATVaultsRegistry {
         uint256 _maxBounty,
         IHATVault.BountySplit _bountySplit,
         uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods
+        uint256 _bountyVestingPeriods,
+        bool _isPaused
     );
     
     /** @notice Emitted when a swap of vault tokens to HAT tokens is done and

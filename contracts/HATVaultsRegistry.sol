@@ -282,7 +282,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _maxBounty,
             _bountySplit,
             _bountyVestingDuration,
-            _bountyVestingPeriods
+            _bountyVestingPeriods,
+            isPaused
         );
     }
 
