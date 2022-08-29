@@ -254,7 +254,7 @@ interface IHATVaultsRegistry {
      * the part of the bounty that is vested in vault's native token.
      * @param _bountyVestingDuration The number of vesting periods
      */
-    event CreateVault(
+    event VaultCreated(
         address indexed _vault,
         address indexed _asset,
         address _committee,

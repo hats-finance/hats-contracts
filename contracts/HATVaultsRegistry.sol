@@ -219,9 +219,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _owner,
         address _committee,
         IRewardController _rewardController,
-        string memory _descriptionHash,
         uint256 _maxBounty,
         HATVault.BountySplit memory _bountySplit,
+        string memory _descriptionHash,
         uint256[2] memory _bountyVestingParams,
         bool _isPaused
     ) 
@@ -246,14 +246,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         hatVaults.push(vault);
 
-        emit CreateVault(
+        emit VaultCreated(
             vault,
             address(_asset),
             _committee,
             _rewardController,
+            _descriptionHash,
             _maxBounty,
             _bountySplit,
-            _descriptionHash,
             _bountyVestingParams[0],
             _bountyVestingParams[1]
         );
