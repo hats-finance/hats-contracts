@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 
 import "./IHATVaultsRegistry.sol";
 import "./IRewardController.sol";
-import "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
 
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
@@ -44,7 +44,7 @@ import "@openzeppelin/contracts/interfaces/IERC4626.sol";
  * This project is open-source and can be found at:
  * https://github.com/hats-finance/hats-contracts
  */
-interface IHATVault is IERC4626 {
+interface IHATVault is IERC4626Upgradeable {
 
     // How to divide the bounty - after deducting the part that is swapped to
     // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
