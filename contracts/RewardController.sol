@@ -116,7 +116,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
      * @param _epochRewardPerBlock reward per block for each epoch
     */
     function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
-        // if rewards have nto started yet, update the full list
+        // if rewards have not started yet, update the full list
         if (block.number < startBlock) {
             epochRewardPerBlock = _epochRewardPerBlock;
         }  else {
