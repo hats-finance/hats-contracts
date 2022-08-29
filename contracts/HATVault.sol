@@ -512,7 +512,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-deposit}. */
     function deposit(uint256 assets, address receiver) public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-        super.deposit(assets, receiver);
+        return super.deposit(assets, receiver);
     }
 
     /** @notice See {IERC4626Upgradeable-maxDeposit}. */
