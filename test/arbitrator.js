@@ -381,17 +381,12 @@ contract("Registry Arbitrator", (accounts) => {
 
     let claimId = await submitClaim(vault, { accounts });
 
-    // only arbitrator can challenge the claim
+    // only arbitrator and govrnance can challenge the claim
     await assertFunctionRaisesException(
       vault.challengeClaim(claimId, { from: committee }),
-      "OnlyArbitrator"
+      "OnlyArbitratorOrRegistryOwner"
     );
 
-    // only arbitrator can challenge the claim
-    await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: owner }),
-      "OnlyArbitrator"
-    );
     let tx = await vault.challengeClaim(claimId, { from: arbitrator });
     assert.equal(tx.logs[0].event, "ChallengeClaim");
     assert.equal(tx.logs[0].args._claimId, claimId);
@@ -453,6 +448,30 @@ contract("Registry Arbitrator", (accounts) => {
     assert.isTrue(
       expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
     );
+  });
+
+  it("challenge - governance can challenge claim", async () => {
+    const { registry, vault, stakingToken, committee, arbitrator } = await setup(accounts);
+    // set challenge period to one day
+    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+    const owner = accounts[0];
+    const staker = accounts[1];
+    await advanceToSafetyPeriod(registry);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    let tx = await vault.challengeClaim(claimId, { from: owner });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    await vault.dismissClaim(claimId, { from: arbitrator });
   });
 
   it("anyone can dismiss Claim after challengeTimeOutPeriod", async () => {

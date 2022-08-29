@@ -22,6 +22,7 @@ See [parameters](./parameters.md) for more info.
 - `arbitrator` the arbitrator role
 - `challengePeriod` the time during which a claim can be challenged by the arbitrator
 - `challengeTimeOutPeriod` the time after which a challenged claim is automatically dismissed
+- `challengeClaim` to challenge a claim for a bounty payout that was previously submitted by a vault's committee
 
 
 

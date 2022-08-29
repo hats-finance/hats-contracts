@@ -60,8 +60,8 @@ error SetSharesArraysMustHaveSameLength();
 error CommitteeNotCheckedInYet();
 // Not enough user balance
 error NotEnoughUserBalance();
-// Only arbitrator
-error OnlyArbitrator();
+// Only arbitrator or regostry owner
+error OnlyArbitratorOrRegistryOwner();
 // Unchalleged claim can only be approved if challenge period is over
 error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
 // Challenged claim can only be approved by arbitrator before the challenge timeout period
@@ -290,11 +290,6 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         _;
     }
 
-    modifier onlyArbitrator() {
-        if (getArbitrator() != msg.sender) revert OnlyArbitrator();
-        _;
-    }
-
     modifier notEmergencyPaused() {
         if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
         _;
@@ -400,13 +395,17 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by the arbitrator to challenge a claim for a bounty
-    * payout that had been previously submitted by the committee.
+    * @notice Called by the arbitrator or governance to challenge a claim for
+    * a bounty payout that had been previously submitted by the committee.
     * Can only be called during the challenge period after submission of the
     * claim.
     * @param _claimId The claim ID
     */
-    function challengeClaim(bytes32 _claimId) external onlyArbitrator isActiveClaim(_claimId) {
+    function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
+        if (
+            registry.owner() != msg.sender &&
+            getArbitrator() != msg.sender
+        ) revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + getChallengePeriod())
             revert ChallengePeriodEnded();
