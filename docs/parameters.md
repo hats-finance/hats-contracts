@@ -41,7 +41,7 @@
 |`vestingDuration`|vault||<= 120 days, `< vestingPeriods`|  `setVestingParams`
 |`bountySplit.hacker`|vault| | sum(bountysplit) = 100%|`setBountySplit` 
 |`bountySplit.hackerVested`|vault| |sum(bountysplit) = 100% |`setBountySplit` 
-|`bountySplit.committee`|vault || sum(bountysplit) = 100%| `setBountySplit`
+|`bountySplit.committee`|vault || sum(bountysplit) = 100%, max 10% | `setBountySplit`
 |`maxBounty`|vault || `<= 9000` (<= 90%)|`setPendingMaxBounty`, `setMaxBounty` 
 |`vaultDescription`|vault || | `setVaultDescription` | only an event
 |`rewardController`|vault || | `setRewardController`

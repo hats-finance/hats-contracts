@@ -570,6 +570,13 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
+    
+    try {
+      await vault.setBountySplit([8000, 999, 1001]);
+      assert(false, "cannot init with committte bounty > 1000");
+    } catch (ex) {
+      assertVMException(ex, "CommitteeBountyCannotBeMoreThanMax");
+    }
 
     try {
       await vault.setHATBountySplit([5000, 5001]);
@@ -586,7 +593,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.setBountySplit([6000, 2200, 1800], { from: accounts[1] });
+      await vault.setBountySplit([6800, 2200, 1000], { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
@@ -599,7 +606,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
-    await vault.setBountySplit([6000, 2200, 1800]);
+    await vault.setBountySplit([6800, 2200, 1000]);
     tx = await vault.setHATBountySplit([0, 800]);
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
     assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, "0");
@@ -615,12 +622,12 @@ contract("HatVaults", (accounts) => {
     );
     assert.equal(
       (await vault.bountySplit()).hackerVested.toString(),
-      "6000"
+      "6800"
     );
 
     assert.equal(
       (await vault.bountySplit()).committee.toString(),
-      "1800"
+      "1000"
     );
     assert.equal(
       (await vault.getHATBountySplit()).governanceHat.toString(),
