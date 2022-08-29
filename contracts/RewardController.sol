@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./interfaces/IRewardController.sol";
 
 error EpochLengthZero();
+error CannotAddTerminatedVault();
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -44,6 +45,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => mapping(address => uint256)) public rewardDebt;
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
+    // vault address => is terminated
+    mapping(address => bool) vaultRewardsTerminated;
 
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
@@ -64,21 +67,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
-        updateVault(_vault);
-        uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
-        globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
-        if (globalVaultsUpdates.length > 0 &&
-            globalVaultsUpdates[globalVaultsUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalVaultsUpdates.push(VaultUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-
-        vaultInfo[_vault].allocPoint = _allocPoint;
+        _setAllocPoint(_vault, _allocPoint);
     }
 
     /**
@@ -111,15 +100,44 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice Called by owner to set reward per epoch
-     * @param _epochRewardPerBlock reward mper epoch
+    * @notice Called by owner to set reward per epoch
+    * Reward can only be set for epochs which have not yet started
+    * @param _epochRewardPerBlock reward per block for each epoch
     */
     function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
-        epochRewardPerBlock = _epochRewardPerBlock;
-        emit SetEpochRewardPerBlock(_epochRewardPerBlock);
+        // if rewards have not started yet, update the full list
+        if (block.number < startBlock) {
+            epochRewardPerBlock = _epochRewardPerBlock;
+        }  else {
+            uint256 nextEpoch = (block.number - startBlock) / epochLength + 1;
+            // if rewards are ongoing, update the future rewards but keep past and current
+            for (; nextEpoch < NUMBER_OF_EPOCHS; nextEpoch++) {
+                epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch];
+            }
+        }
+        emit SetEpochRewardPerBlock(epochRewardPerBlock);
     }
 
-    function _updateVaultBalance(
+    function _setAllocPoint(address _vault, uint256 _allocPoint) internal {
+        if (vaultRewardsTerminated[_vault]) revert CannotAddTerminatedVault();
+        updateVault(_vault);
+        uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
+        globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
+        if (globalVaultsUpdates.length > 0 &&
+            globalVaultsUpdates[globalVaultsUpdates.length-1].blockNumber == block.number) {
+            // already update in this block
+            globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalVaultsUpdates.push(VaultUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+
+        vaultInfo[_vault].allocPoint = _allocPoint;
+    }
+
+    function _commitUserBalance(
         address _vault,
         address _user,
         uint256 _sharesChange,
@@ -141,17 +159,24 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         rewardDebt[_vault][_user] = userShares * rewardPerShare / REWARD_PRECISION;
     }
 
-    function updateVaultBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
-        _updateVaultBalance(msg.sender, _user, _sharesChange, _isDeposit);
+    /**
+    * @notice Called by the vault to update a user claimable reward after deposit or withdraw.
+    * This call should never revert
+    * @param _user The user address to updare rewards for
+    * @param _sharesChange The user of shared the user deposited or withdrew
+    * @param _isDeposit Whether user deposited or withdrew
+    */
+    function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external {
+        _commitUserBalance(msg.sender, _user, _sharesChange, _isDeposit);
     }
 
     /**
-     * @notice Transfer to the specified user their pending share of rewards.
-     * @param _vault The vault address
-     * @param _user The user address to claim for
-     */
+    * @notice Transfer to the specified user their pending share of rewards.
+    * @param _vault The vault address
+    * @param _user The user address to claim for
+    */
     function claimReward(address _vault, address _user) external {
-        _updateVaultBalance(_vault, _user, 0, true);
+        _commitUserBalance(_vault, _user, 0, true);
 
         uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
@@ -162,7 +187,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         emit ClaimReward(_vault, _user, userUnclaimedReward);
     }
 
-     /**
+    /**
     * @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,
     * and sum up all rewards periods from vault.lastRewardBlock until current block number.
     * @param _vault The vault address
@@ -194,7 +219,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     public
     view
     returns (uint256 reward) {
-        if (_fromBlock >= startBlock && _totalAllocPoint > 0) {
+        if ((_fromBlock >= startBlock && _toBlock >= _fromBlock) && _totalAllocPoint > 0) {
             uint256 result;
             uint256 i = (_fromBlock - startBlock) / epochLength + 1;
             for (; i <= NUMBER_OF_EPOCHS; i++) {
@@ -211,9 +236,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-     * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
-     * @param _vault the vault address
-     * @param _user the account for which the reward is calculated
+    * @notice calculate the amount of rewards an account can claim for having contributed to a specific vault
+    * @param _vault the vault address
+    * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         VaultInfo memory vault = vaultInfo[_vault];
@@ -228,6 +253,16 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / REWARD_PRECISION + 
                 unclaimedReward[_vault][_user] -
                 rewardDebt[_vault][_user];
+    }
+
+    /**
+    * @notice Removes the vault from getting rewards
+    */
+    function terminateVaultRewards() external {
+        if (vaultInfo[msg.sender].allocPoint != 0) {
+            _setAllocPoint(msg.sender, 0);
+        }
+        vaultRewardsTerminated[msg.sender] = true;
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {
