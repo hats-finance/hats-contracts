@@ -60,7 +60,7 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    hatBountySplit,
+    ...hatBountySplit,
     tokenLockFactory.address,
     true
   );

@@ -123,7 +123,8 @@ error SystemInEmergencyPause();
 contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    // How to divide the bounty - after deducting HATVaultsRegistry.HATBountySplit
+    // How to divide the bounty - after deducting HATVaultsRegistry.bountyGovernanceHAT
+    // and _bountyHackerHATVested.
     // values are in percentages and should add up to `HUNDRED_PERCENT`
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
@@ -225,8 +226,10 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
 
-    // the HATBountySplit of the vault
-    HATVaultsRegistry.HATBountySplit internal hatBountySplit;
+    // the percentage of the total bounty to be swapped to HATs and sent to governance
+    uint256 internal bountyGovernanceHAT;
+    // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+    uint256 internal bountyHackerHATVested;
 
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address internal arbitrator;
@@ -265,7 +268,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplit(HATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetBountyGovernanceHAT(uint256 _bountyGovernanceHAT);
+    event SetBountyHackerHATVested(uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -343,10 +347,8 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         tokenLockFactory = _registry.tokenLockFactory();
 
         // Set vault to use default registry values where applicable
-        hatBountySplit = HATVaultsRegistry.HATBountySplit({
-            governanceHat: NULL_UINT,
-            hackerHatVested: 0
-        });
+        bountyGovernanceHAT = NULL_UINT;
+        bountyHackerHATVested = NULL_UINT;
         arbitrator = NULL_ADDRESS;
         challengePeriod = NULL_UINT;
         challengeTimeOutPeriod = NULL_UINT;
@@ -672,18 +674,37 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     }
 
     /**
-    * @notice Called by governance to set the vault HAT token bounty split upon
-    * an approval. Either sets it to the value passed, or to the special "null" vaule, 
+    * @notice Called by governance to set the percentage of each claim bounty that
+    * will be swapped for hats and sent to the governance.
+    * Either sets it to the value passed, or to the special "null" vaule, 
     * making it always use the registry's default value.
-    * @param _hatBountySplit The HAT bounty split
+    * @param _bountyGovernanceHAT The HAT bounty for governance
     */
-    function setHATBountySplit(HATVaultsRegistry.HATBountySplit memory _hatBountySplit) external onlyRegistryOwner {
-        if (_hatBountySplit.governanceHat != NULL_UINT) {
-            registry.validateHATSplit(_hatBountySplit);
+    function setBountyGovernanceHAT(uint256 _bountyGovernanceHAT) external onlyRegistryOwner {
+        if (_bountyGovernanceHAT != NULL_UINT) {
+            registry.validateHATSplit(_bountyGovernanceHAT, getBountyHackerHATVested());
         }
-        hatBountySplit = _hatBountySplit;
 
-        emit SetHATBountySplit(_hatBountySplit);
+        bountyGovernanceHAT = _bountyGovernanceHAT;
+
+        emit SetBountyGovernanceHAT(_bountyGovernanceHAT);
+    }
+
+    /**
+    * @notice Called by governance to set the percentage of each claim bounty that
+    * will be swapped for hats and vested for the hacker.
+    * Either sets it to the value passed, or to the special "null" vaule, 
+    * making it always use the registry's default value.
+    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+    */
+    function setBountyHackerHATVested(uint256 _bountyHackerHATVested) external onlyRegistryOwner {
+        if (_bountyHackerHATVested != NULL_UINT) {
+            registry.validateHATSplit(getBountyGovernanceHAT(), _bountyHackerHATVested);
+        }
+
+        bountyHackerHATVested = _bountyHackerHATVested;
+
+        emit SetBountyHackerHATVested(_bountyHackerHATVested);
     }
 
     /**
@@ -886,17 +907,26 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
     /* --------------------------------- Getters -------------------------------------- */
 
     /** 
-    * @notice Returns the vault HAT bounty split
+    * @notice Returns the percentage of each claim bounty that
+    * will be swapped for hats and sent to the governance
     */
-    function getHATBountySplit() public view returns(HATVaultsRegistry.HATBountySplit memory) {
-        if (hatBountySplit.governanceHat != NULL_UINT) {
-            return hatBountySplit;
+    function getBountyGovernanceHAT() public view returns(uint256) {
+        if (bountyGovernanceHAT != NULL_UINT) {
+            return bountyGovernanceHAT;
         } else {
-            (uint256 governanceHat, uint256 hackerHatVested) = registry.defaultHATBountySplit();
-            return HATVaultsRegistry.HATBountySplit({
-                governanceHat: governanceHat,
-                hackerHatVested: hackerHatVested
-            });
+            return registry.defaultBountyGovernanceHAT();
+        }
+    }
+
+    /** 
+    * @notice Returns the percentage of each claim bounty that
+    * will be swapped for hats and vested for the hacker
+    */
+    function getBountyHackerHATVested() public view returns(uint256) {
+        if (bountyHackerHATVested != NULL_UINT) {
+            return bountyHackerHATVested;
+        } else {
+            return registry.defaultBountyHackerHATVested();
         }
     }
 
@@ -1068,11 +1098,10 @@ contract HATVault is ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgr
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 
-        HATVaultsRegistry.HATBountySplit memory _hatBountySplit = getHATBountySplit();
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
-        uint256 governanceHatAmount = totalBountyAmount * _hatBountySplit.governanceHat / HUNDRED_PERCENT_SQRD;
-        uint256 hackerHatVestedAmount = totalBountyAmount * _hatBountySplit.hackerHatVested / HUNDRED_PERCENT_SQRD;
+        uint256 governanceHatAmount = totalBountyAmount * getBountyGovernanceHAT() / HUNDRED_PERCENT_SQRD;
+        uint256 hackerHatVestedAmount = totalBountyAmount * getBountyHackerHATVested() / HUNDRED_PERCENT_SQRD;
 
         totalBountyAmount -= (governanceHatAmount + hackerHatVestedAmount) * HUNDRED_PERCENT;
 

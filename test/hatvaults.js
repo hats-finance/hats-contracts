@@ -396,11 +396,11 @@ contract("HatVaults", (accounts) => {
       "500"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "700"
     );
 
@@ -463,18 +463,36 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.setHATBountySplit([5000, 5001]);
+      await vault.setBountyGovernanceHAT(10000);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
 
     try {
-      await vault.setHATBountySplit([5000, 5000]);
+      await vault.setBountyHackerHATVested(10000);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
+
+    await vault.setBountyHackerHATVested(5000);
+    try {
+      await vault.setBountyGovernanceHAT(5000);
+      assert(false, "cannot set hat bounty split to 10000 or more");
+    } catch (ex) {
+      assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
+    }
+    await vault.setBountyHackerHATVested(0);
+
+    await vault.setBountyGovernanceHAT(5000);
+    try {
+      await vault.setBountyHackerHATVested(5000);
+      assert(false, "cannot set hat bounty split to 10000 or more");
+    } catch (ex) {
+      assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
+    }
+    await vault.setBountyGovernanceHAT(0);
 
     try {
       await vault.setBountySplit([6000, 2200, 1800], { from: accounts[1] });
@@ -484,17 +502,27 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.setHATBountySplit([0, 800], { from: accounts[1] });
+      await vault.setBountyGovernanceHAT(0, { from: accounts[1] });
+      assert(false, "only registry owner");
+    } catch (ex) {
+      assertVMException(ex, "OnlyRegistryOwner");
+    }
+
+    try {
+      await vault.setBountyHackerHATVested(800, { from: accounts[1] });
       assert(false, "only registry owner");
     } catch (ex) {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
     await vault.setBountySplit([6000, 2200, 1800]);
-    tx = await vault.setHATBountySplit([0, 800]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplit");
-    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, "0");
-    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, "800");
+    tx = await vault.setBountyGovernanceHAT(0);
+    assert.equal(tx.logs[0].event, "SetBountyGovernanceHAT");
+    assert.equal(tx.logs[0].args._bountyGovernanceHAT, "0");
+
+    tx = await vault.setBountyHackerHATVested(800);
+    assert.equal(tx.logs[0].event, "SetBountyHackerHATVested");
+    assert.equal(tx.logs[0].args._bountyHackerHATVested, "800");
 
     assert.equal(
       (await vault.maxBounty()).toString(),
@@ -514,11 +542,11 @@ contract("HatVaults", (accounts) => {
       "1800"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "0"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "800"
     );
     await advanceToSafetyPeriod();
@@ -544,8 +572,6 @@ contract("HatVaults", (accounts) => {
       "ActiveClaimExists"
     );
 
-
-
     tx = await vault.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._claimId, claimId);
@@ -560,10 +586,14 @@ contract("HatVaults", (accounts) => {
     await advanceToNonSafetyPeriod();
 
     await vault.setBountySplit([6000, 3000, 1000]);
-    tx = await vault.setHATBountySplit([1, 800]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplit");
-    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, "1");
-    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, "800");
+
+    tx = await vault.setBountyGovernanceHAT(1);
+    assert.equal(tx.logs[0].event, "SetBountyGovernanceHAT");
+    assert.equal(tx.logs[0].args._bountyGovernanceHAT, "1");
+
+    tx = await vault.setBountyHackerHATVested(800);
+    assert.equal(tx.logs[0].event, "SetBountyHackerHATVested");
+    assert.equal(tx.logs[0].args._bountyHackerHATVested, "800");
 
     await vault.setPendingMaxBounty(8000);
 
@@ -576,54 +606,81 @@ contract("HatVaults", (accounts) => {
     await setUpGlobalVars(accounts);
 
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "1500"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "500"
     );
 
     assert.equal(
-      (await hatVaultsRegistry.defaultHATBountySplit()).governanceHat.toString(),
+      (await hatVaultsRegistry.defaultBountyGovernanceHAT()).toString(),
       "1500"
     );
     assert.equal(
-      (await hatVaultsRegistry.defaultHATBountySplit()).hackerHatVested.toString(),
+      (await hatVaultsRegistry.defaultBountyHackerHATVested()).toString(),
       "500"
     );
 
     try {
-      await hatVaultsRegistry.setDefaultHATBountySplit([5000, 5001]);
+      await hatVaultsRegistry.setDefaultBountyGovernanceHAT(10000);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
 
     try {
-      await hatVaultsRegistry.setDefaultHATBountySplit([5000, 5000]);
+      await hatVaultsRegistry.setDefaultBountyHackerHATVested(10000);
       assert(false, "cannot set hat bounty split to 10000 or more");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
     }
 
+    await hatVaultsRegistry.setDefaultBountyHackerHATVested(5000);
     try {
-      await hatVaultsRegistry.setDefaultHATBountySplit([200, 800], { from: accounts[1] });
+      await hatVaultsRegistry.setDefaultBountyGovernanceHAT(5000);
+      assert(false, "cannot set hat bounty split to 10000 or more");
+    } catch (ex) {
+      assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
+    }
+    await hatVaultsRegistry.setDefaultBountyHackerHATVested(0);
+
+    await hatVaultsRegistry.setDefaultBountyGovernanceHAT(5000);
+    try {
+      await hatVaultsRegistry.setDefaultBountyHackerHATVested(5000);
+      assert(false, "cannot set hat bounty split to 10000 or more");
+    } catch (ex) {
+      assertVMException(ex, "TotalHatsSplitPercentageShouldBeLessThanHundredPercent");
+    }
+    await hatVaultsRegistry.setDefaultBountyGovernanceHAT(0);
+
+    try {
+      await hatVaultsRegistry.setDefaultBountyGovernanceHAT(200, { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await vault.setHATBountySplit([1500, 500]);
+    try {
+      await hatVaultsRegistry.setDefaultBountyHackerHATVested(800, { from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
 
-    await hatVaultsRegistry.setDefaultHATBountySplit([200, 800]);
+    await vault.setBountyGovernanceHAT(1500);
+    await vault.setBountyHackerHATVested(500);
+
+    await hatVaultsRegistry.setDefaultBountyGovernanceHAT(200);
+    await hatVaultsRegistry.setDefaultBountyHackerHATVested(800);
 
     assert.equal(
-      (await hatVaultsRegistry.defaultHATBountySplit()).governanceHat.toString(),
+      (await hatVaultsRegistry.defaultBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await hatVaultsRegistry.defaultHATBountySplit()).hackerHatVested.toString(),
+      (await hatVaultsRegistry.defaultBountyHackerHATVested()).toString(),
       "800"
     );
 
@@ -641,54 +698,58 @@ contract("HatVaults", (accounts) => {
     )).logs[1].args._vault);
 
     assert.equal(
-      (await newVault.getHATBountySplit()).governanceHat.toString(),
+      (await newVault.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await newVault.getHATBountySplit()).hackerHatVested.toString(),
+      (await newVault.getBountyHackerHATVested()).toString(),
       "800"
     );
 
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "1500"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "500"
     );
 
-    tx = await vault.setHATBountySplit([await vault.NULL_UINT(), 0]);
-    assert.equal(tx.logs[0].event, "SetHATBountySplit");
-    assert.equal(tx.logs[0].args._hatBountySplit.governanceHat, await vault.NULL_UINT());
-    assert.equal(tx.logs[0].args._hatBountySplit.hackerHatVested, 0);
+    tx = await vault.setBountyGovernanceHAT(await vault.NULL_UINT());
+    assert.equal(tx.logs[0].event, "SetBountyGovernanceHAT");
+    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), (await vault.NULL_UINT()).toString());
+
+    tx = await vault.setBountyHackerHATVested(await vault.NULL_UINT());
+    assert.equal(tx.logs[0].event, "SetBountyHackerHATVested");
+    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), (await vault.NULL_UINT()).toString());
 
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "800"
     );
 
-    await hatVaultsRegistry.setDefaultHATBountySplit([300, 700]);
+    await hatVaultsRegistry.setDefaultBountyGovernanceHAT(300);
+    await hatVaultsRegistry.setDefaultBountyHackerHATVested(700);
 
     assert.equal(
-      (await newVault.getHATBountySplit()).governanceHat.toString(),
+      (await newVault.getBountyGovernanceHAT()).toString(),
       "300"
     );
     assert.equal(
-      (await newVault.getHATBountySplit()).hackerHatVested.toString(),
+      (await newVault.getBountyHackerHATVested()).toString(),
       "700"
     );
 
     assert.equal(
-      (await vault.getHATBountySplit()).governanceHat.toString(),
+      (await vault.getBountyGovernanceHAT()).toString(),
       "300"
     );
     assert.equal(
-      (await vault.getHATBountySplit()).hackerHatVested.toString(),
+      (await vault.getBountyHackerHATVested()).toString(),
       "700"
     );
   });
@@ -1981,7 +2042,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       10,
       vaultsManager.address,
       hatToken1.address,
-      [1000, 500],
+      1000,
+      500,
       tokenLockFactory1.address,
       true
     );
@@ -3629,7 +3691,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       false
     )).logs[1].args._vault);
 
-    await newVault.setHATBountySplit([500, 400]);
+    await newVault.setBountyGovernanceHAT(500);
+    await newVault.setBountyHackerHATVested(400);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -3893,7 +3956,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).hackerHatVested
+            (await vault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4015,7 +4078,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).hackerHatVested
+            (await vault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4033,7 +4096,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).governanceHat
+            (await vault.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4077,7 +4140,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).hackerHatVested
+            (await vault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4094,7 +4157,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).governanceHat
+            (await vault.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4142,7 +4205,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.032"))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).hackerHatVested
+            (await vault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4159,7 +4222,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.032"))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).governanceHat
+            (await vault.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -4316,13 +4379,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await vault.getHATBountySplit()).hackerHatVested
+            (await vault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000")).add(new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await newVault.getHATBountySplit()).hackerHatVested
+            (await newVault.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000")))
@@ -4930,7 +4993,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       10,
       vaultsManager.address,
       hatToken1.address,
-      [1000, 500],
+      1000,
+      500,
       tokenLockFactory1.address,
       true
     );
@@ -4973,7 +5037,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       10,
       vaultsManager.address,
       hatToken1.address,
-      [1000, 500],
+      1000,
+      500,
       tokenLockFactory1.address,
       true
     );

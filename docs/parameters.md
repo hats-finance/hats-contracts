@@ -16,15 +16,11 @@
 |`arbitrator`|registry.owner| | set per vault | `vault.setArbitrator`
 |`challengePeriod`|3 days | >= 1 days, <= 5 days | set per vault | `vault.setChallengePeriod`
 |`challengeTimeOutPeriod`| 5 weeks | >= 2 days, <= 85 days| set per vault | `vault.setChallengeTimeOutPeriod`
-|`hatBountySplit.governanceHAT` || |set per vault|`vault.setHATBountySplit`
-|`hatBountySplit.hackerHATVested` || |set per vault|`vault.setHATBountySplit`
+|`bountyGovernanceHAT` || 99.99% combined with bountyHackerHATVested |set per vault|`vault.setBountyGovernanceHAT`
+|`bountyHackerHATVested` || 99.99% combined with bountyGovernanceHAT |set per vault|`vault.setBountyHackerHATVested`
 
 
--  `setHATBountySplit` only if there is no active claim and no safetyperiod
--  `setArbitrator` only if there is no active claim and no safetyperiod
--  `setChallengePeriod` only if there is no active claim and no safetyperiod 
--  `setChallengeTimeOutPeriod` only if there is no active claim and no safetyperiod 
-- `governanceHAT + hackerHATVested <= 100%`
+- `bountyGovernanceHAT + bountyHackerHATVested <= 100%`
 - `hatVestingDuration < hatVestingPeriods`
 
 ## Settings owned by feeSetter

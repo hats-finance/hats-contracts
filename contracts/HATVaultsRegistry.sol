@@ -91,15 +91,6 @@ contract HATVaultsRegistry is Ownable {
         uint256 claimFee;  
     }
 
-    // How to divide the hats bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
-    // The precentages are taken from the total bounty
-    struct HATBountySplit {
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-        uint256 hackerHatVested;
-    }
-
     struct SwapData {
         uint256 totalHackersHatReward;
         uint256 amount;
@@ -129,7 +120,14 @@ contract HATVaultsRegistry is Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
-    HATBountySplit public defaultHATBountySplit;
+    // How the bountyGovernanceHAT and bountyHackerHATVested set how to divide the hats 
+    // bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
+    // The precentages are taken from the total bounty
+ 
+    // the default percentage of the total bounty to be swapped to HATs and sent to governance
+    uint256 public defaultBountyGovernanceHAT;
+    // the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+    uint256 public defaultBountyHackerHATVested;
 
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
@@ -165,7 +163,8 @@ contract HATVaultsRegistry is Ownable {
         uint256 _amountReceived,
         address indexed _tokenLock
     );
-    event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
+    event SetDefaultBountyGovernanceHAT(uint256 _bountyGovernanceHAT);
+    event SetDefaultBountyHackerHATVested(uint256 _bountyHackerHATVested);
     event SetDefaultArbitrator(address indexed _arbitrator);
     event SetDefaultChallengePeriod(uint256 _challengePeriod);
     event SetDefaultChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -177,10 +176,12 @@ contract HATVaultsRegistry is Ownable {
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _defaultHATBountySplit The default way to split the hat bounty betweeen
-    * the hacker and the governance
-    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * @param _bountyGovernanceHAT The default percentage of a claim's total
+    * bounty to be swapped for HAT and sent to the governance
+    * @param _bountyHackerHATVested The default percentage of a claim's total
+    * bounty to be swapped for HAT and sent to a vesting contract for the hacker
+    *   _bountyGovernanceHAT + _bountyHackerHATVested must be less
+    *    than `HUNDRED_PERCENT`.
     * @param _tokenLockFactory Address of the token lock factory to be used
     * to create a vesting contract for the approved claim reporter.
     */
@@ -188,15 +189,15 @@ contract HATVaultsRegistry is Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        HATBountySplit memory _defaultHATBountySplit,
+        uint256 _bountyGovernanceHAT,
+        uint256 _bountyHackerHATVested,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = IERC20(_HAT);
 
-        validateHATSplit(_defaultHATBountySplit);
-        defaultHATBountySplit = _defaultHATBountySplit;
+        validateHATSplit(_bountyGovernanceHAT, _bountyHackerHATVested);
         tokenLockFactory = _tokenLockFactory;
         generalParameters = GeneralParameters({
             hatVestingDuration: 90 days,
@@ -209,6 +210,9 @@ contract HATVaultsRegistry is Ownable {
             claimFee: 0
         });
 
+
+        defaultBountyGovernanceHAT = _bountyGovernanceHAT;
+        defaultBountyHackerHATVested = _bountyHackerHATVested;
         defaultArbitrator = _hatGovernance;
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
@@ -240,14 +244,25 @@ contract HATVaultsRegistry is Ownable {
     }
 
     /**
-    * @notice Called by governance to set the default HAT token bounty split upon
-    * an approval. This default vaule is used when creating a new vault.
-    * @param _defaultHATBountySplit The HAT bounty split
+    * @notice Called by governance to set the default percentage of each claim bounty
+    * that will be swapped for hats and sent to the governance.
+    * @param _defaultBountyGovernanceHAT The HAT bounty for governance
     */
-    function setDefaultHATBountySplit(HATBountySplit memory _defaultHATBountySplit) external onlyOwner {
-        validateHATSplit(_defaultHATBountySplit);
-        defaultHATBountySplit = _defaultHATBountySplit;
-        emit SetDefaultHATBountySplit(_defaultHATBountySplit);
+    function setDefaultBountyGovernanceHAT(uint256 _defaultBountyGovernanceHAT) external onlyOwner {
+        validateHATSplit(_defaultBountyGovernanceHAT, defaultBountyHackerHATVested);
+        defaultBountyGovernanceHAT = _defaultBountyGovernanceHAT;
+        emit SetDefaultBountyGovernanceHAT(_defaultBountyGovernanceHAT);
+    }
+
+    /**
+    * @notice Called by governance to set the default percentage of each claim bounty
+    * that will be swapped for hats and vested for the hacker.
+    * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
+    */
+    function setDefaultBountyHackerHATVested(uint256 _defaultBountyHackerHATVested) external onlyOwner {
+        validateHATSplit(defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
+        defaultBountyHackerHATVested = _defaultBountyHackerHATVested;
+        emit SetDefaultBountyHackerHATVested(_defaultBountyHackerHATVested);
     }
 
     /**
@@ -545,11 +560,11 @@ contract HATVaultsRegistry is Ownable {
     *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
     *   Total splits should be less than `HUNDRED_PERCENT`.
     * function will revert in case the bounty split is not legal.
-    * @param _hatBountySplit The bounty split to check
+    * @param _bountyGovernanceHAT The HAT bounty for governance
+    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit) public pure {
-        if (_hatBountySplit.governanceHat +
-            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
+    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) public pure {
+        if (_bountyGovernanceHAT + _bountyHackerHATVested >= HUNDRED_PERCENT)
             revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
     }
 

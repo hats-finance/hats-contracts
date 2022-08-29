@@ -17,7 +17,8 @@ See [parameters](./parameters.md) for more info.
 - `withdrawRequestParams` time limits for withdrawal requests
 - `maxBountyDelay` the timelock delay for setting the max bounty
 - `isVaultVisibile` is the vault's visibility in the UI
-- `HATBountySplit` how the HAT bounty is split betwen security researcher and governance
+- `bountyGovernanceHAT` how much of the claim will be swapped for HAT and sent to governance
+- `bountyHackerHATVested` how much of the claim will be swapped for HAT and vested for the hacker
 - `owner` - the ownership itself 
 - `arbitrator` the arbitrator role
 - `challengePeriod` the time during which a claim can be challenged by the arbitrator

@@ -98,7 +98,7 @@ const setup = async function(
     options.halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    options.hatBountySplit,
+    ...options.hatBountySplit,
     tokenLockFactory.address,
     true
   );
