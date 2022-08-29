@@ -364,7 +364,7 @@ contract("HatTimelockController", (accounts) => {
       })
     )[0];
     assert.equal(log.event, "SwapAndSend");
-    assert.equal(log.args._amountReceived.toString(), "0");
+    assert.equal(log.args._amountSent.toString(), "0");
   });
 
   it("challenge - approve Claim ", async () => {
