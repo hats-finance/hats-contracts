@@ -6,6 +6,7 @@ pragma solidity 0.8.16;
 import "./IHATVaultsRegistry.sol";
 import "./IRewardController.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
