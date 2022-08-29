@@ -165,6 +165,12 @@ interface IHATVaultsRegistry {
      * timeout period to be set is longer than 85 days
      */
     error ChallengeTimeOutPeriodTooLong();
+    
+    /**
+     * @notice Raised on {LogClaim} if the transaction was not sent with the
+     * amount of ETH specified as {generalParameters.claimFee}
+     */
+    error NotEnoughFeePaid();
 
     /**
      * @notice Emitted when a claim is logged
