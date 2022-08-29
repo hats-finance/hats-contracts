@@ -180,6 +180,8 @@ interface IHATVault is IERC4626Upgradeable {
     error RedeemMoreThanMax();
     // System is in an emergency pause
     error SystemInEmergencyPause();
+    // User cannot renounce their rewards twice
+    error CannotRenounceRewardsTwice();
 
 
     
@@ -372,15 +374,9 @@ interface IHATVault is IERC4626Upgradeable {
     function setRewardController(IRewardController _newRewardController) external;
 
     /** 
-    * @notice Called by a user to renounced their participation in the rewardController
-    * @param _rewardController The reward controller address to opt out from
+    * @notice Called by a user to renounce their participation with any reward controller
     */
-    function renounceRewardsForController(address _rewardController) external;
-
-    /** 
-    * @notice Called by a user to renounced their participation with any reward controller
-    */
-    function renounceAllRewards() external;
+    function renounceRewards() external;
 
     /**
     * @notice Called by the registry's owner to set the vault HAT token bounty 
@@ -518,11 +514,18 @@ interface IHATVault is IERC4626Upgradeable {
 
     /* --------------------------------- Getters -------------------------------------- */
 
-    /** 
-    * @notice Returns whetever a user renounced their participation in the rewardController
-    * @return The if the user renounced their participation in the rewardController
+    /**
+    * @notice Returns whetever a user renounced their participation with rewardController
+    * @param _user The user to check if renounced
+    * @return If the user renounced their participation with rewardController
     */
-    function didRenouncedRewards(address _user, address _rewardController) external view returns(bool);
+    function renouncedRewards(address _user) external view returns(bool);
+
+    /** 
+    * @notice Returns the total amount of shares held by users who renounced their rewards
+    * @return The total amount of shares held by users who renounced their rewards
+    */
+    function nonRewardingShares() external view returns(uint256);
 
     /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance

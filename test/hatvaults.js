@@ -349,15 +349,22 @@ contract("HatVaults", (accounts) => {
     await setUpGlobalVars(accounts);
 
     var staker = accounts[1];
-    await stakingToken.approve(vault.address, web3.utils.toWei("3"), {
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
       from: staker,
     });
-    await stakingToken.mint(staker, web3.utils.toWei("3"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.mint(staker2, web3.utils.toWei("2"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
 
     assert.equal((await vault.rewardController()), rewardController.address);
 
     let expectedReward = await calculateExpectedReward(staker);
+    let expectedReward2 = await calculateExpectedReward(staker2, 1);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");
@@ -369,7 +376,25 @@ contract("HatVaults", (accounts) => {
       expectedReward.toString()
     );
 
-    await vault.renounceRewardsForController(rewardController.address, { from: staker });
+    await vault.renounceRewards({ from: staker });
+
+    // rewards for staker2 should be doubled
+    tx = await rewardController.claimReward(vault.address, staker2, { from: staker2 });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward2.add(expectedReward).toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    try {
+      await vault.renounceRewards({ from: staker });
+      assert(false, "cannot renounce rewards twice");
+    } catch (ex) {
+      assertVMException(ex, "CannotRenounceRewardsTwice");
+    }
 
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
@@ -388,7 +413,7 @@ contract("HatVaults", (accounts) => {
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
     );
-    assert.equal(await rewardController.getPendingReward(vault.address, accounts[0]), 0);
+    assert.equal(await rewardController.getPendingReward(vault.address, staker), 0);
 
     tx = await vault.setRewardController(accounts[2]);
     assert.equal(tx.logs[0].event, "SetRewardController");
@@ -407,23 +432,23 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
       assert(false, "deposit fails with bad reward controller");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await safeRedeem(vault, web3.utils.toWei("2"), staker);
+      await safeRedeem(vault, web3.utils.toWei("1"), staker2);
       assert(false, "withdraw fails with bad reward controller");
     } catch (ex) {
       assertVMException(ex);
     }
 
-    await vault.renounceAllRewards({ from: staker });
+    await vault.renounceRewards({ from: staker2 });
 
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await safeRedeem(vault, web3.utils.toWei("3"), staker);
+    await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
+    await safeRedeem(vault, web3.utils.toWei("2"), staker2);
   });
 
   it("setCommittee", async () => {

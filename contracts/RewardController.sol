@@ -88,7 +88,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         vault.lastRewardBlock = block.number;
 
-        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply() - IHATVault(_vault).nonRewardingShares();
 
         if (totalShares != 0) {
             uint256 reward = getVaultReward(_vault, lastRewardBlock);
@@ -144,7 +144,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _sharesChange,
         bool _isDeposit
     ) internal {
-        if (IHATVault(_vault).didRenouncedRewards(_user, address(this))) {
+        if (IHATVault(_vault).renouncedRewards(_user)) {
             return;
         }
         updateVault(_vault);
@@ -245,12 +245,12 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
-        if (IHATVault(_vault).didRenouncedRewards(_user, address(this))) {
+        if (IHATVault(_vault).renouncedRewards(_user)) {
             return 0;
         }
         VaultInfo memory vault = vaultInfo[_vault];
         uint256 rewardPerShare = vault.rewardPerShare;
-        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply() - IHATVault(_vault).nonRewardingShares();
 
         if (vault.lastRewardBlock != 0 && block.number > vault.lastRewardBlock && totalShares > 0) {
             uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
