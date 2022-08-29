@@ -66,36 +66,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 maxBounty;
         uint256 timestamp;
     }
-    
-    /**
-    * @param rewardController The reward controller for the vault
-    * @param vestingDuration Duration of the vesting period of the vault's
-    * token vested part of the bounty
-    * @param vestingPeriods The number of vesting periods of the vault's token
-    * vested part of the bounty
-    * @param maxBounty The maximum percentage of the vault that can be paid
-    * out as a bounty
-    * @param bountySplit The way to split the bounty between the hacker, 
-    * hacker vested, and committee.
-    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-    *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param asset The vault's native token
-    * @param owner The address of the vault's owner 
-    * @param committee The address of the vault's committee 
-    * @param isPaused Whether to initialize the vault with deposits disabled
-    */
-    // Needed to avoid a stack too deep error
-    struct VaultInitParams {
-        IRewardController rewardController;
-        uint256 vestingDuration;
-        uint256 vestingPeriods;
-        uint256 maxBounty;
-        IHATVault.BountySplit bountySplit;
-        IERC20 asset;
-        address owner;
-        address committee;
-        bool isPaused;
-    }
 
     uint256 public constant NULL_UINT = type(uint256).max;
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
@@ -190,7 +160,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-initialize}. */
-    function initialize(VaultInitParams memory _params) external initializer {
+    function initialize(IHATVault.VaultInitParams memory _params)
+        external
+        initializer
+    {
         if (_params.maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);

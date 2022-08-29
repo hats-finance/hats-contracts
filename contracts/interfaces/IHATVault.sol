@@ -217,8 +217,8 @@ interface IHATVault is IERC4626 {
     /**
     * @notice Initialize a vault instance
     * @param _params The vault initialization parameters
-    * @dev See {HATVault-VaultInitParams} for more details
-    * @dev Called when the vault is created in {HATVaultsRegistry-createVault}
+    * @dev See {IHATVault-VaultInitParams} for more details
+    * @dev Called when the vault is created in {IHATVaultsRegistry-createVault}
     */
     function initialize(VaultInitParams memory _params) external;
 

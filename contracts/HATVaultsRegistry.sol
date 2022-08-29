@@ -259,7 +259,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         vault = Clones.clone(hatVaultImplementation);
 
         HATVault(vault).initialize(
-            HATVault.VaultInitParams({
+            IHATVault.VaultInitParams({
                 rewardController: _rewardController,
                 vestingDuration: _bountyVestingParams[0],
                 vestingPeriods: _bountyVestingParams[1],
