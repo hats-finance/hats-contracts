@@ -498,7 +498,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         return shares;
     }
 
-    /** @notice See {IERC4626Upgradeable-redeem}. */
+    /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
         public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         if (shares > maxRedeem(owner)) revert RedeemMoreThanMax();
@@ -508,6 +508,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
+    }
+
+    /** @notice See {IHATVault-deposit}. */
+    function deposit(uint256 assets, address receiver) external returns (uint256) {
+        super.deposit(assets, receiver);
     }
 
     /** @notice See {IERC4626Upgradeable-maxDeposit}. */

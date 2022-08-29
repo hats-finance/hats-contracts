@@ -488,8 +488,8 @@ interface IHATVault is IERC4626Upgradeable {
         returns (uint256);
 
     /**
-    * @dev Deposit funds to the vault. Can only be called if deposits are not
-    * paused.
+    * @dev Deposit funds to the vault. Can only be called if the committee had
+    * checked in and deposits are not paused, and the registry is not in an emergency pause.
     * @param receiver Reciever of the shares from the deposit
     * @param assets Amount of vault's native token to deposit
     * @dev See {IERC4626-deposit}.
