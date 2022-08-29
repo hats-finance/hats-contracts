@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./interfaces/IRewardController.sol";
 
 error EpochLengthZero();
+error CannotAddTerminatedVault();
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -44,6 +45,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => mapping(address => uint256)) public rewardDebt;
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
+    // vault address => is terminated
+    mapping(address => bool) vaultRewardsTerminated;
 
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
@@ -64,21 +67,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
-        updateVault(_vault);
-        uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
-        globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
-        if (globalVaultsUpdates.length > 0 &&
-            globalVaultsUpdates[globalVaultsUpdates.length-1].blockNumber == block.number) {
-            // already update in this block
-            globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint = totalAllocPoint;
-        } else {
-            globalVaultsUpdates.push(VaultUpdate({
-                blockNumber: block.number,
-                totalAllocPoint: totalAllocPoint
-            }));
-        }
-
-        vaultInfo[_vault].allocPoint = _allocPoint;
+        _setAllocPoint(_vault, _allocPoint);
     }
 
     /**
@@ -117,6 +106,25 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external onlyOwner {
         epochRewardPerBlock = _epochRewardPerBlock;
         emit SetEpochRewardPerBlock(_epochRewardPerBlock);
+    }
+
+    function _setAllocPoint(address _vault, uint256 _allocPoint) internal {
+        if (vaultRewardsTerminated[_vault]) revert CannotAddTerminatedVault();
+        updateVault(_vault);
+        uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
+        globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
+        if (globalVaultsUpdates.length > 0 &&
+            globalVaultsUpdates[globalVaultsUpdates.length-1].blockNumber == block.number) {
+            // already update in this block
+            globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint = totalAllocPoint;
+        } else {
+            globalVaultsUpdates.push(VaultUpdate({
+                blockNumber: block.number,
+                totalAllocPoint: totalAllocPoint
+            }));
+        }
+
+        vaultInfo[_vault].allocPoint = _allocPoint;
     }
 
     function _commitUserBalance(
@@ -235,6 +243,16 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / REWARD_PRECISION + 
                 unclaimedReward[_vault][_user] -
                 rewardDebt[_vault][_user];
+    }
+
+    /**
+    * @notice Removes the vault from getting rewards
+    */
+    function terminateVaultRewards() external {
+        if (vaultInfo[msg.sender].allocPoint != 0) {
+            _setAllocPoint(msg.sender, 0);
+        }
+        vaultRewardsTerminated[msg.sender] = true;
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {

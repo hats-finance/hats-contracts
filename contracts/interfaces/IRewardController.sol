@@ -8,4 +8,6 @@ interface IRewardController {
     function setAllocPoint(address _vault, uint256 _allocPoint) external;
 
     function claimReward(address _vault, address _user) external;
+
+    function terminateVaultRewards() external;
 }

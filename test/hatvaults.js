@@ -222,18 +222,116 @@ contract("HatVaults", (accounts) => {
 
   it("Set reward controller", async () => {
     await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
     assert.equal((await vault.rewardController()), rewardController.address);
 
     try {
-      await vault.setRewardController(accounts[2], { from: accounts[1] });
-      assert(false, "only gov");
+      await vault.setRewardController();
+      assert(false, "no pending reward controller");
+    } catch (ex) {
+      assertVMException(ex, "NoPendingRewardController");
+    }
+
+    try {
+      await vault.setPendingRewardController(accounts[2], { from: accounts[1] });
+      assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await vault.setRewardController(accounts[2]);
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
+
+    try {
+      await vault.setPendingRewardController(accounts[2]);
+      assert(false, "cannot propose new reward controller while active claim exists");
+    } catch (ex) {
+      assertVMException(ex, "ActiveClaimExists");
+    }
+
+    await vault.dismissClaim(claimId);
+
+    tx = await vault.setPendingRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetPendingRewardController");
+    assert.equal(tx.logs[0].args._pendingRewardController, accounts[2]);
+
+    try {
+      await vault.setRewardController();
+      assert(false, "reward controller delay did not yet pass");
+    } catch (ex) {
+      assertVMException(ex, "NoPendingRewardController");
+    }
+
+    await utils.increaseTime(60 * 60 * 24 * 30);
+
+    try {
+      await vault.setRewardController({ from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    tx = await vault.setRewardController();
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 
     assert.equal((await vault.rewardController()), accounts[2]);
+
+    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await rewardController.setAllocPoint(vault.address, 100);
+      assert(false, "cannot reward a vault that terminated the reward controller");
+    } catch (ex) {
+      assertVMException(ex, "CannotAddTerminatedVault");
+    }
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount, 0);
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
   });
 
   it("setCommittee", async () => {
