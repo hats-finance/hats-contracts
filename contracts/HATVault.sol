@@ -78,7 +78,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
-    uint256 public constant MAX_FEE = 200; // Max fee is 2%
+    uint256 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
@@ -383,7 +383,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setWithdrawalFee}. */
     function setWithdrawalFee(uint256 _fee) external onlyFeeSetter {
-        if (_fee > MAX_FEE) revert WithdrawalFeeTooBig();
+        if (_fee > MAX_WITHDRAWAL_FEE) revert WithdrawalFeeTooBig();
         withdrawalFee = _fee;
         emit SetWithdrawalFee(_fee);
     }
@@ -490,7 +490,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
         // since last withdrawRequest (meaning the last withdraw request had expired)
-        // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
             withdrawEnableStartTime[msg.sender] +
@@ -672,6 +671,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         super._deposit(caller, receiver, assets, shares);
     }
 
+    // amount of shares correspond with assets + fee
     function _withdraw(
         address caller,
         address receiver,

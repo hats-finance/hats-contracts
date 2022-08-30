@@ -323,7 +323,7 @@ interface IHATVault is IERC4626Upgradeable {
     /**
     * @notice Called by the registry's fee setter to set the fee for 
     * withdrawals from the vault.
-    * @param _fee The new fee. Must be smaller then `MAX_FEE`
+    * @param _fee The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE`
     */
     function setWithdrawalFee(uint256 _fee) external;
 

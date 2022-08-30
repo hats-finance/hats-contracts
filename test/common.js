@@ -155,7 +155,7 @@ const setup = async function(
 
   return {
     arbitrator,
-    committee,
+    committee, // accounts[1]
     hatToken,
     owner: accounts[0],
     registry,
