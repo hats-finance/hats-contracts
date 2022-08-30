@@ -1450,7 +1450,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.withdrawalFee(), 200);
   });
 
-  it.only("Withdrawal fee is paid correctly", async () => {
+  it("Withdrawal fee is paid correctly", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
@@ -1508,18 +1508,17 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei("1")
     );
 
-    await advanceToSafetyPeriod();
+   
+    await assertFunctionRaisesException(
+      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
+      "WithdrawMoreThanMax"
+    );
     // however the stakes can maxWithdraw only 0.98 (1 minus fees)
     assert.equal(
       (await vault.maxWithdraw(staker)),
       web3.utils.toWei("0.98")
     );
-    
-    await assertFunctionRaisesException(
-      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
-      "WithdrawMoreThanMax"
-    );
-
+ 
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
     assert.equal(
