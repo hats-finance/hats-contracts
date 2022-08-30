@@ -15,19 +15,20 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 
 More precisely:
 
-1. `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
+1. **SUMBISSION** `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
   - `submitClaim` can only be called by the committee
   - `submitClaim` can only be called during the safety period
   - `submitClaim` can only be called if no other active claim exists
   - only the committe can call `submitClaim`
   - emergencyPause is not in effect
-1. The `arbitrator` can call `challengeClaim(_claimId)` at any time during the `challengePeriod`
+1. **CHALLENGE** `challengeClaim(_claimId)` 
+  - can only be called during the challengePeriod
+  - Only the  `arbitrator` or the `registry.owner` can challenge a claim
   - _claimId must be the id of the active claim
   - the claim has not been challenged before
   - challengePeriod must not have expired
   - only the arbitrator can call challengeClaim
-1. `approveClaim(_claimId, bountyPercentage)`
-
+1. **APPROVAL** `approveClaim(_claimId, bountyPercentage)`
   - During the challengePeriod:
     - the claim must be challenged
     - only arbitrator can call aproveClaim
@@ -35,10 +36,14 @@ More precisely:
     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
     - the bountyPercentage must be that of the original claim
   - _claimId must be the id of the active claim
-1. `dismissClaim(_claimId)`
-  - 
+1. **DIMISSAL** `dismissClaim(_claimId)`
+  -  if a claim was challenged:
+    - before challengeTimeoutPeriod, only the arbitrator can dismiss the claim
+    - after challengeTimeOutPeriod, anyone can dismiss the claim
+  - if the claim was never challenged, then after challengePeriod + challengeTimeoutPeriod, anoyone can dismiss the claim
+  
 
-During the time from submitting a claim to its resolution, the vault will be locked for withdrawals. 
+During the time from submitting a claim to its resolution, the vault will be locked for withdrawals, and no new claims can be submitted
 
 
 
