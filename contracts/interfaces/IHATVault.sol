@@ -482,7 +482,7 @@ interface IHATVault is IERC4626Upgradeable {
     * safety periods or while there is an active claim for a bounty payout.
     * @param receiver Address of receiver of the funds 
     */
-    function emergencyWithdraw(address receiver) external returns (uint256 assets) {
+    function emergencyWithdraw(address receiver) external returns (uint256 assets);
 
     /** 
     * @notice Withdraw previously deposited funds from the vault, without
