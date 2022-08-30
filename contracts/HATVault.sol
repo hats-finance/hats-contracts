@@ -108,6 +108,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
 
+    mapping(address => bool) public rewardControllerRemoved;
+
     // the percentage of the total bounty to be swapped to HATs and sent to governance
     uint256 internal bountyGovernanceHAT;
     // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
@@ -432,7 +434,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setRewardController}. */
     function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
-        rewardController.terminateVaultRewards();
+        rewardControllerRemoved[address(rewardController)] = true;
+        if (rewardControllerRemoved[address(_newRewardController)]) revert CannotSetToPerviousRewardController();
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
