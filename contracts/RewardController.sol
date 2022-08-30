@@ -147,7 +147,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+        if (userShares != 0) {
+            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+        }
 
         if (_sharesChange != 0) {
             if (_isDeposit) {
@@ -263,6 +265,15 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             _setAllocPoint(msg.sender, 0);
         }
         vaultRewardsTerminated[msg.sender] = true;
+    }
+
+    /**
+    * @notice Transfer any tokens held in this contract to the owner
+    * @param _token the token to sweep
+    * @param _amount the amount of token to sweep
+    */
+    function sweepToken(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
+        _token.safeTransfer(msg.sender, _amount);
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {
