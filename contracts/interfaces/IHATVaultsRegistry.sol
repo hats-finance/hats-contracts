@@ -138,9 +138,9 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Raised on {setDefaultHATBountySplit} if the split to be set is
-     * greater than 100% (defined as 10000)
+     * greater than 20% (defined as 2000)
      */
-    error TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
 
     /**
      * @notice Raised on {setDefaultChallengePeriod} if the challenge period
@@ -263,7 +263,8 @@ interface IHATVaultsRegistry {
         uint256 _maxBounty,
         IHATVault.BountySplit _bountySplit,
         uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods
+        uint256 _bountyVestingPeriods,
+        bool _isPaused
     );
     
     /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
@@ -283,9 +284,10 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Emitted when a new default HAT bounty split is set
-     * @param _defaultHATBountySplit The new default HAT bounty split
+     * @param _defaultBountyGovernanceHAT The new default HAT bounty part sent to governance
+     * @param _defaultBountyHackerHATVested The new default HAT bounty part vseted for the hacker
      */
-    event SetDefaultHATBountySplit(HATBountySplit _defaultHATBountySplit);
+    event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested);
 
     /**
      * @notice Emitted when a new default arbitrator is set
@@ -305,6 +307,12 @@ interface IHATVaultsRegistry {
      * period
      */
     event SetDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod);
+
+    /**
+     * @notice Emitted when the default arbitrator can change bounty is set
+     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty of claims
+     */
+    event SetDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty);
 
     /** @notice Emitted when the system is put into emergency pause/unpause
      * @param _isEmergencyPaused Is the system in an emergency pause
@@ -330,23 +338,26 @@ interface IHATVaultsRegistry {
     function logClaim(string memory _descriptionHash) external payable;
 
     /**
-     * @notice Called by governance to set the default HAT token bounty split
-     * upon an approval. This default value is used when creating a new vault.
-     * @param _defaultHATBountySplit The HAT bounty split
+     * @notice Called by governance to set the default percentage of each claim bounty
+     * that will be swapped for hats and sent to the governance or vested for the hacker
+     * @param _defaultBountyGovernanceHAT The HAT bounty for governance
+     * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
      */
     function setDefaultHATBountySplit(
-        HATBountySplit memory _defaultHATBountySplit
+        uint256 _defaultBountyGovernanceHAT,
+        uint256 _defaultBountyHackerHATVested
     ) 
         external;
 
     /** 
      * @dev Check that a given hats bounty split is legal, meaning that:
-     *   Each entry is a number between 0 and less than `HUNDRED_PERCENT`.
-     *   Total splits should be less than `HUNDRED_PERCENT`.
+     *   Each entry is a number between 0 and less than `MAX_HAT_SPLIT`.
+     *   Total splits should be less than `MAX_HAT_SPLIT`.
      * function will revert in case the bounty split is not legal.
-     * @param _hatBountySplit The bounty split to check
+     * @param _bountyGovernanceHAT The HAT bounty for governance
+     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
      */
-    function validateHATSplit(HATBountySplit memory _hatBountySplit)
+    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
          external
          pure;
 
@@ -371,6 +382,12 @@ interface IHATVaultsRegistry {
         uint256 _defaultChallengeTimeOutPeriod
     ) 
         external;
+
+    /**
+     * @notice Called by governance to set Whether the arbitrator can change bounty of claims.
+     * @param _defaultArbitratorCanChangeBounty The default for whether the arbitrator can change bounty of claims
+     */
+    function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external;
 
     /**
      * @notice Check that the given challenge period is legal, meaning that it
@@ -462,10 +479,10 @@ interface IHATVaultsRegistry {
      *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
      *   Total splits should be equal to `HUNDRED_PERCENT`.
      * @param _descriptionHash Hash of the vault description.
-     * @param _bountyVestingParams Vesting params for the part of the bounty
-     * that is paid vested in the vault's native token:
-     *        _bountyVestingParams[0] - vesting duration
-     *        _bountyVestingParams[1] - vesting periods
+     * @param _bountyVestingDuration Vesting duration for the part of the bounty
+     * that is paid vested in the vault's native token
+     * @param _bountyVestingPeriods Vesting periods for the part of the bounty
+     * that is paid vested in the vault's native token
      * @param _isPaused Whether to initialize the vault with deposits disabled
      * @return vault The address of the new vault
      */
@@ -477,7 +494,8 @@ interface IHATVaultsRegistry {
         uint256 _maxBounty,
         IHATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
-        uint256[2] memory _bountyVestingParams,
+        uint256 _bountyVestingDuration,
+        uint256 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 

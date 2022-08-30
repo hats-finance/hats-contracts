@@ -47,6 +47,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IHATVault is IERC4626Upgradeable {
 
+    enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
+
     // How to divide the bounty - after deducting the part that is swapped to
     // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
     // values are in percentages and should add up to 100% (defined as 10000)
@@ -154,6 +156,8 @@ interface IHATVault is IERC4626Upgradeable {
     error CommitteeNotCheckedInYet();
     // Not enough user balance
     error NotEnoughUserBalance();
+    // Only arbitrator or registry owner
+    error OnlyArbitratorOrRegistryOwner();
     // Only arbitrator
     error OnlyArbitrator();
     // Unchalleged claim can only be approved if challenge period is over
@@ -211,10 +215,11 @@ interface IHATVault is IERC4626Upgradeable {
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplit(IHATVaultsRegistry.HATBountySplit _hatBountySplit);
+    event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
+    event SetArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty);
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
@@ -254,7 +259,7 @@ interface IHATVault is IERC4626Upgradeable {
 
    
     /**
-    * @notice Called by the arbitrator to challenge a claim for a bounty
+    * @notice Called by the arbitrator or governance to challenge a claim for a bounty
     * payout that had been previously submitted by the committee.
     * Can only be called during the challenge period after submission of the
     * claim.
@@ -374,11 +379,12 @@ interface IHATVault is IERC4626Upgradeable {
     * split upon an approval.
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
-    * @param _hatBountySplit The HAT bounty split
-    * @dev see {HATVaultsRegistry-HATBountySplit} for more details
+    * @param _bountyGovernanceHAT The HAT bounty for governance
+    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
     function setHATBountySplit(
-        IHATVaultsRegistry.HATBountySplit memory _hatBountySplit
+        uint256 _bountyGovernanceHAT,
+        uint256 _bountyHackerHATVested
     ) 
         external;
 
@@ -409,6 +415,15 @@ interface IHATVault is IERC4626Upgradeable {
     */
     function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
         external;
+
+    /**
+    * @notice Called by the registry's owner to set whether the arbitrator
+    * can change a claim bounty percentage
+    * If the value passed is the special "null" value the vault will use the
+    * registry's default value.
+    * @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage
+    */
+    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external;
 
     /* -------------------------------------------------------------------------------- */
 
@@ -505,16 +520,20 @@ interface IHATVault is IERC4626Upgradeable {
     /* --------------------------------- Getters -------------------------------------- */
 
     /** 
-    * @notice Returns the vault HAT bounty split
+    * @notice Returns the vault HAT bounty split part that goes to the governance
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split
-    * @dev See {HATVaultsRegistry-HATBountySplit} for more details
+    * @return The vault's HAT bounty split part that goes to the governance
     */
-    function getHATBountySplit() 
-        external
-        view
-        returns(IHATVaultsRegistry.HATBountySplit memory);
+    function getBountyGovernanceHAT() external view returns(uint256);
+    
+    /** 
+    * @notice Returns the vault HAT bounty split part that is veested for the hacker
+    * If no specific value for this vault has been set, the registry's default
+    * value will be returned.
+    * @return The vault's HAT bounty split part that is veested for the hacker
+    */
+    function getBountyHackerHATVested() external view returns(uint256);
 
     /** 
     * @notice Returns the address of the vault's arbitrator

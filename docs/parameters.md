@@ -3,16 +3,18 @@
 | parameter  | scope| default | limits  |  setter | 
 |-|-|-|-|-|
 |`isEmergencyPaused`|global|0 | - |`setEmergencyPaused`|
-|`defaultHATBountySplit.governanceHAT`|global ||  |`registry.setDefaultHATBountySplit`
-|`bountySplit.governanceHAT`|vault || |`vault.setHATBountySplit`
-|`defaultHATBountySplit.hackerHATVested`|global|| |`registry.setDefaultHATBountySplit`
-|`bountySplit.hackerHATVested`|vault || |`vault.setHATBountySplit`
+|`defaultBountyovernanceHAT`|global ||  |`registry.setDefaultHATBountySplit`
+|`bountyGovernanceHAT`|vault || |`vault.setHATBountySplit`
+|`defaultBountyhackerHATVested`|global|| |`registry.setDefaultHATBountySplit`
+|`bountyHackerHATVested`|vault || |`vault.setHATBountySplit`
 |`defaultArbitrator`|global|registry.owner| | `registry.setDefaultArbitrator`
 |`arbitrator`|vault|| |  `vault.setArbitrator`
 |`defaultChallengePeriod`|global| 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod`
 |`challengePeriod`|vault|3 days | >= 1 days, <= 5 days |`vault.setChallengePeriod`
 |`defaultChallengeTimeOutPeriod`|global| 5 weeks | >= 2 days, <= 85 days|  `registry.setDefaultChallengeTimeOutPeriod`
 |`challengeTimeOutPeriod`|vault| 5 weeks | >= 2 days, <= 85 days|`vault.setChallengeTimeOutPeriod`
+|`defaultArbitratorCanChangeBounty`|global|true| | `registry.setDefaultArbitratorCanChangeBounty`
+|`arbitratorCanChangeBounty`|vault|| |  `vault.setArbitratorCanChangeBounty`
 |`isVaultVisible`|vault| false ||`setVaultVisibility(_vault, _visible)`
 |`feeSetter`|global|zero address| |`setFeeSetter`
 |`withdrawRequestPendingPeriod`|global|7 days | <= 90 days|`setWithdrawRequestParams`

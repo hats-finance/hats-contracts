@@ -105,6 +105,24 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 85);
   });
 
+  it("Set default arbitrator can change bounty", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), true);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), true);
+
+    await assertFunctionRaisesException(
+      registry.setDefaultArbitratorCanChangeBounty(false, { from: accounts[1] }),
+      "Ownable: caller is not the owner"
+    );
+
+    tx = await registry.setDefaultArbitratorCanChangeBounty(false);
+
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), false);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), false);
+    assert.equal(tx.logs[0].event, "SetDefaultArbitratorCanChangeBounty");
+    assert.equal(tx.logs[0].args._defaultArbitratorCanChangeBounty, false);
+  });
 
   it("Set vault arbitration parameters", async () => {
     const { registry, vault } = await setup(
@@ -119,6 +137,9 @@ contract("Registry Arbitrator", (accounts) => {
 
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
+
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), true);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), true);
 
     await assertFunctionRaisesException(
       vault.setArbitrator(
@@ -145,6 +166,13 @@ contract("Registry Arbitrator", (accounts) => {
     await assertFunctionRaisesException(
       vault.setChallengePeriod(60 * 60 * 24 - 1),
       "ChallengePeriodTooShort"
+    );
+    await assertFunctionRaisesException(
+      vault.setArbitratorCanChangeBounty(
+        0,
+        { from: accounts[1] }
+      ),
+      "OnlyRegistryOwner"
     );
 
     await assertFunctionRaisesException(
@@ -174,6 +202,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 2);
 
+    tx = await vault.setArbitratorCanChangeBounty(1);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, 1);
+
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[2]);
 
@@ -182,6 +214,9 @@ contract("Registry Arbitrator", (accounts) => {
 
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 2);
+
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), true);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), true);
 
     tx = await vault.setArbitrator(accounts[3]);
     assert.equal(tx.logs[0].event, "SetArbitrator");
@@ -195,6 +230,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 85);
 
+    tx = await vault.setArbitratorCanChangeBounty(0);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, false);
+
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[3]);
 
@@ -203,6 +242,9 @@ contract("Registry Arbitrator", (accounts) => {
 
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
+
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), true);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), false);
 
     tx = await vault.setArbitrator(await vault.NULL_ADDRESS());
     assert.equal(tx.logs[0].event, "SetArbitrator");
@@ -216,6 +258,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod.toString(), (await vault.NULL_UINT()).toString());
 
+    tx = await vault.setArbitratorCanChangeBounty(2);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, 2);
+
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[0]);
 
@@ -224,8 +270,10 @@ contract("Registry Arbitrator", (accounts) => {
 
     assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
     assert.equal(await vault.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
-  });
 
+    assert.equal(await registry.defaultArbitratorCanChangeBounty(), true);
+    assert.equal(await vault.getArbitratorCanChangeBounty(), true);
+  });
 
   it("No challenge, claim times out: anyone can approve claim", async () => {
     const { registry, vault, someAccount } = await setup(accounts);
@@ -325,6 +373,53 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[8].args._bountyPercentage.toString(), "8000");
   });
 
+  it("Arbitrator can only change bounty if can change bounty flag is true", async () => {
+    const { registry, vault, stakingToken } = await setup(accounts);
+    await advanceToNonSafetyPeriod(registry);
+    // set challenge period to one day
+    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+
+    const staker = accounts[1];
+    await registry.setDefaultArbitrator(accounts[3]);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await advanceToSafetyPeriod(registry);
+
+    await vault.setArbitratorCanChangeBounty(0);
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await vault.challengeClaim(claimId, {from: accounts[3] });
+
+    // this will only affect the next claim
+    await vault.setArbitratorCanChangeBounty(1);
+
+    let tx = await vault.approveClaim(claimId, 1234, {
+      from: accounts[3],
+    });
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
+    assert.equal(tx.logs[8].args._bountyPercentage.toString(), "8000");
+
+    claimId = await submitClaim(vault, { accounts });
+
+    await vault.challengeClaim(claimId, {from: accounts[3] });
+
+    tx = await vault.approveClaim(claimId, 1234, {
+      from: accounts[3],
+    });
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
+    assert.equal(tx.logs[8].args._bountyPercentage.toString(), "1234");
+    
+  });
+
   it("Arbitrator cannot challenge after challenge period", async () => {
     const { registry, vault, stakingToken } = await setup(accounts);
     await advanceToNonSafetyPeriod(registry);
@@ -381,17 +476,12 @@ contract("Registry Arbitrator", (accounts) => {
 
     let claimId = await submitClaim(vault, { accounts });
 
-    // only arbitrator can challenge the claim
+    // only arbitrator and governance can challenge the claim
     await assertFunctionRaisesException(
       vault.challengeClaim(claimId, { from: committee }),
-      "OnlyArbitrator"
+      "OnlyArbitratorOrRegistryOwner"
     );
 
-    // only arbitrator can challenge the claim
-    await assertFunctionRaisesException(
-      vault.challengeClaim(claimId, { from: owner }),
-      "OnlyArbitrator"
-    );
     let tx = await vault.challengeClaim(claimId, { from: arbitrator });
     assert.equal(tx.logs[0].event, "ChallengeClaim");
     assert.equal(tx.logs[0].args._claimId, claimId);
@@ -453,6 +543,82 @@ contract("Registry Arbitrator", (accounts) => {
     assert.isTrue(
       expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
     );
+  });
+
+  it("challenge - governance can challenge claim", async () => {
+    const { registry, vault, stakingToken, arbitrator } = await setup(accounts);
+    // set challenge period to one day
+    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+    const owner = accounts[0];
+    const staker = accounts[1];
+    await advanceToSafetyPeriod(registry);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    let tx = await vault.challengeClaim(claimId, { from: owner });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    await vault.dismissClaim(claimId, { from: arbitrator });
+  });
+
+  it("challenge - arbitrator changes after claim submitted", async () => {
+    const { registry, vault, stakingToken, arbitrator } = await setup(accounts);
+    // set challenge period to one day
+    await registry.setDefaultChallengePeriod(60 * 60 * 24);
+    const staker = accounts[1];
+    const newArbitrator = accounts[3];
+    await advanceToSafetyPeriod(registry);
+
+    // we send some funds to the vault so we can pay out later when approveClaim is called
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await vault.setArbitrator(newArbitrator);
+    // only arbitrator at the time of submission and governance can challenge the claim
+    await assertFunctionRaisesException(
+      vault.challengeClaim(claimId, { from: newArbitrator }),
+      "OnlyArbitratorOrRegistryOwner"
+    );
+
+    let tx = await vault.challengeClaim(claimId, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+    
+    await assertFunctionRaisesException(
+      vault.dismissClaim(claimId, { from: newArbitrator }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await vault.dismissClaim(claimId, { from: arbitrator });
+
+    claimId = await submitClaim(vault, { accounts });
+    await assertFunctionRaisesException(
+      vault.challengeClaim(claimId, { from: arbitrator }),
+      "OnlyArbitratorOrRegistryOwner"
+    );
+    tx = await vault.challengeClaim(claimId, { from: newArbitrator });
+    assert.equal(tx.logs[0].event, "ChallengeClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    await assertFunctionRaisesException(
+      vault.dismissClaim(claimId, { from: arbitrator }),
+      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    await vault.dismissClaim(claimId, { from: newArbitrator });
   });
 
   it("anyone can dismiss Claim after challengeTimeOutPeriod", async () => {

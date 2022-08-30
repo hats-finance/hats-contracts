@@ -11,6 +11,7 @@ import "./interfaces/IRewardController.sol";
 import "./interfaces/IHATVaultsRegistry.sol";
 import "./HATVault.sol";
 
+
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
  * @author Hats.finance
  * @notice Hats.finance is a proactive bounty protocol for white hat hackers and
@@ -46,6 +47,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 public constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -65,11 +67,19 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // asset => amount
     mapping(address => uint256) public governanceHatReward;
 
-    IHATVaultsRegistry.HATBountySplit public defaultHATBountySplit;
+    // How the bountyGovernanceHAT and bountyHackerHATVested set how to divide the hats 
+    // bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
+    // The precentages are taken from the total bounty
+ 
+    // the default percentage of the total bounty to be swapped to HATs and sent to governance
+    uint256 public defaultBountyGovernanceHAT;
+    // the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+    uint256 public defaultBountyHackerHATVested;
 
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
+    bool public defaultArbitratorCanChangeBounty;
 
     bool public isEmergencyPaused;
 
@@ -78,10 +88,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     * @param _hatVaultImplementation The hat vault implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
-    * @param _defaultHATBountySplit The default way to split the hat bounty betweeen
-    * the hacker and the governance
-    *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-    *   Total splits should be less than `HUNDRED_PERCENT`.
+    * @param _bountyGovernanceHAT The default percentage of a claim's total
+    * bounty to be swapped for HAT and sent to the governance
+    * @param _bountyHackerHATVested The default percentage of a claim's total
+    * bounty to be swapped for HAT and sent to a vesting contract for the hacker
+    *   _bountyGovernanceHAT + _bountyHackerHATVested must be less
+    *    than `HUNDRED_PERCENT`.
     * @param _tokenLockFactory Address of the token lock factory to be used
     * to create a vesting contract for the approved claim reporter.
     */
@@ -89,15 +101,15 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _hatVaultImplementation,
         address _hatGovernance,
         address _HAT,
-        IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit,
+        uint256 _bountyGovernanceHAT,
+        uint256 _bountyHackerHATVested,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
         HAT = IERC20(_HAT);
 
-        validateHATSplit(_defaultHATBountySplit);
-        defaultHATBountySplit = _defaultHATBountySplit;
+        validateHATSplit(_bountyGovernanceHAT, _bountyHackerHATVested);
         tokenLockFactory = _tokenLockFactory;
         generalParameters = IHATVaultsRegistry.GeneralParameters({
             hatVestingDuration: 90 days,
@@ -110,9 +122,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             claimFee: 0
         });
 
+        defaultBountyGovernanceHAT = _bountyGovernanceHAT;
+        defaultBountyHackerHATVested = _bountyHackerHATVested;
         defaultArbitrator = _hatGovernance;
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
+        defaultArbitratorCanChangeBounty = true;
     }
 
     /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */
@@ -133,10 +148,15 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultHATBountySplit}. */
-    function setDefaultHATBountySplit(IHATVaultsRegistry.HATBountySplit memory _defaultHATBountySplit) external onlyOwner { 
-        validateHATSplit(_defaultHATBountySplit);
-        defaultHATBountySplit = _defaultHATBountySplit;
-        emit SetDefaultHATBountySplit(_defaultHATBountySplit);
+    function setDefaultHATBountySplit(
+        uint256 _defaultBountyGovernanceHAT,
+        uint256 _defaultBountyHackerHATVested
+    ) external onlyOwner {
+        validateHATSplit(_defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
+        defaultBountyGovernanceHAT = _defaultBountyGovernanceHAT;
+        defaultBountyHackerHATVested = _defaultBountyHackerHATVested;
+        emit SetDefaultHATBountySplit(_defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
+
     }
    
     /** @notice See {IHATVaultsRegistry-setDefaultArbitrator}. */
@@ -157,6 +177,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
+    }
+
+    /** @notice See {IHATVaultsRegistry-setDefaultArbitratorCanChangeBounty}. */
+    function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external onlyOwner {
+        defaultArbitratorCanChangeBounty = _defaultArbitratorCanChangeBounty;
+        emit SetDefaultArbitratorCanChangeBounty(_defaultArbitratorCanChangeBounty);
     }
    
     /** @notice See {IHATVaultsRegistry-setFeeSetter}. */
@@ -222,7 +248,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 _maxBounty,
         HATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
-        uint256[2] memory _bountyVestingParams,
+        uint256 _bountyVestingDuration,
+        uint256 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 
@@ -233,8 +260,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         HATVault(vault).initialize(
             IHATVault.VaultInitParams({
                 rewardController: _rewardController,
-                vestingDuration: _bountyVestingParams[0],
-                vestingPeriods: _bountyVestingParams[1],
+                vestingDuration: _bountyVestingDuration,
+                vestingPeriods: _bountyVestingPeriods,
                 maxBounty: _maxBounty,
                 bountySplit: _bountySplit,
                 asset: _asset,
@@ -254,8 +281,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _descriptionHash,
             _maxBounty,
             _bountySplit,
-            _bountyVestingParams[0],
-            _bountyVestingParams[1]
+            _bountyVestingDuration,
+            _bountyVestingPeriods,
+            _isPaused
         );
     }
 
@@ -338,10 +366,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-validateHATSplit}. */
-    function validateHATSplit(IHATVaultsRegistry.HATBountySplit memory _hatBountySplit) public pure {
-        if (_hatBountySplit.governanceHat +
-            _hatBountySplit.hackerHatVested >= HUNDRED_PERCENT)
-            revert TotalHatsSplitPercentageShouldBeLessThanHundredPercent();
+    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) public pure {
+        if (_bountyGovernanceHAT + _bountyHackerHATVested > MAX_HAT_SPLIT)
+            revert TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
     }
 
     /** @notice See {IHATVaultsRegistry-validateChallengePeriod}. */
