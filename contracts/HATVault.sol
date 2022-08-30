@@ -249,19 +249,27 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         Claim memory claim = activeClaim;
         delete activeClaim;
         
+        
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) revert ClaimExpired();
+        if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
+            // cannot approve an expired claim
+            revert ClaimExpired();
+        } 
         if (claim.challengedAt != 0) {
+            // the claim was challenged, and only the arbitrator can approve it, within the timeout period
             if (
                 msg.sender != claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
-            )
+            ) {
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+            }
+            // the arbitrator can update the bounty if needed
             if(claim.arbitratorCanChangeBounty) {
                 claim.bountyPercentage = _bountyPercentage;
             }
         } else {
+            // the claim can be approved by anyone if the challengePeriod passed without a challenge
             if (
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp <= claim.createdAt + claim.challengePeriod
@@ -335,7 +343,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 block.timestamp < claim.challengedAt + claim.challengeTimeOutPeriod && 
                 msg.sender != claim.arbitrator
             ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
-        }
+        } // else the claim is expired and should be dismissed
         delete activeClaim;
 
         emit DismissClaim(_claimId);
