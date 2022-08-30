@@ -419,7 +419,7 @@ contract("HatVaults", (accounts) => {
     await vault.emergencyWithdraw(staker, { from: staker });
   });
 
-  it.only("Reward controller sweep token", async () => {
+  it("Reward controller sweep token", async () => {
     await setUpGlobalVars(accounts);
 
     var staker = accounts[1];
