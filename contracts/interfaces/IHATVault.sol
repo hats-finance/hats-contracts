@@ -158,8 +158,6 @@ interface IHATVault is IERC4626Upgradeable {
     error NotEnoughUserBalance();
     // Only arbitrator or registry owner
     error OnlyArbitratorOrRegistryOwner();
-    // Only arbitrator
-    error OnlyArbitrator();
     // Unchalleged claim can only be approved if challenge period is over
     error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
     // Challenged claim can only be approved by arbitrator before the challenge timeout period
