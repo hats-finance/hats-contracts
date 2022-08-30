@@ -277,6 +277,7 @@ contract("HatVaults", (accounts) => {
       (await hatToken.balanceOf(staker)).toString(),
       "0"
     );
+    assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
   });
 
   it("Set reward controller for vault with no alloc point", async () => {
