@@ -692,6 +692,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address to,
         uint256 amount
     ) internal virtual override {
+        // deposit or mint
         if (to != address(0)) {
             if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
@@ -704,7 +705,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             }
             rewardController.commitUserBalance(to, amount, true);
         }
-
+        // withdraw or redeem
         if (from != address(0)) {
             if (activeClaim.createdAt != 0) revert ActiveClaimExists();
             if (!_isWithdrawEnabledForUser(from)) revert InvalidWithdrawRequest();

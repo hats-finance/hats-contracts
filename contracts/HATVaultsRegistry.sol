@@ -52,7 +52,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
     
-    // vault address => bool
+    // vault address => is visible
     mapping(address => bool) public isVaultVisible;
 
     // PARAMETERS FOR ALL VAULTS

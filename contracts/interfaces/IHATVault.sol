@@ -283,9 +283,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Dismiss the active claim for bounty payout submitted by the
-    * committee. Can only be called if the claim has been challanged.
-    * Called either by the arbitrator, or by anyone if the claim is after the
-    * challenge timeout period.
+    * committee.
+    * Called either by the arbitrator, or by anyone if the claim has timed out.
     * @param _claimId The claim ID
     */
     function dismissClaim(bytes32 _claimId) external;
