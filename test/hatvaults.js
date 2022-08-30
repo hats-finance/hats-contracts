@@ -374,16 +374,6 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await vault.rewardController()), accounts[2]);
 
-    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
-    assert.equal(
-      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
-      "0"
-    );
-    assert.equal(
-      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
-      "0"
-    );
-
     try {
       await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
       assert(false, "deposit fails with bad reward controller");
