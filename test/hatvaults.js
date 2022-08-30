@@ -278,6 +278,13 @@ contract("HatVaults", (accounts) => {
       "0"
     );
     assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
+
+    try {
+      await vault.setRewardController(rewardController.address);
+      assert(false, "cannot set to a previous reward controller");
+    } catch (ex) {
+      assertVMException(ex, "CannotSetToPerviousRewardController");
+    }
   });
 
   it("Set reward controller for vault with no alloc point", async () => {
