@@ -1451,12 +1451,9 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Withdrawal fee is paid correctly", async () => {
-    await setUpGlobalVars(accounts);
-    await hatVaultsRegistry.setFeeSetter(accounts[1]);
-
-    await vault.setWithdrawalFee(200, {
-      from: accounts[1],
-    });
+    const { registry, owner } = await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
 
     var staker = accounts[2];
     var staker2 = accounts[3];
@@ -1471,7 +1468,8 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
 
-    let governanceBalance = await stakingToken.balanceOf(accounts[0]);
+    let vaultBalance = await stakingToken.balanceOf(vault.address);
+    let governanceBalance = await stakingToken.balanceOf(owner);
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     // Staker got back the reward minus the 2% fee
@@ -1481,15 +1479,39 @@ contract("HatVaults", (accounts) => {
     );
     // Governance received the fee of 2%
     assert.equal(
-      (await stakingToken.balanceOf(accounts[0])).toString(),
+      (await stakingToken.balanceOf(owner)).toString(),
       governanceBalance
-        .add(new web3.utils.BN(web3.utils.toWei("0.02")))
-        .toString()
+        .add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString()
     );
-
+    // and the vault paid out 1 token
+    assert.equal(
+      (vaultBalance - (await stakingToken.balanceOf(vault.address))).toString(), 
+      web3.utils.toWei("1").toString() 
+    );
+    
+    // at this point, the staker has withdrawn all and has a zero balance
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("0")
+    );
+     assert.equal(
+      (await vault.maxWithdraw(staker)),
+      web3.utils.toWei("0")
+    );
+ 
     await stakingToken.mint(staker, web3.utils.toWei("0.02"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
+
+    // at this point, staker has deposited a total balance of 1e18 shares
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("1")
+    );
+     // however the stakes can maxWithdraw only 0.98 (1 minus fees)
+     assert.equal(
+      (await vault.maxWithdraw(staker)),
+      web3.utils.toWei("0.98")
+    );
     
     await assertFunctionRaisesException(
       safeWithdraw(vault, web3.utils.toWei("0.99"), staker),

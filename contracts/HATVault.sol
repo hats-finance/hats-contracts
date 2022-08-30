@@ -488,7 +488,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
         // since last withdrawRequest (meaning the last withdraw request had expired)
-        // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
             withdrawEnableStartTime[msg.sender] +
@@ -663,6 +662,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         super._deposit(caller, receiver, assets, shares);
     }
 
+    // amount of shares correspond with assets + fee
     function _withdraw(
         address caller,
         address receiver,

@@ -40,9 +40,9 @@
     "hardhat-gas-reporter": "^1.0.7",
     "hardhat-watcher": "^2.1.1",
     "mocha": "^7.1.1",
+    "solhint": "^3.3.5",
     "solidity-coverage": "^0.7.17",
-    "strip-hex-prefix": "^1.0.0",
-    "solhint": "^3.3.5"
+    "strip-hex-prefix": "^1.0.0"
   },
   "repository": {
     "type": "git",
