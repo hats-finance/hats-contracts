@@ -3984,7 +3984,9 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       expectedHackerReward.toString()
     );
 
-    
+    assert.equal(tx.logs[4].event, "SwapAndSend");
+    assert.equal(tx.logs[4].args._beneficiary, accounts[0]);
+    assert.equal((tx.logs[4].args._tokenLock, "0x0000000000000000000000000000000000000000");
     var expectedHatGovernanceReward = new web3.utils.BN(web3.utils.toWei("0.8"))
     .mul(new web3.utils.BN("600"))
     .div(new web3.utils.BN(10000)).add(new web3.utils.BN(web3.utils.toWei("0.4"))
@@ -3992,6 +3994,10 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     .div(new web3.utils.BN(10000)));
     assert.equal(
       (await hatToken.balanceOf(accounts[0])).toString(),
+      expectedHatGovernanceReward.toString()
+    );
+    assert.equal(
+      tx.logs[4].args._amountSent.toString(),
       expectedHatGovernanceReward.toString()
     );
   });
