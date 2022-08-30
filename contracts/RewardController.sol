@@ -242,7 +242,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
-            return 0;
+            return unclaimedReward[_vault][_user];
         }
         VaultInfo memory vault = vaultInfo[_vault];
         uint256 rewardPerShare = vault.rewardPerShare;
