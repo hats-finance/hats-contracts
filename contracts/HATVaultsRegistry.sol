@@ -47,6 +47,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
+    // the maximum percentage of the bounty that will be converted in HATs
     uint256 public constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
