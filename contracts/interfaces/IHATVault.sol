@@ -473,6 +473,18 @@ interface IHATVault is IERC4626Upgradeable {
         returns (uint256 assets);
 
     /** 
+    * @notice Redeem all of the user's shares in the vault for the respective amount
+    * of underlying assets without calling the reward controller, meaning user renounces
+    * their uncommited part of the reward.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * @param receiver Address of receiver of the funds 
+    */
+    function emergencyWithdraw(address receiver) external returns (uint256 assets) {
+
+    /** 
     * @notice Withdraw previously deposited funds from the vault, without
     * transferring the accumulated HAT reward.
     * Can only be performed if a withdraw request has been previously
