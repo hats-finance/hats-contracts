@@ -55,7 +55,6 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // vault address => bool
     mapping(address => bool) public isVaultVisible;
 
-
     // PARAMETERS FOR ALL VAULTS
     IHATVaultsRegistry.GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
