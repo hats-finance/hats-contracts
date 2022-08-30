@@ -268,7 +268,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-    * @notice Removes the vault from getting rewards
+    * @notice Transfer any tokens held in this contract to the owner
     * @param _token the token to sweep
     * @param _amount the amount of token to sweep
     */
