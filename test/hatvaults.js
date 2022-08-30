@@ -1451,7 +1451,7 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Withdrawal fee is paid correctly", async () => {
-    const { registry, owner } = await setUpGlobalVars(accounts);
+    const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
 
