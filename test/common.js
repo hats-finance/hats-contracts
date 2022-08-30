@@ -10,6 +10,7 @@ const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 let epochRewardPerBlock = [
   web3.utils.toWei("441.3"),
   web3.utils.toWei("441.3"),
@@ -98,7 +99,7 @@ const setup = async function(
     options.halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    options.hatBountySplit,
+    ...options.hatBountySplit,
     tokenLockFactory.address,
     true
   );
@@ -130,7 +131,8 @@ const setup = async function(
     options.maxBounty,
     options.bountySplit,
     "_descriptionHash",
-    [86400, 10],
+    86400,
+    10,
     false
   )).logs[1].args._vault);
 
@@ -231,4 +233,5 @@ module.exports = {
   advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
+  ZERO_ADDRESS
 };

@@ -25,7 +25,7 @@ const {
   epochRewardPerBlock,
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
-} = require("./hatvaults.js");
+} = require("./common.js");
 const {
   submitClaim,
   assertFunctionRaisesException,
@@ -60,7 +60,7 @@ const setup = async function(
     halvingAfterBlock,
     accounts[0],
     hatToken.address,
-    hatBountySplit,
+    ...hatBountySplit,
     tokenLockFactory.address,
     true
   );
@@ -93,7 +93,8 @@ const setup = async function(
     maxBounty,
     bountySplit,
     "_descriptionHash",
-    [86400, 10],
+    86400,
+    10,
     false
   )).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
@@ -364,7 +365,7 @@ contract("HatTimelockController", (accounts) => {
       })
     )[0];
     assert.equal(log.event, "SwapAndSend");
-    assert.equal(log.args._amountReceived.toString(), "0");
+    assert.equal(log.args._amountSent.toString(), "0");
   });
 
   it("challenge - approve Claim ", async () => {
@@ -384,7 +385,7 @@ contract("HatTimelockController", (accounts) => {
 
     assertFunctionRaisesException(
       vault.challengeClaim(claimId),
-      "OnlyArbitrator"
+      "OnlyArbitratorOrRegistryOwner"
     );
     await hatTimelockController.challengeClaim(vault.address, claimId);
 
@@ -420,7 +421,8 @@ contract("HatTimelockController", (accounts) => {
       maxBounty,
       bountySplit,
       "_descriptionHash",
-      [86400, 10],
+      86400,
+      10,
       false
     )).receipt.rawLogs[0].address);
 
