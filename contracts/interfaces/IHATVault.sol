@@ -182,6 +182,8 @@ interface IHATVault is IERC4626Upgradeable {
     error RedeemMoreThanMax();
     // System is in an emergency pause
     error SystemInEmergencyPause();
+    // Cannot set a reward controller that was already used in the past
+    error CannotSetToPerviousRewardController();
 
 
     
@@ -518,6 +520,12 @@ interface IHATVault is IERC4626Upgradeable {
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Getters -------------------------------------- */
+
+    /** 
+    * @param _rewardController the reward controller to check
+    * @return bool Whether the reward contoller was previously used in the vault and removed
+    */
+    function rewardControllerRemoved(address _rewardController) external view returns(bool);
 
     /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance

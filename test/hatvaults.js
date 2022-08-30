@@ -269,42 +269,13 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await vault.rewardController()), accounts[2]);
 
-    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    assert.equal(
-      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
-      "0"
-    );
-    assert.equal(
-      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
-      "0"
-    );
-
-    try {
-      await rewardController.setAllocPoint(vault.address, 100);
-      assert(false, "cannot reward a vault that terminated the reward controller");
-    } catch (ex) {
-      assertVMException(ex, "CannotAddTerminatedVault");
-    }
-
-    let expectedReward = await calculateExpectedReward(staker);
-
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");
     assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[0].args._amount.toString(), "0");
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      expectedReward.toString()
-    );
-
-    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount, 0);
-    assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
-      expectedReward.toString()
+      "0"
     );
   });
 
@@ -336,13 +307,6 @@ contract("HatVaults", (accounts) => {
       (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
       "0"
     );
-
-    try {
-      await rewardController.setAllocPoint(vault.address, 100);
-      assert(false, "cannot reward a vault that terminated the reward controller");
-    } catch (ex) {
-      assertVMException(ex, "CannotAddTerminatedVault");
-    }
   });
 
   it("setCommittee", async () => {
