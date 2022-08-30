@@ -279,9 +279,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             address(_asset),
             _committee,
             _rewardController,
-            _descriptionHash,
             _maxBounty,
             _bountySplit,
+            _descriptionHash,
             _bountyVestingDuration,
             _bountyVestingPeriods,
             _isPaused
@@ -374,7 +374,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     /** @notice See {IHATVaultsRegistry-validateChallengePeriod}. */
     function validateChallengePeriod(uint256 _challengePeriod) public pure {
-        if ( _challengePeriod < 1 days) revert ChallengePeriodTooShort();
+        if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
         if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 

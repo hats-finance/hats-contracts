@@ -24,7 +24,7 @@ npx hardhat test
 
 ## Security
 
-The latest audit was done on August 21, 2021
+Audit reports are in the [audit](./audit) directory.
 
 Please report any security issues you find to contact@hats.finance
 
