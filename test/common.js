@@ -68,7 +68,7 @@ const setup = async function(
 
 ) {
   const defaultOptions = {
-    startBlock : 0,
+    startBlock : (await web3.eth.getBlock("latest")).number,
     maxBounty : 8000,
     bountySplit : [7500, 2000, 500],
     hatBountySplit : [1500, 500],

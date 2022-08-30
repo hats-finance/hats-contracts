@@ -64,6 +64,9 @@ const setUpGlobalVars = async function(
   rewardInVaults = 2500000,
   challengePeriod = 60 * 60 * 24
 ) {
+  if (startBlock === 0) {
+    startBlock = (await web3.eth.getBlock("latest")).number;
+  }
   const setupVars = await setup(accounts, {
     startBlock,
     maxBounty,
@@ -1737,7 +1740,7 @@ contract("HatVaults", (accounts) => {
     //staker get stake back
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
+      (await rewardController.unclaimedReward(vault.address, staker)).toString(),
       expectedReward.toString()
     );
     try {
@@ -2329,11 +2332,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       "0"
     );
     await setUpGlobalVars(accounts, 0);
+    let startBlock = parseInt((await rewardController.startBlock()).toString());
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1,
+          startBlock,
+          startBlock + 1,
           allocPoint,
           totalAllocPoint
         )
@@ -2571,11 +2575,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let totalAllocPoint = (
       await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
+    let startBlock = parseInt((await rewardController.startBlock()).toString());
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          10,
+          startBlock,
+          startBlock + 10,
           allocPoint,
           totalAllocPoint
         )
@@ -2585,8 +2590,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          15,
+          startBlock,
+          startBlock + 15,
           allocPoint,
           totalAllocPoint
         )
@@ -2599,8 +2604,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          20,
+          startBlock,
+          startBlock + 20,
           allocPoint,
           totalAllocPoint
         )
@@ -2618,8 +2623,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1000,
+          startBlock,
+          startBlock + 1000,
           allocPoint,
           totalAllocPoint
         )
