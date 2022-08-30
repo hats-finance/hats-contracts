@@ -64,6 +64,9 @@ const setUpGlobalVars = async function(
   rewardInVaults = 2500000,
   challengePeriod = 60 * 60 * 24
 ) {
+  if (startBlock === 0) {
+    startBlock = (await web3.eth.getBlock("latest")).number;
+  }
   const setupVars = await setup(accounts, {
     startBlock,
     maxBounty,
@@ -287,6 +290,178 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("Emergency withdraw", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("3"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("3"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal((await vault.rewardController()), rewardController.address);
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
+    assert.isFalse((await rewardController.getVaultReward(vault.address, lastBlockNumber)).eq(0));
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "100"
+    );
+
+    let withdrawPeriod = (
+      await hatVaultsRegistry.generalParameters()
+    ).withdrawPeriod.toNumber();
+    let safetyPeriod = (
+      await hatVaultsRegistry.generalParameters()
+    ).safetyPeriod.toNumber();
+
+    //increase time for the case there is already pending request ..so make sure start a new one..
+    await utils.increaseTime(7 * 24 * 3600);
+    await vault.withdrawRequest({ from: staker });
+
+    //increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
+    if (currentTimeStamp % (withdrawPeriod + safetyPeriod) >= withdrawPeriod) {
+      await utils.increaseTime(
+        (currentTimeStamp % (withdrawPeriod + safetyPeriod)) +
+          safetyPeriod -
+          withdrawPeriod
+      );
+    }
+    await vault.emergencyWithdraw(staker, { from: staker });
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount, 0);
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await rewardController.getPendingReward(vault.address, accounts[0]), 0);
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    let prevExpectedReward = expectedReward;
+    expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.add(prevExpectedReward).toString()
+    );
+
+    tx = await vault.setRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "SetRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
+
+    assert.equal((await vault.rewardController()), accounts[2]);
+
+    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
+    assert.equal(
+      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "0"
+    );
+
+    try {
+      await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+      assert(false, "deposit fails with bad reward controller");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await safeRedeem(vault, web3.utils.toWei("2"), staker);
+      assert(false, "withdraw fails with bad reward controller");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await vault.emergencyWithdraw(staker, { from: staker });
+  });
+
+  it("Reward controller sweep token", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("3"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("3"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    assert.equal((await vault.rewardController()), rewardController.address);
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+
+    lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
+    assert.isFalse((await rewardController.getVaultReward(vault.address, lastBlockNumber)).eq(0));
+    assert.equal(
+      (await rewardController.vaultInfo(vault.address)).allocPoint.toString(),
+      "100"
+    );
+
+    try {
+      await rewardController.sweepToken(
+        hatToken.address,
+        await hatToken.balanceOf(rewardController.address),
+        { from: accounts[1] }
+      );
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    let amountToSweep = await hatToken.balanceOf(rewardController.address);
+    await rewardController.sweepToken(hatToken.address, amountToSweep);
+    assert.equal(
+      (await hatToken.balanceOf(rewardController.address)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await hatToken.balanceOf(accounts[0])).toString(),
+      amountToSweep.toString()
+    );
+
+    try {
+      await rewardController.claimReward(vault.address, staker, { from: staker });
+      assert(false, "can't claim reward when there are not enough rewards");
+    } catch (ex) {
+      assertVMException(ex, "HAT::_transferTokens: transfer amount exceeds balance");
+    }
+  });
+
   it("Set reward controller for vault with no alloc point", async () => {
     await setUpGlobalVars(accounts);
 
@@ -306,9 +481,9 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await vault.rewardController()), accounts[2]);
 
-    let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    let lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
     assert.equal(
-      (await rewardController.getVaultReward(vault.address, currentBlockNumber)).toString(),
+      (await rewardController.getVaultReward(vault.address, lastBlockNumber)).toString(),
       "0"
     );
     assert.equal(
@@ -1423,12 +1598,9 @@ contract("HatVaults", (accounts) => {
   });
 
   it("Withdrawal fee is paid correctly", async () => {
-    await setUpGlobalVars(accounts);
-    await hatVaultsRegistry.setFeeSetter(accounts[1]);
-
-    await vault.setWithdrawalFee(200, {
-      from: accounts[1],
-    });
+    const { registry, owner }= await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
 
     var staker = accounts[2];
     var staker2 = accounts[3];
@@ -1443,7 +1615,8 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
 
-    let governanceBalance = await stakingToken.balanceOf(accounts[0]);
+    let vaultBalance = await stakingToken.balanceOf(vault.address);
+    let governanceBalance = await stakingToken.balanceOf(owner);
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     // Staker got back the reward minus the 2% fee
@@ -1453,21 +1626,46 @@ contract("HatVaults", (accounts) => {
     );
     // Governance received the fee of 2%
     assert.equal(
-      (await stakingToken.balanceOf(accounts[0])).toString(),
+      (await stakingToken.balanceOf(owner)).toString(),
       governanceBalance
-        .add(new web3.utils.BN(web3.utils.toWei("0.02")))
-        .toString()
+        .add(new web3.utils.BN(web3.utils.toWei("0.02"))).toString()
     );
-
+    // and the vault paid out 1 token
+    assert.equal(
+      (vaultBalance - (await stakingToken.balanceOf(vault.address))).toString(), 
+      web3.utils.toWei("1").toString() 
+    );
+    
+    // at this point, the staker has withdrawn all and has a zero balance
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("0")
+    );
+     assert.equal(
+      (await vault.maxWithdraw(staker)),
+      web3.utils.toWei("0")
+    );
+ 
     await stakingToken.mint(staker, web3.utils.toWei("0.02"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
-    
+
+    // at this point, staker has deposited a total balance of 1e18 shares
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("1")
+    );
+
+   
     await assertFunctionRaisesException(
       safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
       "WithdrawMoreThanMax"
     );
-
+    // however the stakes can maxWithdraw only 0.98 (1 minus fees)
+    assert.equal(
+      (await vault.maxWithdraw(staker)),
+      web3.utils.toWei("0.98")
+    );
+ 
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
     assert.equal(
@@ -1537,7 +1735,7 @@ contract("HatVaults", (accounts) => {
     //staker get stake back
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
+      (await rewardController.unclaimedReward(vault.address, staker)).toString(),
       expectedReward.toString()
     );
     try {
@@ -2129,11 +2327,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       "0"
     );
     await setUpGlobalVars(accounts, 0);
+    let startBlock = parseInt((await rewardController.startBlock()).toString());
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1,
+          startBlock,
+          startBlock + 1,
           allocPoint,
           totalAllocPoint
         )
@@ -2371,11 +2570,12 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let totalAllocPoint = (
       await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
+    let startBlock = parseInt((await rewardController.startBlock()).toString());
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          10,
+          startBlock,
+          startBlock + 10,
           allocPoint,
           totalAllocPoint
         )
@@ -2385,8 +2585,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          15,
+          startBlock,
+          startBlock + 15,
           allocPoint,
           totalAllocPoint
         )
@@ -2399,8 +2599,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          20,
+          startBlock,
+          startBlock + 20,
           allocPoint,
           totalAllocPoint
         )
@@ -2418,8 +2618,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(
       (
         await rewardController.getRewardForBlocksRange(
-          0,
-          1000,
+          startBlock,
+          startBlock + 1000,
           allocPoint,
           totalAllocPoint
         )

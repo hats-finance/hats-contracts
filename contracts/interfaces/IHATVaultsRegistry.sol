@@ -259,9 +259,9 @@ interface IHATVaultsRegistry {
         address indexed _asset,
         address _committee,
         IRewardController _rewardController,
-        string _descriptionHash,
         uint256 _maxBounty,
         IHATVault.BountySplit _bountySplit,
+        string _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods,
         bool _isPaused

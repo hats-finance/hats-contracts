@@ -158,8 +158,6 @@ interface IHATVault is IERC4626Upgradeable {
     error NotEnoughUserBalance();
     // Only arbitrator or registry owner
     error OnlyArbitratorOrRegistryOwner();
-    // Only arbitrator
-    error OnlyArbitrator();
     // Unchalleged claim can only be approved if challenge period is over
     error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
     // Challenged claim can only be approved by arbitrator before the challenge timeout period
@@ -327,7 +325,7 @@ interface IHATVault is IERC4626Upgradeable {
     /**
     * @notice Called by the registry's fee setter to set the fee for 
     * withdrawals from the vault.
-    * @param _fee The new fee. Must be smaller then `MAX_FEE`
+    * @param _fee The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE`
     */
     function setWithdrawalFee(uint256 _fee) external;
 
@@ -473,6 +471,18 @@ interface IHATVault is IERC4626Upgradeable {
     function redeemAndClaim(uint256 shares, address receiver, address owner)
         external 
         returns (uint256 assets);
+
+    /** 
+    * @notice Redeem all of the user's shares in the vault for the respective amount
+    * of underlying assets without calling the reward controller, meaning user renounces
+    * their uncommited part of the reward.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * @param receiver Address of receiver of the funds 
+    */
+    function emergencyWithdraw(address receiver) external returns (uint256 assets);
 
     /** 
     * @notice Withdraw previously deposited funds from the vault, without
