@@ -122,6 +122,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // whether the arbitrator can change bounty of claims
     ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
 
+    bool private _isEmergencyWithdraw;
+
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
         _;
@@ -512,6 +514,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         rewardController.claimReward(address(this), owner);
     }
 
+    /** @notice See {IHATVault-emergencyWithdraw}. */
+    function emergencyWithdraw(address receiver) external returns (uint256 assets) {
+        _isEmergencyWithdraw = true;
+        assets = redeem(balanceOf(_msgSender()), receiver, _msgSender());
+        _isEmergencyWithdraw = false;
+    }
+
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
@@ -713,7 +722,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // will have to be made before next withdrawal
             withdrawEnableStartTime[from] = 0;
 
-            rewardController.commitUserBalance(from, amount, false);
+            if (!_isEmergencyWithdraw) {
+                rewardController.commitUserBalance(from, amount, false);
+            }
         }
     }
 
