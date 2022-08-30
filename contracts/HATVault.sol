@@ -526,7 +526,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-        if (assets > maxWithdraw(owner)) revert WithdrawMoreThanMax();
 
         uint256 shares = previewWithdraw(assets);
         uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
@@ -538,7 +537,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
         public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-        if (shares > maxRedeem(owner)) revert RedeemMoreThanMax();
 
         uint256 assets = previewRedeem(shares);
         uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
@@ -718,8 +716,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
 
         if (from != address(0)) {
-            if (activeClaim.createdAt != 0) revert ActiveClaimExists();
-            if (!_isWithdrawEnabledForUser(from)) revert InvalidWithdrawRequest();
+            if (amount > maxRedeem(from)) revert RedeemMoreThanMax();
             // if all is ok and withdrawal can be made - 
             // reset withdrawRequests[_pid][msg.sender] so that another withdrawRequest
             // will have to be made before next withdrawal

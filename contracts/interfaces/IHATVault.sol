@@ -132,8 +132,6 @@ interface IHATVault is IERC4626Upgradeable {
     error AmountToDepositIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
-    // Withdraw request is invalid
-    error InvalidWithdrawRequest();
     // Vesting duration is too long
     error VestingDurationTooLong();
     // Vesting periods cannot be zero
@@ -174,8 +172,6 @@ interface IHATVault is IERC4626Upgradeable {
     error CannotTransferToAnotherUserWithActiveWithdrawRequest();
     // Withdraw amount must be greater than zero
     error WithdrawMustBeGreaterThanZero();
-    // Withdraw amount cannot be more than maximum for user
-    error WithdrawMoreThanMax();
     // Redeem amount cannot be more than maximum for user
     error RedeemMoreThanMax();
     // System is in an emergency pause
