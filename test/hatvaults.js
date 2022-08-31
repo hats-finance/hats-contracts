@@ -482,6 +482,50 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("create vault", async () => {
+    await setUpGlobalVars(accounts);
+
+    let maxBounty = 8000;
+    let bountySplit = [7000, 2500, 500];
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    let tx = await hatVaultsRegistry.createVault(
+      stakingToken2.address,
+      await hatVaultsRegistry.owner(),
+      accounts[3],
+      rewardController.address,
+      maxBounty,
+      bountySplit,
+      "_descriptionHash1",
+      86400,
+      10,
+      false
+    );
+    assert.equal(tx.logs[1].event, "VaultCreated");
+    assert.equal(
+      tx.logs[1].args._vault,
+      await hatVaultsRegistry.hatVaults((await hatVaultsRegistry.getNumberOfVaults()).sub(new web3.utils.BN("1")))
+    );
+
+    assert.equal(tx.logs[1].args._asset, stakingToken2.address);
+    assert.equal(tx.logs[1].args._committee, accounts[3]);
+    assert.equal(tx.logs[1].args._rewardController, rewardController.address);
+    assert.equal(tx.logs[1].args._maxBounty, maxBounty);
+    assert.equal(tx.logs[1].args._bountySplit.hackerVested, "7000");
+    assert.equal(tx.logs[1].args._bountySplit.hacker, "2500");
+    assert.equal(tx.logs[1].args._bountySplit.committee, "500");
+    assert.equal(tx.logs[1].args._descriptionHash, "_descriptionHash1");
+    assert.equal(tx.logs[1].args._bountyVestingDuration, 86400);
+    assert.equal(tx.logs[1].args._bountyVestingPeriods, 10);
+    assert.equal(tx.logs[1].args._isPaused, false);
+    let newVault = await HATVault.at((tx).logs[1].args._vault);
+    let logs = await newVault.getPastEvents('SetVaultDescription', {
+        fromBlock: 0,
+        toBlock: (await web3.eth.getBlock("latest")).number
+    });
+    assert.equal(logs[0].event, "SetVaultDescription");
+    assert.equal(logs[0].args._descriptionHash, "_descriptionHash1");
+  });
+
   it("setCommittee", async () => {
     await setUpGlobalVars(accounts);
     assert.equal(await vault.committee(), accounts[1]);

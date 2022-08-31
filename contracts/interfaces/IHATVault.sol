@@ -100,6 +100,7 @@ interface IHATVault is IERC4626Upgradeable {
         address owner;
         address committee;
         bool isPaused;
+        string descriptionHash;
     }
 
     // Only committee
