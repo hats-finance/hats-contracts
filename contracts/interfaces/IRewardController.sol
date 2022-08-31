@@ -81,8 +81,8 @@ interface IRewardController {
 
     /**
     * @notice Called by the owner to transfer any tokens held in this contract to the owner
-    * @param _token the token to sweep
-    * @param _amount the amount of token to sweep
+    * @param _token The token to sweep
+    * @param _amount The amount of token to sweep
     */
     function sweepToken(IERC20Upgradeable _token, uint256 _amount) external;
 
