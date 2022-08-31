@@ -92,19 +92,19 @@ Below is a list of known centralization risks. It lists possible attacks or fail
 
 In the [parameters](./parameters.md) document we list which parameters are controlled by each of these roles.l
 
-|who|attack|severity|addressed?|remarks
-|-|-|-|-|-|
+|who|special power|severity|mitigation|
+|-|-|-|-|
+!registyr.owner|block many interactions by calling `setEmergencyPaused`|info (by design)| 
 |registry.owner|block all or specific transfers (including deposit/withdraw) by setting the reward controller to an invalid or malicious address|Critical|users can call `emergencyWithdraw`|
 |registry.owner|can take disproportionate share bounty by minuplating HATBountySplit |high|maxium value is limited to 20%, the setter subject to timelock, which mitigates the problem|
-|registry.owner|block logging of claims by setting a very high claimFee|info|no, but it is easy to find other communication channels|no crucial systems depend on that
-|vault.owner|block payouts by setting maxBounty to 0|medium|not addressed; typically vault.owner would be a timelock|set maxBounty to 0
-|vault.owner|block payout to hacker||**TBD**|set the bountysplit and give the entire bounty (minus registry-set fees) to the committee
-|arbitrator (and registry.owner via setArbitrator)|control bounty size||by designbut  **not sure**|arbitrator can set the bountysize to her liking, ignoring the committee|
-| committee  + registryOwner |empty vault|info|by design|registyrOwner sets arbitrator, then approves any submitted claim
-| committee + arbitrator|empty vault|info|by design|approve any payout|
-|commitee|block payouts|info|by design|by simply never calling submitClaim
-|commitee|block payouts for ever|info|by design|call  `setCommittee(0xdead)`
-|arbitrator|block payouts|info|by design|challenge and dismiss any claim
-|arbitrator|temporarily block withdrawals for challengeTimeOutPeriod (<85 days)|info|by design|
-|committee and arbitrator|block withdrawals|medium|not addressed|in each safety period before challengeTimeoutPeriod: resolving the active claim and resubmitting it, and challenging it
-|registry.owner|can block withdrawals|medium|timelock and limits on values| by playing with safety periods and withdraw request timing 
+|registry.owner|block logging of claims by setting a very high claimFee|info|no, but it is easy to find other communication channelsr,no crucial systems depend on that
+|vault.owner|block future payouts by setting maxBounty to 0|low|no users funds are at risk 
+|vault.owner|block deposits by calling `setDepositPause`|info|
+|arbitrator (and registry.owner via setArbitrator)|control bounty size||by design; we assume the arbitrator contract sets the conditions on which |
+| committee + arbitrator |empty vault by sumbitting and approving claims|info|by design|
+| committee  + registryOwner |owner can set arbitrator to itself, and then empty vault by submitting and approving claimst|info|by design|
+|commitee|block payouts by never submitting claims|info|by design|
+|commitee|block payouts for ever by calling `setCommittee(0xdead)`|info|by design|
+|arbitrator|block payouts by dismissing all claims|info|by design - registyr owner can change the arbitrator if it is malicious|
+|arbitrator|temporarily block withdrawals for challengeTimeOutPeriod (<85 days)|info|by design - registry owner cna change the arbitrator if it is malicious|
+|committee and arbitrator|block withdrawals by re-submtting and challenging it during each safetey period|info (by design)|registry owner cna change the arbitrator, if they collude
