@@ -4,6 +4,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IHATVault.sol";
@@ -33,7 +34,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     uint256 public startBlock;
     uint256 public epochLength;
     // the ERC20 contract in which rewards are distributed
-    IERC20Upgradeable public rewardToken;
+    IERC20 public rewardToken;
     // amount of tokens rewarded in each block, per epoch
     uint256[24] public epochRewardPerBlock;
     VaultUpdate[] public globalVaultsUpdates;
@@ -52,7 +53,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256[24] memory _epochRewardPerBlock
     ) external initializer {
         if (_epochLength == 0) revert EpochLengthZero();
-        rewardToken = IERC20Upgradeable(_rewardToken);
+        rewardToken = IERC20(_rewardToken);
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         epochRewardPerBlock = _epochRewardPerBlock;
@@ -229,7 +230,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /** @notice See {IRewardController-sweepToken}. */
-    function sweepToken(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
+    function sweepToken(IERC20 _token, uint256 _amount) external onlyOwner {
         _token.safeTransfer(msg.sender, _amount);
     }
 

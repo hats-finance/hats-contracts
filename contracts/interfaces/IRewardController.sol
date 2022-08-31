@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IRewardController {
     
@@ -85,6 +85,6 @@ interface IRewardController {
     * @param _token The token to sweep
     * @param _amount The amount of token to sweep
     */
-    function sweepToken(IERC20Upgradeable _token, uint256 _amount) external;
+    function sweepToken(IERC20 _token, uint256 _amount) external;
 
 }
