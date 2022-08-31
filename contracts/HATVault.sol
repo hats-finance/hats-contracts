@@ -13,6 +13,7 @@ import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 import "./HATVaultsRegistry.sol";
+
 /** @title A Hats.finance vault which holds the funds for a specific project's
 * bug bounties
 * @author Hats.finance

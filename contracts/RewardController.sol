@@ -9,13 +9,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 
-error EpochLengthZero();
+
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
-
-    // Not enough rewards to transfer to user
-    error NotEnoughRewardsToTransferToUser();
 
     struct VaultInfo {
         uint256 rewardPerShare;
@@ -32,7 +29,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     uint256 public constant REWARD_PRECISION = 1e12;
     uint256 public constant NUMBER_OF_EPOCHS = 24;
 
-    // Block from which the vaults contract will start rewarding.
+    // Block from which the contract will start rewarding.
     uint256 public startBlock;
     uint256 public epochLength;
     // the ERC20 contract in which rewards are distributed
@@ -46,12 +43,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
 
-    event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
-    event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
-
     function initialize(
         address _rewardToken,
-        address _hatGovernance,
+        address _hatsGovernance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _epochRewardPerBlock
@@ -61,7 +55,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         epochRewardPerBlock = _epochRewardPerBlock;
-        _transferOwnership(_hatGovernance);
+        _transferOwnership(_hatsGovernance);
     }
 
     function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
@@ -204,21 +198,20 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
         for (; i < globalVaultsUpdates.length-1; i++) {
             uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
-            reward =
-            reward + getRewardForBlocksRange(_fromBlock,
+            reward += _getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             vaultAllocPoint,
                                             globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
         }
-        return reward + getRewardForBlocksRange(_fromBlock,
+        return reward + _getRewardForBlocksRange(_fromBlock,
                                                 block.number,
                                                 vaultAllocPoint,
                                                 globalVaultsUpdates[i].totalAllocPoint);
     }
 
-    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
-    public
+    function _getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
+    internal
     view
     returns (uint256 reward) {
         if ((_fromBlock >= startBlock && _toBlock >= _fromBlock) && _totalAllocPoint > 0) {
@@ -262,15 +255,11 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
     /**
     * @notice Transfer any tokens held in this contract to the owner
-    * @param _token the token to sweep
-    * @param _amount the amount of token to sweep
+    * @param _token The token to sweep
+    * @param _amount The amount of token to sweep
     */
     function sweepToken(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
         _token.safeTransfer(msg.sender, _amount);
-    }
-
-    function getGlobalVaultsUpdatesLength() external view returns (uint256) {
-        return globalVaultsUpdates.length;
     }
 
 }
