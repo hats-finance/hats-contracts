@@ -1,13 +1,13 @@
-# Submitting and approving claims
+# Submitting and approving claims for bounty payouts
 
 In Hats v2, we created a generic arbitration procedure in case some party does not agree with the size of the bounty assigned by the Committee.
 
-Claims for bounty payouts can be disputed via an `arbitrator` contract which implements a dispute mechanism. User can start a dispute through the `arbitrator`, which can pause the claim until he resolves the dispute. 
+Claims can be disputed via an `arbitrator` contract which implements a dispute mechanism. User can start a dispute through the `arbitrator`, which can pause the claim until he resolves the dispute. 
 
 The HATVaults contract only implements some time-out checks in case the arbitrator does not resolve the dispute in time.
 
 1. The `committee` of a vault submits a claim 
-2. A challenge period starts,  in which the arbitrator can challenge the claim
+2. A challenge period starts, in which the arbitrator can challenge the claim
 3. If nobody challenges the claim during the challenge period, the claim is paid out as set by the committee
 4. If the claim is challenged, then the `arbitrator` can either dismiss the claim, or approve the claim but with a different amount
 5. If the arbitrator does not approve or dismiss a challenged claim, then after a dispute period, the claim is dismissed
@@ -19,9 +19,9 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 1. **SUBMISSION** 
   `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
    - `submitClaim` can only be called by the committee
-   - `submitClaim` can only be called during the safety period
+   - `submitClaim` can only be called during a safety period
    - `submitClaim` can only be called if no other active claim exists
-   - only the committe can call `submitClaim`
+   - only the committee can call `submitClaim`
    - emergencyPause must not be in effect
 1. **CHALLENGE** `challengeClaim(_claimId)` 
    - can only be called during the challengePeriod
