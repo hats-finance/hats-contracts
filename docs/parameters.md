@@ -1,82 +1,46 @@
 
 ## Settings managed by Registry owner
-| parameter  | scope| default | limits  |  setter | 
-|-|-|-|-|-|
-|`isEmergencyPaused`|global|0 | - |`setEmergencyPaused`|
-|`defaultBountyGovernanceHAT`|global |+defaultBountyHackerHatVested <= 20%|  |`registry.setDefaultHATBountySplit`
-|`bountyGovernanceHAT`|vault |+bountyHackerHatVested <= 20%| |`vault.setHATBountySplit`
-|`defaultBountyhackerHATVested`|global|+defaultBountyGovernanceHAT <= 20%| |`registry.setDefaultHATBountySplit`
-|`bountyHackerHATVested`|vault |+bountyGovernanceHAT<=20%| |`vault.setHATBountySplit`
-|`defaultArbitrator`|global|registry.owner| | `registry.setDefaultArbitrator`
-|`arbitrator`|vault|| |  `vault.setArbitrator`
-|`defaultChallengePeriod`|global| 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod`
-|`challengePeriod`|vault|3 days | >= 1 days, <= 5 days |`vault.setChallengePeriod`
-|`defaultChallengeTimeOutPeriod`|global| 5 weeks | >= 2 days, <= 85 days|  `registry.setDefaultChallengeTimeOutPeriod`
-|`challengeTimeOutPeriod`|vault| 5 weeks | >= 2 days, <= 85 days|`vault.setChallengeTimeOutPeriod`
-|`defaultArbitratorCanChangeBounty`|global|true| | `registry.setDefaultArbitratorCanChangeBounty`
-|`arbitratorCanChangeBounty`|vault|| |  `vault.setArbitratorCanChangeBounty`
-|`isVaultVisible`|vault| false ||`setVaultVisibility(_vault, _visible)`
-|`feeSetter`|global|zero address| |`setFeeSetter`
-|`withdrawRequestPendingPeriod`|global|7 days | <= 90 days|`setWithdrawRequestParams`
-|`withdrawRequestEnablePeriod`|global|7 days |>= 6 hours, <= 100 days|`setWithdrawRequestParams`
-|`claimFee`|global|0 | - |`setClaimFee`|
-|`withdrawPeriod`|global|11 hours | >= 1 hours |`setWithdrawSafetyPeriod`
-|`safetyPeriod`|global|1 hours | <= 6 hours|`setWithdrawSafetyPeriod`
-|`hatVestingDuration`|global|90 days | < 180 days |  `setHatVestingParams`
-|`hatVestingPeriods`|global| 90 | > 0, <= hatVestingDuration |  `setHatVestingParams`
-|`setMaxBountyDelay`| global|2 days |>= 2 days|`setMaxBountyDelay`
-|registry.`owner`| global| _hatGovernance | || `transferOwnership`, `renounceOwnership` 
-
-
-## Vault settings managed by feeSetter
-
-| parameter|scope|default|limits|setter| 
-|-|-|-|-|-|
-|`withdrawalFee`|vault|0| `<= 200` (<= 2%) |vault.setWithdrawalFee`
-
-## Settings managed by Vault owner
-
-|parameter|scope|default|limits|setter| 
-|-|-|-|-|-|
-|`committee`|vault|| | `setComittee` | if committee has not checked in yet
-|`vestingPeriods`|vault|| > 0|`setVestingParams` 
-|`vestingDuration`|vault||<= 120 days, `< vestingPeriods`|  `setVestingParams`
-|`bountySplit.hacker`|vault| | sum(bountysplit) = 100%|`setBountySplit` 
-|`bountySplit.hackerVested`|vault| |sum(bountysplit) = 100% |`setBountySplit` 
-|`bountySplit.committee`|vault || sum(bountysplit) = 100%, max 10% | `setBountySplit`
-|`maxBounty`|vault || `<= 9000` (<= 90%)|`setPendingMaxBounty`, `setMaxBounty` 
-|`vaultDescription`|vault || | `setVaultDescription` | only an event
-|`rewardController`|vault || | `setRewardController`
-|`depositPause`|vault || |  `setDepositPause`
-|`owner`|vault|_hatGovernance | |  `transferOwnership`, `renounceOwnership`  
-
-
--  `setCommittee` only if comittee has not checked in yet 
--  `setBountySplit` only if there is no active claim and no safetyperiod, 
-
-
-## Settings managed by vault's Comittee
-|parameter|scope|default|limits|setter| 
-|-|-|-|-|-|
-|`committee`|vault| || `vault.setComittee`
-|`committeeCheckedIn`|vault| || `vault.committeeCheckin()`
-
-## RewardController settings (managed by RewardController.owner)
-|parameter|scope|default|limits|setter| 
-|-|-|-|-|-|
-|vault's `allocPoint` | 0 | |vault| `setAllocPoint(_vault, _allocPoint)`
-|`epochRewardPerBlock`| | - |global | `setEpochRewardPerBlock`|
-
-RewardController params that are not settable:
-
-|parameter|scope|default|limits|setter| 
-|-|-|-|-|-|
-|`startBlock`|global | - | | set in `initialize` | 
-|`epochLength`|global | - || set in `initialize`|
-|`rewardToken`|global | - || set in `initialize`|
-
-## HATs governance is mitigated by a timelock
-
-The owner of the registry, and typically the owner of the vault as well, is controlled by an instance of `HATTimelockController`. This means that some function calls can not be executed immediately, but go through a time lock period.
+|owner| parameter  | scope| default | limits  |  setter | 
+|-|-|-|-|-|-|
+|`registry.owner`|`isEmergencyPaused`|global|0 | - |`setEmergencyPaused`|
+|`registry.owner`|`defaultBountyGovernanceHAT`|global |+defaultBountyHackerHatVested <= 20%|  |`registry.setDefaultHATBountySplit`
+|`registry.owner`|`bountyGovernanceHAT`|vault |+bountyHackerHatVested <= 20%| |`vault.setHATBountySplit`
+|`registry.owner`|`defaultBountyhackerHATVested`|global|+defaultBountyGovernanceHAT <= 20%| |`registry.setDefaultHATBountySplit`
+|`registry.owner`|`bountyHackerHATVested`|vault |+bountyGovernanceHAT<=20%| |`vault.setHATBountySplit`
+|`registry.owner`|`defaultArbitrator`|global|registry.owner| | `registry.setDefaultArbitrator`
+|`registry.owner`|`arbitrator`|vault|| |  `vault.setArbitrator`
+|`registry.owner`|`defaultChallengePeriod`|global| 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod`
+|`registry.owner`|`challengePeriod`|vault|3 days | >= 1 days, <= 5 days |`vault.setChallengePeriod`
+|`registry.owner`|`defaultChallengeTimeOutPeriod`|global| 5 weeks | >= 2 days, <= 85 days|  `registry.setDefaultChallengeTimeOutPeriod`
+|`registry.owner`|`challengeTimeOutPeriod`|vault| 5 weeks | >= 2 days, <= 85 days|`vault.setChallengeTimeOutPeriod`
+|`registry.owner`|`defaultArbitratorCanChangeBounty`|global|true| | `registry.setDefaultArbitratorCanChangeBounty`
+|`registry.owner`|`arbitratorCanChangeBounty`|vault|| |  `vault.setArbitratorCanChangeBounty`
+|`registry.owner`|`isVaultVisible`|vault| false ||`setVaultVisibility(_vault, _visible)`
+|`registry.owner`|`feeSetter`|global|zero address| |`setFeeSetter`
+|`registry.owner`|`withdrawRequestPendingPeriod`|global|7 days | <= 90 days|`setWithdrawRequestParams`
+|`registry.owner`|`withdrawRequestEnablePeriod`|global|7 days |>= 6 hours, <= 100 days|`setWithdrawRequestParams`
+|`registry.owner`|`claimFee`|global|0 | - |`setClaimFee`|
+|`registry.owner`|`withdrawPeriod`|global|11 hours | >= 1 hours |`setWithdrawSafetyPeriod`
+|`registry.owner`|`safetyPeriod`|global|1 hours | <= 6 hours|`setWithdrawSafetyPeriod`
+|`registry.owner`|`hatVestingDuration`|global|90 days | < 180 days |  `setHatVestingParams`
+|`registry.owner`|`hatVestingPeriods`|global| 90 | > 0, <= hatVestingDuration |  `setHatVestingParams`
+|`registry.owner`|`setMaxBountyDelay`| global|2 days |>= 2 days|`setMaxBountyDelay`
+|`registry.owner`|registry.`owner`| global| _hatGovernance | || `transferOwnership`, `renounceOwnership` 
+|`feeSetter`|`withdrawalFee`|vault|0| `<= 200` (<= 2%) |vault.setWithdrawalFee`
+|`vault.owner`|`committee`|vault|| | `setComittee` | if committee has not checked in yet
+|`vault.owner`|`vestingPeriods`|vault|| > 0|`setVestingParams` 
+|`vault.owner`|`vestingDuration`|vault||<= 120 days, `< vestingPeriods`|  `setVestingParams`
+|`vault.owner`|`bountySplit.hacker`|vault| | sum(bountysplit) = 100%|`setBountySplit` 
+|`vault.owner`|`bountySplit.hackerVested`|vault| |sum(bountysplit) = 100% |`setBountySplit` 
+|`vault.owner`|`bountySplit.committee`|vault || sum(bountysplit) = 100%, max 10% | `setBountySplit`
+|`vault.owner`|`maxBounty`|vault || `<= 9000` (<= 90%)|`setPendingMaxBounty`, `setMaxBounty` 
+|`vault.owner`|`vaultDescription`|vault || | `setVaultDescription` | only an event
+|`vault.owner`|`rewardController`|vault || | `setRewardController`
+|`vault.owner`|`depositPause`|vault || |  `setDepositPause`
+|`vault.owner`|`owner`|vault|_hatGovernance | |  `transferOwnership`, `renounceOwnership`  
+|`vault.committee`|`committee`|vault| || `vault.setComittee`
+|`vault.committee`|`committeeCheckedIn`|vault| || `vault.committeeCheckin()`
+|`rewardController.ownwer`|vault's `allocPoint` | 0 | |vault| `setAllocPoint(_vault, _allocPoint)`
+|`rewardController.ownwer`|`epochRewardPerBlock`| | - |global | `setEpochRewardPerBlock`|
 
 

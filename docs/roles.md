@@ -16,12 +16,13 @@ The HATVaults system depends a number of roles that together manage the system a
 
 - `swapAndSend` and swap and send the vauit's token that are earmarked for payout (after approveClaim)
 
-The registry owner controls a number of global settings, including a number of defautl settings that can be overridden per vault. These are listed here: [parameters](./parameters.md) 
-
+The registry owner controls a number of global settings, including a number of default settings that can be overridden per vault. 
+See [parameters](./parameters.md) for the list of parameters managed by the owner of the registry
 ## `registry.feeSetter`
 
 The `feeSetter` controls the withdrawal fee. 
-See here: [parameters](./parameters.md) 
+
+See [parameters](./parameters.md) for the list of parameters managed by the feeSetter
 
 
 
@@ -34,7 +35,7 @@ See [parameters](./parameters.md) for the list of parameters managed by the owne
 
 ## `vault.committee` (committee of each vault, set on creation)
 
-See [parameters](./parameters.md) for the list of parameters managed by the owner of the committee.
+See [parameters](./parameters.md) for the list of parameters managed by the owner of the vault.
 
 - `submitClaim` - submit a claim for a bounty payout
 
