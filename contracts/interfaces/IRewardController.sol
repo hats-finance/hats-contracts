@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
 interface IRewardController {
     
     error EpochLengthZero();
