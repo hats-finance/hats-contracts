@@ -40,7 +40,8 @@
 |`vault.owner`|`owner`|vault|_hatGovernance | |  `transferOwnership`, `renounceOwnership`  
 |`vault.committee`|`committee`|vault| || `vault.setComittee`
 |`vault.committee`|`committeeCheckedIn`|vault| || `vault.committeeCheckin()`
-|`rewardController.ownwer`|vault's `allocPoint` | 0 | |vault| `setAllocPoint(_vault, _allocPoint)`
-|`rewardController.ownwer`|`epochRewardPerBlock`| | - |global | `setEpochRewardPerBlock`|
+|`rewardController.owner`|vault's `allocPoint` | vault |0|| `setAllocPoint(_vault, _allocPoint)`
+|`rewardController.owner`|`epochRewardPerBlock`| global || - || `setEpochRewardPerBlock`|
+|`rewardController.owner`|`rewardController.owner`| global || - || `transferOwnership`, `renounceOwnership`|
 
 
