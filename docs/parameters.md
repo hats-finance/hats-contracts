@@ -1,6 +1,6 @@
 
-## Settings managed by Registry owner
-|owner| parameter  | scope| default | limits  |  setter | 
+## Parameters
+|owner| parameter name  | scope| default | limits  |  setter | 
 |-|-|-|-|-|-|
 |`registry.owner`|`isEmergencyPaused`|global|0 | - |`setEmergencyPaused`|
 |`registry.owner`|`defaultBountyGovernanceHAT`|global |+defaultBountyHackerHatVested <= 20%|  |`registry.setDefaultHATBountySplit`
