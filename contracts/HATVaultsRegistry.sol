@@ -53,8 +53,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
     
-    // vault address => bool
+    // vault address => is visible
     mapping(address => bool) public isVaultVisible;
+    // asset => hacker address => amount
+    mapping(address => mapping(address => uint256)) public hackersHatReward;
+    // asset => amount
+    mapping(address => uint256) public governanceHatReward;
 
     // PARAMETERS FOR ALL VAULTS
     IHATVaultsRegistry.GeneralParameters public generalParameters;
@@ -64,11 +68,6 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     // the token into which a part of the the bounty will be swapped into
     IERC20 public immutable HAT;
-
-    // asset => hacker address => amount
-    mapping(address => mapping(address => uint256)) public hackersHatReward;
-    // asset => amount
-    mapping(address => uint256) public governanceHatReward;
 
     // How the bountyGovernanceHAT and bountyHackerHATVested set how to divide the hats 
     // bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)

@@ -3043,7 +3043,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await safeWithdraw(vault, web3.utils.toWei("1.1"), staker2);
       assert(false, "cannot withdraw more than max");
     } catch (ex) {
-      assertVMException(ex, "WithdrawMoreThanMax");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     tx = await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2);
@@ -3455,7 +3455,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
 
     await assertFunctionRaisesException(
       vault.transfer(accounts[6], web3.utils.toWei("1"), { from: someAccount }),
-      "ActiveClaimExists"
+      "RedeemMoreThanMax"
     );
     await assertFunctionRaisesException(
       vault.redeem(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
@@ -3467,7 +3467,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     );
     await assertFunctionRaisesException(
       vault.withdraw(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
-      "WithdrawMoreThanMax"
+      "RedeemMoreThanMax"
     );
   });
 
@@ -3532,7 +3532,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
       assert(false, "cannot transfer without making a withdraw request");
     } catch (ex) {
-      assertVMException(ex, "InvalidWithdrawRequest");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     await vault.withdrawRequest({ from: staker2 });
@@ -3544,7 +3544,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.transfer(staker, web3.utils.toWei("1"), { from: staker2 });
       assert(false, "cannot transfer on safety period");
     } catch (ex) {
-      assertVMException(ex, "InvalidWithdrawRequest");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     await advanceToNonSafetyPeriod();
@@ -5248,7 +5248,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await unsafeWithdraw(vault, web3.utils.toWei("1"), staker);
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
-      assertVMException(ex, "WithdrawMoreThanMax");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
 
     await advanceToSafetyPeriod();
@@ -5257,7 +5257,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.withdraw(web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
-      assertVMException(ex, "WithdrawMoreThanMax");
+      assertVMException(ex, "RedeemMoreThanMax");
     }
   });
 

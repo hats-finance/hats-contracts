@@ -132,8 +132,6 @@ interface IHATVault is IERC4626Upgradeable {
     error AmountToDepositIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
-    // Withdraw request is invalid
-    error InvalidWithdrawRequest();
     // Vesting duration is too long
     error VestingDurationTooLong();
     // Vesting periods cannot be zero
@@ -174,8 +172,6 @@ interface IHATVault is IERC4626Upgradeable {
     error CannotTransferToAnotherUserWithActiveWithdrawRequest();
     // Withdraw amount must be greater than zero
     error WithdrawMustBeGreaterThanZero();
-    // Withdraw amount cannot be more than maximum for user
-    error WithdrawMoreThanMax();
     // Redeem amount cannot be more than maximum for user
     error RedeemMoreThanMax();
     // System is in an emergency pause
@@ -285,9 +281,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Dismiss the active claim for bounty payout submitted by the
-    * committee. Can only be called if the claim has been challanged.
-    * Called either by the arbitrator, or by anyone if the claim is after the
-    * challenge timeout period.
+    * committee.
+    * Called either by the arbitrator, or by anyone if the claim has timed out.
     * @param _claimId The claim ID
     */
     function dismissClaim(bytes32 _claimId) external;
