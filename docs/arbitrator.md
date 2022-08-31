@@ -44,19 +44,3 @@ More precisely:
   
 
 During the time from submitting a claim to its resolution, the vault will be locked for withdrawals, and no new claims can be submitted
-
-
-
-# Deployment
-
-## Stage 1: arbitrator is HATs governance
-
-
-## Stage 2: arbitrator is a  contract (mostly) controlled by HATs governance
-
-
-## Stage 3: arbitrator is an (interface to) a decentralized system, such as Kleros, Aragon Court, UMA, ...
-
-
-
-

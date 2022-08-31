@@ -78,7 +78,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
     uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
-    uint256 public constant MAX_FEE = 200; // Max fee is 2%
+    uint256 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
@@ -108,6 +108,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
 
+    mapping(address => bool) public rewardControllerRemoved;
+
     // the percentage of the total bounty to be swapped to HATs and sent to governance
     uint256 internal bountyGovernanceHAT;
     // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
@@ -121,6 +123,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 internal challengeTimeOutPeriod;
     // whether the arbitrator can change bounty of claims
     ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
+
+    bool private _isEmergencyWithdraw;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -381,7 +385,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setWithdrawalFee}. */
     function setWithdrawalFee(uint256 _fee) external onlyFeeSetter {
-        if (_fee > MAX_FEE) revert WithdrawalFeeTooBig();
+        if (_fee > MAX_WITHDRAWAL_FEE) revert WithdrawalFeeTooBig();
         withdrawalFee = _fee;
         emit SetWithdrawalFee(_fee);
     }
@@ -430,7 +434,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setRewardController}. */
     function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
-        rewardController.terminateVaultRewards();
+        rewardControllerRemoved[address(rewardController)] = true;
+        if (rewardControllerRemoved[address(_newRewardController)]) revert CannotSetToPerviousRewardController();
         rewardController = _newRewardController;
         emit SetRewardController(_newRewardController);
     }
@@ -488,7 +493,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
         // since last withdrawRequest (meaning the last withdraw request had expired)
-        // unless there's been a deposit or withdraw since, in which case withdrawRequest is allowed immediately
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <
             withdrawEnableStartTime[msg.sender] +
@@ -510,6 +514,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function redeemAndClaim(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner);
         rewardController.claimReward(address(this), owner);
+    }
+
+    /** @notice See {IHATVault-emergencyWithdraw}. */
+    function emergencyWithdraw(address receiver) external returns (uint256 assets) {
+        _isEmergencyWithdraw = true;
+        assets = redeem(balanceOf(_msgSender()), receiver, _msgSender());
+        _isEmergencyWithdraw = false;
     }
 
     /** @notice See {IHATVault-withdraw}. */
@@ -663,6 +674,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         super._deposit(caller, receiver, assets, shares);
     }
 
+    // amount of shares correspond with assets + fee
     function _withdraw(
         address caller,
         address receiver,
@@ -714,7 +726,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // will have to be made before next withdrawal
             withdrawEnableStartTime[from] = 0;
 
-            rewardController.commitUserBalance(from, amount, false);
+            if (!_isEmergencyWithdraw) {
+                rewardController.commitUserBalance(from, amount, false);
+            }
         }
     }
 

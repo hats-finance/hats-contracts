@@ -6,10 +6,10 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 
 error EpochLengthZero();
-error CannotAddTerminatedVault();
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -45,8 +45,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => mapping(address => uint256)) public rewardDebt;
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
-    // vault address => is terminated
-    mapping(address => bool) vaultRewardsTerminated;
 
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
@@ -119,7 +117,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     function _setAllocPoint(address _vault, uint256 _allocPoint) internal {
-        if (vaultRewardsTerminated[_vault]) revert CannotAddTerminatedVault();
         updateVault(_vault);
         uint256 totalAllocPoint = (globalVaultsUpdates.length == 0) ? _allocPoint :
         globalVaultsUpdates[globalVaultsUpdates.length-1].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
@@ -143,11 +140,16 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _sharesChange,
         bool _isDeposit
     ) internal {
+        if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
+            return;
+        }
         updateVault(_vault);
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
-        unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+        if (userShares != 0) {
+            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+        }
 
         if (_sharesChange != 0) {
             if (_isDeposit) {
@@ -241,6 +243,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     * @param _user the account for which the reward is calculated
     */
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
+        if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
+            return unclaimedReward[_vault][_user];
+        }
         VaultInfo memory vault = vaultInfo[_vault];
         uint256 rewardPerShare = vault.rewardPerShare;
         uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
@@ -256,13 +261,12 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     }
 
     /**
-    * @notice Removes the vault from getting rewards
+    * @notice Transfer any tokens held in this contract to the owner
+    * @param _token the token to sweep
+    * @param _amount the amount of token to sweep
     */
-    function terminateVaultRewards() external {
-        if (vaultInfo[msg.sender].allocPoint != 0) {
-            _setAllocPoint(msg.sender, 0);
-        }
-        vaultRewardsTerminated[msg.sender] = true;
+    function sweepToken(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
+        _token.safeTransfer(msg.sender, _amount);
     }
 
     function getGlobalVaultsUpdatesLength() external view returns (uint256) {

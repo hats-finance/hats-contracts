@@ -180,6 +180,8 @@ interface IHATVault is IERC4626Upgradeable {
     error RedeemMoreThanMax();
     // System is in an emergency pause
     error SystemInEmergencyPause();
+    // Cannot set a reward controller that was already used in the past
+    error CannotSetToPerviousRewardController();
 
 
     
@@ -322,7 +324,7 @@ interface IHATVault is IERC4626Upgradeable {
     /**
     * @notice Called by the registry's fee setter to set the fee for 
     * withdrawals from the vault.
-    * @param _fee The new fee. Must be smaller then `MAX_FEE`
+    * @param _fee The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE`
     */
     function setWithdrawalFee(uint256 _fee) external;
 
@@ -470,6 +472,18 @@ interface IHATVault is IERC4626Upgradeable {
         returns (uint256 assets);
 
     /** 
+    * @notice Redeem all of the user's shares in the vault for the respective amount
+    * of underlying assets without calling the reward controller, meaning user renounces
+    * their uncommited part of the reward.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * @param receiver Address of receiver of the funds 
+    */
+    function emergencyWithdraw(address receiver) external returns (uint256 assets);
+
+    /** 
     * @notice Withdraw previously deposited funds from the vault, without
     * transferring the accumulated HAT reward.
     * Can only be performed if a withdraw request has been previously
@@ -515,6 +529,12 @@ interface IHATVault is IERC4626Upgradeable {
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Getters -------------------------------------- */
+
+    /** 
+    * @param _rewardController the reward controller to check
+    * @return bool Whether the reward contoller was previously used in the vault and removed
+    */
+    function rewardControllerRemoved(address _rewardController) external view returns(bool);
 
     /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance
