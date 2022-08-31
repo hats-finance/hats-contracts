@@ -1094,7 +1094,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("withdrawn", async () => {
+  it("withdraw procedure is sane", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     var staker = accounts[1];
 
@@ -1228,6 +1228,39 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("cannot withdraw if there is an active claim", async () => {
+    const { committee, someAccount }= await setUpGlobalVars(accounts, 0, 8000, [7000, 2500, 500], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
+    const staker = accounts[1];
+    let claimId;
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    
+    // withdrawal is possible
+    await safeRedeem(vault, web3.utils.toWei(".01"), staker);
+
+    // submit a claim
+    await advanceToSafetyPeriod();
+    tx = await vault.submitClaim(someAccount, 8000, "", { from: committee });
+    claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
+
+    // cannot withdraw while active claim exists
+    assertFunctionRaisesException(
+      safeRedeem(vault, web3.utils.toWei(".01"), staker),
+      "RedeemMoreThanMax"
+    );
+
+    await vault.dismissClaim(claimId);
+
+    // withdrawal is possible now claim is dismissed
+    await safeRedeem(vault, web3.utils.toWei(".01"), staker);
+  });
   it("withdraw cannot be 0", async () => {
     await setUpGlobalVars(accounts);
     var staker = accounts[1];
