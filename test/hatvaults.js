@@ -1587,7 +1587,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.withdrawalFee(), 200);
   });
 
-  it("Withdrawal fee is paid correctly", async () => {
+  it.only("Withdrawal fee is paid on redeem", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
@@ -1607,6 +1607,10 @@ contract("HatVaults", (accounts) => {
 
     let vaultBalance = await stakingToken.balanceOf(vault.address);
     let governanceBalance = await stakingToken.balanceOf(owner);
+    await assertFunctionRaisesException(
+      safeRedeem(vault, web3.utils.toWei("1.0000001"), staker),
+      "RedeemMoreThanMax"
+    );
 
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     // Staker got back the reward minus the 2% fee
@@ -1627,48 +1631,109 @@ contract("HatVaults", (accounts) => {
     );
     
     // at this point, the staker has withdrawn all and has a zero balance
-    assert.equal(
-      (await vault.balanceOf(staker)),
-      web3.utils.toWei("0")
-    );
-     assert.equal(
-      (await vault.maxWithdraw(staker)),
-      web3.utils.toWei("0")
-    );
+    assert.equal(await vault.balanceOf(staker), web3.utils.toWei("0"));
+    assert.equal(await vault.maxRedeem(staker), web3.utils.toWei("0"));
  
     await stakingToken.mint(staker, web3.utils.toWei("0.02"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     // at this point, staker has deposited a total balance of 1e18 shares
-    assert.equal(
-      (await vault.balanceOf(staker)),
-      web3.utils.toWei("1")
-    );
+    assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
 
-   
-    await assertFunctionRaisesException(
-      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
-      "WithdrawMoreThanMax"
-    );
-    // however the stakes can maxWithdraw only 0.98 (1 minus fees)
+    // however the stakes can maxRedeem 1 share, but maxWithdraw only 0.98 tokens (1 minus fees)
+    await vault.withdrawRequest({ from: staker });
+    // increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    assert.equal((await vault.maxRedeem(staker)), web3.utils.toWei("1"));
     assert.equal(
       (await vault.maxWithdraw(staker)),
       web3.utils.toWei("0.98")
     );
  
-    await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
+  });
 
-    assert.equal(
-      await stakingToken.balanceOf(staker),
-      web3.utils.toWei("0.98")
+  it.only("Withdrawal fee is paid on withdrawal", async () => {
+    const { registry, owner }= await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
+
+    var staker = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    
+    // deposit on token 
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    
+    let vaultBalance = await stakingToken.balanceOf(vault.address);
+    assert.equal(vaultBalance, web3.utils.toWei("1"));
+    let governanceBalance = await stakingToken.balanceOf(owner);
+    assert.equal(governanceBalance, web3.utils.toWei("0"));
+
+    // now we can redeem 1 share, but withdraw a maximum of .98
+    await advanceToNonSafetyPeriod();
+    await assertFunctionRaisesException(
+      safeWithdraw(vault, web3.utils.toWei("0.99"), staker),
+      "RedeemMoreThanMax"
     );
-    // Governance received the fee
-    assert.equal(
-      (await stakingToken.balanceOf(accounts[0])).toString(),
-      governanceBalance
-        .add(new web3.utils.BN(web3.utils.toWei("0.04")))
-        .toString()
+
+    await safeWithdraw(vault, web3.utils.toWei("0.49"), staker);
+
+    // Staker gets the tokens she withdrawn
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("0.49"));
+    // Governance received the fee of 2%
+    assert.equal(await stakingToken.balanceOf(owner), web3.utils.toWei("0.01"));
+
+    // and the vault paid out .5 token
+    assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei(".5"));
+    
+    // at this point, the staker has withdrawn .5
+    assert.equal(await vault.balanceOf(staker), web3.utils.toWei("0.5"));
+  });
+
+  it.only("No withdrawal fee is paid on transfer", async () => {
+    const { registry, owner, someAccount }= await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
+
+    var staker = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    
+    // deposit on token 
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    
+    let vaultBalance = await stakingToken.balanceOf(vault.address);
+    assert.equal(vaultBalance, web3.utils.toWei("1"));
+    let governanceBalance = await stakingToken.balanceOf(owner);
+    assert.equal(governanceBalance, web3.utils.toWei("0"));
+
+    // now we can redeem 1 share, but withdraw a maximum of .98
+    await advanceToNonSafetyPeriod();
+    
+    // however the stakes can maxRedeem 1 share, but maxWithdraw only 0.98 tokens (1 minus fees)
+    await vault.withdrawRequest({ from: staker });
+    // increase time for pending period
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+
+    await assertFunctionRaisesException(
+      vault.transfer(someAccount, web3.utils.toWei("1.01"), {from: staker}),
+      "RedeemMoreThanMax"
     );
+    await vault.transfer(someAccount, web3.utils.toWei(".7"), {from: staker}),
+
+    // Staker gets the tokens she withdrawn
+    assert.equal(await vault.balanceOf(staker), web3.utils.toWei("0.3"));
+    // no fee is paid on the transfer - someAccount gets the entire amount
+    assert.equal(await vault.balanceOf(someAccount), web3.utils.toWei("0.7"));
+    // Governance received no fees
+    assert.equal(await stakingToken.balanceOf(owner), web3.utils.toWei("0"));
+
   });
 
   it("stake", async () => {
