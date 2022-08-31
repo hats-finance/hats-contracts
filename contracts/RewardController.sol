@@ -198,20 +198,20 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
         for (; i < globalVaultsUpdates.length-1; i++) {
             uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
-            reward += _getRewardForBlocksRange(_fromBlock,
+            reward += getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             vaultAllocPoint,
                                             globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
         }
-        return reward + _getRewardForBlocksRange(_fromBlock,
+        return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,
                                                 vaultAllocPoint,
                                                 globalVaultsUpdates[i].totalAllocPoint);
     }
 
-    function _getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
-    internal
+    function getRewardForBlocksRange(uint256 _fromBlock, uint256 _toBlock, uint256 _allocPoint, uint256 _totalAllocPoint)
+    public
     view
     returns (uint256 reward) {
         if ((_fromBlock >= startBlock && _toBlock >= _fromBlock) && _totalAllocPoint > 0) {
@@ -260,6 +260,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     */
     function sweepToken(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
         _token.safeTransfer(msg.sender, _amount);
+    }
+
+    function getGlobalVaultsUpdatesLength() external view returns (uint256) {
+        return globalVaultsUpdates.length;
     }
 
 }
