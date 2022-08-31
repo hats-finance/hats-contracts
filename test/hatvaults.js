@@ -1260,6 +1260,7 @@ contract("HatVaults", (accounts) => {
 
     // withdrawal is possible now claim is dismissed
     await safeRedeem(vault, web3.utils.toWei(".01"), staker);
+
   });
   it("withdraw cannot be 0", async () => {
     await setUpGlobalVars(accounts);
