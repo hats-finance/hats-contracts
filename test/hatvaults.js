@@ -1587,7 +1587,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.withdrawalFee(), 200);
   });
 
-  it.only("Withdrawal fee is paid on redeem", async () => {
+  it("Withdrawal fee is paid on redeem", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
@@ -1653,7 +1653,7 @@ contract("HatVaults", (accounts) => {
  
   });
 
-  it.only("Withdrawal fee is paid on withdrawal", async () => {
+  it("Withdrawal fee is paid on withdrawal", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
@@ -1693,7 +1693,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("0.5"));
   });
 
-  it.only("No withdrawal fee is paid on transfer", async () => {
+  it("No withdrawal fee is paid on transfer", async () => {
     const { registry, owner, someAccount }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
