@@ -1,17 +1,26 @@
+
+## Deposit process 
+
+User deposits `amount` tokens of the contract at `token` in a `vault`
+1. User first approves the token: `token.approve(vault.address, amount)`
+1. User deposits the tokens by calling: `vault.deposit(amount, receiver)`
+  1. `amount` tokens are transfered to the `vault` contract
+  1. user's `shares` balance in the vault is updated to reflect her deposit 
+
   
 
 ## Withdrawal process
 
 The funds that a user has deposited in the vault can be paid out as a bounty to hackers. 
 
-HATs has implemented some time limits on withdrawals to make sure that a users will not withdraw their funds just before a claim is submitted or is paid out. 
+HATs has implemented some time limits on withdrawals to make sure that a users will not withdraw their funds while a claim is being processed. 
 
 This means that a user cannot withdraw her funds:
 
 - When a claim has been submitted, but has not been approved or dismissed yet
 - During a regular fixed period during which claims can be submitted
 
-More precisely, this workds as follows:
+More precisely, this works as follows:
 
 - Before withdrawing, a user calls`withdrawRequest` at time `t`. This can be called at any time
 

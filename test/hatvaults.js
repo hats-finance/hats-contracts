@@ -1258,7 +1258,8 @@ contract("HatVaults", (accounts) => {
 
     await vault.dismissClaim(claimId);
 
-    // withdrawal is possible now claim is dismissed
+    await advanceToNonSafetyPeriod();
+    // withdrawal is possible again now claim is dismissed
     await safeRedeem(vault, web3.utils.toWei(".01"), staker);
 
   });

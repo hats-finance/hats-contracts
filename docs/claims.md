@@ -1,4 +1,4 @@
-# Arbitrator Interface
+# Submitting and approving claims
 
 In Hats v2, we created a generic arbitration procedure in case some party does not agree with the size of the bounty assigned by the Committee.
 
@@ -14,7 +14,7 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 6. If any of these processes times out due to inactivity, the claim is dismissed
 
 
-More precisely:
+## Details and restrictions
 
 1. **SUBMISSION** 
   `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
@@ -36,7 +36,7 @@ More precisely:
      - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
      - the bountyPercentage must be that of the original claim
    - `_claimId` must be the id of the currently active claim
-1. **DIMISSAL** `dismissClaim(_claimId)`
+1. **DISMISSAL** `dismissClaim(_claimId)`
    -  if a claim was challenged:
       - before challengeTimeoutPeriod, only the arbitrator can dismiss the claim
       - after challengeTimeOutPeriod, anyone can dismiss the claim
