@@ -3,10 +3,10 @@
 |owner| parameter name  | scope| default | limits  |  setter | comments
 |-|-|-|-|-|-|-|
 |`registry.owner`|`isEmergencyPaused`|global|false |  |`setEmergencyPaused`|
-|`registry.owner`|`defaultBountyGovernanceHAT`|global |+defaultBountyHackerHatVested <= 20%|  |`registry.setDefaultHATBountySplit`
-|`registry.owner`|`bountyGovernanceHAT`|vault |+bountyHackerHatVested <= 20%| |`vault.setHATBountySplit`
-|`registry.owner`|`defaultBountyHackerHATVested`|global|+defaultBountyGovernanceHAT <= 20%| |`registry.setDefaultHATBountySplit`
-|`registry.owner`|`bountyHackerHATVested`|vault |+bountyGovernanceHAT<=20%| |`vault.setHATBountySplit`
+|`registry.owner`|`defaultBountyGovernanceHAT`|global ||+defaultBountyHackerHatVested <= 20% |`registry.setDefaultHATBountySplit`
+|`registry.owner`|`bountyGovernanceHAT`|vault ||+bountyHackerHatVested <= 20%|`vault.setHATBountySplit`
+|`registry.owner`|`defaultBountyHackerHATVested`|global||+defaultBountyGovernanceHAT <= 20%|`registry.setDefaultHATBountySplit`
+|`registry.owner`|`bountyHackerHATVested`|vault ||+bountyGovernanceHAT<=20%|`vault.setHATBountySplit`
 |`registry.owner`|`defaultArbitrator`|global|registry.owner| | `registry.setDefaultArbitrator`
 |`registry.owner`|`arbitrator`|vault|| |  `vault.setArbitrator`
 |`registry.owner`|`defaultChallengePeriod`|global| 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod`
