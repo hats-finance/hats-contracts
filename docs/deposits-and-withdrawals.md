@@ -25,7 +25,7 @@ More precisely, this works as follows:
 - Before withdrawing, a user calls `withdrawRequest` at time `t`. This can be called at any time
 
 The user can call `withdraw` or `redeem` and withdraw all or part of her funds only if
-  1. The current time is later than `t + withdrawRequestPendingPeriod (= withdrawEnableStartTime[user]` but before `t + withdrawRequestPendingPeriod + withdrawRequestEnablePeriod`
+  1. The current time is later than `t + withdrawRequestPendingPeriod` but before `t + withdrawRequestPendingPeriod + withdrawRequestEnablePeriod`
   2. the current time is during the withdraw period
   3. there is no active claim
 

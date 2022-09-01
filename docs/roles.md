@@ -99,20 +99,20 @@ Below is a list of known centralization risks. It lists possible attacks or fail
 
 In the [parameters](./parameters.md) document we list which parameters are controlled by each of these roles.
 
-|who|special power|severity|mitigation|
-|-|-|-|-|
-!registry.owner|block submissions and deposits, mints and transfers by calling `setEmergencyPaused`|info (by design)| 
-|registry.owner|block all or specific transfers (including deposit/withdraw) by setting the reward controller to an invalid or malicious address|Critical|users can call `emergencyWithdraw`|
-|registry.owner|can take disproportionate share bounty by manipulating HATBountySplit |high|maximum value is limited to 20%, the setter subject to time lock, which mitigates the problem|
-|registry.owner|block logging of claims by setting a very high claimFee|info|no, but it is easy to find other communication channels, no crucial systems depend on that
-|vault.owner|block future payouts by setting maxBounty to 0|low|no users funds are at risk 
-|vault.owner|block deposits by calling `setDepositPause`|info (by design)|
-|arbitrator (and registry.owner via setArbitrator)|control bounty size||by design; arbitrators can be blocked from changing bounty percentage |
-| committee + arbitrator |empty vault by submitting and approving claims|info|by design|
-| committee  + registryOwner |owner can set arbitrator to itself, and then empty vault by submitting and approving claims|info|by design|
-|committee|block payouts by never submitting claims|info|by design|
-|committee|block payouts for ever by calling `setCommittee(0xdead)`|info|by design|
-|arbitrator|block payouts by dismissing all claims|info|by design - registry owner can change the arbitrator if it is malicious|
-|arbitrator|temporarily block withdrawals for challengeTimeOutPeriod (<85 days)|info|by design - registry owner cna change the arbitrator if it is malicious|
-|committee and arbitrator|block withdrawals by re-submitting and challenging it during each safety period|info (by design)|registry owner can change the arbitrator, if they collude
-!rewardController.owner|empty reward controller by calling `sweepToken`|info (by design)| 
+|who|special power|mitigation|
+|-|-|-|
+!registry.owner|block submissions and deposits, mints and transfers by calling `setEmergencyPaused`|by design| 
+|registry.owner|block all or specific transfers (including deposit/withdraw) by setting the reward controller to an invalid or malicious address|users can call `emergencyWithdraw`|
+|registry.owner|can take disproportionate share bounty by manipulating HATBountySplit |maximum value is limited to 20%, the setter subject to time lock, which mitigates the problem|
+|registry.owner|block logging of claims by setting a very high claimFee|no, but it is easy to find other communication channels, no crucial systems depend on that
+|vault.owner|block future payouts by setting maxBounty to 0|no users funds are at risk 
+|vault.owner|block deposits by calling `setDepositPause`|by design|
+|arbitrator (and registry.owner via setArbitrator)|control bounty size|by design; arbitrators can be blocked from changing bounty percentage |
+| committee + arbitrator |empty vault by submitting and approving claims|by design|
+| committee  + registryOwner |owner can set arbitrator to itself, and then empty vault by submitting and approving claims|by design|
+|committee|block payouts by never submitting claims|by design|
+|committee|block payouts for ever by calling `setCommittee(0xdead)`|by design|
+|arbitrator|block payouts by dismissing all claims|by design - registry owner can change the arbitrator if it is malicious|
+|arbitrator|temporarily block withdrawals for challengeTimeOutPeriod (<85 days)|by design - registry owner cna change the arbitrator if it is malicious|
+|committee and arbitrator|block withdrawals by re-submitting and challenging it during each safety period|by design. registry owner can change the arbitrator, if they collude
+!rewardController.owner|empty reward controller by calling `sweepToken`|by design| 

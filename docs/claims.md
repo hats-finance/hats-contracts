@@ -32,7 +32,8 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
      - the claim must be challenged
      - only the arbitrator can call `approveClaim` and can change the bountyPercentage if given the permission, until the challenge had timed out
    - after the challenge period:
-     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. The bountyPercentage remains that as chosen by the committee
+     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. 
+     - the bountyPercentage remains that as chosen by the committee
    - `_claimId` must be the id of the currently active claim
 1. **DISMISSAL** `dismissClaim(_claimId)`
    -  if a claim was challenged:
