@@ -5,10 +5,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./CoreUtility.sol";
-import "./ManagedPausable.sol";
 import "../interfaces/IVotingEscrow.sol";
 
 interface IAddressWhitelist {
@@ -19,16 +17,7 @@ interface IVotingEscrowCallback {
     function syncWithVotingEscrow(address account) external;
 }
 
-contract VotingEscrowV2 is
-    IVotingEscrow,
-    OwnableUpgradeable,
-    ReentrancyGuard,
-    CoreUtility,
-    ManagedPausable
-{
-    /// @dev Reserved storage slots for future base contract upgrades
-    uint256[29] private _reservedSlots;
-
+contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     event LockCreated(address indexed account, uint256 amount, uint256 unlockTime);
@@ -76,28 +65,21 @@ contract VotingEscrowV2 is
     /// @notice Start timestamp of the trading week in which the last checkpoint is made
     uint256 public checkpointWeek;
 
-    constructor(address token_, uint256 maxTime_) public {
+    constructor(
+        address token_,
+        string memory name_,
+        string memory symbol_,
+        uint256 maxTime_,
+        uint256 maxTimeAllowed_
+    ) public {
+        require(maxTimeAllowed_ <= maxTime_, "Cannot exceed max time");
+
         token = token_;
         // TODO: Might need to check maxTime is an end of a week
         maxTime = maxTime_;
-    }
-
-    /// @dev Initialize the contract. The contract is designed to be used with OpenZeppelin's
-    ///      `TransparentUpgradeableProxy`. This function should be called by the proxy's
-    ///      constructor (via the `_data` argument).
-    function initialize(
-        string memory name_,
-        string memory symbol_,
-        uint256 maxTimeAllowed_
-    ) external initializer {
-        __Ownable_init();
-        require(maxTimeAllowed_ <= maxTime, "Cannot exceed max time");
         maxTimeAllowed = maxTimeAllowed_;
-        _initializeManagedPausable(msg.sender);
-
         name = name_;
         symbol = symbol_;
-
         checkpointWeek = _endOfWeek(block.timestamp) - 1 weeks;
     }
 
@@ -163,7 +145,7 @@ contract VotingEscrowV2 is
         return _totalSupplyAtTimestamp(timestamp);
     }
 
-    function createLock(uint256 amount, uint256 unlockTime) external nonReentrant whenNotPaused {
+    function createLock(uint256 amount, uint256 unlockTime) external nonReentrant {
         _assertNotContract();
         require(
             unlockTime + 1 weeks == _endOfWeek(unlockTime),
@@ -194,7 +176,7 @@ contract VotingEscrowV2 is
         emit LockCreated(msg.sender, amount, unlockTime);
     }
 
-    function increaseAmount(address account, uint256 amount) external nonReentrant whenNotPaused {
+    function increaseAmount(address account, uint256 amount) external nonReentrant {
         LockedBalance memory lockedBalance = locked[account];
 
         require(amount > 0, "Zero value");
@@ -219,7 +201,7 @@ contract VotingEscrowV2 is
         emit AmountIncreased(account, amount);
     }
 
-    function increaseUnlockTime(uint256 unlockTime) external nonReentrant whenNotPaused {
+    function increaseUnlockTime(uint256 unlockTime) external nonReentrant {
         require(
             unlockTime + 1 weeks == _endOfWeek(unlockTime),
             "Unlock time must be end of a week"
@@ -262,6 +244,16 @@ contract VotingEscrowV2 is
         IERC20(token).safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
+    }
+
+    /// @notice Recalculate `nextWeekSupply` from scratch. This function eliminates accumulated
+    ///         rounding errors in `nextWeekSupply`, which is incrementally updated in
+    ///         `createLock`, `increaseAmount` and `increaseUnlockTime`. It is almost
+    ///         never required.
+    /// @dev Search "rounding error" in test cases for details about the rounding errors.
+    function calibrateSupply() external {
+        uint256 nextWeek = checkpointWeek + 1 weeks;
+        nextWeekSupply = _totalSupplyAtTimestamp(nextWeek);
     }
 
     function updateAddressWhitelist(address newWhitelist) external onlyOwner {
@@ -320,6 +312,19 @@ contract VotingEscrowV2 is
         return total;
     }
 
+    /// @dev UTC time of a day when the fund settles.
+    uint256 internal constant SETTLEMENT_TIME = 14 hours;
+
+    /// @dev Return end timestamp of the trading week containing a given timestamp.
+    ///
+    ///      A trading week starts at UTC time `SETTLEMENT_TIME` on a Thursday (inclusive)
+    ///      and ends at the same time of the next Thursday (exclusive).
+    /// @param timestamp The given timestamp
+    /// @return End timestamp of the trading week.
+    function _endOfWeek(uint256 timestamp) internal pure returns (uint256) {
+        return ((timestamp + 1 weeks - SETTLEMENT_TIME) / 1 weeks) * 1 weeks + SETTLEMENT_TIME;
+    }
+
     /// @dev Pre-conditions:
     ///
     ///      - `newAmount > 0`
@@ -363,15 +368,5 @@ contract VotingEscrowV2 is
         nextWeekSupply = newNextWeekSupply + (
             (newAmount * (newUnlockTime - nextWeek) + (maxTime - 1)) / maxTime
         );
-    }
-
-    /// @notice Recalculate `nextWeekSupply` from scratch. This function eliminates accumulated
-    ///         rounding errors in `nextWeekSupply`, which is incrementally updated in
-    ///         `createLock`, `increaseAmount` and `increaseUnlockTime`. It is almost
-    ///         never required.
-    /// @dev Search "rounding error" in test cases for details about the rounding errors.
-    function calibrateSupply() external {
-        uint256 nextWeek = checkpointWeek + 1 weeks;
-        nextWeekSupply = _totalSupplyAtTimestamp(nextWeek);
     }
 }

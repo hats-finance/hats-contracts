@@ -70,23 +70,13 @@ describe.only("VotingEscrowV2", function () {
         const chess = await MockToken.connect(owner).deploy("Chess", "Chess", 18);
 
         const VotingEscrow = await ethers.getContractFactory("VotingEscrowV2");
-        const votingEscrowImpl = await VotingEscrow.connect(owner).deploy(chess.address, MAX_TIME);
-        const TransparentUpgradeableProxy = await ethers.getContractFactory(
-            "TransparentUpgradeableProxy"
-        );
-        const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-        const proxyAdmin = await ProxyAdmin.connect(owner).deploy();
-        const initTx = await votingEscrowImpl.populateTransaction.initialize(
+        const votingEscrow = await VotingEscrow.connect(owner).deploy(
+            chess.address,
             "Vote-escrowed CHESS",
             "veCHESS",
+            MAX_TIME,
             MAX_TIME_ALLOWED
         );
-        const votingEscrowProxy = await TransparentUpgradeableProxy.connect(owner).deploy(
-            votingEscrowImpl.address,
-            proxyAdmin.address,
-            initTx.data
-        );
-        const votingEscrow = VotingEscrow.attach(votingEscrowProxy.address);
 
         await chess.mint(user1.address, parseEther("1000"));
         await chess.mint(user2.address, parseEther("1000"));
@@ -126,19 +116,14 @@ describe.only("VotingEscrowV2", function () {
 
     describe("initialize", function () {
         it("Should revert if exceeding max time", async function () {
-            // Deploy a new proxied VotingEscrow without initialization
-            const impl = await proxyAdmin.getProxyImplementation(votingEscrow.address);
-            const TransparentUpgradeableProxy = await ethers.getContractFactory(
-                "TransparentUpgradeableProxy"
-            );
-            const newProxy = await TransparentUpgradeableProxy.connect(owner).deploy(
-                impl,
-                proxyAdmin.address,
-                "0x"
-            );
-            const newVotingEscrow = await ethers.getContractAt("VotingEscrowV2", newProxy.address);
-
-            await expect(newVotingEscrow.initialize("", "", MAX_TIME + 1)).to.be.revertedWith(
+            const VotingEscrow = await ethers.getContractFactory("VotingEscrowV2");
+            await expect(VotingEscrow.connect(owner).deploy(
+                chess.address,
+                "Vote-escrowed CHESS",
+                "veCHESS",
+                MAX_TIME,
+                MAX_TIME + 1
+            )).to.be.revertedWith(
                 "Cannot exceed max time"
             );
         });
@@ -845,46 +830,6 @@ describe.only("VotingEscrowV2", function () {
                 .revertsWithReason("Mock on the method is not initialized");
             await votingEscrow.connect(owner).updateCallback(ethers.constants.AddressZero);
             await votingEscrow.increaseAmount(addr1, 1);
-        });
-    });
-
-    describe("pause() and unpause()", function () {
-        it("Should pause createLock()", async function () {
-            await votingEscrow.connect(owner).pause();
-            await expect(
-                votingEscrow.createLock(parseEther("1"), startWeek + WEEK)
-            ).to.be.revertedWith("Pausable: paused");
-            await votingEscrow.connect(owner).unpause();
-            await votingEscrow.createLock(parseEther("1"), startWeek + WEEK);
-        });
-
-        it("Should pause increaseAmount()", async function () {
-            await votingEscrow.createLock(parseEther("1"), startWeek + WEEK);
-            await votingEscrow.connect(owner).pause();
-            await expect(votingEscrow.increaseAmount(addr1, 1)).to.be.revertedWith(
-                "Pausable: paused"
-            );
-            await votingEscrow.connect(owner).unpause();
-            await votingEscrow.increaseAmount(addr1, 1);
-        });
-
-        it("Should pause increaseUnlockTime()", async function () {
-            await votingEscrow.createLock(parseEther("1"), startWeek + WEEK);
-            await votingEscrow.connect(owner).pause();
-            await expect(votingEscrow.increaseUnlockTime(startWeek + WEEK * 2)).to.be.revertedWith(
-                "Pausable: paused"
-            );
-            await votingEscrow.connect(owner).unpause();
-            await votingEscrow.increaseUnlockTime(startWeek + WEEK * 2);
-        });
-
-        it("Should not pause withdraw()", async function () {
-            await votingEscrow.createLock(parseEther("1"), startWeek + WEEK);
-            await advanceBlockAtTime(startWeek + WEEK);
-            await votingEscrow.connect(owner).pause();
-            await votingEscrow.withdraw();
-            await votingEscrow.connect(owner).unpause();
-            await votingEscrow.withdraw();
         });
     });
 });
