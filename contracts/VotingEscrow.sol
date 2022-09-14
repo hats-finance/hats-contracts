@@ -16,6 +16,7 @@ interface IVotingEscrowCallback {
 contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    //TODO mv to interface & create errors
     event LockCreated(address indexed account, uint256 amount, uint256 unlockTime);
 
     event AmountIncreased(address indexed account, uint256 increasedAmount);
@@ -24,11 +25,11 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
 
     event Withdrawn(address indexed account, uint256 amount);
 
-    uint8 public constant decimals = 18;
+    uint8 public constant decimals = 18; //TODO rm
 
-    uint256 public immutable override maxTime;
+    uint256 public immutable MAX_TIME; //TODO set here?
 
-    address public immutable override token;
+    IERC20 public immutable HAT;
 
     string public name;
     string public symbol;
@@ -64,17 +65,17 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     mapping(address => bool) public whitelistedContracts;
 
     constructor(
-        address token_,
+        address _HAT,
         string memory name_,
         string memory symbol_,
         uint256 maxTime_,
         uint256 maxTimeAllowed_
-    ) public {
+    ) {
         require(maxTimeAllowed_ <= maxTime_, "Cannot exceed max time");
 
-        token = token_;
+        HAT = IERC20(_HAT);
         // TODO: Might need to check maxTime is an end of a week
-        maxTime = maxTime_;
+        MAX_TIME = maxTime_;
         maxTimeAllowed = maxTimeAllowed_;
         name = name_;
         symbol = symbol_;
@@ -91,7 +92,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         if (lockedBalance.amount == 0 || lockedBalance.amount < threshold) {
             return 0;
         }
-        return lockedBalance.unlockTime - (threshold * maxTime / lockedBalance.amount);
+        return lockedBalance.unlockTime - (threshold * MAX_TIME / lockedBalance.amount);
     }
 
     function balanceOf(address account) external view override returns (uint256) {
@@ -110,12 +111,12 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
                 // Remove Chess unlocked at the beginning of the next week from total locked amount.
                 newTotalLocked -= scheduledUnlock[weekCursor];
                 // Calculate supply at the end of the next week.
-                newNextWeekSupply -= newTotalLocked * 1 weeks / maxTime;
+                newNextWeekSupply -= newTotalLocked * 1 weeks / MAX_TIME;
             }
             newTotalLocked -= scheduledUnlock[weekCursor];
-            newNextWeekSupply -= newTotalLocked * (block.timestamp - currentWeek) / maxTime;
+            newNextWeekSupply -= newTotalLocked * (block.timestamp - currentWeek) / MAX_TIME;
         } else {
-            newNextWeekSupply += newTotalLocked * (nextWeek - block.timestamp) / maxTime;
+            newNextWeekSupply += newTotalLocked * (nextWeek - block.timestamp) / MAX_TIME;
         }
 
         return newNextWeekSupply;
@@ -167,7 +168,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         locked[msg.sender].unlockTime = unlockTime;
         locked[msg.sender].amount = amount;
 
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        HAT.safeTransferFrom(msg.sender, address(this), amount);
 
         if (callback != address(0)) {
             IVotingEscrowCallback(callback).syncWithVotingEscrow(msg.sender);
@@ -192,7 +193,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         scheduledUnlock[lockedBalance.unlockTime] += amount;
         locked[account].amount = newAmount;
 
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        HAT.safeTransferFrom(msg.sender, address(this), amount);
 
         if (callback != address(0)) {
             IVotingEscrowCallback(callback).syncWithVotingEscrow(msg.sender);
@@ -241,7 +242,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         lockedBalance.amount = 0;
         locked[msg.sender] = lockedBalance;
 
-        IERC20(token).safeTransfer(msg.sender, amount);
+        HAT.safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
     }
@@ -265,13 +266,15 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     }
 
     function updateMaxTimeAllowed(uint256 newMaxTimeAllowed) external onlyOwner {
-        require(newMaxTimeAllowed <= maxTime, "Cannot exceed max time");
+        require(newMaxTimeAllowed <= MAX_TIME, "Cannot exceed max time");
         require(newMaxTimeAllowed > maxTimeAllowed, "Cannot shorten max time allowed");
         maxTimeAllowed = newMaxTimeAllowed;
     }
 
-    function addWhitelistedContracts(address[] _whitelistedContracts) external onlyOwner {
+    //TODO whould we want a removeWhitelistedContracts?
+    function addWhitelistedContracts(address[] calldata _whitelistedContracts) external onlyOwner {
         for (uint256 i = 0; i < _whitelistedContracts.length; i++) {
+            require(Address.isContract(_whitelistedContracts[i]), "Must be a contract");
             whitelistedContracts[_whitelistedContracts[i]] = true;
         } 
     }
@@ -286,14 +289,14 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         if (timestamp > lockedBalance.unlockTime) {
             return 0;
         }
-        return (lockedBalance.amount * (lockedBalance.unlockTime - timestamp)) / maxTime;
+        return (lockedBalance.amount * (lockedBalance.unlockTime - timestamp)) / MAX_TIME;
     }
 
     function _totalSupplyAtTimestamp(uint256 timestamp) private view returns (uint256) {
         uint256 weekCursor = _endOfWeek(timestamp);
         uint256 total = 0;
-        for (; weekCursor <= timestamp + maxTime; weekCursor += 1 weeks) {
-            total += scheduledUnlock[weekCursor] * (weekCursor - timestamp) / maxTime;
+        for (; weekCursor <= timestamp + MAX_TIME; weekCursor += 1 weeks) {
+            total += scheduledUnlock[weekCursor] * (weekCursor - timestamp) / MAX_TIME;
         }
         return total;
     }
@@ -337,7 +340,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
                 // Remove Chess unlocked at the beginning of this week from total locked amount.
                 newTotalLocked -= scheduledUnlock[w];
                 // Calculate supply at the end of the next week.
-                newNextWeekSupply -= newTotalLocked * 1 weeks / maxTime;
+                newNextWeekSupply -= newTotalLocked * 1 weeks / MAX_TIME;
             }
             checkpointWeek = currentWeek;
         }
@@ -345,14 +348,14 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         // Remove the old schedule if there is one
         if (oldAmount > 0 && oldUnlockTime >= nextWeek) {
             newTotalLocked -= oldAmount;
-            newNextWeekSupply -= oldAmount * (oldUnlockTime - nextWeek) / maxTime;
+            newNextWeekSupply -= oldAmount * (oldUnlockTime - nextWeek) / MAX_TIME;
         }
 
         totalLocked = newTotalLocked + newAmount;
         // Round up on division when added to the total supply, so that the total supply is never
         // smaller than the sum of all accounts' veCHESS balance.
         nextWeekSupply = newNextWeekSupply + (
-            (newAmount * (newUnlockTime - nextWeek) + (maxTime - 1)) / maxTime
+            (newAmount * (newUnlockTime - nextWeek) + (MAX_TIME - 1)) / MAX_TIME
         );
     }
 }

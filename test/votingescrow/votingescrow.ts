@@ -34,7 +34,7 @@ function calculateDropBelowTime(
     return unlockTime - BigNumber.from(MAX_TIME).mul(threshold).div(lockAmount).toNumber();
 }
 
-describe("VotingEscrowV2", function () {
+describe.only("VotingEscrow", function () {
     interface FixtureData {
         readonly wallets: FixtureWalletMap;
         readonly startWeek: number;
@@ -69,7 +69,7 @@ describe("VotingEscrowV2", function () {
         const MockToken = await ethers.getContractFactory("MockToken");
         const chess = await MockToken.connect(owner).deploy("Chess", "Chess", 18);
 
-        const VotingEscrow = await ethers.getContractFactory("VotingEscrowV2");
+        const VotingEscrow = await ethers.getContractFactory("VotingEscrow");
         const votingEscrow = await VotingEscrow.connect(owner).deploy(
             chess.address,
             "Vote-escrowed CHESS",
@@ -116,7 +116,7 @@ describe("VotingEscrowV2", function () {
 
     describe("initialize", function () {
         it("Should revert if exceeding max time", async function () {
-            const VotingEscrow = await ethers.getContractFactory("VotingEscrowV2");
+            const VotingEscrow = await ethers.getContractFactory("VotingEscrow");
             await expect(VotingEscrow.connect(owner).deploy(
                 chess.address,
                 "Vote-escrowed CHESS",
@@ -722,15 +722,11 @@ describe("VotingEscrowV2", function () {
         });
     });
 
-    describe("updateAddressWhitelist()", function () {
+    describe("addWhitelistedContracts()", function () {
         let newWhitelist: MockContract;
         let someContract: MockContract;
 
         beforeEach(async function () {
-            newWhitelist = await deployMockForName(
-                owner,
-                "contracts/votingescrow/VotingEscrowV2.sol:IAddressWhitelist"
-            );
             someContract = await deployMockForName(owner, "IERC20");
             await chess.mint(someContract.address, parseEther("1000"));
             await someContract.call(chess, "approve", votingEscrow.address, parseEther("1000"));
@@ -738,19 +734,17 @@ describe("VotingEscrowV2", function () {
 
         it("Should only be called by owner", async function () {
             await expect(
-                votingEscrow.updateAddressWhitelist(newWhitelist.address)
+                votingEscrow.addWhitelistedContracts([someContract.address])
             ).to.be.revertedWith("Ownable: caller is not the owner");
         });
 
         it("Should reject non-contract whitelist address", async function () {
             await expect(
-                votingEscrow.connect(owner).updateAddressWhitelist(addr1)
-            ).to.be.revertedWith("Must be null or a contract");
+                votingEscrow.connect(owner).addWhitelistedContracts([addr1])
+            ).to.be.revertedWith("Must be a contract");
         });
 
         it("Should reject non-whitelisted contract to create lock", async function () {
-            await newWhitelist.mock.check.withArgs(someContract.address).returns(false);
-            await votingEscrow.connect(owner).updateAddressWhitelist(newWhitelist.address);
             await expect(
                 someContract.call(
                     votingEscrow,
@@ -762,18 +756,18 @@ describe("VotingEscrowV2", function () {
         });
 
         it("Should allow whitelisted contract to create lock", async function () {
-            await votingEscrow.connect(owner).updateAddressWhitelist(newWhitelist.address);
-            await expect(() =>
+            await votingEscrow.connect(owner).addWhitelistedContracts([someContract.address]);                
+            await expect(
                 someContract.call(
                     votingEscrow,
                     "createLock",
                     parseEther("10"),
                     startWeek + WEEK * 10
                 )
-            ).to.callMocks({
-                func: newWhitelist.mock.check.withArgs(someContract.address),
-                rets: [true],
-            });
+            ).to.emit(votingEscrow, "LockCreated").withArgs(
+                someContract.address, 
+                parseEther("10"), startWeek + WEEK * 10
+                );
         });
     });
 
