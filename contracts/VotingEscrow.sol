@@ -9,15 +9,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IVotingEscrow.sol";
 
-interface IAddressWhitelist {
-    function check(address account) external view returns (bool);
-}
-
 interface IVotingEscrowCallback {
     function syncWithVotingEscrow(address account) external;
 }
 
-contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
+contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     event LockCreated(address indexed account, uint256 amount, uint256 unlockTime);
@@ -37,7 +33,6 @@ contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
     string public name;
     string public symbol;
 
-    address public addressWhitelist;
 
     mapping(address => LockedBalance) public locked;
 
@@ -64,6 +59,9 @@ contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
 
     /// @notice Start timestamp of the trading week in which the last checkpoint is made
     uint256 public checkpointWeek;
+
+    // mapping of address => true if the address is a whitelisted contract address
+    mapping(address => bool) public whitelistedContracts;
 
     constructor(
         address token_,
@@ -146,7 +144,9 @@ contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
     }
 
     function createLock(uint256 amount, uint256 unlockTime) external nonReentrant {
-        _assertNotContract();
+        if (msg.sender != tx.origin) {
+            require(whitelistedContracts[msg.sender], "Smart contract depositors not allowed");
+        }
         require(
             unlockTime + 1 weeks == _endOfWeek(unlockTime),
             "Unlock time must be end of a week"
@@ -256,14 +256,6 @@ contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
         nextWeekSupply = _totalSupplyAtTimestamp(nextWeek);
     }
 
-    function updateAddressWhitelist(address newWhitelist) external onlyOwner {
-        require(
-            newWhitelist == address(0) || Address.isContract(newWhitelist),
-            "Must be null or a contract"
-        );
-        addressWhitelist = newWhitelist;
-    }
-
     function updateCallback(address newCallback) external onlyOwner {
         require(
             newCallback == address(0) || Address.isContract(newCallback),
@@ -278,16 +270,10 @@ contract VotingEscrowV2 is IVotingEscrow, Ownable, ReentrancyGuard {
         maxTimeAllowed = newMaxTimeAllowed;
     }
 
-    function _assertNotContract() private view {
-        if (msg.sender != tx.origin) {
-            if (
-                addressWhitelist != address(0) &&
-                IAddressWhitelist(addressWhitelist).check(msg.sender)
-            ) {
-                return;
-            }
-            revert("Smart contract depositors not allowed");
-        }
+    function addWhitelistedContracts(address[] _whitelistedContracts) external onlyOwner {
+        for (uint256 i = 0; i < _whitelistedContracts.length; i++) {
+            whitelistedContracts[_whitelistedContracts[i]] = true;
+        } 
     }
 
     function _balanceOfAtTimestamp(address account, uint256 timestamp)
