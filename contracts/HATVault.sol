@@ -492,13 +492,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawRequest}. */
     function withdrawRequest() external nonReentrant {
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
-        // since last withdrawRequest (meaning the last withdraw request had expired)
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp <
-            withdrawEnableStartTime[msg.sender] +
-                generalParameters.withdrawRequestEnablePeriod)
-            revert PendingWithdrawRequestExists();
         // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         withdrawEnableStartTime[msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;

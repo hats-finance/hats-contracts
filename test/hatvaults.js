@@ -1542,12 +1542,6 @@ contract("HatVaults", (accounts) => {
     }
 
     await utils.increaseTime(7 * 24 * 3600);
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
 
     await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
@@ -1563,20 +1557,9 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.withdrawRequest({ from: staker });
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
-    await utils.increaseTime(7 * 24 * 3600);
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
-    await utils.increaseTime(7 * 24 * 3600);
+
+    await utils.increaseTime(14 * 24 * 3600);
+
     //request is now expired so can request again.
     await vault.withdrawRequest({ from: staker });
   });

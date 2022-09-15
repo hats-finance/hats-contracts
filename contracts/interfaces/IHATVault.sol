@@ -126,8 +126,6 @@ interface IHATVault is IERC4626Upgradeable {
     error DelayPeriodForSettingMaxBountyHadNotPassed();
     // Committee already checked in
     error CommitteeAlreadyCheckedIn();
-    // Pending withdraw request exists
-    error PendingWithdrawRequestExists();
     // Amount to deposit is zero
     error AmountToDepositIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
