@@ -760,7 +760,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp <=
+            block.timestamp <
                 withdrawEnableStartTime[_user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }
