@@ -71,20 +71,20 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         checkpointWeek = _endOfWeek(block.timestamp) - 1 weeks;
     }
 
-    function getTimestampDropBelow(address account, uint256 threshold)
+    function getTimestampDropBelow(address _account, uint256 _threshold)
         external
         view
         returns (uint256)
     {
-        LockedBalance memory lockedBalance = locked[account];
-        if (lockedBalance.amount == 0 || lockedBalance.amount < threshold) {
+        LockedBalance memory lockedBalance = locked[_account];
+        if (lockedBalance.amount == 0 || lockedBalance.amount < _threshold) {
             return 0;
         }
-        return lockedBalance.unlockTime - (threshold * MAX_TIME / lockedBalance.amount);
+        return lockedBalance.unlockTime - (_threshold * MAX_TIME / lockedBalance.amount);
     }
 
-    function balanceOf(address account) external view override returns (uint256) {
-        return _balanceOfAtTimestamp(account, block.timestamp);
+    function balanceOf(address _account) external view override returns (uint256) {
+        return _balanceOfAtTimestamp(_account, block.timestamp);
     }
 
     function totalSupply() external view override returns (uint256) {
@@ -110,98 +110,98 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         return newNextWeekSupply;
     }
 
-    function getLockedBalance(address account)
+    function getLockedBalance(address _account)
         external
         view
         override
         returns (LockedBalance memory)
     {
-        return locked[account];
+        return locked[_account];
     }
 
-    function balanceOfAtTimestamp(address account, uint256 timestamp)
+    function balanceOfAtTimestamp(address _account, uint256 _timestamp)
         external
         view
         override
         returns (uint256)
     {
-        return _balanceOfAtTimestamp(account, timestamp);
+        return _balanceOfAtTimestamp(_account, _timestamp);
     }
 
-    function totalSupplyAtTimestamp(uint256 timestamp) external view returns (uint256) {
-        return _totalSupplyAtTimestamp(timestamp);
+    function totalSupplyAtTimestamp(uint256 _timestamp) external view returns (uint256) {
+        return _totalSupplyAtTimestamp(_timestamp);
     }
 
-    function createLock(uint256 amount, uint256 unlockTime) external nonReentrant {
+    function createLock(uint256 _amount, uint256 _unlockTime) external nonReentrant {
         if (msg.sender != tx.origin) {
             require(whitelistedContracts[msg.sender], "Smart contract depositors not allowed");
         }
         // TODO round instead of require?
         require(
-            unlockTime + 1 weeks == _endOfWeek(unlockTime),
+            _unlockTime + 1 weeks == _endOfWeek(_unlockTime),
             "Unlock time must be end of a week"
         );
 
         LockedBalance memory lockedBalance = locked[msg.sender];
 
-        require(amount > 0, "Zero value");
+        require(_amount > 0, "Zero value");
         require(lockedBalance.amount == 0, "Withdraw old tokens first");
-        require(unlockTime > block.timestamp, "Can only lock until time in the future");
+        require(_unlockTime > block.timestamp, "Can only lock until time in the future");
         require(
-            unlockTime <= block.timestamp + maxTimeAllowed,
+            _unlockTime <= block.timestamp + maxTimeAllowed,
             "Voting lock cannot exceed max lock time"
         );
 
-        _checkpoint(lockedBalance.amount, lockedBalance.unlockTime, amount, unlockTime);
-        scheduledUnlock[unlockTime] += amount;
-        locked[msg.sender].unlockTime = unlockTime;
-        locked[msg.sender].amount = amount;
+        _checkpoint(lockedBalance.amount, lockedBalance.unlockTime, _amount, _unlockTime);
+        scheduledUnlock[_unlockTime] += _amount;
+        locked[msg.sender].unlockTime = _unlockTime;
+        locked[msg.sender].amount = _amount;
 
-        HAT.safeTransferFrom(msg.sender, address(this), amount);
+        HAT.safeTransferFrom(msg.sender, address(this), _amount);
 
         if (callback != address(0)) {
             IVotingEscrowCallback(callback).syncWithVotingEscrow(msg.sender);
         }
 
-        emit LockCreated(msg.sender, amount, unlockTime);
+        emit LockCreated(msg.sender, _amount, _unlockTime);
     }
 
-    function increaseAmount(address account, uint256 amount) external nonReentrant {
-        LockedBalance memory lockedBalance = locked[account];
+    function increaseAmount(address _account, uint256 _amount) external nonReentrant {
+        LockedBalance memory lockedBalance = locked[_account];
 
-        require(amount > 0, "Zero value");
+        require(_amount > 0, "Zero value");
         require(lockedBalance.unlockTime > block.timestamp, "Cannot add to expired lock");
 
-        uint256 newAmount = lockedBalance.amount + amount;
+        uint256 newAmount = lockedBalance.amount + _amount;
         _checkpoint(
             lockedBalance.amount,
             lockedBalance.unlockTime,
             newAmount,
             lockedBalance.unlockTime
         );
-        scheduledUnlock[lockedBalance.unlockTime] += amount;
-        locked[account].amount = newAmount;
+        scheduledUnlock[lockedBalance.unlockTime] += _amount;
+        locked[_account].amount = newAmount;
 
-        HAT.safeTransferFrom(msg.sender, address(this), amount);
+        HAT.safeTransferFrom(msg.sender, address(this), _amount);
 
         if (callback != address(0)) {
             IVotingEscrowCallback(callback).syncWithVotingEscrow(msg.sender);
         }
 
-        emit AmountIncreased(account, amount);
+        emit AmountIncreased(_account, _amount);
     }
 
-    function increaseUnlockTime(uint256 unlockTime) external nonReentrant {
+    function increaseUnlockTime(uint256 _unlockTime) external nonReentrant {
         require(
-            unlockTime + 1 weeks == _endOfWeek(unlockTime),
+            _unlockTime + 1 weeks == _endOfWeek(_unlockTime),
             "Unlock time must be end of a week"
         );
         LockedBalance memory lockedBalance = locked[msg.sender];
 
         require(lockedBalance.unlockTime > block.timestamp, "Lock expired");
-        require(unlockTime > lockedBalance.unlockTime, "Can only increase lock duration");
+        require(_unlockTime > lockedBalance.unlockTime, "Can only increase lock duration");
         require(
-            unlockTime <= block.timestamp + maxTimeAllowed,
+            _unlockTime <= block.timestamp + maxTimeAllowed,
             "Voting lock cannot exceed max lock time"
         );
 
@@ -209,17 +209,17 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
             lockedBalance.amount,
             lockedBalance.unlockTime,
             lockedBalance.amount,
-            unlockTime
+            _unlockTime
         );
         scheduledUnlock[lockedBalance.unlockTime] -= lockedBalance.amount;
-        scheduledUnlock[unlockTime] += lockedBalance.amount;
-        locked[msg.sender].unlockTime = unlockTime;
+        scheduledUnlock[_unlockTime] += lockedBalance.amount;
+        locked[msg.sender].unlockTime = _unlockTime;
 
         if (callback != address(0)) {
             IVotingEscrowCallback(callback).syncWithVotingEscrow(msg.sender);
         }
 
-        emit UnlockTimeIncreased(msg.sender, unlockTime);
+        emit UnlockTimeIncreased(msg.sender, _unlockTime);
     }
 
     function withdraw() external nonReentrant {
@@ -246,18 +246,18 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         nextWeekSupply = _totalSupplyAtTimestamp(nextWeek);
     }
 
-    function updateCallback(address newCallback) external onlyOwner {
+    function updateCallback(address _newCallback) external onlyOwner {
         require(
-            newCallback == address(0) || Address.isContract(newCallback),
+            _newCallback == address(0) || Address.isContract(_newCallback),
             "Must be null or a contract"
         );
-        callback = newCallback;
+        callback = _newCallback;
     }
 
-    function updateMaxTimeAllowed(uint256 newMaxTimeAllowed) external onlyOwner {
-        require(newMaxTimeAllowed <= MAX_TIME, "Cannot exceed max time");
-        require(newMaxTimeAllowed > maxTimeAllowed, "Cannot shorten max time allowed");
-        maxTimeAllowed = newMaxTimeAllowed;
+    function updateMaxTimeAllowed(uint256 _newMaxTimeAllowed) external onlyOwner {
+        require(_newMaxTimeAllowed <= MAX_TIME, "Cannot exceed max time");
+        require(_newMaxTimeAllowed > maxTimeAllowed, "Cannot shorten max time allowed");
+        maxTimeAllowed = _newMaxTimeAllowed;
     }
 
     //TODO whould we want a removeWhitelistedContracts?
@@ -268,24 +268,24 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         } 
     }
 
-    function _balanceOfAtTimestamp(address account, uint256 timestamp)
+    function _balanceOfAtTimestamp(address _account, uint256 _timestamp)
         private
         view
         returns (uint256)
     {
-        require(timestamp >= block.timestamp, "Must be current or future time");
-        LockedBalance memory lockedBalance = locked[account];
-        if (timestamp > lockedBalance.unlockTime) {
+        require(_timestamp >= block.timestamp, "Must be current or future time");
+        LockedBalance memory lockedBalance = locked[_account];
+        if (_timestamp > lockedBalance.unlockTime) {
             return 0;
         }
-        return (lockedBalance.amount * (lockedBalance.unlockTime - timestamp)) / MAX_TIME;
+        return (lockedBalance.amount * (lockedBalance.unlockTime - _timestamp)) / MAX_TIME;
     }
 
-    function _totalSupplyAtTimestamp(uint256 timestamp) private view returns (uint256) {
-        uint256 weekCursor = _endOfWeek(timestamp);
+    function _totalSupplyAtTimestamp(uint256 _timestamp) private view returns (uint256) {
+        uint256 weekCursor = _endOfWeek(_timestamp);
         uint256 total = 0;
-        for (; weekCursor <= timestamp + MAX_TIME; weekCursor += 1 weeks) {
-            total += scheduledUnlock[weekCursor] * (weekCursor - timestamp) / MAX_TIME;
+        for (; weekCursor <= _timestamp + MAX_TIME; weekCursor += 1 weeks) {
+            total += scheduledUnlock[weekCursor] * (weekCursor - _timestamp) / MAX_TIME;
         }
         return total;
     }
@@ -297,10 +297,10 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     ///
     ///      A trading week starts at UTC time `SETTLEMENT_TIME` on a Thursday (inclusive)
     ///      and ends at the same time of the next Thursday (exclusive).
-    /// @param timestamp The given timestamp
+    /// @param _timestamp The given timestamp
     /// @return End timestamp of the trading week.
-    function _endOfWeek(uint256 timestamp) internal pure returns (uint256) {
-        return ((timestamp + 1 weeks - SETTLEMENT_TIME) / 1 weeks) * 1 weeks + SETTLEMENT_TIME;
+    function _endOfWeek(uint256 _timestamp) internal pure returns (uint256) {
+        return ((_timestamp + 1 weeks - SETTLEMENT_TIME) / 1 weeks) * 1 weeks + SETTLEMENT_TIME;
     }
 
     /// @dev Pre-conditions:
@@ -312,10 +312,10 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     ///      The latter two conditions gaurantee that `newUnlockTime` is no smaller than the local
     ///      variable `nextWeek` in the function.
     function _checkpoint(
-        uint256 oldAmount,
-        uint256 oldUnlockTime,
-        uint256 newAmount,
-        uint256 newUnlockTime
+        uint256 _oldAmount,
+        uint256 _oldUnlockTime,
+        uint256 _newAmount,
+        uint256 _newUnlockTime
     ) private {
         // Update veCHESS supply at the beginning of each week since the last checkpoint.
         uint256 weekCursor = checkpointWeek;
@@ -335,16 +335,16 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         }
 
         // Remove the old schedule if there is one
-        if (oldAmount > 0 && oldUnlockTime >= nextWeek) {
-            newTotalLocked -= oldAmount;
-            newNextWeekSupply -= oldAmount * (oldUnlockTime - nextWeek) / MAX_TIME;
+        if (_oldAmount > 0 && _oldUnlockTime >= nextWeek) {
+            newTotalLocked -= _oldAmount;
+            newNextWeekSupply -= _oldAmount * (_oldUnlockTime - nextWeek) / MAX_TIME;
         }
 
-        totalLocked = newTotalLocked + newAmount;
+        totalLocked = newTotalLocked + _newAmount;
         // Round up on division when added to the total supply, so that the total supply is never
         // smaller than the sum of all accounts' veCHESS balance.
         nextWeekSupply = newNextWeekSupply + (
-            (newAmount * (newUnlockTime - nextWeek) + (MAX_TIME - 1)) / MAX_TIME
+            (_newAmount * (_newUnlockTime - nextWeek) + (MAX_TIME - 1)) / MAX_TIME
         );
     }
 }
