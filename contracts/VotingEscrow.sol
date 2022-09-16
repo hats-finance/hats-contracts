@@ -16,24 +16,13 @@ interface IVotingEscrowCallback {
 contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    //TODO mv to interface & create errors
-    event LockCreated(address indexed account, uint256 amount, uint256 unlockTime);
-
-    event AmountIncreased(address indexed account, uint256 increasedAmount);
-
-    event UnlockTimeIncreased(address indexed account, uint256 newUnlockTime);
-
-    event Withdrawn(address indexed account, uint256 amount);
-
-    uint8 public constant decimals = 18; //TODO rm
-
-    uint256 public immutable MAX_TIME; //TODO set here?
-
-    IERC20 public immutable HAT;
+    uint8 public constant decimals = 18;
 
     string public name;
     string public symbol;
 
+    uint256 public immutable MAX_TIME; //TODO set here?
+    IERC20 public immutable HAT;
 
     mapping(address => LockedBalance) public locked;
 
@@ -61,7 +50,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     /// @notice Start timestamp of the trading week in which the last checkpoint is made
     uint256 public checkpointWeek;
 
-    // mapping of address => true if the address is a whitelisted contract address
+    /// @notice Mapping of address => true if the address is a whitelisted contract address
     mapping(address => bool) public whitelistedContracts;
 
     constructor(
@@ -85,7 +74,6 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     function getTimestampDropBelow(address account, uint256 threshold)
         external
         view
-        override
         returns (uint256)
     {
         LockedBalance memory lockedBalance = locked[account];
@@ -148,6 +136,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         if (msg.sender != tx.origin) {
             require(whitelistedContracts[msg.sender], "Smart contract depositors not allowed");
         }
+        // TODO round instead of require?
         require(
             unlockTime + 1 weeks == _endOfWeek(unlockTime),
             "Unlock time must be end of a week"
