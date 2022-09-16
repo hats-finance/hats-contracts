@@ -178,6 +178,8 @@ interface IHATVault is IERC4626Upgradeable {
     error CannotSetToPerviousRewardController();
     // Cannot transfer 0 amount of shares
     error TransferAmountCannotBeZero();
+    // Cannot transfer shares to self
+    error CannotTransferToSelf();
 
     
     event SubmitClaim(

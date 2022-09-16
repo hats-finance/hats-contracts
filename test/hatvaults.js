@@ -3769,6 +3769,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       assertVMException(ex, "TransferAmountCannotBeZero");
     }
 
+    try {
+      await vault.transfer(staker, web3.utils.toWei("1"), { from: staker });
+      assert(false, "cannot transfer to self");
+    } catch (ex) {
+      assertVMException(ex, "CannotTransferToSelf");
+    }
+
     await vault.approve(staker2, web3.utils.toWei("1"), { from: staker });
 
     tx = await vault.transferFrom(staker, staker2, web3.utils.toWei("1"), { from: staker2 });
