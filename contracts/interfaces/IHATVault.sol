@@ -176,7 +176,8 @@ interface IHATVault is IERC4626Upgradeable {
     error SystemInEmergencyPause();
     // Cannot set a reward controller that was already used in the past
     error CannotSetToPerviousRewardController();
-
+    // Cannot transfer 0 amount of shares
+    error TransferAmountCannotBeZero();
 
     
     event SubmitClaim(

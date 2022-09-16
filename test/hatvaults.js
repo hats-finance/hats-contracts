@@ -3761,6 +3761,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     } catch (ex) {
       assertVMException(ex, "ERC20: insufficient allowance");
     }
+
+    try {
+      await vault.transferFrom(staker, staker2, 0, { from: staker2 });
+      assert(false, "transfer amount cannot be 0");
+    } catch (ex) {
+      assertVMException(ex, "TransferAmountCannotBeZero");
+    }
+
     await vault.approve(staker2, web3.utils.toWei("1"), { from: staker });
 
     tx = await vault.transferFrom(staker, staker2, web3.utils.toWei("1"), { from: staker2 });

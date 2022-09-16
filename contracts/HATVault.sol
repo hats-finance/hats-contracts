@@ -696,6 +696,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address to,
         uint256 amount
     ) internal virtual override {
+        if (amount == 0) revert TransferAmountCannotBeZero();
         // deposit/mint/transfer
         if (to != address(0)) {
             if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
