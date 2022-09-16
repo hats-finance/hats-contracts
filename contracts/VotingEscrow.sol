@@ -16,10 +16,10 @@ interface IVotingEscrowCallback {
 contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    uint8 public constant decimals = 18;
-
+    //TODO rm?
     string public name;
     string public symbol;
+    uint8 public constant decimals = 18;
 
     uint256 public immutable MAX_TIME; //TODO set here?
     IERC20 public immutable HAT;
