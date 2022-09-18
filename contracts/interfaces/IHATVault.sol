@@ -130,6 +130,8 @@ interface IHATVault is IERC4626Upgradeable {
     error PendingWithdrawRequestExists();
     // Amount to deposit is zero
     error AmountToDepositIsZero();
+    // Amount to withdraw is zero
+    error AmountToWithdrawIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
     // Vesting duration is too long
