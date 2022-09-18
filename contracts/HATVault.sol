@@ -521,7 +521,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         uint256 shares = previewWithdraw(assets);
-        uint256 fee = assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee) - assets;
+        uint256 fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
