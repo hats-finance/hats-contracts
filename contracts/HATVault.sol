@@ -703,6 +703,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address to,
         uint256 amount
     ) internal virtual override {
+        if (amount == 0) revert AmountToTransferIsZero();
         // deposit/mint/transfer
         if (to != address(0)) {
             if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
@@ -760,7 +761,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp <=
+            block.timestamp <
                 withdrawEnableStartTime[_user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }
