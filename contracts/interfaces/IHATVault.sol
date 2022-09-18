@@ -128,10 +128,8 @@ interface IHATVault is IERC4626Upgradeable {
     error CommitteeAlreadyCheckedIn();
     // Pending withdraw request exists
     error PendingWithdrawRequestExists();
-    // Amount to deposit is zero
-    error AmountToDepositIsZero();
-    // Amount to withdraw is zero
-    error AmountToWithdrawIsZero();
+    // Amount to transfer/withdraw/deposit is zero
+    error AmountIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
     // Vesting duration is too long
