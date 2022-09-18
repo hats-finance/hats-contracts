@@ -520,9 +520,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-
         uint256 shares = previewWithdraw(assets);
-        uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
+        uint256 fee = assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee) - assets;
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
@@ -530,8 +529,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
-        public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-
+        public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         uint256 assets = previewRedeem(shares);
         uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
