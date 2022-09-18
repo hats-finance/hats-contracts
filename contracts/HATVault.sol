@@ -655,7 +655,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     ) internal override virtual nonReentrant {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
-        if (shares == 0) revert AmountToDepositIsZero();
         if (withdrawEnableStartTime[receiver] != 0 && receiver == caller) {
             // clear withdraw request if caller deposits in her own account
             withdrawEnableStartTime[receiver] = 0;

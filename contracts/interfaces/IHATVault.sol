@@ -126,8 +126,6 @@ interface IHATVault is IERC4626Upgradeable {
     error DelayPeriodForSettingMaxBountyHadNotPassed();
     // Committee already checked in
     error CommitteeAlreadyCheckedIn();
-    // Amount to deposit is zero
-    error AmountToDepositIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
     // Vesting duration is too long
