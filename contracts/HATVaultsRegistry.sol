@@ -268,7 +268,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 asset: _asset,
                 owner: _owner,
                 committee: _committee,
-                isPaused: _isPaused
+                isPaused: _isPaused,
+                descriptionHash: _descriptionHash
             })
         );
 

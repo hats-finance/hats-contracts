@@ -193,6 +193,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
         challengePeriod = NULL_UINT;
         challengeTimeOutPeriod = NULL_UINT;
+
+        emit SetVaultDescription(_params.descriptionHash);
     }
 
     /* ---------------------------------- Claim --------------------------------------- */
