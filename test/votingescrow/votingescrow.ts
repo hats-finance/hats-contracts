@@ -34,7 +34,7 @@ function calculateDropBelowTime(
     return unlockTime - BigNumber.from(MAX_TIME).mul(threshold).div(lockAmount).toNumber();
 }
 
-describe.only("VotingEscrow", function () {
+describe("VotingEscrow", function () {
     interface FixtureData {
         readonly wallets: FixtureWalletMap;
         readonly startWeek: number;
