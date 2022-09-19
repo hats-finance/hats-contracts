@@ -16,7 +16,6 @@ interface IVotingEscrowCallback {
 contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    //TODO rm?
     string public name;
     string public symbol;
     uint8 public constant decimals = 18;
@@ -89,22 +88,22 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
 
     function totalSupply() external view override returns (uint256) {
         uint256 weekCursor = checkpointWeek;
-        uint256 nextWeek = _endOfWeek(block.timestamp);
-        uint256 currentWeek = nextWeek - 1 weeks;
+        uint256 endOfCurrentWeek = _endOfWeek(block.timestamp);
+        uint256 startOfCurrentWeek = endOfCurrentWeek - 1 weeks;
         uint256 newNextWeekSupply = nextWeekSupply;
         uint256 newTotalLocked = totalLocked;
-        if (weekCursor < currentWeek) {
+        if (weekCursor < startOfCurrentWeek) {
             weekCursor += 1 weeks;
-            for (; weekCursor < currentWeek; weekCursor += 1 weeks) {
-                // Remove Chess unlocked at the beginning of the next week from total locked amount.
+            for (; weekCursor < startOfCurrentWeek; weekCursor += 1 weeks) {
+                // Remove HAT unlocked at the beginning of the next week from total locked amount.
                 newTotalLocked -= scheduledUnlock[weekCursor];
                 // Calculate supply at the end of the next week.
                 newNextWeekSupply -= newTotalLocked * 1 weeks / MAX_TIME;
             }
             newTotalLocked -= scheduledUnlock[weekCursor];
-            newNextWeekSupply -= newTotalLocked * (block.timestamp - currentWeek) / MAX_TIME;
+            newNextWeekSupply -= newTotalLocked * (block.timestamp - startOfCurrentWeek) / MAX_TIME;
         } else {
-            newNextWeekSupply += newTotalLocked * (nextWeek - block.timestamp) / MAX_TIME;
+            newNextWeekSupply += newTotalLocked * (endOfCurrentWeek - block.timestamp) / MAX_TIME;
         }
 
         return newNextWeekSupply;
@@ -236,11 +235,6 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         emit Withdrawn(msg.sender, amount);
     }
 
-    /// @notice Recalculate `nextWeekSupply` from scratch. This function eliminates accumulated
-    ///         rounding errors in `nextWeekSupply`, which is incrementally updated in
-    ///         `createLock`, `increaseAmount` and `increaseUnlockTime`. It is almost
-    ///         never required.
-    /// @dev Search "rounding error" in test cases for details about the rounding errors.
     function calibrateSupply() external {
         uint256 nextWeek = checkpointWeek + 1 weeks;
         nextWeekSupply = _totalSupplyAtTimestamp(nextWeek);
@@ -310,41 +304,41 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     ///      - `newUnlockTime + 1 weeks == _endOfWeek(newUnlockTime)`, i.e. aligned to a trading week
     ///
     ///      The latter two conditions gaurantee that `newUnlockTime` is no smaller than the local
-    ///      variable `nextWeek` in the function.
+    ///      variable `endOfCurrentWeek` in the function.
     function _checkpoint(
         uint256 _oldAmount,
         uint256 _oldUnlockTime,
         uint256 _newAmount,
         uint256 _newUnlockTime
     ) private {
-        // Update veCHESS supply at the beginning of each week since the last checkpoint.
+        // Update veHAT supply at the beginning of each week since the last checkpoint.
         uint256 weekCursor = checkpointWeek;
-        uint256 nextWeek = _endOfWeek(block.timestamp);
-        uint256 currentWeek = nextWeek - 1 weeks;
+        uint256 endOfCurrentWeek = _endOfWeek(block.timestamp);
+        uint256 startOfCurrentWeek = endOfCurrentWeek - 1 weeks;
         uint256 newTotalLocked = totalLocked;
         uint256 newNextWeekSupply = nextWeekSupply;
-        if (weekCursor < currentWeek) {
-            for (uint256 w = weekCursor + 1 weeks; w <= currentWeek; w += 1 weeks) {
+        if (weekCursor < startOfCurrentWeek) {
+            for (uint256 w = weekCursor + 1 weeks; w <= startOfCurrentWeek; w += 1 weeks) {
                 veSupplyPerWeek[w] = newNextWeekSupply;
-                // Remove Chess unlocked at the beginning of this week from total locked amount.
+                // Remove HAT unlocked at the beginning of this week from total locked amount.
                 newTotalLocked -= scheduledUnlock[w];
                 // Calculate supply at the end of the next week.
                 newNextWeekSupply -= newTotalLocked * 1 weeks / MAX_TIME;
             }
-            checkpointWeek = currentWeek;
+            checkpointWeek = startOfCurrentWeek;
         }
 
         // Remove the old schedule if there is one
-        if (_oldAmount > 0 && _oldUnlockTime >= nextWeek) {
+        if (_oldAmount > 0 && _oldUnlockTime >= endOfCurrentWeek) {
             newTotalLocked -= _oldAmount;
-            newNextWeekSupply -= _oldAmount * (_oldUnlockTime - nextWeek) / MAX_TIME;
+            newNextWeekSupply -= _oldAmount * (_oldUnlockTime - endOfCurrentWeek) / MAX_TIME;
         }
 
         totalLocked = newTotalLocked + _newAmount;
         // Round up on division when added to the total supply, so that the total supply is never
-        // smaller than the sum of all accounts' veCHESS balance.
+        // smaller than the sum of all accounts' veHAT balance.
         nextWeekSupply = newNextWeekSupply + (
-            (_newAmount * (_newUnlockTime - nextWeek) + (MAX_TIME - 1)) / MAX_TIME
+            (_newAmount * (_newUnlockTime - endOfCurrentWeek) + (MAX_TIME - 1)) / MAX_TIME
         );
     }
 }
