@@ -1673,6 +1673,16 @@ contract("HatVaults", (accounts) => {
       (await vault.maxWithdraw(staker)),
       web3.utils.toWei("0.98")
     );
+
+    assert.equal(
+      (await vault.previewWithdraw(web3.utils.toWei("0.98"))),
+      web3.utils.toWei("1")
+    );
+
+    assert.equal(
+      (await vault.previewRedeem(web3.utils.toWei("1"))),
+      web3.utils.toWei("0.98")
+    );
  
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 

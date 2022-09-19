@@ -520,8 +520,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-        uint256 shares = previewWithdraw(assets);
-        uint256 fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
+        (uint256 shares, uint256 fee) = previewWithdrawAndFee(assets);
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
@@ -530,8 +529,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-        uint256 assets = previewRedeem(shares);
-        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
+        (uint256 assets, uint256 fee) = previewRedeemAndFee(shares);
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
@@ -565,16 +563,27 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IERC4626Upgradeable-previewWithdraw}. */
-    function previewWithdraw(uint256 assets) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
-        return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+    function previewWithdraw(uint256 assets) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256 shares) {
+        (shares,) = previewWithdrawAndFee(assets);
     }
 
     /** @notice See {IERC4626Upgradeable-previewRedeem}. */
-    function previewRedeem(uint256 shares) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
-        uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
-        return assets - fee;
+    function previewRedeem(uint256 shares) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256 assets) {
+        (assets,) = previewRedeemAndFee(shares);
+    }
+
+    /** @notice See {IHATVault-previewWithdrawAndFee}. */
+    function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
+        uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
+        fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
+        shares = _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+    }
+
+    /** @notice See {IHATVault-previewRedeemAndFee}. */
+    function previewRedeemAndFee(uint256 shares) public view returns (uint256 assets, uint256 fee) {
+        uint256 assetsPlusFee = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
+        fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
+        assets = assetsPlusFee - fee;
     }
 
     /* -------------------------------------------------------------------------------- */
