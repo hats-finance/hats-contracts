@@ -1079,7 +1079,7 @@ contract("HatVaults", (accounts) => {
       await vault.mint(0, staker, { from: staker });
       assert(false, "cannot deposit 0");
     } catch (ex) {
-      assertVMException(ex, "TransferAmountCannotBeZero");
+      assertVMException(ex, "AmountCannotBeZero");
     }
 
     await vault.deposit(1, staker, { from: staker });
@@ -1090,7 +1090,7 @@ contract("HatVaults", (accounts) => {
       await vault.deposit(1, staker, { from: staker });
       assert(false, "cannot deposit amount too low for 1 share");
     } catch (ex) {
-      assertVMException(ex, "TransferAmountCannotBeZero");
+      assertVMException(ex, "AmountCannotBeZero");
     }
   });
 
@@ -3766,7 +3766,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.transferFrom(staker, staker2, 0, { from: staker2 });
       assert(false, "transfer amount cannot be 0");
     } catch (ex) {
-      assertVMException(ex, "TransferAmountCannotBeZero");
+      assertVMException(ex, "AmountCannotBeZero");
     }
 
     try {
