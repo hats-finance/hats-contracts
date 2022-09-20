@@ -1728,6 +1728,10 @@ contract("HatVaults", (accounts) => {
     assert.equal(result.shares, web3.utils.toWei("1")); 
     assert.equal(result.fee, web3.utils.toWei("0.02")); 
 
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei("1")));
+    assert.equal(result.shares.toString(), web3.utils.toWei("1.020408163265306122").toString()); 
+    assert.equal(result.fee.toString(), web3.utils.toWei("0.020408163265306122").toString()); 
+
     result = (await vault.previewRedeemAndFee(web3.utils.toWei("0.5")));
     assert.equal(result.assets, web3.utils.toWei("0.49")); 
     assert.equal(result.fee, web3.utils.toWei("0.01")); 
@@ -1740,6 +1744,25 @@ contract("HatVaults", (accounts) => {
     result = (await vault.previewRedeemAndFee(new web3.utils.BN("1")));
     assert.equal(result.assets.toString(), (new web3.utils.BN("1")).toString()); 
     assert.equal(result.fee, web3.utils.toWei("0")); 
+
+    // we submit and approve a claim for 90% of the vault value
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+    await advanceToSafetyPeriod();
+    result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
+    assert.equal(result.assets.toString(), web3.utils.toWei("0.196")); 
+    assert.equal(result.fee, web3.utils.toWei("0.004")); 
 
   });
   
