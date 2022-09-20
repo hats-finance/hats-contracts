@@ -34,6 +34,8 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
     uint256 private constant MIN_PERIOD = 1;
 
+    bool private IS_MASTER_COPY;
+
     // -- State --
 
     IERC20 public token;
@@ -72,6 +74,10 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
     event BeneficiaryChanged(address newBeneficiary);
     event LockAccepted();
     event LockCanceled();
+
+    constructor() {
+        IS_MASTER_COPY = true;
+    }
 
     /**
      * @dev Only allow calls from the beneficiary of the contract
@@ -128,6 +134,8 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         token.safeTransfer(beneficiary, amountToRelease);
 
         emit TokensReleased(beneficiary, amountToRelease);
+
+        trySelfDestruct();
     }
 
     /**
@@ -142,6 +150,8 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         token.safeTransfer(beneficiary, _amount);
 
         emit TokensWithdrawn(beneficiary, _amount);
+
+        trySelfDestruct();
     }
 
     /**
@@ -389,5 +399,11 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         releaseStartTime = _releaseStartTime;
         vestingCliffTime = _vestingCliffTime;
         revocable = _revocable;
+    }
+
+    function trySelfDestruct() private {
+        if (!IS_MASTER_COPY && currentTime() > endTime && currentBalance() == 0) {
+            selfdestruct(payable(msg.sender));
+        }
     }
 }

@@ -494,11 +494,18 @@ contract("TokenLock", (accounts) => {
       await stakingToken.balanceOf(accounts[1]),
       web3.utils.toWei("1")
     );
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("withdraw surplus", async () => {
     await setup(accounts);
+    assert.equal(
+      await tokenLock.surplusAmount(),
+      web3.utils.toWei("0")
+    );
     await stakingToken.mint(tokenLock.address, web3.utils.toWei("100"));
+    await utils.increaseTime(1000);
+    await tokenLock.release({ from: accounts[1] });
     try {
       await tokenLock.withdrawSurplus(1);
       assert(false, "only beneficiary");
@@ -519,14 +526,15 @@ contract("TokenLock", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
-    assert.equal(await stakingToken.balanceOf(accounts[1]), 0);
+    assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
     await tokenLock.withdrawSurplus(web3.utils.toWei("100"), {
       from: accounts[1],
     });
     assert.equal(
       await stakingToken.balanceOf(accounts[1]),
-      web3.utils.toWei("100")
+      web3.utils.toWei("101")
     );
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("sweep tokens", async () => {

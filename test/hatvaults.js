@@ -5255,17 +5255,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       (await stakingToken.balanceOf(accounts[2])).sub(hackerPreviousBalance).toString(),
       expectedHackerBalance.toString()
     );
-    try {
-      await vestingTokenLock.withdrawSurplus(1, { from: accounts[2] });
-      assert(false, "no Surplus");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-    await stakingToken.mint(vestingTokenLock.address, 10);
-    //await stakingToken.transfer(vestingTokenLock.address,10);
-    tx = await vestingTokenLock.withdrawSurplus(1, { from: accounts[2] });
-    assert.equal(tx.logs[0].event, "TokensWithdrawn");
-    assert.equal(tx.logs[0].args.amount, 1);
+    expect(await ethers.provider.getCode(vestingTokenLock.address)).to.equal("0x");
   });
 
   it("no vesting", async () => {
