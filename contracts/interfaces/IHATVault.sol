@@ -586,7 +586,7 @@ interface IHATVault is IERC4626Upgradeable {
     /** 
     * @notice Returns the amount of assets to be sent to the user for the exact
     * amount of shares to redeem. Also returns the amount assets to be paid as fee.
-    * @return assets amound of assets to be sent in exchange for the amount of shares specified
+    * @return assets amount of assets to be sent in exchange for the amount of shares specified
     * @return fee The amount of assets that will be paid as fee
     */
     function previewRedeemAndFee(uint256 shares) external view returns (uint256 assets, uint256 fee);
