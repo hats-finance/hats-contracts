@@ -75,6 +75,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
     constructor() {
         endTime = type(uint256).max;
+        isInitialized = true;
     }
 
     /**
