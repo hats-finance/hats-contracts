@@ -1674,16 +1674,19 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei("0.98")
     );
 
+    // previewwithdraw says that to withdraw 0.98 tokens we will burn 1 share
     assert.equal(
       (await vault.previewWithdraw(web3.utils.toWei("0.98"))),
       web3.utils.toWei("1")
     );
 
+    // and vice versa, if we redeem one share, we will get 0.98 tokens
     assert.equal(
       (await vault.previewRedeem(web3.utils.toWei("1"))),
       web3.utils.toWei("0.98")
     );
  
+    // withdraw 0.98 tokens (and burn one share)
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
     assert.equal(
@@ -1697,8 +1700,49 @@ contract("HatVaults", (accounts) => {
         .add(new web3.utils.BN(web3.utils.toWei("0.04")))
         .toString()
     );
+    // and all shares of the staker are burnt
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("0")
+    );
+
   });
 
+  it("previewwithdrawandfee  is calculated correctly", async () => {
+    const { registry, owner }= await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
+
+    var staker = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+    let result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
+    assert.equal(result.assets, web3.utils.toWei("0.98")); 
+    assert.equal(result.fee, web3.utils.toWei("0.02")); 
+
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei(".98")));
+    assert.equal(result.shares, web3.utils.toWei("1")); 
+    assert.equal(result.fee, web3.utils.toWei("0.02")); 
+
+    result = (await vault.previewRedeemAndFee(web3.utils.toWei("0.5")));
+    assert.equal(result.assets, web3.utils.toWei("0.49")); 
+    assert.equal(result.fee, web3.utils.toWei("0.01")); 
+
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei(".49")));
+    assert.equal(result.shares, web3.utils.toWei("0.5")); 
+    assert.equal(result.fee, web3.utils.toWei("0.01")); 
+
+    // rounding with 1 wei - pay no fee
+    result = (await vault.previewRedeemAndFee(new web3.utils.BN("1")));
+    assert.equal(result.assets.toString(), (new web3.utils.BN("1")).toString()); 
+    assert.equal(result.fee, web3.utils.toWei("0")); 
+
+  });
+  
   it("Withdrawal fee is paid on redeem", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);

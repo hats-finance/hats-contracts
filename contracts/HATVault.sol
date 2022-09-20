@@ -576,7 +576,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
         uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
         fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
-        shares = _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+        shares = _convertToShares(assets + fee, MathUpgradeable.Rounding.Up);
     }
 
     /** @notice See {IHATVault-previewRedeemAndFee}. */

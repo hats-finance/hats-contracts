@@ -8,7 +8,7 @@ The HATVaults system depends a number of roles that together manage the system a
 - `arbitrator` - the party that is responsible for resolving disputes regarding claims
 
 
-## Publicly avilable functions
+## Publicly available functions
 
 - `registry.createVault`
 
