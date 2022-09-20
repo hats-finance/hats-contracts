@@ -577,7 +577,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @notice Returns the amount of shares to be burned to give the user the exact
     * amount of assets requested plus cover for the fee. Also returns the amount assets
     * to be paid as fee.
-    * @return shares The amound of shares to be burned to get the requested amount of assets
+    * @return shares The amount of shares to be burned to get the requested amount of assets
     * @return fee The amount of assets that will be paid as fee
     */
     function previewWithdrawAndFee(uint256 assets) external view returns (uint256 shares, uint256 fee);
