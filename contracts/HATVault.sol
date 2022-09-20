@@ -494,13 +494,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawRequest}. */
     function withdrawRequest() external nonReentrant {
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require withdraw to be at least withdrawRequestEnablePeriod+withdrawRequestPendingPeriod
-        // since last withdrawRequest (meaning the last withdraw request had expired)
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp <
-            withdrawEnableStartTime[msg.sender] +
-                generalParameters.withdrawRequestEnablePeriod)
-            revert PendingWithdrawRequestExists();
         // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         withdrawEnableStartTime[msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
@@ -529,9 +522,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-
-        uint256 shares = previewWithdraw(assets);
-        uint256 fee = _convertToAssets(shares - _convertToShares(assets, MathUpgradeable.Rounding.Up), MathUpgradeable.Rounding.Up);
+        (uint256 shares, uint256 fee) = previewWithdrawAndFee(assets);
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return shares;
@@ -539,10 +530,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-redeem}. */
     function redeem(uint256 shares, address receiver, address owner) 
-        public  override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
-
-        uint256 assets = previewRedeem(shares);
-        uint256 fee = _convertToAssets(shares, MathUpgradeable.Rounding.Down) - assets;
+        public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
+        (uint256 assets, uint256 fee) = previewRedeemAndFee(shares);
         _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
 
         return assets;
@@ -576,16 +565,26 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IERC4626Upgradeable-previewWithdraw}. */
-    function previewWithdraw(uint256 assets) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        uint256 assetsPlusFee = (assets * HUNDRED_PERCENT / (HUNDRED_PERCENT - withdrawalFee));
-        return _convertToShares(assetsPlusFee, MathUpgradeable.Rounding.Up);
+    function previewWithdraw(uint256 assets) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256 shares) {
+        (shares,) = previewWithdrawAndFee(assets);
     }
 
     /** @notice See {IERC4626Upgradeable-previewRedeem}. */
-    function previewRedeem(uint256 shares) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        uint256 assets = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
-        uint256 fee = assets * withdrawalFee / HUNDRED_PERCENT;
-        return assets - fee;
+    function previewRedeem(uint256 shares) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256 assets) {
+        (assets,) = previewRedeemAndFee(shares);
+    }
+
+    /** @notice See {IHATVault-previewWithdrawAndFee}. */
+    function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
+        fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
+        shares = _convertToShares(assets + fee, MathUpgradeable.Rounding.Up);
+    }
+
+    /** @notice See {IHATVault-previewRedeemAndFee}. */
+    function previewRedeemAndFee(uint256 shares) public view returns (uint256 assets, uint256 fee) {
+        uint256 assetsPlusFee = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
+        fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
+        assets = assetsPlusFee - fee;
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -666,7 +665,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     ) internal override virtual nonReentrant {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
-        if (shares == 0) revert AmountToDepositIsZero();
         if (withdrawEnableStartTime[receiver] != 0 && receiver == caller) {
             // clear withdraw request if caller deposits in her own account
             withdrawEnableStartTime[receiver] = 0;
@@ -705,6 +703,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address to,
         uint256 amount
     ) internal virtual override {
+        if (amount == 0) revert AmountCannotBeZero();
+        if (from == to) revert CannotTransferToSelf();
         // deposit/mint/transfer
         if (to != address(0)) {
             if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
@@ -762,7 +762,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp <=
+            block.timestamp <
                 withdrawEnableStartTime[_user] +
                 generalParameters.withdrawRequestEnablePeriod);
     }

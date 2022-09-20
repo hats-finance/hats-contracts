@@ -1123,7 +1123,7 @@ contract("HatVaults", (accounts) => {
       await vault.mint(0, staker, { from: staker });
       assert(false, "cannot deposit 0");
     } catch (ex) {
-      assertVMException(ex, "AmountToDepositIsZero");
+      assertVMException(ex, "AmountCannotBeZero");
     }
 
     await vault.deposit(1, staker, { from: staker });
@@ -1134,7 +1134,7 @@ contract("HatVaults", (accounts) => {
       await vault.deposit(1, staker, { from: staker });
       assert(false, "cannot deposit amount too low for 1 share");
     } catch (ex) {
-      assertVMException(ex, "AmountToDepositIsZero");
+      assertVMException(ex, "AmountCannotBeZero");
     }
   });
 
@@ -1586,12 +1586,6 @@ contract("HatVaults", (accounts) => {
     }
 
     await utils.increaseTime(7 * 24 * 3600);
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
 
     await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
@@ -1607,20 +1601,9 @@ contract("HatVaults", (accounts) => {
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.withdrawRequest({ from: staker });
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
-    await utils.increaseTime(7 * 24 * 3600);
-    try {
-      await vault.withdrawRequest({ from: staker });
-      assert(false, "there is already pending request");
-    } catch (ex) {
-      assertVMException(ex, "PendingWithdrawRequestExists");
-    }
-    await utils.increaseTime(7 * 24 * 3600);
+
+    await utils.increaseTime(14 * 24 * 3600);
+
     //request is now expired so can request again.
     await vault.withdrawRequest({ from: staker });
   });
@@ -1734,7 +1717,20 @@ contract("HatVaults", (accounts) => {
       (await vault.maxWithdraw(staker)),
       web3.utils.toWei("0.98")
     );
+
+    // previewwithdraw says that to withdraw 0.98 tokens we will burn 1 share
+    assert.equal(
+      (await vault.previewWithdraw(web3.utils.toWei("0.98"))),
+      web3.utils.toWei("1")
+    );
+
+    // and vice versa, if we redeem one share, we will get 0.98 tokens
+    assert.equal(
+      (await vault.previewRedeem(web3.utils.toWei("1"))),
+      web3.utils.toWei("0.98")
+    );
  
+    // withdraw 0.98 tokens (and burn one share)
     await safeWithdraw(vault, web3.utils.toWei("0.98"), staker);
 
     assert.equal(
@@ -1748,8 +1744,72 @@ contract("HatVaults", (accounts) => {
         .add(new web3.utils.BN(web3.utils.toWei("0.04")))
         .toString()
     );
+    // and all shares of the staker are burnt
+    assert.equal(
+      (await vault.balanceOf(staker)),
+      web3.utils.toWei("0")
+    );
+
   });
 
+  it("previewwithdrawandfee  is calculated correctly", async () => {
+    const { registry, owner }= await setUpGlobalVars(accounts);
+    await registry.setFeeSetter(owner);
+    await vault.setWithdrawalFee(200, { from: owner });
+
+    var staker = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+    let result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
+    assert.equal(result.assets, web3.utils.toWei("0.98")); 
+    assert.equal(result.fee, web3.utils.toWei("0.02")); 
+
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei(".98")));
+    assert.equal(result.shares, web3.utils.toWei("1")); 
+    assert.equal(result.fee, web3.utils.toWei("0.02")); 
+
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei("1")));
+    assert.equal(result.shares.toString(), web3.utils.toWei("1.020408163265306122").toString()); 
+    assert.equal(result.fee.toString(), web3.utils.toWei("0.020408163265306122").toString()); 
+
+    result = (await vault.previewRedeemAndFee(web3.utils.toWei("0.5")));
+    assert.equal(result.assets, web3.utils.toWei("0.49")); 
+    assert.equal(result.fee, web3.utils.toWei("0.01")); 
+
+    result = (await vault.previewWithdrawAndFee(web3.utils.toWei(".49")));
+    assert.equal(result.shares, web3.utils.toWei("0.5")); 
+    assert.equal(result.fee, web3.utils.toWei("0.01")); 
+
+    // rounding with 1 wei - pay no fee
+    result = (await vault.previewRedeemAndFee(new web3.utils.BN("1")));
+    assert.equal(result.assets.toString(), (new web3.utils.BN("1")).toString()); 
+    assert.equal(result.fee, web3.utils.toWei("0")); 
+
+    // we submit and approve a claim for 90% of the vault value
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+    await advanceToSafetyPeriod();
+    result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
+    assert.equal(result.assets.toString(), web3.utils.toWei("0.196")); 
+    assert.equal(result.fee, web3.utils.toWei("0.004")); 
+
+  });
+  
   it("Withdrawal fee is paid on redeem", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
@@ -3822,6 +3882,21 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     } catch (ex) {
       assertVMException(ex, "ERC20: insufficient allowance");
     }
+
+    try {
+      await vault.transferFrom(staker, staker2, 0, { from: staker2 });
+      assert(false, "transfer amount cannot be 0");
+    } catch (ex) {
+      assertVMException(ex, "AmountCannotBeZero");
+    }
+
+    try {
+      await vault.transfer(staker, web3.utils.toWei("1"), { from: staker });
+      assert(false, "cannot transfer to self");
+    } catch (ex) {
+      assertVMException(ex, "CannotTransferToSelf");
+    }
+
     await vault.approve(staker2, web3.utils.toWei("1"), { from: staker });
 
     tx = await vault.transferFrom(staker, staker2, web3.utils.toWei("1"), { from: staker2 });

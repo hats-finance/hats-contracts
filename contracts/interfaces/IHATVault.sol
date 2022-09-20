@@ -127,10 +127,6 @@ interface IHATVault is IERC4626Upgradeable {
     error DelayPeriodForSettingMaxBountyHadNotPassed();
     // Committee already checked in
     error CommitteeAlreadyCheckedIn();
-    // Pending withdraw request exists
-    error PendingWithdrawRequestExists();
-    // Amount to deposit is zero
-    error AmountToDepositIsZero();
     // Total bounty split % should be `HUNDRED_PERCENT`
     error TotalSplitPercentageShouldBeHundredPercent();
     // Vesting duration is too long
@@ -179,7 +175,10 @@ interface IHATVault is IERC4626Upgradeable {
     error SystemInEmergencyPause();
     // Cannot set a reward controller that was already used in the past
     error CannotSetToPerviousRewardController();
-
+    // Cannot mint burn or transfer 0 amount of shares
+    error AmountCannotBeZero();
+    // Cannot transfer shares to self
+    error CannotTransferToSelf();
 
     
     event SubmitClaim(
@@ -575,4 +574,21 @@ interface IHATVault is IERC4626Upgradeable {
     */
     function getChallengeTimeOutPeriod() external view returns(uint256);
 
+    /** 
+    * @notice Returns the amount of shares to be burned to give the user the exact
+    * amount of assets requested plus cover for the fee. Also returns the amount assets
+    * to be paid as fee.
+    * @return shares The amount of shares to be burned to get the requested amount of assets
+    * @return fee The amount of assets that will be paid as fee
+    */
+    function previewWithdrawAndFee(uint256 assets) external view returns (uint256 shares, uint256 fee);
+
+
+    /** 
+    * @notice Returns the amount of assets to be sent to the user for the exact
+    * amount of shares to redeem. Also returns the amount assets to be paid as fee.
+    * @return assets amount of assets to be sent in exchange for the amount of shares specified
+    * @return fee The amount of assets that will be paid as fee
+    */
+    function previewRedeemAndFee(uint256 shares) external view returns (uint256 assets, uint256 fee);
 }
