@@ -34,8 +34,6 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
     uint256 private constant MIN_PERIOD = 1;
 
-    bool private IS_MASTER_COPY;
-
     // -- State --
 
     IERC20 public token;
@@ -76,7 +74,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
     event LockCanceled();
 
     constructor() {
-        IS_MASTER_COPY = true;
+        endTime = type(uint256).max;
     }
 
     /**
@@ -402,7 +400,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
     }
 
     function trySelfDestruct() private {
-        if (!IS_MASTER_COPY && currentTime() > endTime && currentBalance() == 0) {
+        if (currentTime() > endTime && currentBalance() == 0) {
             selfdestruct(payable(msg.sender));
         }
     }
