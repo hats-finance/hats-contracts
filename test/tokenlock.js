@@ -1,6 +1,7 @@
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
+const CloneFactoryMock = artifacts.require("./CloneFactoryMock.sol");
 const utils = require("./utils.js");
 
 var stakingToken;
@@ -57,7 +58,10 @@ function assertVMException(error) {
 contract("TokenLock", (accounts) => {
   it("initialize values", async () => {
     await setup(accounts);
-    let newTokenLock = await HATTokenLock.new();
+    const cloneFactory = await CloneFactoryMock.new();
+    let newTokenLock = await HATTokenLock.at(
+      (await cloneFactory.createClone(tokenLockParent.address)).logs[0].args._clone
+    );
 
     try {
       await newTokenLock.initialize(
@@ -243,6 +247,33 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revocable(),
       await tokenLock.canDelegate()
     );
+  });
+
+  it("cannot initialize master copy", async () => {
+    await setup(accounts);
+
+    assert.equal(
+      (await tokenLockParent.endTime()).toString(),
+      "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    );
+    try {
+      await tokenLockParent.initialize(
+        await tokenLock.owner(),
+        await tokenLock.beneficiary(),
+        await tokenLock.token(),
+        10,
+        await tokenLock.startTime(),
+        await tokenLock.endTime(),
+        await tokenLock.periods(),
+        await tokenLock.releaseStartTime(),
+        await tokenLock.vestingCliffTime(),
+        await tokenLock.revocable(),
+        await tokenLock.canDelegate()
+      );
+      assert(false, "cannot initialize twice");
+    } catch (ex) {
+      assertVMException(ex);
+    }
   });
 
   it("cannot initialize twice", async () => {
