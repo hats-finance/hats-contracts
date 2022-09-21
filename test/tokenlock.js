@@ -1,6 +1,7 @@
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
+const CloneFactoryMock = artifacts.require("./CloneFactoryMock.sol");
 const utils = require("./utils.js");
 
 var stakingToken;
@@ -57,7 +58,10 @@ function assertVMException(error) {
 contract("TokenLock", (accounts) => {
   it("initialize values", async () => {
     await setup(accounts);
-    let newTokenLock = await HATTokenLock.new();
+    const cloneFactory = await CloneFactoryMock.new();
+    let newTokenLock = await HATTokenLock.at(
+      (await cloneFactory.createClone(tokenLockParent.address)).logs[0].args._clone
+    );
 
     try {
       await newTokenLock.initialize(
@@ -243,6 +247,33 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revocable(),
       await tokenLock.canDelegate()
     );
+  });
+
+  it("cannot initialize master copy", async () => {
+    await setup(accounts);
+
+    assert.equal(
+      (await tokenLockParent.endTime()).toString(),
+      "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    );
+    try {
+      await tokenLockParent.initialize(
+        await tokenLock.owner(),
+        await tokenLock.beneficiary(),
+        await tokenLock.token(),
+        10,
+        await tokenLock.startTime(),
+        await tokenLock.endTime(),
+        await tokenLock.periods(),
+        await tokenLock.releaseStartTime(),
+        await tokenLock.vestingCliffTime(),
+        await tokenLock.revocable(),
+        await tokenLock.canDelegate()
+      );
+      assert(false, "cannot initialize twice");
+    } catch (ex) {
+      assertVMException(ex);
+    }
   });
 
   it("cannot initialize twice", async () => {
@@ -494,11 +525,18 @@ contract("TokenLock", (accounts) => {
       await stakingToken.balanceOf(accounts[1]),
       web3.utils.toWei("1")
     );
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("withdraw surplus", async () => {
     await setup(accounts);
+    assert.equal(
+      await tokenLock.surplusAmount(),
+      web3.utils.toWei("0")
+    );
     await stakingToken.mint(tokenLock.address, web3.utils.toWei("100"));
+    await utils.increaseTime(1000);
+    await tokenLock.release({ from: accounts[1] });
     try {
       await tokenLock.withdrawSurplus(1);
       assert(false, "only beneficiary");
@@ -519,14 +557,15 @@ contract("TokenLock", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
-    assert.equal(await stakingToken.balanceOf(accounts[1]), 0);
+    assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
     await tokenLock.withdrawSurplus(web3.utils.toWei("100"), {
       from: accounts[1],
     });
     assert.equal(
       await stakingToken.balanceOf(accounts[1]),
-      web3.utils.toWei("100")
+      web3.utils.toWei("101")
     );
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("sweep tokens", async () => {
