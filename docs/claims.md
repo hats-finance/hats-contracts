@@ -1,4 +1,4 @@
-# Submitting and approving claims for bounty payouts
+# Submission and aribtration claims for bounty payouts
 
 In Hats v2, we created a generic arbitration procedure in case some party does not agree with the size of the bounty assigned by the Committee.
 
@@ -16,6 +16,11 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
 
 ## Details and restrictions
 
+There are 3 "periods" relevant for the handling of a new claim:
+1. Challenge Period: the first `challengePeriod` seconds after the submission of the claim 
+1. Challenge Timeout Period: the `challengeTimeOutPeriod` seconds after the challenge period ended
+1. Expiration: after `challengePeriod + challengeTimeoutPeriod` seconds after the submission of the claim
+
 1. **SUBMISSION** 
   `submitClaim(beneficiary, bountyPercentage)` will create a new `claimId`.
    - `submitClaim` can only be called by the committee
@@ -23,23 +28,24 @@ The HATVaults contract only implements some time-out checks in case the arbitrat
    - `submitClaim` can only be called if no other active claim exists
    - emergencyPause must not be in effect
 1. **CHALLENGE** `challengeClaim(_claimId)` 
-   - can only be called during the challengePeriod
+   - can only be called during the challenge period
    - only the `arbitrator` or the `registry.owner` can challenge a claim (the registry.owner functions here as a "challenger of last resort")
    - can only be called if the claim has not been challenged yet
-   - `_claimId` must be the id of the currently active claim
 1. **APPROVAL** `approveClaim(_claimId, bountyPercentage)`
-   - during the challengePeriod:
-     - the claim must be challenged
-     - only the arbitrator can call `approveClaim` and can change the bountyPercentage if given the permission, until the challenge had timed out
-   - after the challenge period:
-     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim. 
-     - the bountyPercentage remains that as chosen by the committee
-   - `_claimId` must be the id of the currently active claim
+   - during the challenge period and challenge timeout period:
+     - if the claim is challenged, and no more than `challengeTimoutPeriod` seconds have passed since the challenge, the arbitrator can call `approveClaim`. The arbitrator can change the bountyPercentage if given the permission
+   - during the challenge timeout period:
+     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim.  In that case, the bountyPercentage remains that as chosen by the committee
 1. **DISMISSAL** `dismissClaim(_claimId)`
-   -  if a claim was challenged:
-      - before challengeTimeoutPeriod, only the arbitrator can dismiss the claim
-      - after challengeTimeOutPeriod, anyone can dismiss the claim
-    - if the claim was never challenged, then after challengePeriod + challengeTimeoutPeriod, anyone can dismiss the claim
-   - `_claimId` must be the id of the currently active claim
+    - during the challenge period and challenge timeout period:
+      - if the claim was challenged, the arbitrator can dismiss the claim
+    - after challengePeriod + challengeTimeoutPeriod, the claim is _expired_  and:
+      - anyone can dismiss the claim
 
-During the time from submitting a claim to its resolution, the vault will be locked for withdrawals, and no new claims can be submitted
+During the time from submitting a claim to its resolution (i.e. approval or dismissal), the vault will be locked for withdrawals, and no new claims can be submitted
+
+## Relevant settings
+
+- `challengePeriod`: length of challlenge period, in seconds
+- `challengeTimeoutPeriod`: length of time a challenged claim can be approved
+- `arbitratorCanChangeBounty`: determines whether the arbitrator change the bounty amount when approving a claim
