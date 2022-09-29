@@ -2572,6 +2572,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       1000,
       500,
       tokenLockFactory1.address,
+      accounts[0],
       true
     );
 
@@ -5656,6 +5657,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       1000,
       500,
       tokenLockFactory1.address,
+      accounts[0],
       true
     );
 
@@ -5701,6 +5703,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       1000,
       500,
       tokenLockFactory1.address,
+      accounts[0],
       true
     );
 

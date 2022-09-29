@@ -101,6 +101,7 @@ const setup = async function(
     hatToken.address,
     ...options.hatBountySplit,
     tokenLockFactory.address,
+    null,
     true
   );
 

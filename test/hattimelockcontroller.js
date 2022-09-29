@@ -7,6 +7,7 @@ const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const RewardController = artifacts.require("./RewardController.sol");
+const HATGovernanceArbitrator = artifacts.require("./HATGovernanceArbitrator.sol");
 const utils = require("./utils.js");
 
 const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
@@ -19,6 +20,7 @@ var hatToken;
 var router;
 var stakingToken;
 var tokenLockFactory;
+var arbitratorContract;
 var hatGovernanceDelay = 60 * 60 * 24 * 7;
 const {
   assertVMException,
@@ -53,6 +55,8 @@ const setup = async function(
   router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
+  arbitratorContract = await HATGovernanceArbitrator.new();
+  arbitratorContract
   let deployment = await deployHatVaults(
     hatToken.address,
     startBlock,
@@ -98,12 +102,13 @@ const setup = async function(
     false
   )).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
-  await hatVaultsRegistry.setDefaultArbitrator(hatTimelockController.address);
+
   await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
 
   await vault.transferOwnership(hatTimelockController.address);
   await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
   await rewardController.transferOwnership(hatTimelockController.address);
+  await arbitratorContract.transferOwnership(hatTimelockController.address);
 
   await hatTimelockController.setAllocPoint(
     vault.address,
@@ -298,7 +303,7 @@ contract("HatTimelockController", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     try {
-      await hatTimelockController.approveClaim(vault.address, claimId, bountyPercentage, {
+      await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -308,7 +313,7 @@ contract("HatTimelockController", (accounts) => {
 
     await utils.increaseTime(60 * 60 * 24);
 
-    await hatTimelockController.approveClaim(vault.address, claimId, bountyPercentage);
+    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
@@ -389,7 +394,7 @@ contract("HatTimelockController", (accounts) => {
     );
     await hatTimelockController.challengeClaim(vault.address, claimId);
 
-    await hatTimelockController.approveClaim(vault.address, claimId, 8000);
+    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, 8000);
   });
 
   it("challenge - dismiss claim", async () => {
@@ -403,7 +408,7 @@ contract("HatTimelockController", (accounts) => {
       vault.dismissClaim(claimId),
       "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
     );
-    await hatTimelockController.dismissClaim(vault.address, claimId);
+    await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId);
   });
 
   it("setCommittee", async () => {

@@ -5,6 +5,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "./HATVaultsRegistry.sol";
+import "./HATGovernanceArbitrator.sol";
 
 contract HATTimelockController is TimelockController {
 
@@ -17,16 +18,12 @@ contract HATTimelockController is TimelockController {
     
     // The following functions are not subject to the timelock
 
-    function approveClaim(HATVault _vault, bytes32 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
-        _vault.approveClaim(_claimId, _bountyPercentage);
+    function approveClaim(HATGovernanceArbitrator _arbitrator, HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
+        _arbitrator.approveClaim(_vault, _claimId);
     }
 
-    function challengeClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
-        _vault.challengeClaim(_claimId);
-    }
-
-    function dismissClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
-        _vault.dismissClaim(_claimId);
+    function dismissClaim(ATGovernanceArbitrator _arbitrator, HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
+        _arbitrator.dismissClaim(_vault, _claimId);
     }
 
     function setDepositPause(HATVault _vault, bool _depositPause) external onlyRole(PROPOSER_ROLE) {

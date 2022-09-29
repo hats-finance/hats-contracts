@@ -34,6 +34,7 @@ async function main(
   bountyGovernanceHAT = 1000,
   bountyHackerHATVested = 500,
   tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3",
+  arbitratorAddress = null,
   silent = false
 ) {
   // This is just a convenience check
@@ -54,6 +55,10 @@ async function main(
   }
   if (!governance && network.name === "hardhat") {
     governance = deployerAddress;
+  }
+
+  if (arbitratorAddress === null) {
+    arbitratorAddress = governance;
   }
 
   if (!silent) {
@@ -79,6 +84,7 @@ async function main(
   const hatVaultsRegistry = await HATVaultsRegistry.deploy(
     hatVaultImplementation.address,
     deployerAddress,
+    arbitratorAddress,
     HAT,
     bountyGovernanceHAT,
     bountyHackerHATVested,
