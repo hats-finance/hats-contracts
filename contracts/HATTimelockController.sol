@@ -4,7 +4,6 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
-import "./HATVaultsRegistry.sol";
 import "./HATGovernanceArbitrator.sol";
 
 contract HATTimelockController is TimelockController {
@@ -22,7 +21,7 @@ contract HATTimelockController is TimelockController {
         _arbitrator.approveClaim(_vault, _claimId);
     }
 
-    function dismissClaim(ATGovernanceArbitrator _arbitrator, HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
+    function dismissClaim(HATGovernanceArbitrator _arbitrator, HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
         _arbitrator.dismissClaim(_vault, _claimId);
     }
 

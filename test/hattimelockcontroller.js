@@ -65,7 +65,7 @@ const setup = async function(
     hatToken.address,
     ...hatBountySplit,
     tokenLockFactory.address,
-    arbitratorContract,
+    arbitratorContract.address,
     true
   );
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
@@ -311,8 +311,6 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
 
-    await utils.increaseTime(60 * 60 * 24);
-
     await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId);
 
     let path = ethers.utils.solidityPack(
@@ -393,7 +391,7 @@ contract("HatTimelockController", (accounts) => {
       "OnlyArbitratorOrRegistryOwner"
     );
 
-    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, 8000);
+    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId);
   });
 
   it("challenge - dismiss claim", async () => {
@@ -404,7 +402,7 @@ contract("HatTimelockController", (accounts) => {
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       vault.dismissClaim(claimId),
-      "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+      "OnlyCallableIfChallenged"
     );
     await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId);
   });
