@@ -56,7 +56,6 @@ const setup = async function(
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
   arbitratorContract = await HATGovernanceArbitrator.new();
-  arbitratorContract
   let deployment = await deployHatVaults(
     hatToken.address,
     startBlock,
@@ -66,6 +65,7 @@ const setup = async function(
     hatToken.address,
     ...hatBountySplit,
     tokenLockFactory.address,
+    arbitratorContract,
     true
   );
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
@@ -392,7 +392,6 @@ contract("HatTimelockController", (accounts) => {
       vault.challengeClaim(claimId),
       "OnlyArbitratorOrRegistryOwner"
     );
-    await hatTimelockController.challengeClaim(vault.address, claimId);
 
     await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, 8000);
   });
@@ -402,7 +401,6 @@ contract("HatTimelockController", (accounts) => {
     // set challenge period to 1000
     await advanceToSafetyPeriod(hatVaultsRegistry);
     let claimId = await submitClaim(vault, { accounts });
-    await hatTimelockController.challengeClaim(vault.address, claimId);
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
       vault.dismissClaim(claimId),
