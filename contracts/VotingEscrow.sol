@@ -20,16 +20,21 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     string public symbol;
     uint8 public constant decimals = 18;
 
-    uint256 public immutable MAX_TIME; //TODO set here?
+    /// @notice The limit on the maximum duration of locks allowed
+    /// @dev This value is used in calculations of voting power
+    uint256 public immutable MAX_TIME;
+
+    /// @notice The token that is being locked
     IERC20 public immutable HAT;
 
+    /// @notice Mapping of account addresses to their locked balances
     mapping(address => LockedBalance) public locked;
 
     /// @notice Mapping of unlockTime => total amount that will be unlocked at unlockTime
     mapping(uint256 => uint256) public scheduledUnlock;
 
-    /// @notice max lock time allowed at the moment
-    uint256 public maxTimeAllowed;
+    /// @notice Max lock duration allowed at the moment
+    uint256 public currentMaxTime;
 
     /// @notice Contract to be call when an account's locked HAT is updated
     address public callback;
@@ -57,14 +62,14 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         string memory name_,
         string memory symbol_,
         uint256 maxTime_,
-        uint256 maxTimeAllowed_
+        uint256 currentMaxTime_
     ) {
-        require(maxTimeAllowed_ <= maxTime_, "Cannot exceed max time");
+        if (currentMaxTime_ > maxTime_) revert CurrentMaxTimeCannotExceedMaxTime();
 
         HAT = IERC20(_HAT);
         // TODO: Might need to check maxTime is an end of a week
         MAX_TIME = maxTime_;
-        maxTimeAllowed = maxTimeAllowed_;
+        currentMaxTime = currentMaxTime_;
         name = name_;
         symbol = symbol_;
         checkpointWeek = _endOfWeek(block.timestamp) - 1 weeks;
@@ -132,9 +137,8 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     }
 
     function createLock(uint256 _amount, uint256 _unlockTime) external nonReentrant {
-        if (msg.sender != tx.origin) {
-            require(whitelistedContracts[msg.sender], "Smart contract depositors not allowed");
-        }
+        if (msg.sender != tx.origin && !whitelistedContracts[msg.sender])
+            revert OnlyEOAOrWhitelistedContractsAllowed();
         // TODO round instead of require?
         require(
             _unlockTime + 1 weeks == _endOfWeek(_unlockTime),
@@ -143,13 +147,10 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
 
         LockedBalance memory lockedBalance = locked[msg.sender];
 
-        require(_amount > 0, "Zero value");
-        require(lockedBalance.amount == 0, "Withdraw old tokens first");
-        require(_unlockTime > block.timestamp, "Can only lock until time in the future");
-        require(
-            _unlockTime <= block.timestamp + maxTimeAllowed,
-            "Voting lock cannot exceed max lock time"
-        );
+        if (_amount == 0) revert AmountCannotBeZero();
+        if (lockedBalance.amount != 0) revert MustWithdrawBeforeCreatingNewLock();
+        if (_unlockTime <= block.timestamp) revert UnlockTimeMustBeInTheFuture();
+        if (_unlockTime > block.timestamp + currentMaxTime) revert CannotExceedCurrentMaxLockDuration();
 
         _checkpoint(lockedBalance.amount, lockedBalance.unlockTime, _amount, _unlockTime);
         scheduledUnlock[_unlockTime] += _amount;
@@ -168,8 +169,8 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     function increaseAmount(address _account, uint256 _amount) external nonReentrant {
         LockedBalance memory lockedBalance = locked[_account];
 
-        require(_amount > 0, "Zero value");
-        require(lockedBalance.unlockTime > block.timestamp, "Cannot add to expired lock");
+        if (_amount == 0) revert AmountCannotBeZero();
+        if (lockedBalance.unlockTime <= block.timestamp) revert LockHasExpired();
 
         uint256 newAmount = lockedBalance.amount + _amount;
         _checkpoint(
@@ -191,18 +192,16 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     }
 
     function increaseUnlockTime(uint256 _unlockTime) external nonReentrant {
+        // TODO round instead of require?
         require(
             _unlockTime + 1 weeks == _endOfWeek(_unlockTime),
             "Unlock time must be end of a week"
         );
         LockedBalance memory lockedBalance = locked[msg.sender];
 
-        require(lockedBalance.unlockTime > block.timestamp, "Lock expired");
-        require(_unlockTime > lockedBalance.unlockTime, "Can only increase lock duration");
-        require(
-            _unlockTime <= block.timestamp + maxTimeAllowed,
-            "Voting lock cannot exceed max lock time"
-        );
+        if (lockedBalance.unlockTime <= block.timestamp) revert LockHasExpired();
+        if (_unlockTime <= lockedBalance.unlockTime) revert CanOnlyExtendLock();
+        if (_unlockTime > block.timestamp + currentMaxTime) revert CannotExceedCurrentMaxLockDuration();
 
         _checkpoint(
             lockedBalance.amount,
@@ -223,7 +222,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
 
     function withdraw() external nonReentrant {
         LockedBalance memory lockedBalance = locked[msg.sender];
-        require(block.timestamp >= lockedBalance.unlockTime, "The lock is not expired");
+        if (block.timestamp < lockedBalance.unlockTime) revert LockHasNotExpired();
         uint256 amount = uint256(lockedBalance.amount);
 
         lockedBalance.unlockTime = 0;
@@ -241,23 +240,21 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
     }
 
     function updateCallback(address _newCallback) external onlyOwner {
-        require(
-            _newCallback == address(0) || Address.isContract(_newCallback),
-            "Must be null or a contract"
-        );
+        if(_newCallback != address(0) && !Address.isContract(_newCallback))
+            revert NewCallbackMustBeNullOrContract();
         callback = _newCallback;
     }
 
-    function updateMaxTimeAllowed(uint256 _newMaxTimeAllowed) external onlyOwner {
-        require(_newMaxTimeAllowed <= MAX_TIME, "Cannot exceed max time");
-        require(_newMaxTimeAllowed > maxTimeAllowed, "Cannot shorten max time allowed");
-        maxTimeAllowed = _newMaxTimeAllowed;
+    function setCurrentMaxTime(uint256 _newMaxTime) external onlyOwner {
+        if (currentMaxTime_ > MAX_TIME) revert CurrentMaxTimeCannotExceedMaxTime();
+        if (_newMaxTime <= currentMaxTime) revert CanOnlyIncreaseCurrentMaxTime();
+        currentMaxTime = _newMaxTime;
     }
 
     //TODO whould we want a removeWhitelistedContracts?
     function addWhitelistedContracts(address[] calldata _whitelistedContracts) external onlyOwner {
         for (uint256 i = 0; i < _whitelistedContracts.length; i++) {
-            require(Address.isContract(_whitelistedContracts[i]), "Must be a contract");
+            if (!Address.isContract(_whitelistedContracts[i])) revert OnlyContractsCanBeWhitelisted();
             whitelistedContracts[_whitelistedContracts[i]] = true;
         } 
     }
@@ -267,7 +264,7 @@ contract VotingEscrow is IVotingEscrow, Ownable, ReentrancyGuard {
         view
         returns (uint256)
     {
-        require(_timestamp >= block.timestamp, "Must be current or future time");
+        if (_timestamp < block.timestamp) revert CannotQueryPastBalance();
         LockedBalance memory lockedBalance = locked[_account];
         if (_timestamp > lockedBalance.unlockTime) {
             return 0;
