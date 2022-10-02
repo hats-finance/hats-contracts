@@ -364,7 +364,7 @@ interface IHATVault is IERC4626Upgradeable {
     function setVaultDescription(string memory _descriptionHash) external;
 
     /**
-    * @notice Called by vault's owner to set the vault's reward controller
+    * @notice Called by the registry's owner to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
     function setRewardController(IRewardController _newRewardController) external;
