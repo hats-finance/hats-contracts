@@ -8,6 +8,20 @@ interface IVotingEscrow {
         uint256 unlockTime;
     }
 
+    error CurrentMaxTimeCannotExceedMaxTime();
+    error OnlyEOAOrWhitelistedContractsAllowed();
+    error AmountCannotBeZero();
+    error MustWithdrawBeforeCreatingNewLock();
+    error UnlockTimeMustBeInTheFuture();
+    error CannotExceedCurrentMaxLockDuration();
+    error LockHasExpired();
+    error CanOnlyExtendLock();
+    error LockHasNotExpired();
+    error NewCallbackMustBeNullOrContract();
+    error CanOnlyIncreaseCurrentMaxTime();
+    error OnlyContractsCanBeWhitelisted();
+    error CannotQueryPastBalance();
+
     event LockCreated(address indexed account, uint256 amount, uint256 unlockTime);
 
     event AmountIncreased(address indexed account, uint256 increasedAmount);
@@ -114,11 +128,11 @@ interface IVotingEscrow {
     function updateCallback(address _newCallback) external;
 
     /**
-     * @notice Updates the maximum lock time allowed. Can only be called by the owner.
-     * @param _newMaxTimeAllowed The new maximum lock time allowed, must be greater than the current
+     * @notice Updates the maximum lock duration allowed. Can only be called by the owner.
+     * @param _newMaxTimeAllowed The new maximum lock duration allowed, must be greater than the current
      * and smaller than `MAX_TIME`
      */
-    function updateMaxTimeAllowed(uint256 _newMaxTimeAllowed) external;
+    function setCurrentMaxTime(uint256 _newMaxTime) external;
 
     /**
      * @notice Adds new accounts to the whitelist. Can only be called by the owner.
