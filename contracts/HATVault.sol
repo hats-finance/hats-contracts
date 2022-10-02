@@ -111,9 +111,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     mapping(address => bool) public rewardControllerRemoved;
 
-    // the percentage of the total bounty to be swapped to HATs and sent to governance
+    // the percentage of the total bounty to be swapped to HATs and sent to governance (out of {HUNDRED_PERCENT})
     uint256 internal bountyGovernanceHAT;
-    // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+    // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract (out of {HUNDRED_PERCENT})
     uint256 internal bountyHackerHATVested;
 
     // address of the arbitrator - which can dispute claims and override the committee's decisions
@@ -436,11 +436,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setRewardController}. */
-    function setRewardController(IRewardController _newRewardController) external onlyRegistryOwner noActiveClaim {
+    function setRewardController(IRewardController _rewardController) external onlyRegistryOwner noActiveClaim {
         rewardControllerRemoved[address(rewardController)] = true;
-        if (rewardControllerRemoved[address(_newRewardController)]) revert CannotSetToPerviousRewardController();
-        rewardController = _newRewardController;
-        emit SetRewardController(_newRewardController);
+        if (rewardControllerRemoved[address(_rewardController)]) revert CannotSetToPerviousRewardController();
+        rewardController = _rewardController;
+        emit SetRewardController(_rewardController);
     }
     
     /** @notice See {IHATVault-setHATBountySplit}. */
