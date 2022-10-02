@@ -104,6 +104,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     bool public depositPause;
 
+    // Is the vault visible on the Hats ui, set to false on initialization and change of vault description.
+    // Only the registry owner can change this value
+    bool public isVisible;
+
     // Time of when withdrawal period starts for every user that has an
     // active withdraw request. (time when last withdraw request pending 
     // period ended, or 0 if last action was deposit or withdraw)
@@ -432,7 +436,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setVaultDescription}. */
     function setVaultDescription(string memory _descriptionHash) external onlyOwner {
+        isVisible = false;
         emit SetVaultDescription(_descriptionHash);
+    }
+
+    /** @notice See {IHATVault-setVaultVisibility}. */
+    function setVaultVisibility(bool _visible) external onlyRegistryOwner {
+        isVisible = _visible;
+        emit SetVaultVisibility(_visible);
     }
 
     /** @notice See {IHATVault-setRewardController}. */

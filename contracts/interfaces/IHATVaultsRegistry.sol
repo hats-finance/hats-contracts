@@ -231,13 +231,6 @@ interface IHATVaultsRegistry {
      */
     event SetMaxBountyDelay(uint256 _delay);
 
-    /**
-     * @notice Emitted when the UI visibility of a vault is changed
-     * @param _vault The address of the vault to update
-     * @param _visible Is this vault visible in the UI
-     */
-    event SetVaultVisibility(address indexed _vault, bool indexed _visible);
-
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
      * @param _asset The vault's native token
@@ -500,14 +493,6 @@ interface IHATVaultsRegistry {
     ) 
     external 
     returns(address vault);
-
-    /**
-     * @notice Called by governance to change the UI visibility of a vault
-     * @param _vault The address of the vault to update
-     * @param _visible Is this vault visible in the UI
-     * This parameter can be used by the UI to include or exclude the vault
-     */
-    function setVaultVisibility(address _vault, bool _visible) external;
 
     /**
      * @notice Transfer the part of the bounty that is supposed to be swapped

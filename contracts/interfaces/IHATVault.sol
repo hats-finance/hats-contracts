@@ -211,6 +211,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
+    event SetVaultVisibility(bool indexed _visible);
     event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
@@ -358,10 +359,17 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Called by the vault's owner to change the description of the
-    * vault in the Hats.finance UI
+    * vault in the Hats.finance UI. Resets the vault's visibility to false.
     * @param _descriptionHash the hash of the vault's description
     */
     function setVaultDescription(string memory _descriptionHash) external;
+
+    /**
+     * @notice Called by the registry owner to change the UI visibility of the vault
+     * @param _visible Is this vault visible in the UI
+     * This parameter can be used by the UI to include or exclude the vault
+     */
+    function setVaultVisibility(bool _visible) external;
 
     /**
     * @notice Called by vault's owner to set the vault's reward controller
