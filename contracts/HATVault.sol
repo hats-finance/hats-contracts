@@ -272,7 +272,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             }
             // the arbitrator can update the bounty if needed
-            if(claim.arbitratorCanChangeBounty) {
+            if (claim.arbitratorCanChangeBounty) {
                 claim.bountyPercentage = _bountyPercentage;
             }
         } else {
@@ -361,7 +361,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setCommittee}. */
     function setCommittee(address _committee) external {
-        // governance can update committee only if committee was not checked in yet.
+        // vault owner can update committee only if committee was not checked in yet.
         if (msg.sender == owner() && committee != msg.sender) {
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();

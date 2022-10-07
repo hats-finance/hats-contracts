@@ -293,7 +293,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Set new committee address. Can be called by existing committee,
-    * or by the governance in the case that the committee hadn't checked in
+    * or by the the vault's owner in the case that the committee hadn't checked in
     * yet.
     * @param _committee The address of the new committee 
     */
