@@ -52,8 +52,6 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
     
-    // vault address => is visible
-    mapping(address => bool) public isVaultVisible;
     // asset => hacker address => amount
     mapping(address => mapping(address => uint256)) public hackersHatReward;
     // asset => amount
@@ -287,12 +285,6 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _bountyVestingPeriods,
             _isPaused
         );
-    }
-
-    /** @notice See {IHATVaultsRegistry-setVaultVisibility}. */
-    function setVaultVisibility(address _vault, bool _visible) external onlyOwner {
-        isVaultVisible[_vault] = _visible;
-        emit SetVaultVisibility(_vault, _visible);
     }
 
     /** @notice See {IHATVaultsRegistry-addTokensToSwap}. */
