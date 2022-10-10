@@ -1,4 +1,4 @@
-# Submission and aribtration claims for bounty payouts
+# Submission and arbitration of claims for bounty payouts
 
 In Hats v2, we created a generic arbitration procedure in case some party does not agree with the size of the bounty assigned by the Committee.
 
