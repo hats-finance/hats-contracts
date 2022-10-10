@@ -35,7 +35,7 @@ There are 3 "periods" relevant for the handling of a new claim:
    - during the challenge period and challenge timeout period:
     - if the claim is challenged (during the challenge period), and no more than `challengeTimoutPeriod` seconds have passed since the challenge, the arbitrator can call `approveClaim`. The arbitrator can change the bountyPercentage if given the permission
    - during the challenge timeout period:
-     - if the claim was not challenged, anyone can call `approveClaim` and approve the claim.  In that case, the bountyPercentage remains that as chosen by the committee
+    - if the challenge period had passed and the claim was not challenged (but is not yet expired), anyone can call `approveClaim` and approve the claim. In that case, the bountyPercentage remains that as chosen by the committee
 1. **DISMISSAL** `dismissClaim(_claimId)`
     - during the challenge period and challenge timeout period:
       - if the claim was challenged, the arbitrator can dismiss the claim
