@@ -48,4 +48,4 @@ During the time from submitting a claim to its resolution (i.e. approval or dism
 
 - `challengePeriod`: length of challlenge period, in seconds
 - `challengeTimeoutPeriod`: length of time a challenged claim can be approved
-- `arbitratorCanChangeBounty`: determines whether the arbitrator change the bounty amount when approving a claim
+- `arbitratorCanChangeBounty`: determines whether the arbitrator can change the bounty percentage when approving a claim
