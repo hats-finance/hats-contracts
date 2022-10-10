@@ -103,7 +103,7 @@ In the [parameters](./parameters.md) document we list which parameters are contr
 |-|-|-|
 !registry.owner|block submissions and deposits, mints and transfers by calling `setEmergencyPaused`|by design| 
 |registry.owner|block all or specific transfers (including deposit/withdraw) by setting the reward controller to an invalid or malicious address|users can call `emergencyWithdraw`|
-|registry.owner|can take disproportionate share bounty by manipulating HATBountySplit |maximum value is limited to 20%, the setter subject to time lock, which mitigates the problem|
+|registry.owner|can take disproportionate share of bounties by manipulating the part that is swapped to HATs and sent to governance |maximum value is limited to 20%, the setter subject to time lock, which mitigates the problem|
 |registry.owner|block logging of claims by setting a very high claimFee|no, but it is easy to find other communication channels, no crucial systems depend on that
 |vault.owner|block future payouts by setting maxBounty to 0|no users funds are at risk 
 |vault.owner|block deposits by calling `setDepositPause`|by design|
@@ -115,4 +115,4 @@ In the [parameters](./parameters.md) document we list which parameters are contr
 |arbitrator|block payouts by dismissing all claims|by design - registry owner can change the arbitrator if it is malicious|
 |arbitrator|temporarily block withdrawals for challengeTimeOutPeriod (<85 days)|by design - registry owner cna change the arbitrator if it is malicious|
 |committee and arbitrator|block withdrawals by re-submitting and challenging it during each safety period|by design. registry owner can change the arbitrator, if they collude
-!rewardController.owner|empty reward controller by calling `sweepToken`|by design| 
+|rewardController.owner|empty reward controller by calling `sweepToken`|by design| 

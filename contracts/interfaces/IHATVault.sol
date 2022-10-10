@@ -50,7 +50,7 @@ interface IHATVault is IERC4626Upgradeable {
     enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
 
     // How to divide the bounty - after deducting the part that is swapped to
-    // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
+    // HAT tokens (and then sent to governance and vested to the hacker)
     // values are in percentages and should add up to 100% (defined as 10000)
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
