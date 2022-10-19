@@ -357,7 +357,7 @@ interface IHATVault is IERC4626Upgradeable {
     function setDepositPause(bool _depositPause) external;
 
     /**
-    * @notice Called by the vault's owner to change the description of the
+    * @notice Called by the registry's owner to change the description of the
     * vault in the Hats.finance UI
     * @param _descriptionHash the hash of the vault's description
     */
