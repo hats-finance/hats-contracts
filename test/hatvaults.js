@@ -4513,7 +4513,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.setVaultDescription("_descriptionHash", { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyRegistryOwner");
     }
     tx = await vault.setVaultDescription("_descriptionHash");
     assert.equal(tx.logs[0].event, "SetVaultDescription");

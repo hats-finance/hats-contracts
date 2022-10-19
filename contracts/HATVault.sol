@@ -431,7 +431,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setVaultDescription}. */
-    function setVaultDescription(string memory _descriptionHash) external onlyOwner {
+    function setVaultDescription(string memory _descriptionHash) external onlyRegistryOwner {
         emit SetVaultDescription(_descriptionHash);
     }
 
