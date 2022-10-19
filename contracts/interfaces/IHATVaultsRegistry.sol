@@ -56,15 +56,6 @@ interface IHATVaultsRegistry {
         uint256 claimFee;  
     }
 
-    // How to divide the HAT part of bounties, in percentages (out of {HUNDRED_PERCENT})
-    // The precentages are taken from the total bounty
-    struct HATBountySplit {
-        // the percentage of the total bounty to be swapped to HATs and sent to governance
-        uint256 governanceHat;
-        // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-        uint256 hackerHatVested;
-    }
-
     /**
      * @notice Raised on {setWithdrawSafetyPeriod} if the withdraw period to
      * be set is shorter than 1 hour
