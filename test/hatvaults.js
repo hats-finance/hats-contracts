@@ -2649,7 +2649,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       '32000000000000000000', '43000000000000000000',
       '78000000000000000000', '64000000000000000000',
       '65000000000000000000', '29000000000000000000'
-    ]
+    ];
 
     var startBlock = (await web3.eth.getBlock("latest")).number + 1000;
     await setUpGlobalVars(accounts, startBlock);
@@ -2749,7 +2749,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       '66000000000000000000', '70000000000000000000',
       '40000000000000000000', '38000000000000000000',
       '84000000000000000000', '38000000000000000000'
-    ]
+    ];
 
     var startBlock = (await web3.eth.getBlock("latest")).number;
     await setUpGlobalVars(accounts, startBlock);
