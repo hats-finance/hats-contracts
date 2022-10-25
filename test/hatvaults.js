@@ -448,7 +448,7 @@ contract("HatVaults", (accounts) => {
       await rewardController.claimReward(vault.address, staker, { from: staker });
       assert(false, "can't claim reward when there are not enough rewards");
     } catch (ex) {
-      assertVMException(ex, "HAT::_transferTokens: transfer amount exceeds balance");
+      assertVMException(ex, "ERC20: transfer amount exceeds balance");
     }
   });
 
@@ -2458,7 +2458,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
 
     let hatTotalSupply = await hatToken.totalSupply();
-    let hatTokenCap = await hatToken.CAP();
+    let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
     await utils.setMinter(hatToken, accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
@@ -5773,7 +5773,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       web3.utils.toWei("0").toString()
     );
     let hatTotalSupply = await hatToken.totalSupply();
-    let hatTokenCap = await hatToken.CAP();
+    let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
     await utils.setMinter(hatToken, accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
@@ -6011,7 +6011,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await rewardController.claimReward(vault.address, staker, { from: staker });
       assert(false, "can't claim reward when there are not enough rewards");
     } catch (ex) {
-      assertVMException(ex, "HAT::_transferTokens: transfer amount exceeds balance");
+      assertVMException(ex, "ERC20: transfer amount exceeds balance");
     }
 
     await utils.setMinter(hatToken, accounts[0], expectedReward);

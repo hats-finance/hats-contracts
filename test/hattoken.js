@@ -264,12 +264,12 @@ contract("HATToken", (accounts) => {
     }
   });
 
-  it("getPriorVotes ", async () => {
+  it("getPastVotes ", async () => {
     const token = await HATToken.new(accounts[0], utils.TIME_LOCK_DELAY);
     await utils.setMinter(token, accounts[0], 2000);
 
     try {
-      await token.getPriorVotes(
+      await token.getPastVotes(
         accounts[1],
         (await web3.eth.getBlock("latest")).number + 1
       );
@@ -279,41 +279,41 @@ contract("HATToken", (accounts) => {
     }
 
     // Should start at 0
-    let currentVote = await token.getPriorVotes(
+    let currentVote = await token.getPastVotes(
       accounts[1],
       (await web3.eth.getBlock("latest")).number - 1
     );
     assert.equal(currentVote, 0);
 
     await token.mint(accounts[1], 100);
-    currentVote = await token.getCurrentVotes(accounts[1]);
+    currentVote = await token.getVotes(accounts[1]);
     assert.equal(currentVote, 0);
     await token.delegate(accounts[1], { from: accounts[1] });
-    currentVote = await token.getCurrentVotes(accounts[1]);
+    currentVote = await token.getVotes(accounts[1]);
     assert.equal(currentVote, 100);
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let firstBlockNumber = currentBlockNumber;
     //increment block number
     await utils.increaseTime(40);
-    currentVote = await token.getPriorVotes(accounts[1], currentBlockNumber);
+    currentVote = await token.getPastVotes(accounts[1], currentBlockNumber);
     assert.equal(currentVote, 100);
     await token.burn(50, { from: accounts[1] });
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     //increment block number
     await utils.increaseTime(40);
-    currentVote = await token.getPriorVotes(accounts[1], currentBlockNumber);
+    currentVote = await token.getPastVotes(accounts[1], currentBlockNumber);
     assert.equal(currentVote, 50);
 
     // Should be 0 before first action
-    currentVote = await token.getPriorVotes(accounts[1], 0);
+    currentVote = await token.getPastVotes(accounts[1], 0);
     assert.equal(currentVote, 0);
 
     // Check old votes count
-    currentVote = await token.getPriorVotes(accounts[1], firstBlockNumber);
+    currentVote = await token.getPastVotes(accounts[1], firstBlockNumber);
     assert.equal(currentVote, 100);
 
     // Check old votes count
-    currentVote = await token.getPriorVotes(
+    currentVote = await token.getPastVotes(
       accounts[1],
       currentBlockNumber - 1
     );
@@ -325,9 +325,9 @@ contract("HATToken", (accounts) => {
     await token.burn(0, { from: accounts[2] });
     await token.burn(1, { from: accounts[1] });
     // Check old votes count
-    currentVote = await token.getPriorVotes(accounts[1], currentBlockNumber);
+    currentVote = await token.getPastVotes(accounts[1], currentBlockNumber);
     assert.equal(currentVote, 50);
-    currentVote = await token.getPriorVotes(
+    currentVote = await token.getPastVotes(
       accounts[1],
       currentBlockNumber + 2
     );
@@ -339,17 +339,17 @@ contract("HATToken", (accounts) => {
     await utils.setMinter(token, accounts[0], 2000);
 
     // Should start at 0
-    let currentVote = await token.getPriorVotes(
+    let currentVote = await token.getPastVotes(
       accounts[1],
       (await web3.eth.getBlock("latest")).number - 1
     );
     assert.equal(currentVote, 0);
 
     await token.mint(accounts[1], 100);
-    currentVote = await token.getCurrentVotes(accounts[1]);
+    currentVote = await token.getVotes(accounts[1]);
     assert.equal(currentVote, 0);
     await token.delegateTwice(accounts[1], accounts[2], { from: accounts[1] });
-    currentVote = await token.getCurrentVotes(accounts[1]);
+    currentVote = await token.getVotes(accounts[1]);
     assert.equal(currentVote, 100);
   });
 
@@ -568,22 +568,14 @@ contract("HATToken", (accounts) => {
       .pow(web3.utils.toBN(256))
       .sub(web3.utils.toBN(1));
 
-    try {
-      await token.approve(accounts[2], value.sub(web3.utils.toBN(1)), {
-        from: accounts[1],
-      });
-      assert(false, "cannot allow amount larger than 96 bits");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
+    await token.approve(accounts[2], value.sub(web3.utils.toBN(1)), {from: accounts[1]});
     await token.approve(accounts[2], value, { from: accounts[1] });
 
     assert.equal(
       (await token.allowance(accounts[1], accounts[2])).toString(),
       web3.utils
         .toBN(2)
-        .pow(web3.utils.toBN(96))
+        .pow(web3.utils.toBN(256))
         .sub(web3.utils.toBN(1))
         .toString()
     );
@@ -601,25 +593,6 @@ contract("HATToken", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
-  });
-
-  it("test safe 32", async () => {
-    const token = await HATToken.new(accounts[0], utils.TIME_LOCK_DELAY);
-    await utils.setMinter(token, accounts[0], web3.utils.toWei("1000"));
-    await token.mint(accounts[1], web3.utils.toWei("100"));
-    let value = web3.utils.toBN(2).pow(web3.utils.toBN(32));
-
-    try {
-      await token.testSafe32(value);
-      assert(false, "cannot allow amount larger than 96 bits");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    value = value.sub(web3.utils.toBN(1));
-
-    let safe32 = await token.testSafe32(value);
-    assert.equal(safe32.toString(), value.toString());
   });
 
   const Permit = [
@@ -883,7 +856,6 @@ contract("HATToken", (accounts) => {
     // }
     await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
 
-    assert.equal((await token.nonces(owner)).toString(), "1");
     assert.equal(await token.delegates(owner), accounts[2]);
   });
 
@@ -912,7 +884,6 @@ contract("HATToken", (accounts) => {
     const { v, r, s } = fromRpcSig(signature);
     await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
 
-    assert.equal((await token.nonces(owner)).toString(), "1");
     assert.equal(await token.delegates(owner), accounts[2]);
     try {
       await token.delegateBySig(accounts[2], nonce, expiry, v, r, s);
