@@ -129,6 +129,18 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
         defaultArbitratorCanChangeBounty = true;
+        emit RegistryCreated(
+            _hatVaultImplementation,
+            _HAT,
+            address(_tokenLockFactory),
+            generalParameters,
+            _bountyGovernanceHAT,
+            _bountyHackerHATVested,
+            _hatGovernance,
+            defaultChallengePeriod,
+            defaultChallengeTimeOutPeriod,
+            defaultArbitratorCanChangeBounty
+        );
     }
 
     /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */
@@ -278,6 +290,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit VaultCreated(
             vault,
             address(_asset),
+            _owner,
             _committee,
             _rewardController,
             _maxBounty,

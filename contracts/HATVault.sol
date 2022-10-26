@@ -406,7 +406,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty.timestamp = block.timestamp;
-        emit SetPendingMaxBounty(_maxBounty, pendingMaxBounty.timestamp);
+        emit SetPendingMaxBounty(_maxBounty);
     }
 
     /** @notice See {IHATVault-setMaxBounty}. */

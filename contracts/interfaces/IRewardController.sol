@@ -9,7 +9,15 @@ interface IRewardController {
     // Not enough rewards to transfer to user
     error NotEnoughRewardsToTransferToUser();
 
+    event RewardControllerCreated(
+        address _rewardToken,
+        address _hatsGovernance,
+        uint256 _startBlock,
+        uint256 _epochLength,
+        uint256[24] _epochRewardPerBlock
+    );
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
+    event SetAllocPoint(address indexed _vault, uint256 _allocPoint);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     /**
