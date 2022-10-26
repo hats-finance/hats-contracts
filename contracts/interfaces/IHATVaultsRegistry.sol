@@ -167,7 +167,7 @@ interface IHATVaultsRegistry {
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
      * @param _HAT The HAT token address
-     * @param _tokenLockFactory the token lock factory address
+     * @param _tokenLockFactory The token lock factory address
      * @param _generalParameters the registry's general parameters
      * @param _bountyGovernanceHAT The HAT bounty for governance
      * @param _bountyHackerHATVested The HAT bounty vested for the hacker
