@@ -38,6 +38,8 @@ module.exports = {
     currency: "USD",
     coinmarketcap: process.env.COINMARKETCAP,
     gasPrice: 100,
+    outputFile: "gas-report.txt",
+    excludeContracts: ["mocks/", "HATToken"]
   },
   networks: {
     rinkeby: {

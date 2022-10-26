@@ -2637,9 +2637,20 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("setEpochRewardPerBlock - can set all before start block", async () => {
-    var epochRewardPerBlockRandom = [...Array(24)].map(() =>
-      web3.utils.toWei(((Math.random() * 100) | 0).toString())
-    );
+    var epochRewardPerBlockRandom = [
+      '12000000000000000000', '23000000000000000000',
+      '32000000000000000000', '5000000000000000000',
+      '47000000000000000000', '32000000000000000000',
+      '95000000000000000000', '56000000000000000000',
+      '38000000000000000000', '80000000000000000000',
+      '62000000000000000000', '71000000000000000000',
+      '43000000000000000000', '44000000000000000000',
+      '16000000000000000000', '26000000000000000000',
+      '32000000000000000000', '97000000000000000000',
+      '32000000000000000000', '43000000000000000000',
+      '78000000000000000000', '64000000000000000000',
+      '65000000000000000000', '29000000000000000000'
+    ];
 
     var startBlock = (await web3.eth.getBlock("latest")).number + 1000;
     await setUpGlobalVars(accounts, startBlock);
@@ -2726,9 +2737,20 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("setEpochRewardPerBlock - can set only epoch that have not started", async () => {
-    var epochRewardPerBlockRandom = [...Array(24)].map(() =>
-      web3.utils.toWei(((Math.random() * 100) | 0).toString())
-    );
+    var epochRewardPerBlockRandom = [
+      '21000000000000000000', '17000000000000000000',
+      '14000000000000000000', '54000000000000000000',
+      '63000000000000000000', '55000000000000000000',
+      '51000000000000000000', '25000000000000000000',
+      '39000000000000000000', '55000000000000000000',
+      '27000000000000000000', '99000000000000000000',
+      '31000000000000000000', '19000000000000000000',
+      '80000000000000000000', '41000000000000000000',
+      '37000000000000000000', '11000000000000000000',
+      '66000000000000000000', '70000000000000000000',
+      '40000000000000000000', '38000000000000000000',
+      '84000000000000000000', '38000000000000000000'
+    ];
 
     var startBlock = (await web3.eth.getBlock("latest")).number;
     await setUpGlobalVars(accounts, startBlock);
@@ -4514,7 +4536,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await vault.setVaultDescription("_descriptionHash", { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
-      assertVMException(ex, "Ownable: caller is not the owner");
+      assertVMException(ex, "OnlyRegistryOwner");
     }
     tx = await vault.setVaultDescription("_descriptionHash");
     assert.equal(tx.logs[0].event, "SetVaultDescription");

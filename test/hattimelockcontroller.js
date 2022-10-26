@@ -457,4 +457,34 @@ contract("HatTimelockController", (accounts) => {
     await newVault.setCommittee(accounts[2], { from: accounts[1] });
     await newVault.setCommittee(accounts[1], { from: accounts[2] });
   });
+
+  it("setEmergencyPaused", async () => {
+    await setup(accounts);
+
+    var staker = accounts[1];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+
+    try {
+      await hatVaultsRegistry.setEmergencyPaused(true);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    await hatTimelockController.setEmergencyPaused(hatVaultsRegistry.address, true);
+
+    await assertFunctionRaisesException(
+      vault.deposit(web3.utils.toWei("1"), staker, { from: staker }),
+      "SystemInEmergencyPause"
+    );
+
+    await hatTimelockController.setEmergencyPaused(hatVaultsRegistry.address, false);
+    
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+  });
 });

@@ -50,7 +50,7 @@ interface IHATVault is IERC4626Upgradeable {
     enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
 
     // How to divide the bounty - after deducting the part that is swapped to
-    // HAT tokens ( {IHATVaultsRegistry.HATBountySplit} )
+    // HAT tokens (and then sent to governance and vested to the hacker)
     // values are in percentages and should add up to 100% (defined as 10000)
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
@@ -293,7 +293,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Set new committee address. Can be called by existing committee,
-    * or by the governance in the case that the committee hadn't checked in
+    * or by the the vault's owner in the case that the committee hadn't checked in
     * yet.
     * @param _committee The address of the new committee 
     */
@@ -357,14 +357,14 @@ interface IHATVault is IERC4626Upgradeable {
     function setDepositPause(bool _depositPause) external;
 
     /**
-    * @notice Called by the vault's owner to change the description of the
+    * @notice Called by the registry's owner to change the description of the
     * vault in the Hats.finance UI
     * @param _descriptionHash the hash of the vault's description
     */
     function setVaultDescription(string memory _descriptionHash) external;
 
     /**
-    * @notice Called by vault's owner to set the vault's reward controller
+    * @notice Called by the registry's owner to set the vault's reward controller
     * @param _newRewardController The new reward controller
     */
     function setRewardController(IRewardController _newRewardController) external;

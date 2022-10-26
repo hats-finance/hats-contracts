@@ -64,4 +64,8 @@ contract HATTimelockController is TimelockController {
             _routingPayload
         );
     }
+
+    function setEmergencyPaused(HATVaultsRegistry _registry, bool _isEmergencyPaused) external onlyRole(PROPOSER_ROLE) {
+        _registry.setEmergencyPaused(_isEmergencyPaused);
+    }
 }
