@@ -174,7 +174,7 @@ interface IHATVaultsRegistry {
      * @param _hatGovernance The registry's governance
      * @param _defaultChallengePeriod The new default challenge period
      * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
-     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty of claims
+     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty percentage of claims
      * describes the claim.
      */
     event RegistryCreated(
