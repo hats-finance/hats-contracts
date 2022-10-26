@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "lint --fix": "eslint --fix .",
     "test": "hardhat test",
-    "coveralls": "hardhat coverage"
+    "coveralls": "hardhat coverage",
+    "gas-avg": "hardhat test && python3 gas-avg-check.py"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
