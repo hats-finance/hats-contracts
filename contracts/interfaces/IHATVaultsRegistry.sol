@@ -258,7 +258,7 @@ interface IHATVaultsRegistry {
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
      * @param _asset The vault's native token
-     * @param _onwer The address of the vault's owner
+     * @param _owner The address of the vault's owner
      * @param _committee The address of the vault's committee 
      * @param _rewardController The reward controller for the vault
      * @param _maxBounty The maximum percentage of the vault that can be paid

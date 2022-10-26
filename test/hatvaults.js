@@ -507,6 +507,7 @@ contract("HatVaults", (accounts) => {
     );
 
     assert.equal(tx.logs[1].args._asset, stakingToken2.address);
+    assert.equal(tx.logs[1].args._owner, await hatVaultsRegistry.owner());
     assert.equal(tx.logs[1].args._committee, accounts[3]);
     assert.equal(tx.logs[1].args._rewardController, rewardController.address);
     assert.equal(tx.logs[1].args._maxBounty, maxBounty);
