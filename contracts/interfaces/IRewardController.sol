@@ -18,6 +18,8 @@ interface IRewardController {
     );
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
     event SetAllocPoint(address indexed _vault, uint256 _allocPoint);
+    event VaultUpdated(address indexed _vault, uint256 _rewardPerShare, uint256 _lastProcessedVaultUpdate);
+    event UserBalanceCommitted(address indexed _vault, address indexed _user, uint256 _unclaimedReward, uint256 _rewardDebt);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     /**

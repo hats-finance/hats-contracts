@@ -104,6 +104,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if (globalVaultsUpdates.length != 0) {
             vaultInfo[_vault].lastProcessedVaultUpdate = globalVaultsUpdates.length - 1;
         }
+
+        emit VaultUpdated(_vault, vault.rewardPerShare, vaultInfo[_vault].lastProcessedVaultUpdate);
     }
 
     /** @notice See {IRewardController-setEpochRewardPerBlock}. */
@@ -145,7 +147,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 userShares -= _sharesChange;
             }
         }
-        rewardDebt[_vault][_user] = userShares * rewardPerShare / REWARD_PRECISION;
+        uint256 newRewardDebt = userShares * rewardPerShare / REWARD_PRECISION;
+        rewardDebt[_vault][_user] = newRewardDebt;
+        emit UserBalanceCommitted(_vault, _user, unclaimedReward[_vault][_user], newRewardDebt);
     }
 
     /** @notice See {IRewardController-commitUserBalance}. */
