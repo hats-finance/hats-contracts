@@ -3,13 +3,10 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
+import "./interfaces/IHATToken.sol";
 
-contract HATToken is ERC20Votes, ERC20Capped {
+contract HATToken is IHATToken, ERC20Votes, ERC20Capped {
 
-    struct PendingMinter {
-        uint256 seedAmount;
-        uint256 setMinterPendingAt;
-    }
     address public governance;
     address public governancePending;
     uint256 public setGovernancePendingAt;
@@ -23,14 +20,10 @@ contract HATToken is ERC20Votes, ERC20Capped {
     /// minter -> minting seedAmount
     mapping (address => PendingMinter) public pendingMinters;
 
-    /// @notice An event thats emitted when a new minter address is pending
-    event MinterPending(address indexed minter, uint256 seedAmount, uint256 at);
-    /// @notice An event thats emitted when the minter address is changed
-    event MinterChanged(address indexed minter, uint256 seedAmount);
-    /// @notice An event thats emitted when a new governance address is pending
-    event GovernancePending(address indexed oldGovernance, address indexed newGovernance, uint256 at);
-    /// @notice An event thats emitted when a new governance address is set
-    event GovernanceChanged(address indexed oldGovernance, address indexed newGovernance);
+    modifier onlyGovernance() {
+        if (msg.sender != governance) revert OnlyGovernance();
+        _;
+    }
 
     /**
      * @notice Construct a new HAT token
@@ -45,8 +38,7 @@ contract HATToken is ERC20Votes, ERC20Capped {
         timeLockDelay = _timeLockDelay;
     }
 
-    function setPendingGovernance(address _governance) external {
-        require(msg.sender == governance, "HAT:!governance");
+    function setPendingGovernance(address _governance) external onlyGovernance {
         require(_governance != address(0), "HAT:!_governance");
         governancePending = _governance;
         // solhint-disable-next-line not-rely-on-time
@@ -54,8 +46,7 @@ contract HATToken is ERC20Votes, ERC20Capped {
         emit GovernancePending(governance, _governance, setGovernancePendingAt);
     }
 
-    function confirmGovernance() external {
-        require(msg.sender == governance, "HAT:!governance");
+    function confirmGovernance() external onlyGovernance{
         require(setGovernancePendingAt > 0, "HAT:!governancePending");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - setGovernancePendingAt > timeLockDelay,
@@ -65,16 +56,14 @@ contract HATToken is ERC20Votes, ERC20Capped {
         setGovernancePendingAt = 0;
     }
 
-    function setPendingMinter(address _minter, uint256 _cap) external {
-        require(msg.sender == governance, "HAT::!governance");
+    function setPendingMinter(address _minter, uint256 _cap) external onlyGovernance{
         pendingMinters[_minter].seedAmount = _cap;
         // solhint-disable-next-line not-rely-on-time
         pendingMinters[_minter].setMinterPendingAt = block.timestamp;
         emit MinterPending(_minter, _cap, pendingMinters[_minter].setMinterPendingAt);
     }
 
-    function confirmMinter(address _minter) external {
-        require(msg.sender == governance, "HAT::mint: only the governance can confirm minter");
+    function confirmMinter(address _minter) external onlyGovernance{
         require(pendingMinters[_minter].setMinterPendingAt > 0, "HAT:: no pending minter was set");
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp - pendingMinters[_minter].setMinterPendingAt > timeLockDelay,
