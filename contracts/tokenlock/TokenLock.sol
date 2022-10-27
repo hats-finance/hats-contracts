@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./OwnableInitializable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./MathUtils.sol";
 import "./ITokenLock.sol";
 
@@ -29,7 +29,7 @@ import "./ITokenLock.sol";
  * default schedule.
  */
 // solhint-disable-next-line indent
-abstract contract TokenLock is OwnableInitializable, ITokenLock {
+abstract contract TokenLock is Ownable, ITokenLock {
     using SafeERC20 for IERC20;
 
     uint256 private constant MIN_PERIOD = 1;
@@ -384,7 +384,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
         isInitialized = true;
 
-        OwnableInitializable.initialize(_tokenLockOwner);
+        _transferOwnership(_tokenLockOwner);
         beneficiary = _beneficiary;
         token = IERC20(_token);
 
