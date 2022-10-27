@@ -216,16 +216,13 @@ contract("HATToken", (accounts) => {
     assert.equal(currentVote, 100);
 
     // Move block
-    await token.burn(0, { from: accounts[2] });
-    await token.burn(0, { from: accounts[2] });
-    await token.burn(0, { from: accounts[2] });
     await token.burn(1, { from: accounts[1] });
     // Check old votes count
     currentVote = await token.getPastVotes(accounts[1], currentBlockNumber);
     assert.equal(currentVote, 50);
     currentVote = await token.getPastVotes(
       accounts[1],
-      currentBlockNumber + 2
+      currentBlockNumber + 1
     );
     assert.equal(currentVote, 50);
   });

@@ -114,11 +114,13 @@ const setup = async function(
     web3.utils.toWei((2500000 + options.rewardInVaults).toString())
   );
   await hatToken.mint(router.address, web3.utils.toWei("2500000"));
-  await hatToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
-  await hatToken.transfer(
-    rewardController.address,
-    web3.utils.toWei(options.rewardInVaults.toString())
-  );
+  if (options.rewardInVaults > 0) {
+    await hatToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
+    await hatToken.transfer(
+      rewardController.address,
+      web3.utils.toWei(options.rewardInVaults.toString())
+   );
+  }
   hatVaultsExpectedHatsBalance = options.rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
