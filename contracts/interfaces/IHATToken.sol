@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 
 interface IHATToken is IVotes, IERC20Permit {
 
+    // Amount for minting or burning cannot be zero
+    error ZeroAmount();
+
     /// @notice An event thats emitted when the minter address is set
     event MinterSet(address indexed minter, uint256 seedAmount);
 
