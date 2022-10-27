@@ -312,6 +312,27 @@ contract("HATToken", (accounts) => {
       } catch (ex) {
         assert(false, "minter could not mint");
       }
+
+      await token.setMinter(accounts[0], 5);
+
+      try {
+        await token.mint(accounts[1], 4, { from: accounts[0] });
+      } catch (ex) {
+        assert(false, "minter could not mint");
+      }
+
+      try {
+        await token.mint(accounts[1], 2, { from: accounts[0] });
+        assert(false, "minter cannot mint above limit");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+
+      try {
+        await token.mint(accounts[1], 1, { from: accounts[0] });
+      } catch (ex) {
+        assert(false, "minter could not mint");
+      }
     });
 
     it("mint by not minter", async () => {
