@@ -2460,7 +2460,7 @@ contract("HatVaults", (accounts) => {
     let hatTotalSupply = await hatToken.totalSupply();
     let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
-    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.setMinter(accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.transfer(rewardController.address, amountToMint);
 
@@ -2558,7 +2558,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
 
   it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -4243,7 +4243,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
       from: staker,
     });
-    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("1"));
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
     await hatToken.mint(staker, web3.utils.toWei("1"));
     await newVault.committeeCheckIn({ from: accounts[1] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -5642,7 +5642,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("update vault before setting reward controller alloc points", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -5687,7 +5687,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("add/set vault on the same block", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -5775,7 +5775,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let hatTotalSupply = await hatToken.totalSupply();
     let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
-    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.setMinter(accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.transfer(rewardController.address, amountToMint);
 
@@ -5929,7 +5929,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       100
     );
 
-    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("110"));
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("110"));
     await newVault.committeeCheckIn({ from: accounts[1] });
 
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
@@ -6014,7 +6014,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       assertVMException(ex, "ERC20: transfer amount exceeds balance");
     }
 
-    await utils.setMinter(hatToken, accounts[0], expectedReward);
+    await hatToken.setMinter(accounts[0], expectedReward);
     await hatToken.mint(rewardController.address, expectedReward);
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");

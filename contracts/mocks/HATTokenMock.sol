@@ -6,8 +6,8 @@ import "../HATToken.sol";
 //solhint-disable no-empty-blocks
 
 contract HATTokenMock is HATToken {
-    constructor(address _governance, uint256 _timeLockDelay)
-    HATToken(_governance, _timeLockDelay) {
+    constructor(address _governance)
+    HATToken(_governance) {
     }
 
     function burnFrom(address _from, uint256 _amount) public {
