@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./MathUtils.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./ITokenLock.sol";
 
 // this contract is based on GraphTokenLock
@@ -321,7 +321,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
 
         // A beneficiary can never have more releasable tokens than the contract balance
         uint256 releasable = availableAmount() - releasedAmount;
-        return MathUtils.min(currentBalance(), releasable);
+        return Math.min(currentBalance(), releasable);
     }
 
     /**
