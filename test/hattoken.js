@@ -2,8 +2,14 @@ const HATToken = artifacts.require("./HATTokenMock.sol");
 const utils = require("./utils.js");
 const { fromRpcSig } = require("ethereumjs-util");
 const ethSigUtil = require("eth-sig-util");
-const { EIP712Domain } = require("./eip712.js");
 const Wallet = require("ethereumjs-wallet").default;
+
+const EIP712Domain = [
+  { name: 'name', type: 'string' },
+  { name: 'version', type: 'string' },
+  { name: 'chainId', type: 'uint256' },
+  { name: 'verifyingContract', type: 'address' },
+];
 
 function assertVMException(error) {
   let condition =
@@ -589,7 +595,7 @@ contract("HATToken", (accounts) => {
       await token.increaseAllowance(accounts[2], web3.utils.toBN(1), {
         from: accounts[1],
       });
-      assert(false, "cannot allow amount larger than 96 bits");
+      assert(false, "cannot allow amount larger than 256 bits");
     } catch (ex) {
       assertVMException(ex);
     }
@@ -614,7 +620,7 @@ contract("HATToken", (accounts) => {
   ) => ({
     primaryType: "Permit",
     types: { EIP712Domain, Permit },
-    domain: { name: "hats.finance", chainId, verifyingContract },
+    domain: { name: "hats.finance", version: "1", chainId, verifyingContract },
     message: { owner, spender, value, nonce, deadline },
   });
 
@@ -626,7 +632,7 @@ contract("HATToken", (accounts) => {
     await token.mint(owner, web3.utils.toWei("100"));
 
     let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
-    let chainId = await web3.eth.net.getId();
+    let chainId = await token.getChainId();
     let value = web3.utils.toWei("10");
     let nonce = 0;
     let deadline = currentBlockTimestamp + 7 * 24 * 3600;
@@ -717,7 +723,7 @@ contract("HATToken", (accounts) => {
       (await token.allowance(owner, accounts[2])).toString(),
       web3.utils
         .toBN(2)
-        .pow(web3.utils.toBN(96))
+        .pow(web3.utils.toBN(256))
         .sub(web3.utils.toBN(1))
         .toString()
     );
@@ -820,7 +826,7 @@ contract("HATToken", (accounts) => {
   ) => ({
     primaryType: "Delegation",
     types: { EIP712Domain, Delegation },
-    domain: { name: "hats.finance", chainId, verifyingContract },
+    domain: { name: "hats.finance", version: "1", chainId, verifyingContract },
     message: { delegatee, nonce, expiry },
   });
 
