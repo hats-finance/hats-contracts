@@ -60,7 +60,7 @@ contract("TokenLock", (accounts) => {
     await setup(accounts);
     const cloneFactory = await CloneFactoryMock.new();
     let newTokenLock = await HATTokenLock.at(
-      (await cloneFactory.createClone(tokenLockParent.address)).logs[0].args._clone
+      (await cloneFactory.clone(tokenLockParent.address)).logs[0].args._clone
     );
 
     try {

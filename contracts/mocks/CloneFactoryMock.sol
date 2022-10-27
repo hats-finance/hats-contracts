@@ -27,7 +27,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 contract CloneFactoryMock {
     event CloneCreated(address indexed _clone);
 
-    function createClone(address target) external returns (address result) {
+    function clone(address target) external returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
             let clone := mload(0x40)
