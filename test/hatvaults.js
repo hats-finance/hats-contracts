@@ -2748,15 +2748,15 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
     assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
     
-    // Should now be in the 3rd epoch
+    // Should now be in the 2rd epoch
 
     let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlock[i]);
     }
 
-    for (let i = 3; i < eventEpochRewardPerBlock.length; i++) {
+    for (let i = 2; i < eventEpochRewardPerBlock.length; i++) {
       eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
@@ -2799,7 +2799,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
@@ -2816,16 +2816,16 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
         .add(new web3.utils.BN(epochRewardPerBlockRandom[3]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
     }
-    for (let i = 3; i < 24; i++) {
+    for (let i = 2; i < 24; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
     }
     assert.equal(
@@ -2909,7 +2909,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("getPendingReward + getRewardPerBlock", async () => {
-    await setUpGlobalVars(accounts);
+    await setUpGlobalVars(accounts, 0, 8000, [7500, 2000, 500], [1500, 500], 100);
     var staker = accounts[1];
     assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
     await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
@@ -2950,7 +2950,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           1
         )
       ).toString(),
-      multiplier
+      multiplier.toString()
     );
   });
 
@@ -6002,7 +6002,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await rewardController.updateVault(vault.address);
     let hatsAvailable = await hatToken.balanceOf(rewardController.address);
-    let expectedReward = await calculateExpectedReward(staker, 5);
+    let expectedReward = await calculateExpectedReward(staker, 3);
     assert.isTrue(
       parseInt(hatsAvailable.toString()) < parseInt(expectedReward.toString())
     );
