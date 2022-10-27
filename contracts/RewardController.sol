@@ -46,7 +46,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     /** @notice See {IRewardController-initialize}. */
     function initialize(
         address _rewardToken,
-        address _hatsGovernance,
+        address _governance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _epochRewardPerBlock
@@ -56,8 +56,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         startBlock = _startRewardingBlock;
         epochLength = _epochLength;
         epochRewardPerBlock = _epochRewardPerBlock;
-        _transferOwnership(_hatsGovernance);
-        emit RewardControllerCreated(_rewardToken, _hatsGovernance, _startRewardingBlock, _epochLength, _epochRewardPerBlock);
+        _transferOwnership(_governance);
+        emit RewardControllerCreated(_rewardToken, _governance, _startRewardingBlock, _epochLength, _epochRewardPerBlock);
     }
 
     /** @notice See {IRewardController-setAllocPoint}. */

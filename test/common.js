@@ -104,6 +104,7 @@ const setup = async function(
     true
   );
 
+  hatVaultImplementation = deployment.hatVaultImplementation;
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
     deployment.rewardController.address
@@ -159,6 +160,8 @@ const setup = async function(
     hatToken,
     owner: accounts[0],
     registry,
+    hatVaultImplementation,
+    tokenLockFactory,
     rewardController,
     hatVaultsExpectedHatsBalance,
     router,
