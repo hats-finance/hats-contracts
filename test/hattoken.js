@@ -153,6 +153,13 @@ contract("HATToken", (accounts) => {
     assert.equal(totalSupply.toNumber(), 900);
 
     try {
+      await token.burn(0, { from: accounts[1] });
+      throw "cannot burn 0";
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
       await token.burn(901, { from: accounts[1] });
       throw "an error";
     } catch (error) {
@@ -216,18 +223,18 @@ contract("HATToken", (accounts) => {
     assert.equal(currentVote, 100);
 
     // Move block
-    await token.burn(0, { from: accounts[2] });
-    await token.burn(0, { from: accounts[2] });
-    await token.burn(0, { from: accounts[2] });
+    await token.setMinter(accounts[0], 2000);
+    await token.setMinter(accounts[0], 2000);
+    await token.setMinter(accounts[0], 2000);
     await token.burn(1, { from: accounts[1] });
     // Check old votes count
     currentVote = await token.getPastVotes(accounts[1], currentBlockNumber);
-    assert.equal(currentVote, 50);
+    assert.equal(currentVote.toString(), "50");
     currentVote = await token.getPastVotes(
       accounts[1],
       currentBlockNumber + 2
     );
-    assert.equal(currentVote, 50);
+    assert.equal(currentVote.toString(), "50");
   });
 
   it("delegate twice in same block ", async () => {
@@ -333,6 +340,13 @@ contract("HATToken", (accounts) => {
       } catch (ex) {
         assert(false, "minter could not mint");
       }
+
+      try {
+        await token.mint(accounts[1], 0, { from: accounts[0] });
+        throw "cannot mint 0";
+      } catch (ex) {
+        assertVMException(ex);
+      }
     });
 
     it("mint by not minter", async () => {
@@ -342,6 +356,13 @@ contract("HATToken", (accounts) => {
         await token.mint(accounts[1], 10, { from: accounts[1] });
       } catch (ex) {
         return;
+      }
+
+      try {
+        await token.mint(accounts[1], 0, { from: accounts[1] });
+        throw "cannot mint 0";
+      } catch (ex) {
+        assertVMException(error);
       }
 
       assert(false, "non-minter was able to mint");
