@@ -448,7 +448,7 @@ contract("HatVaults", (accounts) => {
       await rewardController.claimReward(vault.address, staker, { from: staker });
       assert(false, "can't claim reward when there are not enough rewards");
     } catch (ex) {
-      assertVMException(ex, "HAT::_transferTokens: transfer amount exceeds balance");
+      assertVMException(ex, "ERC20: transfer amount exceeds balance");
     }
   });
 
@@ -2458,9 +2458,9 @@ contract("HatVaults", (accounts) => {
     assert.equal(await hatToken.balanceOf(staker), 0);
 
     let hatTotalSupply = await hatToken.totalSupply();
-    let hatTokenCap = await hatToken.CAP();
+    let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
-    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.setMinter(accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.transfer(rewardController.address, amountToMint);
 
@@ -2558,7 +2558,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
 
   it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -2770,15 +2770,15 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
     assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
     
-    // Should now be in the 3rd epoch
+    // Should now be in the 2rd epoch
 
     let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlock[i]);
     }
 
-    for (let i = 3; i < eventEpochRewardPerBlock.length; i++) {
+    for (let i = 2; i < eventEpochRewardPerBlock.length; i++) {
       eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
@@ -2821,7 +2821,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
@@ -2838,16 +2838,16 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlock[2]))
+        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
         .add(new web3.utils.BN(epochRewardPerBlockRandom[3]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
     }
-    for (let i = 3; i < 24; i++) {
+    for (let i = 2; i < 24; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
     }
     assert.equal(
@@ -2931,7 +2931,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("getPendingReward + getRewardPerBlock", async () => {
-    await setUpGlobalVars(accounts);
+    await setUpGlobalVars(accounts, 0, 8000, [7500, 2000, 500], [1500, 500], 100);
     var staker = accounts[1];
     assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
     await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
@@ -2972,7 +2972,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
           1
         )
       ).toString(),
-      multiplier
+      multiplier.toString()
     );
   });
 
@@ -4265,7 +4265,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
       from: staker,
     });
-    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("1"));
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
     await hatToken.mint(staker, web3.utils.toWei("1"));
     await newVault.committeeCheckIn({ from: accounts[1] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -5664,7 +5664,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("update vault before setting reward controller alloc points", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -5709,7 +5709,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   });
 
   it("add/set vault on the same block", async () => {
-    let hatToken1 = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+    let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
     var vaultsManager = await VaultsManagerMock.new();
@@ -5795,9 +5795,9 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       web3.utils.toWei("0").toString()
     );
     let hatTotalSupply = await hatToken.totalSupply();
-    let hatTokenCap = await hatToken.CAP();
+    let hatTokenCap = await hatToken.cap();
     let amountToMint = hatTokenCap.sub(hatTotalSupply);
-    await utils.setMinter(hatToken, accounts[0], amountToMint);
+    await hatToken.setMinter(accounts[0], amountToMint);
     await hatToken.mint(accounts[0], amountToMint);
     await hatToken.transfer(rewardController.address, amountToMint);
 
@@ -5951,7 +5951,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       100
     );
 
-    await utils.setMinter(hatToken, accounts[0], web3.utils.toWei("110"));
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("110"));
     await newVault.committeeCheckIn({ from: accounts[1] });
 
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
@@ -6024,7 +6024,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await rewardController.updateVault(vault.address);
     let hatsAvailable = await hatToken.balanceOf(rewardController.address);
-    let expectedReward = await calculateExpectedReward(staker, 5);
+    let expectedReward = await calculateExpectedReward(staker, 3);
     assert.isTrue(
       parseInt(hatsAvailable.toString()) < parseInt(expectedReward.toString())
     );
@@ -6033,10 +6033,10 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       await rewardController.claimReward(vault.address, staker, { from: staker });
       assert(false, "can't claim reward when there are not enough rewards");
     } catch (ex) {
-      assertVMException(ex, "HAT::_transferTokens: transfer amount exceeds balance");
+      assertVMException(ex, "ERC20: transfer amount exceeds balance");
     }
 
-    await utils.setMinter(hatToken, accounts[0], expectedReward);
+    await hatToken.setMinter(accounts[0], expectedReward);
     await hatToken.mint(rewardController.address, expectedReward);
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(tx.logs[0].event, "ClaimReward");

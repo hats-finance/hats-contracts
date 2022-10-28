@@ -44,7 +44,7 @@ const setup = async function(
   weth = true,
   rewardInVaults = 2500000
 ) {
-  hatToken = await HATTokenMock.new(accounts[0], utils.TIME_LOCK_DELAY);
+  hatToken = await HATTokenMock.new(accounts[0]);
   stakingToken = await ERC20Mock.new("Staking", "STK");
   var wethAddress = utils.NULL_ADDRESS;
   if (weth) {
@@ -74,8 +74,7 @@ const setup = async function(
     [accounts[0]]
   );
 
-  await utils.setMinter(
-    hatToken,
+  await hatToken.setMinter(
     accounts[0],
     web3.utils.toWei((2500000 + rewardInVaults).toString())
   );
