@@ -256,6 +256,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     external 
     returns(address vault)
     {
+
+        require(
+hatVaultImplementation != address(0),
+"vault implement not set yet"
+);
+
         vault = Clones.clone(hatVaultImplementation);
 
         HATVault(vault).initialize(
