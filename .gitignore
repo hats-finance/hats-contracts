@@ -1,3 +1,9 @@
+# Foundry
+out
+forge-cache
+
+# Node modules
+
 *sublime*
 *.pyc
 build/
