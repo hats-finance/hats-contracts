@@ -22,7 +22,7 @@ const setup = async function(
   stakingToken = await ERC20Mock.new("Staking", "STK");
 
   tokenLockParent = await HATTokenLock.new();
-  tokenLockFactory = await TokenLockFactory.new(tokenLockParent.address);
+  tokenLockFactory = await TokenLockFactory.new(tokenLockParent.address, accounts[0]);
   let currentBlockTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
   let tx = await tokenLockFactory.createTokenLock(

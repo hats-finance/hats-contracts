@@ -10,7 +10,7 @@ const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
-const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 const {
   assertFunctionRaisesException,
   assertVMException,
@@ -2560,20 +2560,23 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5666,20 +5669,23 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   it("update vault before setting reward controller alloc points", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5711,20 +5717,23 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
   it("add/set vault on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(

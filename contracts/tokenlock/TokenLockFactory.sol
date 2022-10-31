@@ -43,10 +43,11 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
     /**
      * Constructor.
      * @param _masterCopy Address of the master copy to use to clone proxies
+     * @param _governance Owner of the factory
      */
-    // solhint-disable-next-line func-visibility
-    constructor(address _masterCopy) {
+    constructor(address _masterCopy, address _governance) {
         setMasterCopy(_masterCopy);
+        _transferOwnership(_governance);
     }
 
     // -- Factory --
