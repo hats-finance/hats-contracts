@@ -2578,7 +2578,7 @@ contract("HatVaults", (accounts) => {
   });
 
 
-  it("getVaultReward - no vault updates will retrun 0 ", async () => {
+it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
     const RewardControllerFactory = await ethers.getContractFactory("RewardController");
     rewardController = await RewardControllerFactory.deploy();
