@@ -205,11 +205,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-        generalParameters.withdrawPeriod) revert NotSafetyPeriod();
+        unchecked {
+         if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+        generalParameters.withdrawPeriod) revert NotSafetyPeriod();           
+        }
+
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        claimId = keccak256(abi.encodePacked(address(this), nonce++));
+        claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
             claimId: claimId,
             beneficiary: _beneficiary,

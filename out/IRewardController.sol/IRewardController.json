@@ -1,0 +1,1878 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "name": "EpochLengthZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotEnoughRewardsToTransferToUser",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ClaimReward",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256[24]",
+          "name": "_epochRewardPerBlock",
+          "type": "uint256[24]"
+        }
+      ],
+      "name": "SetEpochRewardPerBlock",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        }
+      ],
+      "name": "claimReward",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_sharesChange",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "_isDeposit",
+          "type": "bool"
+        }
+      ],
+      "name": "commitUserBalance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        }
+      ],
+      "name": "getPendingReward",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_fromBlock",
+          "type": "uint256"
+        }
+      ],
+      "name": "getVaultReward",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_rewardToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_hatsGovernance",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_startRewardingBlock",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_epochLength",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[24]",
+          "name": "_epochRewardPerBlock",
+          "type": "uint256[24]"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_allocPoint",
+          "type": "uint256"
+        }
+      ],
+      "name": "setAllocPoint",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[24]",
+          "name": "_epochRewardPerBlock",
+          "type": "uint256[24]"
+        }
+      ],
+      "name": "setEpochRewardPerBlock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IERC20Upgradeable",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "sweepToken",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        }
+      ],
+      "name": "updateVault",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "claimReward(address,address)": "4953c782",
+    "commitUserBalance(address,uint256,bool)": "44d18cd9",
+    "getPendingReward(address,address)": "fe0f3a13",
+    "getVaultReward(address,uint256)": "60096ff9",
+    "initialize(address,address,uint256,uint256,uint256[24])": "7476db4f",
+    "setAllocPoint(address,uint256)": "02b1720c",
+    "setEpochRewardPerBlock(uint256[24])": "24703c5a",
+    "sweepToken(address,uint256)": "e90a182f",
+    "updateVault(address)": "e7563f3f"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.16+commit.07a7930e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"EpochLengthZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotEnoughRewardsToTransferToUser\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"ClaimReward\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256[24]\",\"name\":\"_epochRewardPerBlock\",\"type\":\"uint256[24]\"}],\"name\":\"SetEpochRewardPerBlock\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"claimReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_sharesChange\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_isDeposit\",\"type\":\"bool\"}],\"name\":\"commitUserBalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"getPendingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_fromBlock\",\"type\":\"uint256\"}],\"name\":\"getVaultReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_rewardToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_hatsGovernance\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_startRewardingBlock\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_epochLength\",\"type\":\"uint256\"},{\"internalType\":\"uint256[24]\",\"name\":\"_epochRewardPerBlock\",\"type\":\"uint256[24]\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_allocPoint\",\"type\":\"uint256\"}],\"name\":\"setAllocPoint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[24]\",\"name\":\"_epochRewardPerBlock\",\"type\":\"uint256[24]\"}],\"name\":\"setEpochRewardPerBlock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IERC20Upgradeable\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"sweepToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_vault\",\"type\":\"address\"}],\"name\":\"updateVault\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"claimReward(address,address)\":{\"params\":{\"_user\":\"The user address to claim for\",\"_vault\":\"The vault address\"}},\"commitUserBalance(address,uint256,bool)\":{\"params\":{\"_isDeposit\":\"Whether user deposited or withdrew\",\"_sharesChange\":\"The user of shared the user deposited or withdrew\",\"_user\":\"The user address to updare rewards for\"}},\"getPendingReward(address,address)\":{\"params\":{\"_user\":\"The user for which the reward is calculated\",\"_vault\":\"The vault address\"}},\"getVaultReward(address,uint256)\":{\"params\":{\"_fromBlock\":\"The block from which to start calculation\",\"_vault\":\"The vault address\"},\"returns\":{\"reward\":\"The amount of rewards for the vault\"}},\"initialize(address,address,uint256,uint256,uint256[24])\":{\"params\":{\"_epochLength\":\"The length of a rewarding epoch\",\"_epochRewardPerBlock\":\"The reward per block for each of the 24 epochs\",\"_hatsGovernance\":\"The hats governance address, to be given ownership of the reward controller\",\"_rewardToken\":\"The address of the ERC20 token to be distributed as rewards\",\"_startRewardingBlock\":\"The block number from which to start rewarding\"}},\"setAllocPoint(address,uint256)\":{\"params\":{\"_allocPoint\":\"The allocation points for the vault\",\"_vault\":\"The address of the vault\"}},\"setEpochRewardPerBlock(uint256[24])\":{\"params\":{\"_epochRewardPerBlock\":\"reward per block for each epoch\"}},\"sweepToken(address,uint256)\":{\"params\":{\"_amount\":\"The amount of token to sweep\",\"_token\":\"The token to sweep\"}},\"updateVault(address)\":{\"params\":{\"_vault\":\"The vault's address\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"claimReward(address,address)\":{\"notice\":\"Transfer to the specified user their pending share of rewards.\"},\"commitUserBalance(address,uint256,bool)\":{\"notice\":\"Called by the vault to update a user claimable reward after deposit or withdraw. This call should never revert.\"},\"getPendingReward(address,address)\":{\"notice\":\"Calculate the amount of rewards a user can claim for having contributed to a specific vault\"},\"getVaultReward(address,uint256)\":{\"notice\":\"Calculate rewards for a vault by iterating over the history of totalAllocPoints updates, and sum up all rewards periods from vault.lastRewardBlock until current block number.\"},\"initialize(address,address,uint256,uint256,uint256[24])\":{\"notice\":\"Initializes the reward controller\"},\"setAllocPoint(address,uint256)\":{\"notice\":\"Called by the owner to set the allocation points for a vault, meaning the vault's relative share of the total rewards\"},\"setEpochRewardPerBlock(uint256[24])\":{\"notice\":\"Called by the owner to set reward per epoch Reward can only be set for epochs which have not yet started\"},\"sweepToken(address,uint256)\":{\"notice\":\"Called by the owner to transfer any tokens held in this contract to the owner\"},\"updateVault(address)\":{\"notice\":\"Update the vault's reward per share, not more then once per block\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IRewardController.sol\":\"IRewardController\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@ensdomains/=node_modules/@ensdomains/\",\":@openzeppelin/=node_modules/@openzeppelin/\",\":eth-gas-reporter/=node_modules/eth-gas-reporter/\",\":hardhat/=node_modules/hardhat/\"]},\"sources\":{\"contracts/interfaces/IRewardController.sol\":{\"keccak256\":\"0x8e7198df19e0036e6d09121b934fbd5f0df52a38a0bb0fd66cbcc3dfce03edf5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://c3cdb4bce2ba60445c091431bb6b8dfd1193ff90ce0247375d479f47c447aec6\",\"dweb:/ipfs/QmZiMFn9WjQEDQkL9uh9hegPSgJvNqdDgad7SpdjPeYt9M\"]},\"node_modules/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol\":{\"keccak256\":\"0x4e733d3164f73f461eaf9d8087a7ad1ea180bdc8ba0d3d61b0e1ae16d8e63dff\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://75b47c3aeca7b66ea6752f8be020ec5c1c502de6ec9065272dae23d3a52196e2\",\"dweb:/ipfs/QmUebPMHv16tYKFh5BmBQkMfRFb5b8UZ2RgVwdjxCeufVF\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.16+commit.07a7930e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "EpochLengthZero"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "NotEnoughRewardsToTransferToUser"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "ClaimReward",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256[24]",
+              "name": "_epochRewardPerBlock",
+              "type": "uint256[24]",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "SetEpochRewardPerBlock",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "claimReward"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_sharesChange",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "_isDeposit",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "commitUserBalance"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getPendingReward",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_fromBlock",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getVaultReward",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "reward",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_rewardToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_hatsGovernance",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_startRewardingBlock",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_epochLength",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256[24]",
+              "name": "_epochRewardPerBlock",
+              "type": "uint256[24]"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "initialize"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_allocPoint",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setAllocPoint"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256[24]",
+              "name": "_epochRewardPerBlock",
+              "type": "uint256[24]"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setEpochRewardPerBlock"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "contract IERC20Upgradeable",
+              "name": "_token",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "sweepToken"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_vault",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "updateVault"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "claimReward(address,address)": {
+            "params": {
+              "_user": "The user address to claim for",
+              "_vault": "The vault address"
+            }
+          },
+          "commitUserBalance(address,uint256,bool)": {
+            "params": {
+              "_isDeposit": "Whether user deposited or withdrew",
+              "_sharesChange": "The user of shared the user deposited or withdrew",
+              "_user": "The user address to updare rewards for"
+            }
+          },
+          "getPendingReward(address,address)": {
+            "params": {
+              "_user": "The user for which the reward is calculated",
+              "_vault": "The vault address"
+            }
+          },
+          "getVaultReward(address,uint256)": {
+            "params": {
+              "_fromBlock": "The block from which to start calculation",
+              "_vault": "The vault address"
+            },
+            "returns": {
+              "reward": "The amount of rewards for the vault"
+            }
+          },
+          "initialize(address,address,uint256,uint256,uint256[24])": {
+            "params": {
+              "_epochLength": "The length of a rewarding epoch",
+              "_epochRewardPerBlock": "The reward per block for each of the 24 epochs",
+              "_hatsGovernance": "The hats governance address, to be given ownership of the reward controller",
+              "_rewardToken": "The address of the ERC20 token to be distributed as rewards",
+              "_startRewardingBlock": "The block number from which to start rewarding"
+            }
+          },
+          "setAllocPoint(address,uint256)": {
+            "params": {
+              "_allocPoint": "The allocation points for the vault",
+              "_vault": "The address of the vault"
+            }
+          },
+          "setEpochRewardPerBlock(uint256[24])": {
+            "params": {
+              "_epochRewardPerBlock": "reward per block for each epoch"
+            }
+          },
+          "sweepToken(address,uint256)": {
+            "params": {
+              "_amount": "The amount of token to sweep",
+              "_token": "The token to sweep"
+            }
+          },
+          "updateVault(address)": {
+            "params": {
+              "_vault": "The vault's address"
+            }
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "claimReward(address,address)": {
+            "notice": "Transfer to the specified user their pending share of rewards."
+          },
+          "commitUserBalance(address,uint256,bool)": {
+            "notice": "Called by the vault to update a user claimable reward after deposit or withdraw. This call should never revert."
+          },
+          "getPendingReward(address,address)": {
+            "notice": "Calculate the amount of rewards a user can claim for having contributed to a specific vault"
+          },
+          "getVaultReward(address,uint256)": {
+            "notice": "Calculate rewards for a vault by iterating over the history of totalAllocPoints updates, and sum up all rewards periods from vault.lastRewardBlock until current block number."
+          },
+          "initialize(address,address,uint256,uint256,uint256[24])": {
+            "notice": "Initializes the reward controller"
+          },
+          "setAllocPoint(address,uint256)": {
+            "notice": "Called by the owner to set the allocation points for a vault, meaning the vault's relative share of the total rewards"
+          },
+          "setEpochRewardPerBlock(uint256[24])": {
+            "notice": "Called by the owner to set reward per epoch Reward can only be set for epochs which have not yet started"
+          },
+          "sweepToken(address,uint256)": {
+            "notice": "Called by the owner to transfer any tokens held in this contract to the owner"
+          },
+          "updateVault(address)": {
+            "notice": "Update the vault's reward per share, not more then once per block"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":@ensdomains/=node_modules/@ensdomains/",
+        ":@openzeppelin/=node_modules/@openzeppelin/",
+        ":eth-gas-reporter/=node_modules/eth-gas-reporter/",
+        ":hardhat/=node_modules/hardhat/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/interfaces/IRewardController.sol": "IRewardController"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/interfaces/IRewardController.sol": {
+        "keccak256": "0x8e7198df19e0036e6d09121b934fbd5f0df52a38a0bb0fd66cbcc3dfce03edf5",
+        "urls": [
+          "bzz-raw://c3cdb4bce2ba60445c091431bb6b8dfd1193ff90ce0247375d479f47c447aec6",
+          "dweb:/ipfs/QmZiMFn9WjQEDQkL9uh9hegPSgJvNqdDgad7SpdjPeYt9M"
+        ],
+        "license": "MIT"
+      },
+      "node_modules/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol": {
+        "keccak256": "0x4e733d3164f73f461eaf9d8087a7ad1ea180bdc8ba0d3d61b0e1ae16d8e63dff",
+        "urls": [
+          "bzz-raw://75b47c3aeca7b66ea6752f8be020ec5c1c502de6ec9065272dae23d3a52196e2",
+          "dweb:/ipfs/QmUebPMHv16tYKFh5BmBQkMfRFb5b8UZ2RgVwdjxCeufVF"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "contracts/interfaces/IRewardController.sol",
+    "id": 5662,
+    "exportedSymbols": {
+      "IERC20Upgradeable": [
+        9073
+      ],
+      "IRewardController": [
+        5661
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "32:3692:8",
+    "nodes": [
+      {
+        "id": 5556,
+        "nodeType": "PragmaDirective",
+        "src": "32:23:8",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "0.8",
+          ".16"
+        ]
+      },
+      {
+        "id": 5557,
+        "nodeType": "ImportDirective",
+        "src": "57:79:8",
+        "nodes": [],
+        "absolutePath": "node_modules/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
+        "file": "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 5662,
+        "sourceUnit": 9074,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 5661,
+        "nodeType": "ContractDefinition",
+        "src": "138:3585:8",
+        "nodes": [
+          {
+            "id": 5559,
+            "nodeType": "ErrorDefinition",
+            "src": "177:24:8",
+            "nodes": [],
+            "errorSelector": "6e8ac7e6",
+            "name": "EpochLengthZero",
+            "nameLocation": "183:15:8",
+            "parameters": {
+              "id": 5558,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "198:2:8"
+            }
+          },
+          {
+            "id": 5561,
+            "nodeType": "ErrorDefinition",
+            "src": "252:41:8",
+            "nodes": [],
+            "errorSelector": "36b6f485",
+            "name": "NotEnoughRewardsToTransferToUser",
+            "nameLocation": "258:32:8",
+            "parameters": {
+              "id": 5560,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "290:2:8"
+            }
+          },
+          {
+            "id": 5567,
+            "nodeType": "EventDefinition",
+            "src": "299:63:8",
+            "nodes": [],
+            "anonymous": false,
+            "eventSelector": "0670808d1e6714a56aec6624e8f94dc455ef9ad8ceba5a26c1002d13cf6c59fd",
+            "name": "SetEpochRewardPerBlock",
+            "nameLocation": "305:22:8",
+            "parameters": {
+              "id": 5566,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5565,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "_epochRewardPerBlock",
+                  "nameLocation": "340:20:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5567,
+                  "src": "328:32:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$24_memory_ptr",
+                    "typeString": "uint256[24]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 5562,
+                      "name": "uint256",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "328:7:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "id": 5564,
+                    "length": {
+                      "hexValue": "3234",
+                      "id": 5563,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "336:2:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_24_by_1",
+                        "typeString": "int_const 24"
+                      },
+                      "value": "24"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "328:11:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_uint256_$24_storage_ptr",
+                      "typeString": "uint256[24]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "327:34:8"
+            }
+          },
+          {
+            "id": 5575,
+            "nodeType": "EventDefinition",
+            "src": "367:82:8",
+            "nodes": [],
+            "anonymous": false,
+            "eventSelector": "7e77f685b38c861064cb08f2776eb5dfd3c82f652ed9f21221b8c53b75628e51",
+            "name": "ClaimReward",
+            "nameLocation": "373:11:8",
+            "parameters": {
+              "id": 5574,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5569,
+                  "indexed": true,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "401:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5575,
+                  "src": "385:22:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5568,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "385:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5571,
+                  "indexed": true,
+                  "mutability": "mutable",
+                  "name": "_user",
+                  "nameLocation": "425:5:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5575,
+                  "src": "409:21:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5570,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "409:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5573,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "440:7:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5575,
+                  "src": "432:15:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5572,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "432:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "384:64:8"
+            }
+          },
+          {
+            "id": 5591,
+            "nodeType": "FunctionDefinition",
+            "src": "936:215:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5576,
+              "nodeType": "StructuredDocumentation",
+              "src": "455:476:8",
+              "text": " @notice Initializes the reward controller\n @param _rewardToken The address of the ERC20 token to be distributed as rewards\n @param _hatsGovernance The hats governance address, to be given ownership of the reward controller\n @param _startRewardingBlock The block number from which to start rewarding\n @param _epochLength The length of a rewarding epoch\n @param _epochRewardPerBlock The reward per block for each of the 24 epochs"
+            },
+            "functionSelector": "7476db4f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "initialize",
+            "nameLocation": "945:10:8",
+            "parameters": {
+              "id": 5589,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5578,
+                  "mutability": "mutable",
+                  "name": "_rewardToken",
+                  "nameLocation": "973:12:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5591,
+                  "src": "965:20:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5577,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "965:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5580,
+                  "mutability": "mutable",
+                  "name": "_hatsGovernance",
+                  "nameLocation": "1003:15:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5591,
+                  "src": "995:23:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5579,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "995:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5582,
+                  "mutability": "mutable",
+                  "name": "_startRewardingBlock",
+                  "nameLocation": "1036:20:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5591,
+                  "src": "1028:28:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5581,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1028:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5584,
+                  "mutability": "mutable",
+                  "name": "_epochLength",
+                  "nameLocation": "1074:12:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5591,
+                  "src": "1066:20:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5583,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1066:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5588,
+                  "mutability": "mutable",
+                  "name": "_epochRewardPerBlock",
+                  "nameLocation": "1115:20:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5591,
+                  "src": "1096:39:8",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$24_memory_ptr",
+                    "typeString": "uint256[24]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 5585,
+                      "name": "uint256",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "1096:7:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "id": 5587,
+                    "length": {
+                      "hexValue": "3234",
+                      "id": 5586,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "1104:2:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_24_by_1",
+                        "typeString": "int_const 24"
+                      },
+                      "value": "24"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "1096:11:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_uint256_$24_storage_ptr",
+                      "typeString": "uint256[24]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "955:186:8"
+            },
+            "returnParameters": {
+              "id": 5590,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1150:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5599,
+            "nodeType": "FunctionDefinition",
+            "src": "1421:69:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5592,
+              "nodeType": "StructuredDocumentation",
+              "src": "1157:259:8",
+              "text": " @notice Called by the owner to set the allocation points for a vault, meaning the\n vault's relative share of the total rewards\n @param _vault The address of the vault\n @param _allocPoint The allocation points for the vault"
+            },
+            "functionSelector": "02b1720c",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setAllocPoint",
+            "nameLocation": "1430:13:8",
+            "parameters": {
+              "id": 5597,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5594,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "1452:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5599,
+                  "src": "1444:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5593,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1444:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5596,
+                  "mutability": "mutable",
+                  "name": "_allocPoint",
+                  "nameLocation": "1468:11:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5599,
+                  "src": "1460:19:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5595,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1460:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1443:37:8"
+            },
+            "returnParameters": {
+              "id": 5598,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1489:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5605,
+            "nodeType": "FunctionDefinition",
+            "src": "1631:46:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5600,
+              "nodeType": "StructuredDocumentation",
+              "src": "1496:130:8",
+              "text": " @notice Update the vault's reward per share, not more then once per block\n @param _vault The vault's address"
+            },
+            "functionSelector": "e7563f3f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "updateVault",
+            "nameLocation": "1640:11:8",
+            "parameters": {
+              "id": 5603,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5602,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "1660:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5605,
+                  "src": "1652:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5601,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1652:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1651:16:8"
+            },
+            "returnParameters": {
+              "id": 5604,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1676:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5613,
+            "nodeType": "FunctionDefinition",
+            "src": "1889:82:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5606,
+              "nodeType": "StructuredDocumentation",
+              "src": "1683:201:8",
+              "text": " @notice Called by the owner to set reward per epoch\n Reward can only be set for epochs which have not yet started\n @param _epochRewardPerBlock reward per block for each epoch"
+            },
+            "functionSelector": "24703c5a",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setEpochRewardPerBlock",
+            "nameLocation": "1898:22:8",
+            "parameters": {
+              "id": 5611,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5610,
+                  "mutability": "mutable",
+                  "name": "_epochRewardPerBlock",
+                  "nameLocation": "1940:20:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5613,
+                  "src": "1921:39:8",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$24_memory_ptr",
+                    "typeString": "uint256[24]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 5607,
+                      "name": "uint256",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "1921:7:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "id": 5609,
+                    "length": {
+                      "hexValue": "3234",
+                      "id": 5608,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "1929:2:8",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_24_by_1",
+                        "typeString": "int_const 24"
+                      },
+                      "value": "24"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "1921:11:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_uint256_$24_storage_ptr",
+                      "typeString": "uint256[24]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1920:41:8"
+            },
+            "returnParameters": {
+              "id": 5612,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1970:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5623,
+            "nodeType": "FunctionDefinition",
+            "src": "2318:91:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5614,
+              "nodeType": "StructuredDocumentation",
+              "src": "1977:336:8",
+              "text": " @notice Called by the vault to update a user claimable reward after deposit or withdraw.\n This call should never revert.\n @param _user The user address to updare rewards for\n @param _sharesChange The user of shared the user deposited or withdrew\n @param _isDeposit Whether user deposited or withdrew"
+            },
+            "functionSelector": "44d18cd9",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "commitUserBalance",
+            "nameLocation": "2327:17:8",
+            "parameters": {
+              "id": 5621,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5616,
+                  "mutability": "mutable",
+                  "name": "_user",
+                  "nameLocation": "2353:5:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5623,
+                  "src": "2345:13:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5615,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2345:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5618,
+                  "mutability": "mutable",
+                  "name": "_sharesChange",
+                  "nameLocation": "2368:13:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5623,
+                  "src": "2360:21:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5617,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2360:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5620,
+                  "mutability": "mutable",
+                  "name": "_isDeposit",
+                  "nameLocation": "2388:10:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5623,
+                  "src": "2383:15:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 5619,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2383:4:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2344:55:8"
+            },
+            "returnParameters": {
+              "id": 5622,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2408:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5631,
+            "nodeType": "FunctionDefinition",
+            "src": "2593:61:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5624,
+              "nodeType": "StructuredDocumentation",
+              "src": "2414:174:8",
+              "text": " @notice Transfer to the specified user their pending share of rewards.\n @param _vault The vault address\n @param _user The user address to claim for"
+            },
+            "functionSelector": "4953c782",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "claimReward",
+            "nameLocation": "2602:11:8",
+            "parameters": {
+              "id": 5629,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5626,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "2622:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5631,
+                  "src": "2614:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5625,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2614:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5628,
+                  "mutability": "mutable",
+                  "name": "_user",
+                  "nameLocation": "2638:5:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5631,
+                  "src": "2630:13:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5627,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2630:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2613:31:8"
+            },
+            "returnParameters": {
+              "id": 5630,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2653:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5641,
+            "nodeType": "FunctionDefinition",
+            "src": "3031:98:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5632,
+              "nodeType": "StructuredDocumentation",
+              "src": "2660:366:8",
+              "text": " @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,\n and sum up all rewards periods from vault.lastRewardBlock until current block number.\n @param _vault The vault address\n @param _fromBlock The block from which to start calculation\n @return reward The amount of rewards for the vault"
+            },
+            "functionSelector": "60096ff9",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getVaultReward",
+            "nameLocation": "3040:14:8",
+            "parameters": {
+              "id": 5637,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5634,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "3063:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5641,
+                  "src": "3055:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5633,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3055:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5636,
+                  "mutability": "mutable",
+                  "name": "_fromBlock",
+                  "nameLocation": "3079:10:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5641,
+                  "src": "3071:18:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5635,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3071:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3054:36:8"
+            },
+            "returnParameters": {
+              "id": 5640,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5639,
+                  "mutability": "mutable",
+                  "name": "reward",
+                  "nameLocation": "3121:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5641,
+                  "src": "3113:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5638,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3113:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3112:16:8"
+            },
+            "scope": 5661,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5651,
+            "nodeType": "FunctionDefinition",
+            "src": "3357:89:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5642,
+              "nodeType": "StructuredDocumentation",
+              "src": "3135:217:8",
+              "text": " @notice Calculate the amount of rewards a user can claim for having contributed to a specific vault\n @param _vault The vault address\n @param _user The user for which the reward is calculated"
+            },
+            "functionSelector": "fe0f3a13",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getPendingReward",
+            "nameLocation": "3366:16:8",
+            "parameters": {
+              "id": 5647,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5644,
+                  "mutability": "mutable",
+                  "name": "_vault",
+                  "nameLocation": "3391:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5651,
+                  "src": "3383:14:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5643,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3383:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5646,
+                  "mutability": "mutable",
+                  "name": "_user",
+                  "nameLocation": "3407:5:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5651,
+                  "src": "3399:13:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 5645,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3399:7:8",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3382:31:8"
+            },
+            "returnParameters": {
+              "id": 5650,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5649,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5651,
+                  "src": "3437:7:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5648,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3437:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3436:9:8"
+            },
+            "scope": 5661,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 5660,
+            "nodeType": "FunctionDefinition",
+            "src": "3648:72:8",
+            "nodes": [],
+            "documentation": {
+              "id": 5652,
+              "nodeType": "StructuredDocumentation",
+              "src": "3452:191:8",
+              "text": " @notice Called by the owner to transfer any tokens held in this contract to the owner\n @param _token The token to sweep\n @param _amount The amount of token to sweep"
+            },
+            "functionSelector": "e90a182f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "sweepToken",
+            "nameLocation": "3657:10:8",
+            "parameters": {
+              "id": 5658,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5655,
+                  "mutability": "mutable",
+                  "name": "_token",
+                  "nameLocation": "3686:6:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5660,
+                  "src": "3668:24:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_IERC20Upgradeable_$9073",
+                    "typeString": "contract IERC20Upgradeable"
+                  },
+                  "typeName": {
+                    "id": 5654,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 5653,
+                      "name": "IERC20Upgradeable",
+                      "nameLocations": [
+                        "3668:17:8"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 9073,
+                      "src": "3668:17:8"
+                    },
+                    "referencedDeclaration": 9073,
+                    "src": "3668:17:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_IERC20Upgradeable_$9073",
+                      "typeString": "contract IERC20Upgradeable"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5657,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "3702:7:8",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 5660,
+                  "src": "3694:15:8",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 5656,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3694:7:8",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3667:43:8"
+            },
+            "returnParameters": {
+              "id": 5659,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3719:0:8"
+            },
+            "scope": 5661,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IRewardController",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          5661
+        ],
+        "name": "IRewardController",
+        "nameLocation": "148:17:8",
+        "scope": 5662,
+        "usedErrors": [
+          5559,
+          5561
+        ]
+      }
+    ],
+    "license": "MIT"
+  },
+  "id": 8
+}
