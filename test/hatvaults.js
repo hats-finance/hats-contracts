@@ -2092,6 +2092,8 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await calculateExpectedReward(staker);
     const iterations = 8;
 
+
+    //Claiming reward multiple times for same reward
     for (let count = 0; count < iterations ; count++) {
         let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
         assert.equal(tx.logs[0].event, "ClaimReward");
