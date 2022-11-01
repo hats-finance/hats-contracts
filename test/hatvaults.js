@@ -2067,6 +2067,54 @@ contract("HatVaults", (accounts) => {
     );
   });
 
+  it("AUDIT CONTEST - claim same reward more than once", async () => {
+    await setUpGlobalVars(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [7000, 2500, 500],
+      [1000, 500],
+      10000
+    );
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    let expectedReward = await calculateExpectedReward(staker);
+    const iterations = 8;
+
+    for (let count = 0; count < iterations ; count++) {
+        let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+        assert.equal(tx.logs[0].event, "ClaimReward");
+        assert.equal(tx.logs[0].args._vault, vault.address);
+    }
+
+    const hackedAmount = (new web3.utils.BN(expectedReward)).mul(new web3.utils.BN(iterations));
+
+    assert.equal(
+      (await hatToken.balanceOf(rewardController.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())).sub(hackedAmount).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      hackedAmount.toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker), 0);
+    assert.equal(
+      await stakingToken.balanceOf(vault.address),
+      web3.utils.toWei("1")
+    );
+  });
+
   it("claim reward before deposit", async () => {
     await setUpGlobalVars(
       accounts,
@@ -2530,7 +2578,7 @@ contract("HatVaults", (accounts) => {
   });
 
 
-it("getVaultReward - no vault updates will retrun 0 ", async () => {
+  it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await setUpGlobalVars(accounts);
     const RewardControllerFactory = await ethers.getContractFactory("RewardController");
     rewardController = await RewardControllerFactory.deploy();
