@@ -143,7 +143,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             if (msg.value < generalParameters.claimFee)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
-            payable(owner()).transfer(msg.value);
+            address(owner()).call{value:msg.value}("");
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }
@@ -319,8 +319,11 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+        for (uint256 i = 0; i < _beneficiaries.length;) {
             swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+            unchecked {
+                ++i;
+            }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
@@ -329,7 +332,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+        for (uint256 i = 0; i < _beneficiaries.length;) {
             uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
@@ -355,6 +358,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 _HAT.safeTransfer(tokenLock, hackerReward);
             }
             emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            unchecked {
+                ++i;
+            }
         }
         _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
         emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));

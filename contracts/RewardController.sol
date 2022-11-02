@@ -175,13 +175,16 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }
         uint256 vaultAllocPoint = vaultInfo[_vault].allocPoint;
         uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
-        for (; i < globalVaultsUpdates.length-1; i++) {
+        for (; i < globalVaultsUpdates.length-1;) {
             uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
             reward += getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             vaultAllocPoint,
                                             globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
+            unchecked {
+                ++i;
+            }
         }
         return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,

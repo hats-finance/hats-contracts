@@ -628,20 +628,20 @@
   },
   "ast": {
     "absolutePath": "contracts/interfaces/IRewardController.sol",
-    "id": 5664,
+    "id": 5675,
     "exportedSymbols": {
       "IERC20Upgradeable": [
-        9075
+        9086
       ],
       "IRewardController": [
-        5663
+        5674
       ]
     },
     "nodeType": "SourceUnit",
     "src": "32:3692:8",
     "nodes": [
       {
-        "id": 5558,
+        "id": 5569,
         "nodeType": "PragmaDirective",
         "src": "32:23:8",
         "nodes": [],
@@ -652,25 +652,25 @@
         ]
       },
       {
-        "id": 5559,
+        "id": 5570,
         "nodeType": "ImportDirective",
         "src": "57:79:8",
         "nodes": [],
         "absolutePath": "node_modules/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
         "file": "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 5664,
-        "sourceUnit": 9076,
+        "scope": 5675,
+        "sourceUnit": 9087,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 5663,
+        "id": 5674,
         "nodeType": "ContractDefinition",
         "src": "138:3585:8",
         "nodes": [
           {
-            "id": 5561,
+            "id": 5572,
             "nodeType": "ErrorDefinition",
             "src": "177:24:8",
             "nodes": [],
@@ -678,14 +678,14 @@
             "name": "EpochLengthZero",
             "nameLocation": "183:15:8",
             "parameters": {
-              "id": 5560,
+              "id": 5571,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "198:2:8"
             }
           },
           {
-            "id": 5563,
+            "id": 5574,
             "nodeType": "ErrorDefinition",
             "src": "252:41:8",
             "nodes": [],
@@ -693,14 +693,14 @@
             "name": "NotEnoughRewardsToTransferToUser",
             "nameLocation": "258:32:8",
             "parameters": {
-              "id": 5562,
+              "id": 5573,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "290:2:8"
             }
           },
           {
-            "id": 5569,
+            "id": 5580,
             "nodeType": "EventDefinition",
             "src": "299:63:8",
             "nodes": [],
@@ -709,18 +709,18 @@
             "name": "SetEpochRewardPerBlock",
             "nameLocation": "305:22:8",
             "parameters": {
-              "id": 5568,
+              "id": 5579,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5567,
+                  "id": 5578,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_epochRewardPerBlock",
                   "nameLocation": "340:20:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5569,
+                  "scope": 5580,
                   "src": "328:32:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -730,7 +730,7 @@
                   },
                   "typeName": {
                     "baseType": {
-                      "id": 5564,
+                      "id": 5575,
                       "name": "uint256",
                       "nodeType": "ElementaryTypeName",
                       "src": "328:7:8",
@@ -739,10 +739,10 @@
                         "typeString": "uint256"
                       }
                     },
-                    "id": 5566,
+                    "id": 5577,
                     "length": {
                       "hexValue": "3234",
-                      "id": 5565,
+                      "id": 5576,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -770,7 +770,7 @@
             }
           },
           {
-            "id": 5577,
+            "id": 5588,
             "nodeType": "EventDefinition",
             "src": "367:82:8",
             "nodes": [],
@@ -779,18 +779,18 @@
             "name": "ClaimReward",
             "nameLocation": "373:11:8",
             "parameters": {
-              "id": 5576,
+              "id": 5587,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5571,
+                  "id": 5582,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "401:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5577,
+                  "scope": 5588,
                   "src": "385:22:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -799,7 +799,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5570,
+                    "id": 5581,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "385:7:8",
@@ -813,13 +813,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 5573,
+                  "id": 5584,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_user",
                   "nameLocation": "425:5:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5577,
+                  "scope": 5588,
                   "src": "409:21:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -828,7 +828,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5572,
+                    "id": 5583,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "409:7:8",
@@ -842,13 +842,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 5575,
+                  "id": 5586,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_amount",
                   "nameLocation": "440:7:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5577,
+                  "scope": 5588,
                   "src": "432:15:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -857,7 +857,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5574,
+                    "id": 5585,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "432:7:8",
@@ -873,12 +873,12 @@
             }
           },
           {
-            "id": 5593,
+            "id": 5604,
             "nodeType": "FunctionDefinition",
             "src": "936:215:8",
             "nodes": [],
             "documentation": {
-              "id": 5578,
+              "id": 5589,
               "nodeType": "StructuredDocumentation",
               "src": "455:476:8",
               "text": " @notice Initializes the reward controller\n @param _rewardToken The address of the ERC20 token to be distributed as rewards\n @param _hatsGovernance The hats governance address, to be given ownership of the reward controller\n @param _startRewardingBlock The block number from which to start rewarding\n @param _epochLength The length of a rewarding epoch\n @param _epochRewardPerBlock The reward per block for each of the 24 epochs"
@@ -890,17 +890,17 @@
             "name": "initialize",
             "nameLocation": "945:10:8",
             "parameters": {
-              "id": 5591,
+              "id": 5602,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5580,
+                  "id": 5591,
                   "mutability": "mutable",
                   "name": "_rewardToken",
                   "nameLocation": "973:12:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5593,
+                  "scope": 5604,
                   "src": "965:20:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -909,7 +909,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5579,
+                    "id": 5590,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "965:7:8",
@@ -923,12 +923,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5582,
+                  "id": 5593,
                   "mutability": "mutable",
                   "name": "_hatsGovernance",
                   "nameLocation": "1003:15:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5593,
+                  "scope": 5604,
                   "src": "995:23:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -937,7 +937,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5581,
+                    "id": 5592,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "995:7:8",
@@ -951,12 +951,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5584,
+                  "id": 5595,
                   "mutability": "mutable",
                   "name": "_startRewardingBlock",
                   "nameLocation": "1036:20:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5593,
+                  "scope": 5604,
                   "src": "1028:28:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -965,7 +965,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5583,
+                    "id": 5594,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1028:7:8",
@@ -978,12 +978,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5586,
+                  "id": 5597,
                   "mutability": "mutable",
                   "name": "_epochLength",
                   "nameLocation": "1074:12:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5593,
+                  "scope": 5604,
                   "src": "1066:20:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -992,7 +992,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5585,
+                    "id": 5596,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1066:7:8",
@@ -1005,12 +1005,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5590,
+                  "id": 5601,
                   "mutability": "mutable",
                   "name": "_epochRewardPerBlock",
                   "nameLocation": "1115:20:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5593,
+                  "scope": 5604,
                   "src": "1096:39:8",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -1020,7 +1020,7 @@
                   },
                   "typeName": {
                     "baseType": {
-                      "id": 5587,
+                      "id": 5598,
                       "name": "uint256",
                       "nodeType": "ElementaryTypeName",
                       "src": "1096:7:8",
@@ -1029,10 +1029,10 @@
                         "typeString": "uint256"
                       }
                     },
-                    "id": 5589,
+                    "id": 5600,
                     "length": {
                       "hexValue": "3234",
-                      "id": 5588,
+                      "id": 5599,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -1059,23 +1059,23 @@
               "src": "955:186:8"
             },
             "returnParameters": {
-              "id": 5592,
+              "id": 5603,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1150:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5601,
+            "id": 5612,
             "nodeType": "FunctionDefinition",
             "src": "1421:69:8",
             "nodes": [],
             "documentation": {
-              "id": 5594,
+              "id": 5605,
               "nodeType": "StructuredDocumentation",
               "src": "1157:259:8",
               "text": " @notice Called by the owner to set the allocation points for a vault, meaning the\n vault's relative share of the total rewards\n @param _vault The address of the vault\n @param _allocPoint The allocation points for the vault"
@@ -1087,17 +1087,17 @@
             "name": "setAllocPoint",
             "nameLocation": "1430:13:8",
             "parameters": {
-              "id": 5599,
+              "id": 5610,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5596,
+                  "id": 5607,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "1452:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5601,
+                  "scope": 5612,
                   "src": "1444:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1106,7 +1106,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5595,
+                    "id": 5606,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1444:7:8",
@@ -1120,12 +1120,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5598,
+                  "id": 5609,
                   "mutability": "mutable",
                   "name": "_allocPoint",
                   "nameLocation": "1468:11:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5601,
+                  "scope": 5612,
                   "src": "1460:19:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1134,7 +1134,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5597,
+                    "id": 5608,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1460:7:8",
@@ -1149,23 +1149,23 @@
               "src": "1443:37:8"
             },
             "returnParameters": {
-              "id": 5600,
+              "id": 5611,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1489:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5607,
+            "id": 5618,
             "nodeType": "FunctionDefinition",
             "src": "1631:46:8",
             "nodes": [],
             "documentation": {
-              "id": 5602,
+              "id": 5613,
               "nodeType": "StructuredDocumentation",
               "src": "1496:130:8",
               "text": " @notice Update the vault's reward per share, not more then once per block\n @param _vault The vault's address"
@@ -1177,17 +1177,17 @@
             "name": "updateVault",
             "nameLocation": "1640:11:8",
             "parameters": {
-              "id": 5605,
+              "id": 5616,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5604,
+                  "id": 5615,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "1660:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5607,
+                  "scope": 5618,
                   "src": "1652:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1196,7 +1196,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5603,
+                    "id": 5614,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1652:7:8",
@@ -1212,23 +1212,23 @@
               "src": "1651:16:8"
             },
             "returnParameters": {
-              "id": 5606,
+              "id": 5617,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1676:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5615,
+            "id": 5626,
             "nodeType": "FunctionDefinition",
             "src": "1889:82:8",
             "nodes": [],
             "documentation": {
-              "id": 5608,
+              "id": 5619,
               "nodeType": "StructuredDocumentation",
               "src": "1683:201:8",
               "text": " @notice Called by the owner to set reward per epoch\n Reward can only be set for epochs which have not yet started\n @param _epochRewardPerBlock reward per block for each epoch"
@@ -1240,17 +1240,17 @@
             "name": "setEpochRewardPerBlock",
             "nameLocation": "1898:22:8",
             "parameters": {
-              "id": 5613,
+              "id": 5624,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5612,
+                  "id": 5623,
                   "mutability": "mutable",
                   "name": "_epochRewardPerBlock",
                   "nameLocation": "1940:20:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5615,
+                  "scope": 5626,
                   "src": "1921:39:8",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -1260,7 +1260,7 @@
                   },
                   "typeName": {
                     "baseType": {
-                      "id": 5609,
+                      "id": 5620,
                       "name": "uint256",
                       "nodeType": "ElementaryTypeName",
                       "src": "1921:7:8",
@@ -1269,10 +1269,10 @@
                         "typeString": "uint256"
                       }
                     },
-                    "id": 5611,
+                    "id": 5622,
                     "length": {
                       "hexValue": "3234",
-                      "id": 5610,
+                      "id": 5621,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -1299,23 +1299,23 @@
               "src": "1920:41:8"
             },
             "returnParameters": {
-              "id": 5614,
+              "id": 5625,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1970:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5625,
+            "id": 5636,
             "nodeType": "FunctionDefinition",
             "src": "2318:91:8",
             "nodes": [],
             "documentation": {
-              "id": 5616,
+              "id": 5627,
               "nodeType": "StructuredDocumentation",
               "src": "1977:336:8",
               "text": " @notice Called by the vault to update a user claimable reward after deposit or withdraw.\n This call should never revert.\n @param _user The user address to updare rewards for\n @param _sharesChange The user of shared the user deposited or withdrew\n @param _isDeposit Whether user deposited or withdrew"
@@ -1327,17 +1327,17 @@
             "name": "commitUserBalance",
             "nameLocation": "2327:17:8",
             "parameters": {
-              "id": 5623,
+              "id": 5634,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5618,
+                  "id": 5629,
                   "mutability": "mutable",
                   "name": "_user",
                   "nameLocation": "2353:5:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5625,
+                  "scope": 5636,
                   "src": "2345:13:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1346,7 +1346,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5617,
+                    "id": 5628,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2345:7:8",
@@ -1360,12 +1360,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5620,
+                  "id": 5631,
                   "mutability": "mutable",
                   "name": "_sharesChange",
                   "nameLocation": "2368:13:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5625,
+                  "scope": 5636,
                   "src": "2360:21:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1374,7 +1374,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5619,
+                    "id": 5630,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2360:7:8",
@@ -1387,12 +1387,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5622,
+                  "id": 5633,
                   "mutability": "mutable",
                   "name": "_isDeposit",
                   "nameLocation": "2388:10:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5625,
+                  "scope": 5636,
                   "src": "2383:15:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1401,7 +1401,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5621,
+                    "id": 5632,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "2383:4:8",
@@ -1416,23 +1416,23 @@
               "src": "2344:55:8"
             },
             "returnParameters": {
-              "id": 5624,
+              "id": 5635,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "2408:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5633,
+            "id": 5644,
             "nodeType": "FunctionDefinition",
             "src": "2593:61:8",
             "nodes": [],
             "documentation": {
-              "id": 5626,
+              "id": 5637,
               "nodeType": "StructuredDocumentation",
               "src": "2414:174:8",
               "text": " @notice Transfer to the specified user their pending share of rewards.\n @param _vault The vault address\n @param _user The user address to claim for"
@@ -1444,17 +1444,17 @@
             "name": "claimReward",
             "nameLocation": "2602:11:8",
             "parameters": {
-              "id": 5631,
+              "id": 5642,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5628,
+                  "id": 5639,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "2622:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5633,
+                  "scope": 5644,
                   "src": "2614:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1463,7 +1463,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5627,
+                    "id": 5638,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2614:7:8",
@@ -1477,12 +1477,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5630,
+                  "id": 5641,
                   "mutability": "mutable",
                   "name": "_user",
                   "nameLocation": "2638:5:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5633,
+                  "scope": 5644,
                   "src": "2630:13:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1491,7 +1491,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5629,
+                    "id": 5640,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2630:7:8",
@@ -1507,23 +1507,23 @@
               "src": "2613:31:8"
             },
             "returnParameters": {
-              "id": 5632,
+              "id": 5643,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "2653:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5643,
+            "id": 5654,
             "nodeType": "FunctionDefinition",
             "src": "3031:98:8",
             "nodes": [],
             "documentation": {
-              "id": 5634,
+              "id": 5645,
               "nodeType": "StructuredDocumentation",
               "src": "2660:366:8",
               "text": " @notice Calculate rewards for a vault by iterating over the history of totalAllocPoints updates,\n and sum up all rewards periods from vault.lastRewardBlock until current block number.\n @param _vault The vault address\n @param _fromBlock The block from which to start calculation\n @return reward The amount of rewards for the vault"
@@ -1535,17 +1535,17 @@
             "name": "getVaultReward",
             "nameLocation": "3040:14:8",
             "parameters": {
-              "id": 5639,
+              "id": 5650,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5636,
+                  "id": 5647,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "3063:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5643,
+                  "scope": 5654,
                   "src": "3055:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1554,7 +1554,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5635,
+                    "id": 5646,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "3055:7:8",
@@ -1568,12 +1568,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5638,
+                  "id": 5649,
                   "mutability": "mutable",
                   "name": "_fromBlock",
                   "nameLocation": "3079:10:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5643,
+                  "scope": 5654,
                   "src": "3071:18:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1582,7 +1582,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5637,
+                    "id": 5648,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3071:7:8",
@@ -1597,17 +1597,17 @@
               "src": "3054:36:8"
             },
             "returnParameters": {
-              "id": 5642,
+              "id": 5653,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5641,
+                  "id": 5652,
                   "mutability": "mutable",
                   "name": "reward",
                   "nameLocation": "3121:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5643,
+                  "scope": 5654,
                   "src": "3113:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1616,7 +1616,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5640,
+                    "id": 5651,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3113:7:8",
@@ -1630,18 +1630,18 @@
               ],
               "src": "3112:16:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5653,
+            "id": 5664,
             "nodeType": "FunctionDefinition",
             "src": "3357:89:8",
             "nodes": [],
             "documentation": {
-              "id": 5644,
+              "id": 5655,
               "nodeType": "StructuredDocumentation",
               "src": "3135:217:8",
               "text": " @notice Calculate the amount of rewards a user can claim for having contributed to a specific vault\n @param _vault The vault address\n @param _user The user for which the reward is calculated"
@@ -1653,17 +1653,17 @@
             "name": "getPendingReward",
             "nameLocation": "3366:16:8",
             "parameters": {
-              "id": 5649,
+              "id": 5660,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5646,
+                  "id": 5657,
                   "mutability": "mutable",
                   "name": "_vault",
                   "nameLocation": "3391:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5653,
+                  "scope": 5664,
                   "src": "3383:14:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1672,7 +1672,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5645,
+                    "id": 5656,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "3383:7:8",
@@ -1686,12 +1686,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5648,
+                  "id": 5659,
                   "mutability": "mutable",
                   "name": "_user",
                   "nameLocation": "3407:5:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5653,
+                  "scope": 5664,
                   "src": "3399:13:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1700,7 +1700,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5647,
+                    "id": 5658,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "3399:7:8",
@@ -1716,17 +1716,17 @@
               "src": "3382:31:8"
             },
             "returnParameters": {
-              "id": 5652,
+              "id": 5663,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5651,
+                  "id": 5662,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5653,
+                  "scope": 5664,
                   "src": "3437:7:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1735,7 +1735,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5650,
+                    "id": 5661,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3437:7:8",
@@ -1749,18 +1749,18 @@
               ],
               "src": "3436:9:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5662,
+            "id": 5673,
             "nodeType": "FunctionDefinition",
             "src": "3648:72:8",
             "nodes": [],
             "documentation": {
-              "id": 5654,
+              "id": 5665,
               "nodeType": "StructuredDocumentation",
               "src": "3452:191:8",
               "text": " @notice Called by the owner to transfer any tokens held in this contract to the owner\n @param _token The token to sweep\n @param _amount The amount of token to sweep"
@@ -1772,41 +1772,41 @@
             "name": "sweepToken",
             "nameLocation": "3657:10:8",
             "parameters": {
-              "id": 5660,
+              "id": 5671,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5657,
+                  "id": 5668,
                   "mutability": "mutable",
                   "name": "_token",
                   "nameLocation": "3686:6:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5662,
+                  "scope": 5673,
                   "src": "3668:24:8",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_IERC20Upgradeable_$9075",
+                    "typeIdentifier": "t_contract$_IERC20Upgradeable_$9086",
                     "typeString": "contract IERC20Upgradeable"
                   },
                   "typeName": {
-                    "id": 5656,
+                    "id": 5667,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 5655,
+                      "id": 5666,
                       "name": "IERC20Upgradeable",
                       "nameLocations": [
                         "3668:17:8"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 9075,
+                      "referencedDeclaration": 9086,
                       "src": "3668:17:8"
                     },
-                    "referencedDeclaration": 9075,
+                    "referencedDeclaration": 9086,
                     "src": "3668:17:8",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IERC20Upgradeable_$9075",
+                      "typeIdentifier": "t_contract$_IERC20Upgradeable_$9086",
                       "typeString": "contract IERC20Upgradeable"
                     }
                   },
@@ -1814,12 +1814,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5659,
+                  "id": 5670,
                   "mutability": "mutable",
                   "name": "_amount",
                   "nameLocation": "3702:7:8",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5662,
+                  "scope": 5673,
                   "src": "3694:15:8",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1828,7 +1828,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5658,
+                    "id": 5669,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "3694:7:8",
@@ -1843,12 +1843,12 @@
               "src": "3667:43:8"
             },
             "returnParameters": {
-              "id": 5661,
+              "id": 5672,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "3719:0:8"
             },
-            "scope": 5663,
+            "scope": 5674,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
@@ -1861,14 +1861,14 @@
         "contractKind": "interface",
         "fullyImplemented": false,
         "linearizedBaseContracts": [
-          5663
+          5674
         ],
         "name": "IRewardController",
         "nameLocation": "148:17:8",
-        "scope": 5664,
+        "scope": 5675,
         "usedErrors": [
-          5561,
-          5563
+          5572,
+          5574
         ]
       }
     ],
