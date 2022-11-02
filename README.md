@@ -59,12 +59,6 @@
   - [line 322](https://github.com/hats-finance/hats-contracts/blob/15b37a68f97f8f737a8808a9ff55d60bc2376d7e/contracts/HATVaultsRegistry.sol#L322)
   - [line 332](https://github.com/hats-finance/hats-contracts/blob/15b37a68f97f8f737a8808a9ff55d60bc2376d7e/contracts/HATVaultsRegistry.sol#L332)
 
-- initial gas measurement from running `npm run gas-avg` is `6975095`
-
-#### HATVault.sol
-
--
-
 # <img src="https://raw.githubusercontent.com/hats-finance/icons/main/hats.svg" alt="Hats.Finance" text="sds" height="40px"> Hats.Finance | Contracts
 
 [![Coverage Status](https://coveralls.io/repos/github/hats-finance/hats-contracts/badge.svg?t=Ko4Ndz&kill_cache=2)](https://coveralls.io/github/hats-finance/hats-contracts)
