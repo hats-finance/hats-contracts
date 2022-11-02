@@ -25,3 +25,4 @@ remix-compiler.config.js
 .DS_Store
 .openzeppelin
 gas-report.txt
+out/

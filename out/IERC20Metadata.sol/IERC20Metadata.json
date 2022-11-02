@@ -555,20 +555,20 @@
   },
   "ast": {
     "absolutePath": "node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
-    "id": 13803,
+    "id": 13805,
     "exportedSymbols": {
       "IERC20": [
-        13075
+        13077
       ],
       "IERC20Metadata": [
-        13802
+        13804
       ]
     },
     "nodeType": "SourceUnit",
     "src": "110:573:47",
     "nodes": [
       {
-        "id": 13779,
+        "id": 13781,
         "nodeType": "PragmaDirective",
         "src": "110:23:47",
         "nodes": [],
@@ -580,30 +580,30 @@
         ]
       },
       {
-        "id": 13780,
+        "id": 13782,
         "nodeType": "ImportDirective",
         "src": "135:23:47",
         "nodes": [],
         "absolutePath": "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "file": "../IERC20.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 13803,
-        "sourceUnit": 13076,
+        "scope": 13805,
+        "sourceUnit": 13078,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 13802,
+        "id": 13804,
         "nodeType": "ContractDefinition",
         "src": "277:405:47",
         "nodes": [
           {
-            "id": 13789,
+            "id": 13791,
             "nodeType": "FunctionDefinition",
             "src": "377:54:47",
             "nodes": [],
             "documentation": {
-              "id": 13784,
+              "id": 13786,
               "nodeType": "StructuredDocumentation",
               "src": "318:54:47",
               "text": " @dev Returns the name of the token."
@@ -615,23 +615,23 @@
             "name": "name",
             "nameLocation": "386:4:47",
             "parameters": {
-              "id": 13785,
+              "id": 13787,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "390:2:47"
             },
             "returnParameters": {
-              "id": 13788,
+              "id": 13790,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 13787,
+                  "id": 13789,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 13789,
+                  "scope": 13791,
                   "src": "416:13:47",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -640,7 +640,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 13786,
+                    "id": 13788,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "416:6:47",
@@ -654,18 +654,18 @@
               ],
               "src": "415:15:47"
             },
-            "scope": 13802,
+            "scope": 13804,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 13795,
+            "id": 13797,
             "nodeType": "FunctionDefinition",
             "src": "498:56:47",
             "nodes": [],
             "documentation": {
-              "id": 13790,
+              "id": 13792,
               "nodeType": "StructuredDocumentation",
               "src": "437:56:47",
               "text": " @dev Returns the symbol of the token."
@@ -677,23 +677,23 @@
             "name": "symbol",
             "nameLocation": "507:6:47",
             "parameters": {
-              "id": 13791,
+              "id": 13793,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "513:2:47"
             },
             "returnParameters": {
-              "id": 13794,
+              "id": 13796,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 13793,
+                  "id": 13795,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 13795,
+                  "scope": 13797,
                   "src": "539:13:47",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -702,7 +702,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 13792,
+                    "id": 13794,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "539:6:47",
@@ -716,18 +716,18 @@
               ],
               "src": "538:15:47"
             },
-            "scope": 13802,
+            "scope": 13804,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 13801,
+            "id": 13803,
             "nodeType": "FunctionDefinition",
             "src": "630:50:47",
             "nodes": [],
             "documentation": {
-              "id": 13796,
+              "id": 13798,
               "nodeType": "StructuredDocumentation",
               "src": "560:65:47",
               "text": " @dev Returns the decimals places of the token."
@@ -739,23 +739,23 @@
             "name": "decimals",
             "nameLocation": "639:8:47",
             "parameters": {
-              "id": 13797,
+              "id": 13799,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "647:2:47"
             },
             "returnParameters": {
-              "id": 13800,
+              "id": 13802,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 13799,
+                  "id": 13801,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 13801,
+                  "scope": 13803,
                   "src": "673:5:47",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -764,7 +764,7 @@
                     "typeString": "uint8"
                   },
                   "typeName": {
-                    "id": 13798,
+                    "id": 13800,
                     "name": "uint8",
                     "nodeType": "ElementaryTypeName",
                     "src": "673:5:47",
@@ -778,7 +778,7 @@
               ],
               "src": "672:7:47"
             },
-            "scope": 13802,
+            "scope": 13804,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
@@ -788,16 +788,16 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 13782,
+              "id": 13784,
               "name": "IERC20",
               "nameLocations": [
                 "305:6:47"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 13075,
+              "referencedDeclaration": 13077,
               "src": "305:6:47"
             },
-            "id": 13783,
+            "id": 13785,
             "nodeType": "InheritanceSpecifier",
             "src": "305:6:47"
           }
@@ -806,19 +806,19 @@
         "contractDependencies": [],
         "contractKind": "interface",
         "documentation": {
-          "id": 13781,
+          "id": 13783,
           "nodeType": "StructuredDocumentation",
           "src": "160:116:47",
           "text": " @dev Interface for the optional metadata functions from the ERC20 standard.\n _Available since v4.1._"
         },
         "fullyImplemented": false,
         "linearizedBaseContracts": [
-          13802,
-          13075
+          13804,
+          13077
         ],
         "name": "IERC20Metadata",
         "nameLocation": "287:14:47",
-        "scope": 13803,
+        "scope": 13805,
         "usedErrors": []
       }
     ],

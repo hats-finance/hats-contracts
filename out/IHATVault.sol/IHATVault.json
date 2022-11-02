@@ -4018,35 +4018,35 @@
   },
   "ast": {
     "absolutePath": "contracts/interfaces/IHATVault.sol",
-    "id": 5176,
+    "id": 5178,
     "exportedSymbols": {
       "IERC20": [
-        13075
+        13077
       ],
       "IERC20MetadataUpgradeable": [
-        9695
+        9697
       ],
       "IERC20Upgradeable": [
-        9073
+        9075
       ],
       "IERC4626Upgradeable": [
-        8174
+        8176
       ],
       "IHATVault": [
-        5175
+        5177
       ],
       "IHATVaultsRegistry": [
-        5554
+        5556
       ],
       "IRewardController": [
-        5661
+        5663
       ]
     },
     "nodeType": "SourceUnit",
     "src": "118:25558:6",
     "nodes": [
       {
-        "id": 4677,
+        "id": 4679,
         "nodeType": "PragmaDirective",
         "src": "118:23:6",
         "nodes": [],
@@ -4057,85 +4057,85 @@
         ]
       },
       {
-        "id": 4678,
+        "id": 4680,
         "nodeType": "ImportDirective",
         "src": "143:34:6",
         "nodes": [],
         "absolutePath": "contracts/interfaces/IHATVaultsRegistry.sol",
         "file": "./IHATVaultsRegistry.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 5176,
-        "sourceUnit": 5555,
-        "symbolAliases": [],
-        "unitAlias": ""
-      },
-      {
-        "id": 4679,
-        "nodeType": "ImportDirective",
-        "src": "178:33:6",
-        "nodes": [],
-        "absolutePath": "contracts/interfaces/IRewardController.sol",
-        "file": "./IRewardController.sol",
-        "nameLocation": "-1:-1:-1",
-        "scope": 5176,
-        "sourceUnit": 5662,
-        "symbolAliases": [],
-        "unitAlias": ""
-      },
-      {
-        "id": 4680,
-        "nodeType": "ImportDirective",
-        "src": "212:80:6",
-        "nodes": [],
-        "absolutePath": "node_modules/@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol",
-        "file": "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol",
-        "nameLocation": "-1:-1:-1",
-        "scope": 5176,
-        "sourceUnit": 8175,
+        "scope": 5178,
+        "sourceUnit": 5557,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
         "id": 4681,
         "nodeType": "ImportDirective",
+        "src": "178:33:6",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/IRewardController.sol",
+        "file": "./IRewardController.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 5178,
+        "sourceUnit": 5664,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 4682,
+        "nodeType": "ImportDirective",
+        "src": "212:80:6",
+        "nodes": [],
+        "absolutePath": "node_modules/@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol",
+        "file": "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 5178,
+        "sourceUnit": 8177,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 4683,
+        "nodeType": "ImportDirective",
         "src": "293:56:6",
         "nodes": [],
         "absolutePath": "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "file": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 5176,
-        "sourceUnit": 13076,
+        "scope": 5178,
+        "sourceUnit": 13078,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 5175,
+        "id": 5177,
         "nodeType": "ContractDefinition",
         "src": "2347:23328:6",
         "nodes": [
           {
-            "id": 4688,
+            "id": 4690,
             "nodeType": "EnumDefinition",
             "src": "2397:50:6",
             "nodes": [],
             "canonicalName": "IHATVault.ArbitratorCanChangeBounty",
             "members": [
               {
-                "id": 4685,
+                "id": 4687,
                 "name": "NO",
                 "nameLocation": "2429:2:6",
                 "nodeType": "EnumValue",
                 "src": "2429:2:6"
               },
               {
-                "id": 4686,
+                "id": 4688,
                 "name": "YES",
                 "nameLocation": "2433:3:6",
                 "nodeType": "EnumValue",
                 "src": "2433:3:6"
               },
               {
-                "id": 4687,
+                "id": 4689,
                 "name": "DEFAULT",
                 "nameLocation": "2438:7:6",
                 "nodeType": "EnumValue",
@@ -4146,7 +4146,7 @@
             "nameLocation": "2402:25:6"
           },
           {
-            "id": 4695,
+            "id": 4697,
             "nodeType": "StructDefinition",
             "src": "2682:304:6",
             "nodes": [],
@@ -4154,12 +4154,12 @@
             "members": [
               {
                 "constant": false,
-                "id": 4690,
+                "id": 4692,
                 "mutability": "mutable",
                 "name": "hackerVested",
                 "nameLocation": "2795:12:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4695,
+                "scope": 4697,
                 "src": "2787:20:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4168,7 +4168,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4689,
+                  "id": 4691,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "2787:7:6",
@@ -4181,12 +4181,12 @@
               },
               {
                 "constant": false,
-                "id": 4692,
+                "id": 4694,
                 "mutability": "mutable",
                 "name": "hacker",
                 "nameLocation": "2898:6:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4695,
+                "scope": 4697,
                 "src": "2890:14:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4195,7 +4195,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4691,
+                  "id": 4693,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "2890:7:6",
@@ -4208,12 +4208,12 @@
               },
               {
                 "constant": false,
-                "id": 4694,
+                "id": 4696,
                 "mutability": "mutable",
                 "name": "committee",
                 "nameLocation": "2970:9:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4695,
+                "scope": 4697,
                 "src": "2962:17:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4222,7 +4222,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4693,
+                  "id": 4695,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "2962:7:6",
@@ -4236,11 +4236,11 @@
             ],
             "name": "BountySplit",
             "nameLocation": "2689:11:6",
-            "scope": 5175,
+            "scope": 5177,
             "visibility": "public"
           },
           {
-            "id": 4706,
+            "id": 4708,
             "nodeType": "StructDefinition",
             "src": "3131:171:6",
             "nodes": [],
@@ -4248,12 +4248,12 @@
             "members": [
               {
                 "constant": false,
-                "id": 4697,
+                "id": 4699,
                 "mutability": "mutable",
                 "name": "hacker",
                 "nameLocation": "3168:6:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4706,
+                "scope": 4708,
                 "src": "3160:14:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4262,7 +4262,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4696,
+                  "id": 4698,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "3160:7:6",
@@ -4275,12 +4275,12 @@
               },
               {
                 "constant": false,
-                "id": 4699,
+                "id": 4701,
                 "mutability": "mutable",
                 "name": "hackerVested",
                 "nameLocation": "3192:12:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4706,
+                "scope": 4708,
                 "src": "3184:20:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4289,7 +4289,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4698,
+                  "id": 4700,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "3184:7:6",
@@ -4302,12 +4302,12 @@
               },
               {
                 "constant": false,
-                "id": 4701,
+                "id": 4703,
                 "mutability": "mutable",
                 "name": "committee",
                 "nameLocation": "3222:9:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4706,
+                "scope": 4708,
                 "src": "3214:17:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4316,7 +4316,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4700,
+                  "id": 4702,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "3214:7:6",
@@ -4329,12 +4329,12 @@
               },
               {
                 "constant": false,
-                "id": 4703,
+                "id": 4705,
                 "mutability": "mutable",
                 "name": "hackerHatVested",
                 "nameLocation": "3249:15:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4706,
+                "scope": 4708,
                 "src": "3241:23:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4343,7 +4343,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4702,
+                  "id": 4704,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "3241:7:6",
@@ -4356,12 +4356,12 @@
               },
               {
                 "constant": false,
-                "id": 4705,
+                "id": 4707,
                 "mutability": "mutable",
                 "name": "governanceHat",
                 "nameLocation": "3282:13:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4706,
+                "scope": 4708,
                 "src": "3274:21:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4370,7 +4370,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4704,
+                  "id": 4706,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "3274:7:6",
@@ -4384,11 +4384,11 @@
             ],
             "name": "ClaimBounty",
             "nameLocation": "3138:11:6",
-            "scope": 5175,
+            "scope": 5177,
             "visibility": "public"
           },
           {
-            "id": 4730,
+            "id": 4732,
             "nodeType": "StructDefinition",
             "src": "4285:336:6",
             "nodes": [],
@@ -4396,36 +4396,36 @@
             "members": [
               {
                 "constant": false,
-                "id": 4709,
+                "id": 4711,
                 "mutability": "mutable",
                 "name": "rewardController",
                 "nameLocation": "4336:16:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4318:34:6",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_contract$_IRewardController_$5661",
+                  "typeIdentifier": "t_contract$_IRewardController_$5663",
                   "typeString": "contract IRewardController"
                 },
                 "typeName": {
-                  "id": 4708,
+                  "id": 4710,
                   "nodeType": "UserDefinedTypeName",
                   "pathNode": {
-                    "id": 4707,
+                    "id": 4709,
                     "name": "IRewardController",
                     "nameLocations": [
                       "4318:17:6"
                     ],
                     "nodeType": "IdentifierPath",
-                    "referencedDeclaration": 5661,
+                    "referencedDeclaration": 5663,
                     "src": "4318:17:6"
                   },
-                  "referencedDeclaration": 5661,
+                  "referencedDeclaration": 5663,
                   "src": "4318:17:6",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_IRewardController_$5661",
+                    "typeIdentifier": "t_contract$_IRewardController_$5663",
                     "typeString": "contract IRewardController"
                   }
                 },
@@ -4433,12 +4433,12 @@
               },
               {
                 "constant": false,
-                "id": 4711,
+                "id": 4713,
                 "mutability": "mutable",
                 "name": "vestingDuration",
                 "nameLocation": "4370:15:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4362:23:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4447,7 +4447,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4710,
+                  "id": 4712,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "4362:7:6",
@@ -4460,12 +4460,12 @@
               },
               {
                 "constant": false,
-                "id": 4713,
+                "id": 4715,
                 "mutability": "mutable",
                 "name": "vestingPeriods",
                 "nameLocation": "4403:14:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4395:22:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4474,7 +4474,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4712,
+                  "id": 4714,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "4395:7:6",
@@ -4487,12 +4487,12 @@
               },
               {
                 "constant": false,
-                "id": 4715,
+                "id": 4717,
                 "mutability": "mutable",
                 "name": "maxBounty",
                 "nameLocation": "4435:9:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4427:17:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4501,7 +4501,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 4714,
+                  "id": 4716,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "4427:7:6",
@@ -4514,75 +4514,38 @@
               },
               {
                 "constant": false,
-                "id": 4718,
+                "id": 4720,
                 "mutability": "mutable",
                 "name": "bountySplit",
                 "nameLocation": "4476:11:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4454:33:6",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_struct$_BountySplit_$4695_storage_ptr",
+                  "typeIdentifier": "t_struct$_BountySplit_$4697_storage_ptr",
                   "typeString": "struct IHATVault.BountySplit"
                 },
                 "typeName": {
-                  "id": 4717,
+                  "id": 4719,
                   "nodeType": "UserDefinedTypeName",
                   "pathNode": {
-                    "id": 4716,
+                    "id": 4718,
                     "name": "IHATVault.BountySplit",
                     "nameLocations": [
                       "4454:9:6",
                       "4464:11:6"
                     ],
                     "nodeType": "IdentifierPath",
-                    "referencedDeclaration": 4695,
+                    "referencedDeclaration": 4697,
                     "src": "4454:21:6"
                   },
-                  "referencedDeclaration": 4695,
+                  "referencedDeclaration": 4697,
                   "src": "4454:21:6",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_BountySplit_$4695_storage_ptr",
+                    "typeIdentifier": "t_struct$_BountySplit_$4697_storage_ptr",
                     "typeString": "struct IHATVault.BountySplit"
-                  }
-                },
-                "visibility": "internal"
-              },
-              {
-                "constant": false,
-                "id": 4721,
-                "mutability": "mutable",
-                "name": "asset",
-                "nameLocation": "4504:5:6",
-                "nodeType": "VariableDeclaration",
-                "scope": 4730,
-                "src": "4497:12:6",
-                "stateVariable": false,
-                "storageLocation": "default",
-                "typeDescriptions": {
-                  "typeIdentifier": "t_contract$_IERC20_$13075",
-                  "typeString": "contract IERC20"
-                },
-                "typeName": {
-                  "id": 4720,
-                  "nodeType": "UserDefinedTypeName",
-                  "pathNode": {
-                    "id": 4719,
-                    "name": "IERC20",
-                    "nameLocations": [
-                      "4497:6:6"
-                    ],
-                    "nodeType": "IdentifierPath",
-                    "referencedDeclaration": 13075,
-                    "src": "4497:6:6"
-                  },
-                  "referencedDeclaration": 13075,
-                  "src": "4497:6:6",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_IERC20_$13075",
-                    "typeString": "contract IERC20"
                   }
                 },
                 "visibility": "internal"
@@ -4591,10 +4554,47 @@
                 "constant": false,
                 "id": 4723,
                 "mutability": "mutable",
+                "name": "asset",
+                "nameLocation": "4504:5:6",
+                "nodeType": "VariableDeclaration",
+                "scope": 4732,
+                "src": "4497:12:6",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_contract$_IERC20_$13077",
+                  "typeString": "contract IERC20"
+                },
+                "typeName": {
+                  "id": 4722,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 4721,
+                    "name": "IERC20",
+                    "nameLocations": [
+                      "4497:6:6"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 13077,
+                    "src": "4497:6:6"
+                  },
+                  "referencedDeclaration": 13077,
+                  "src": "4497:6:6",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_IERC20_$13077",
+                    "typeString": "contract IERC20"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 4725,
+                "mutability": "mutable",
                 "name": "owner",
                 "nameLocation": "4527:5:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4519:13:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4603,7 +4603,7 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 4722,
+                  "id": 4724,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
                   "src": "4519:7:6",
@@ -4617,12 +4617,12 @@
               },
               {
                 "constant": false,
-                "id": 4725,
+                "id": 4727,
                 "mutability": "mutable",
                 "name": "committee",
                 "nameLocation": "4550:9:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4542:17:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4631,7 +4631,7 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 4724,
+                  "id": 4726,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
                   "src": "4542:7:6",
@@ -4645,12 +4645,12 @@
               },
               {
                 "constant": false,
-                "id": 4727,
+                "id": 4729,
                 "mutability": "mutable",
                 "name": "isPaused",
                 "nameLocation": "4574:8:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4569:13:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4659,7 +4659,7 @@
                   "typeString": "bool"
                 },
                 "typeName": {
-                  "id": 4726,
+                  "id": 4728,
                   "name": "bool",
                   "nodeType": "ElementaryTypeName",
                   "src": "4569:4:6",
@@ -4672,12 +4672,12 @@
               },
               {
                 "constant": false,
-                "id": 4729,
+                "id": 4731,
                 "mutability": "mutable",
                 "name": "descriptionHash",
                 "nameLocation": "4599:15:6",
                 "nodeType": "VariableDeclaration",
-                "scope": 4730,
+                "scope": 4732,
                 "src": "4592:22:6",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4686,7 +4686,7 @@
                   "typeString": "string"
                 },
                 "typeName": {
-                  "id": 4728,
+                  "id": 4730,
                   "name": "string",
                   "nodeType": "ElementaryTypeName",
                   "src": "4592:6:6",
@@ -4700,11 +4700,11 @@
             ],
             "name": "VaultInitParams",
             "nameLocation": "4292:15:6",
-            "scope": 5175,
+            "scope": 5177,
             "visibility": "public"
           },
           {
-            "id": 4732,
+            "id": 4734,
             "nodeType": "ErrorDefinition",
             "src": "4649:22:6",
             "nodes": [],
@@ -4712,14 +4712,14 @@
             "name": "OnlyCommittee",
             "nameLocation": "4655:13:6",
             "parameters": {
-              "id": 4731,
+              "id": 4733,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "4668:2:6"
             }
           },
           {
-            "id": 4734,
+            "id": 4736,
             "nodeType": "ErrorDefinition",
             "src": "4703:26:6",
             "nodes": [],
@@ -4727,14 +4727,14 @@
             "name": "ActiveClaimExists",
             "nameLocation": "4709:17:6",
             "parameters": {
-              "id": 4733,
+              "id": 4735,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "4726:2:6"
             }
           },
           {
-            "id": 4736,
+            "id": 4738,
             "nodeType": "ErrorDefinition",
             "src": "4755:21:6",
             "nodes": [],
@@ -4742,14 +4742,14 @@
             "name": "SafetyPeriod",
             "nameLocation": "4761:12:6",
             "parameters": {
-              "id": 4735,
+              "id": 4737,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "4773:2:6"
             }
           },
           {
-            "id": 4738,
+            "id": 4740,
             "nodeType": "ErrorDefinition",
             "src": "4806:24:6",
             "nodes": [],
@@ -4757,14 +4757,14 @@
             "name": "NotSafetyPeriod",
             "nameLocation": "4812:15:6",
             "parameters": {
-              "id": 4737,
+              "id": 4739,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "4827:2:6"
             }
           },
           {
-            "id": 4740,
+            "id": 4742,
             "nodeType": "ErrorDefinition",
             "src": "4890:44:6",
             "nodes": [],
@@ -4772,14 +4772,14 @@
             "name": "BountyPercentageHigherThanMaxBounty",
             "nameLocation": "4896:35:6",
             "parameters": {
-              "id": 4739,
+              "id": 4741,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "4931:2:6"
             }
           },
           {
-            "id": 4742,
+            "id": 4744,
             "nodeType": "ErrorDefinition",
             "src": "5008:62:6",
             "nodes": [],
@@ -4787,14 +4787,14 @@
             "name": "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod",
             "nameLocation": "5014:53:6",
             "parameters": {
-              "id": 4741,
+              "id": 4743,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5067:2:6"
             }
           },
           {
-            "id": 4744,
+            "id": 4746,
             "nodeType": "ErrorDefinition",
             "src": "5105:28:6",
             "nodes": [],
@@ -4802,14 +4802,14 @@
             "name": "NoActiveClaimExists",
             "nameLocation": "5111:19:6",
             "parameters": {
-              "id": 4743,
+              "id": 4745,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5130:2:6"
             }
           },
           {
-            "id": 4746,
+            "id": 4748,
             "nodeType": "ErrorDefinition",
             "src": "5191:27:6",
             "nodes": [],
@@ -4817,14 +4817,14 @@
             "name": "ClaimIdIsNotActive",
             "nameLocation": "5197:18:6",
             "parameters": {
-              "id": 4745,
+              "id": 4747,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5215:2:6"
             }
           },
           {
-            "id": 4748,
+            "id": 4750,
             "nodeType": "ErrorDefinition",
             "src": "5250:25:6",
             "nodes": [],
@@ -4832,14 +4832,14 @@
             "name": "NotEnoughFeePaid",
             "nameLocation": "5256:16:6",
             "parameters": {
-              "id": 4747,
+              "id": 4749,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5272:2:6"
             }
           },
           {
-            "id": 4750,
+            "id": 4752,
             "nodeType": "ErrorDefinition",
             "src": "5309:27:6",
             "nodes": [],
@@ -4847,14 +4847,14 @@
             "name": "NoPendingMaxBounty",
             "nameLocation": "5315:18:6",
             "parameters": {
-              "id": 4749,
+              "id": 4751,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5333:2:6"
             }
           },
           {
-            "id": 4752,
+            "id": 4754,
             "nodeType": "ErrorDefinition",
             "src": "5399:51:6",
             "nodes": [],
@@ -4862,14 +4862,14 @@
             "name": "DelayPeriodForSettingMaxBountyHadNotPassed",
             "nameLocation": "5405:42:6",
             "parameters": {
-              "id": 4751,
+              "id": 4753,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5447:2:6"
             }
           },
           {
-            "id": 4754,
+            "id": 4756,
             "nodeType": "ErrorDefinition",
             "src": "5491:34:6",
             "nodes": [],
@@ -4877,14 +4877,14 @@
             "name": "CommitteeAlreadyCheckedIn",
             "nameLocation": "5497:25:6",
             "parameters": {
-              "id": 4753,
+              "id": 4755,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5522:2:6"
             }
           },
           {
-            "id": 4756,
+            "id": 4758,
             "nodeType": "ErrorDefinition",
             "src": "5586:51:6",
             "nodes": [],
@@ -4892,14 +4892,14 @@
             "name": "TotalSplitPercentageShouldBeHundredPercent",
             "nameLocation": "5592:42:6",
             "parameters": {
-              "id": 4755,
+              "id": 4757,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5634:2:6"
             }
           },
           {
-            "id": 4758,
+            "id": 4760,
             "nodeType": "ErrorDefinition",
             "src": "5678:31:6",
             "nodes": [],
@@ -4907,14 +4907,14 @@
             "name": "VestingDurationTooLong",
             "nameLocation": "5684:22:6",
             "parameters": {
-              "id": 4757,
+              "id": 4759,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5706:2:6"
             }
           },
           {
-            "id": 4760,
+            "id": 4762,
             "nodeType": "ErrorDefinition",
             "src": "5752:35:6",
             "nodes": [],
@@ -4922,14 +4922,14 @@
             "name": "VestingPeriodsCannotBeZero",
             "nameLocation": "5758:26:6",
             "parameters": {
-              "id": 4759,
+              "id": 4761,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5784:2:6"
             }
           },
           {
-            "id": 4762,
+            "id": 4764,
             "nodeType": "ErrorDefinition",
             "src": "5837:42:6",
             "nodes": [],
@@ -4937,14 +4937,14 @@
             "name": "VestingDurationSmallerThanPeriods",
             "nameLocation": "5843:33:6",
             "parameters": {
-              "id": 4761,
+              "id": 4763,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5876:2:6"
             }
           },
           {
-            "id": 4764,
+            "id": 4766,
             "nodeType": "ErrorDefinition",
             "src": "5941:48:6",
             "nodes": [],
@@ -4952,14 +4952,14 @@
             "name": "MaxBountyCannotBeMoreThanMaxBountyLimit",
             "nameLocation": "5947:39:6",
             "parameters": {
-              "id": 4763,
+              "id": 4765,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "5986:2:6"
             }
           },
           {
-            "id": 4766,
+            "id": 4768,
             "nodeType": "ErrorDefinition",
             "src": "6067:43:6",
             "nodes": [],
@@ -4967,14 +4967,14 @@
             "name": "CommitteeBountyCannotBeMoreThanMax",
             "nameLocation": "6073:34:6",
             "parameters": {
-              "id": 4765,
+              "id": 4767,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6107:2:6"
             }
           },
           {
-            "id": 4768,
+            "id": 4770,
             "nodeType": "ErrorDefinition",
             "src": "6142:26:6",
             "nodes": [],
@@ -4982,14 +4982,14 @@
             "name": "OnlyRegistryOwner",
             "nameLocation": "6148:17:6",
             "parameters": {
-              "id": 4767,
+              "id": 4769,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6165:2:6"
             }
           },
           {
-            "id": 4770,
+            "id": 4772,
             "nodeType": "ErrorDefinition",
             "src": "6196:22:6",
             "nodes": [],
@@ -4997,14 +4997,14 @@
             "name": "OnlyFeeSetter",
             "nameLocation": "6202:13:6",
             "parameters": {
-              "id": 4769,
+              "id": 4771,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6215:2:6"
             }
           },
           {
-            "id": 4772,
+            "id": 4774,
             "nodeType": "ErrorDefinition",
             "src": "6267:28:6",
             "nodes": [],
@@ -5012,14 +5012,14 @@
             "name": "WithdrawalFeeTooBig",
             "nameLocation": "6273:19:6",
             "parameters": {
-              "id": 4771,
+              "id": 4773,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6292:2:6"
             }
           },
           {
-            "id": 4774,
+            "id": 4776,
             "nodeType": "ErrorDefinition",
             "src": "6347:42:6",
             "nodes": [],
@@ -5027,14 +5027,14 @@
             "name": "SetSharesArraysMustHaveSameLength",
             "nameLocation": "6353:33:6",
             "parameters": {
-              "id": 4773,
+              "id": 4775,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6386:2:6"
             }
           },
           {
-            "id": 4776,
+            "id": 4778,
             "nodeType": "ErrorDefinition",
             "src": "6430:33:6",
             "nodes": [],
@@ -5042,14 +5042,14 @@
             "name": "CommitteeNotCheckedInYet",
             "nameLocation": "6436:24:6",
             "parameters": {
-              "id": 4775,
+              "id": 4777,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6460:2:6"
             }
           },
           {
-            "id": 4778,
+            "id": 4780,
             "nodeType": "ErrorDefinition",
             "src": "6499:29:6",
             "nodes": [],
@@ -5057,14 +5057,14 @@
             "name": "NotEnoughUserBalance",
             "nameLocation": "6505:20:6",
             "parameters": {
-              "id": 4777,
+              "id": 4779,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6525:2:6"
             }
           },
           {
-            "id": 4780,
+            "id": 4782,
             "nodeType": "ErrorDefinition",
             "src": "6574:38:6",
             "nodes": [],
@@ -5072,14 +5072,14 @@
             "name": "OnlyArbitratorOrRegistryOwner",
             "nameLocation": "6580:29:6",
             "parameters": {
-              "id": 4779,
+              "id": 4781,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6609:2:6"
             }
           },
           {
-            "id": 4782,
+            "id": 4784,
             "nodeType": "ErrorDefinition",
             "src": "6691:63:6",
             "nodes": [],
@@ -5087,14 +5087,14 @@
             "name": "UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod",
             "nameLocation": "6697:54:6",
             "parameters": {
-              "id": 4781,
+              "id": 4783,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6751:2:6"
             }
           },
           {
-            "id": 4784,
+            "id": 4786,
             "nodeType": "ErrorDefinition",
             "src": "6854:80:6",
             "nodes": [],
@@ -5102,14 +5102,14 @@
             "name": "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod",
             "nameLocation": "6860:71:6",
             "parameters": {
-              "id": 4783,
+              "id": 4785,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6931:2:6"
             }
           },
           {
-            "id": 4786,
+            "id": 4788,
             "nodeType": "ErrorDefinition",
             "src": "6964:21:6",
             "nodes": [],
@@ -5117,14 +5117,14 @@
             "name": "ClaimExpired",
             "nameLocation": "6970:12:6",
             "parameters": {
-              "id": 4785,
+              "id": 4787,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "6982:2:6"
             }
           },
           {
-            "id": 4788,
+            "id": 4790,
             "nodeType": "ErrorDefinition",
             "src": "7022:29:6",
             "nodes": [],
@@ -5132,14 +5132,14 @@
             "name": "ChallengePeriodEnded",
             "nameLocation": "7028:20:6",
             "parameters": {
-              "id": 4787,
+              "id": 4789,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7048:2:6"
             }
           },
           {
-            "id": 4790,
+            "id": 4792,
             "nodeType": "ErrorDefinition",
             "src": "7097:31:6",
             "nodes": [],
@@ -5147,14 +5147,14 @@
             "name": "ClaimAlreadyChallenged",
             "nameLocation": "7103:22:6",
             "parameters": {
-              "id": 4789,
+              "id": 4791,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7125:2:6"
             }
           },
           {
-            "id": 4792,
+            "id": 4794,
             "nodeType": "ErrorDefinition",
             "src": "7168:33:6",
             "nodes": [],
@@ -5162,14 +5162,14 @@
             "name": "OnlyCallableIfChallenged",
             "nameLocation": "7174:24:6",
             "parameters": {
-              "id": 4791,
+              "id": 4793,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7198:2:6"
             }
           },
           {
-            "id": 4794,
+            "id": 4796,
             "nodeType": "ErrorDefinition",
             "src": "7266:61:6",
             "nodes": [],
@@ -5177,14 +5177,14 @@
             "name": "CannotTransferToAnotherUserWithActiveWithdrawRequest",
             "nameLocation": "7272:52:6",
             "parameters": {
-              "id": 4793,
+              "id": 4795,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7324:2:6"
             }
           },
           {
-            "id": 4796,
+            "id": 4798,
             "nodeType": "ErrorDefinition",
             "src": "7381:38:6",
             "nodes": [],
@@ -5192,14 +5192,14 @@
             "name": "WithdrawMustBeGreaterThanZero",
             "nameLocation": "7387:29:6",
             "parameters": {
-              "id": 4795,
+              "id": 4797,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7416:2:6"
             }
           },
           {
-            "id": 4798,
+            "id": 4800,
             "nodeType": "ErrorDefinition",
             "src": "7482:26:6",
             "nodes": [],
@@ -5207,14 +5207,14 @@
             "name": "RedeemMoreThanMax",
             "nameLocation": "7488:17:6",
             "parameters": {
-              "id": 4797,
+              "id": 4799,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7505:2:6"
             }
           },
           {
-            "id": 4800,
+            "id": 4802,
             "nodeType": "ErrorDefinition",
             "src": "7552:31:6",
             "nodes": [],
@@ -5222,14 +5222,14 @@
             "name": "SystemInEmergencyPause",
             "nameLocation": "7558:22:6",
             "parameters": {
-              "id": 4799,
+              "id": 4801,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7580:2:6"
             }
           },
           {
-            "id": 4802,
+            "id": 4804,
             "nodeType": "ErrorDefinition",
             "src": "7660:44:6",
             "nodes": [],
@@ -5237,14 +5237,14 @@
             "name": "CannotSetToPerviousRewardController",
             "nameLocation": "7666:35:6",
             "parameters": {
-              "id": 4801,
+              "id": 4803,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7701:2:6"
             }
           },
           {
-            "id": 4804,
+            "id": 4806,
             "nodeType": "ErrorDefinition",
             "src": "7764:27:6",
             "nodes": [],
@@ -5252,14 +5252,14 @@
             "name": "AmountCannotBeZero",
             "nameLocation": "7770:18:6",
             "parameters": {
-              "id": 4803,
+              "id": 4805,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7788:2:6"
             }
           },
           {
-            "id": 4806,
+            "id": 4808,
             "nodeType": "ErrorDefinition",
             "src": "7834:29:6",
             "nodes": [],
@@ -5267,14 +5267,14 @@
             "name": "CannotTransferToSelf",
             "nameLocation": "7840:20:6",
             "parameters": {
-              "id": 4805,
+              "id": 4807,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "7860:2:6"
             }
           },
           {
-            "id": 4818,
+            "id": 4820,
             "nodeType": "EventDefinition",
             "src": "7874:200:6",
             "nodes": [],
@@ -5283,18 +5283,18 @@
             "name": "SubmitClaim",
             "nameLocation": "7880:11:6",
             "parameters": {
-              "id": 4817,
+              "id": 4819,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4808,
+                  "id": 4810,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "7917:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4818,
+                  "scope": 4820,
                   "src": "7901:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5303,7 +5303,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4807,
+                    "id": 4809,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "7901:7:6",
@@ -5316,13 +5316,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4810,
+                  "id": 4812,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_committee",
                   "nameLocation": "7951:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4818,
+                  "scope": 4820,
                   "src": "7935:26:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5331,7 +5331,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4809,
+                    "id": 4811,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "7935:7:6",
@@ -5345,13 +5345,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4812,
+                  "id": 4814,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_beneficiary",
                   "nameLocation": "7987:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4818,
+                  "scope": 4820,
                   "src": "7971:28:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5360,7 +5360,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4811,
+                    "id": 4813,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "7971:7:6",
@@ -5374,13 +5374,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4814,
+                  "id": 4816,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_bountyPercentage",
                   "nameLocation": "8017:17:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4818,
+                  "scope": 4820,
                   "src": "8009:25:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5389,7 +5389,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4813,
+                    "id": 4815,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8009:7:6",
@@ -5402,13 +5402,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4816,
+                  "id": 4818,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_descriptionHash",
                   "nameLocation": "8051:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4818,
+                  "scope": 4820,
                   "src": "8044:23:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5417,7 +5417,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 4815,
+                    "id": 4817,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "8044:6:6",
@@ -5433,7 +5433,7 @@
             }
           },
           {
-            "id": 4822,
+            "id": 4824,
             "nodeType": "EventDefinition",
             "src": "8079:47:6",
             "nodes": [],
@@ -5442,18 +5442,18 @@
             "name": "ChallengeClaim",
             "nameLocation": "8085:14:6",
             "parameters": {
-              "id": 4821,
+              "id": 4823,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4820,
+                  "id": 4822,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "8116:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4822,
+                  "scope": 4824,
                   "src": "8100:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5462,7 +5462,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4819,
+                    "id": 4821,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "8100:7:6",
@@ -5478,7 +5478,7 @@
             }
           },
           {
-            "id": 4837,
+            "id": 4839,
             "nodeType": "EventDefinition",
             "src": "8131:230:6",
             "nodes": [],
@@ -5487,18 +5487,18 @@
             "name": "ApproveClaim",
             "nameLocation": "8137:12:6",
             "parameters": {
-              "id": 4836,
+              "id": 4838,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4824,
+                  "id": 4826,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "8175:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8159:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5507,7 +5507,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4823,
+                    "id": 4825,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "8159:7:6",
@@ -5520,13 +5520,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4826,
+                  "id": 4828,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_committee",
                   "nameLocation": "8209:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8193:26:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5535,7 +5535,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4825,
+                    "id": 4827,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "8193:7:6",
@@ -5549,13 +5549,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4828,
+                  "id": 4830,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_beneficiary",
                   "nameLocation": "8245:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8229:28:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5564,7 +5564,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4827,
+                    "id": 4829,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "8229:7:6",
@@ -5578,13 +5578,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4830,
+                  "id": 4832,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_bountyPercentage",
                   "nameLocation": "8275:17:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8267:25:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5593,7 +5593,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4829,
+                    "id": 4831,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8267:7:6",
@@ -5606,13 +5606,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4832,
+                  "id": 4834,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_tokenLock",
                   "nameLocation": "8310:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8302:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5621,7 +5621,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4831,
+                    "id": 4833,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "8302:7:6",
@@ -5635,37 +5635,37 @@
                 },
                 {
                   "constant": false,
-                  "id": 4835,
+                  "id": 4837,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_claimBounty",
                   "nameLocation": "8342:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4837,
+                  "scope": 4839,
                   "src": "8330:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_ClaimBounty_$4706_memory_ptr",
+                    "typeIdentifier": "t_struct$_ClaimBounty_$4708_memory_ptr",
                     "typeString": "struct IHATVault.ClaimBounty"
                   },
                   "typeName": {
-                    "id": 4834,
+                    "id": 4836,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4833,
+                      "id": 4835,
                       "name": "ClaimBounty",
                       "nameLocations": [
                         "8330:11:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4706,
+                      "referencedDeclaration": 4708,
                       "src": "8330:11:6"
                     },
-                    "referencedDeclaration": 4706,
+                    "referencedDeclaration": 4708,
                     "src": "8330:11:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_ClaimBounty_$4706_storage_ptr",
+                      "typeIdentifier": "t_struct$_ClaimBounty_$4708_storage_ptr",
                       "typeString": "struct IHATVault.ClaimBounty"
                     }
                   },
@@ -5676,7 +5676,7 @@
             }
           },
           {
-            "id": 4841,
+            "id": 4843,
             "nodeType": "EventDefinition",
             "src": "8366:45:6",
             "nodes": [],
@@ -5685,18 +5685,18 @@
             "name": "DismissClaim",
             "nameLocation": "8372:12:6",
             "parameters": {
-              "id": 4840,
+              "id": 4842,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4839,
+                  "id": 4841,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "8401:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4841,
+                  "scope": 4843,
                   "src": "8385:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5705,7 +5705,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4838,
+                    "id": 4840,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "8385:7:6",
@@ -5721,7 +5721,7 @@
             }
           },
           {
-            "id": 4845,
+            "id": 4847,
             "nodeType": "EventDefinition",
             "src": "8416:47:6",
             "nodes": [],
@@ -5730,18 +5730,18 @@
             "name": "SetCommittee",
             "nameLocation": "8422:12:6",
             "parameters": {
-              "id": 4844,
+              "id": 4846,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4843,
+                  "id": 4845,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_committee",
                   "nameLocation": "8451:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4845,
+                  "scope": 4847,
                   "src": "8435:26:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5750,7 +5750,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4842,
+                    "id": 4844,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "8435:7:6",
@@ -5767,7 +5767,7 @@
             }
           },
           {
-            "id": 4851,
+            "id": 4853,
             "nodeType": "EventDefinition",
             "src": "8468:82:6",
             "nodes": [],
@@ -5776,18 +5776,18 @@
             "name": "SetVestingParams",
             "nameLocation": "8474:16:6",
             "parameters": {
-              "id": 4850,
+              "id": 4852,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4847,
+                  "id": 4849,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_duration",
                   "nameLocation": "8508:9:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4851,
+                  "scope": 4853,
                   "src": "8500:17:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5796,7 +5796,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4846,
+                    "id": 4848,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8500:7:6",
@@ -5809,13 +5809,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4849,
+                  "id": 4851,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_periods",
                   "nameLocation": "8535:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4851,
+                  "scope": 4853,
                   "src": "8527:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5824,7 +5824,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4848,
+                    "id": 4850,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8527:7:6",
@@ -5840,7 +5840,7 @@
             }
           },
           {
-            "id": 4856,
+            "id": 4858,
             "nodeType": "EventDefinition",
             "src": "8555:47:6",
             "nodes": [],
@@ -5849,42 +5849,42 @@
             "name": "SetBountySplit",
             "nameLocation": "8561:14:6",
             "parameters": {
-              "id": 4855,
+              "id": 4857,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4854,
+                  "id": 4856,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_bountySplit",
                   "nameLocation": "8588:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4856,
+                  "scope": 4858,
                   "src": "8576:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_BountySplit_$4695_memory_ptr",
+                    "typeIdentifier": "t_struct$_BountySplit_$4697_memory_ptr",
                     "typeString": "struct IHATVault.BountySplit"
                   },
                   "typeName": {
-                    "id": 4853,
+                    "id": 4855,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4852,
+                      "id": 4854,
                       "name": "BountySplit",
                       "nameLocations": [
                         "8576:11:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4695,
+                      "referencedDeclaration": 4697,
                       "src": "8576:11:6"
                     },
-                    "referencedDeclaration": 4695,
+                    "referencedDeclaration": 4697,
                     "src": "8576:11:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_BountySplit_$4695_storage_ptr",
+                      "typeIdentifier": "t_struct$_BountySplit_$4697_storage_ptr",
                       "typeString": "struct IHATVault.BountySplit"
                     }
                   },
@@ -5895,7 +5895,7 @@
             }
           },
           {
-            "id": 4860,
+            "id": 4862,
             "nodeType": "EventDefinition",
             "src": "8607:40:6",
             "nodes": [],
@@ -5904,18 +5904,18 @@
             "name": "SetWithdrawalFee",
             "nameLocation": "8613:16:6",
             "parameters": {
-              "id": 4859,
+              "id": 4861,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4858,
+                  "id": 4860,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_newFee",
                   "nameLocation": "8638:7:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4860,
+                  "scope": 4862,
                   "src": "8630:15:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5924,7 +5924,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4857,
+                    "id": 4859,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8630:7:6",
@@ -5940,7 +5940,7 @@
             }
           },
           {
-            "id": 4862,
+            "id": 4864,
             "nodeType": "EventDefinition",
             "src": "8652:27:6",
             "nodes": [],
@@ -5949,14 +5949,14 @@
             "name": "CommitteeCheckedIn",
             "nameLocation": "8658:18:6",
             "parameters": {
-              "id": 4861,
+              "id": 4863,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "8676:2:6"
             }
           },
           {
-            "id": 4868,
+            "id": 4870,
             "nodeType": "EventDefinition",
             "src": "8684:66:6",
             "nodes": [],
@@ -5965,18 +5965,18 @@
             "name": "SetPendingMaxBounty",
             "nameLocation": "8690:19:6",
             "parameters": {
-              "id": 4867,
+              "id": 4869,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4864,
+                  "id": 4866,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_maxBounty",
                   "nameLocation": "8718:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4868,
+                  "scope": 4870,
                   "src": "8710:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5985,7 +5985,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4863,
+                    "id": 4865,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8710:7:6",
@@ -5998,13 +5998,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4866,
+                  "id": 4868,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_timeStamp",
                   "nameLocation": "8738:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4868,
+                  "scope": 4870,
                   "src": "8730:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6013,7 +6013,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4865,
+                    "id": 4867,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8730:7:6",
@@ -6029,7 +6029,7 @@
             }
           },
           {
-            "id": 4872,
+            "id": 4874,
             "nodeType": "EventDefinition",
             "src": "8755:39:6",
             "nodes": [],
@@ -6038,18 +6038,18 @@
             "name": "SetMaxBounty",
             "nameLocation": "8761:12:6",
             "parameters": {
-              "id": 4871,
+              "id": 4873,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4870,
+                  "id": 4872,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_maxBounty",
                   "nameLocation": "8782:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4872,
+                  "scope": 4874,
                   "src": "8774:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6058,7 +6058,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4869,
+                    "id": 4871,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "8774:7:6",
@@ -6074,7 +6074,7 @@
             }
           },
           {
-            "id": 4877,
+            "id": 4879,
             "nodeType": "EventDefinition",
             "src": "8799:74:6",
             "nodes": [],
@@ -6083,42 +6083,42 @@
             "name": "SetRewardController",
             "nameLocation": "8805:19:6",
             "parameters": {
-              "id": 4876,
+              "id": 4878,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4875,
+                  "id": 4877,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_newRewardController",
                   "nameLocation": "8851:20:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4877,
+                  "scope": 4879,
                   "src": "8825:46:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_IRewardController_$5661",
+                    "typeIdentifier": "t_contract$_IRewardController_$5663",
                     "typeString": "contract IRewardController"
                   },
                   "typeName": {
-                    "id": 4874,
+                    "id": 4876,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4873,
+                      "id": 4875,
                       "name": "IRewardController",
                       "nameLocations": [
                         "8825:17:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 5661,
+                      "referencedDeclaration": 5663,
                       "src": "8825:17:6"
                     },
-                    "referencedDeclaration": 5661,
+                    "referencedDeclaration": 5663,
                     "src": "8825:17:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IRewardController_$5661",
+                      "typeIdentifier": "t_contract$_IRewardController_$5663",
                       "typeString": "contract IRewardController"
                     }
                   },
@@ -6129,7 +6129,7 @@
             }
           },
           {
-            "id": 4881,
+            "id": 4883,
             "nodeType": "EventDefinition",
             "src": "8878:42:6",
             "nodes": [],
@@ -6138,18 +6138,18 @@
             "name": "SetDepositPause",
             "nameLocation": "8884:15:6",
             "parameters": {
-              "id": 4880,
+              "id": 4882,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4879,
+                  "id": 4881,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_depositPause",
                   "nameLocation": "8905:13:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4881,
+                  "scope": 4883,
                   "src": "8900:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6158,7 +6158,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 4878,
+                    "id": 4880,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "8900:4:6",
@@ -6174,7 +6174,7 @@
             }
           },
           {
-            "id": 4885,
+            "id": 4887,
             "nodeType": "EventDefinition",
             "src": "8925:51:6",
             "nodes": [],
@@ -6183,18 +6183,18 @@
             "name": "SetVaultDescription",
             "nameLocation": "8931:19:6",
             "parameters": {
-              "id": 4884,
+              "id": 4886,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4883,
+                  "id": 4885,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_descriptionHash",
                   "nameLocation": "8958:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4885,
+                  "scope": 4887,
                   "src": "8951:23:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6203,7 +6203,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 4882,
+                    "id": 4884,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "8951:6:6",
@@ -6219,7 +6219,7 @@
             }
           },
           {
-            "id": 4891,
+            "id": 4893,
             "nodeType": "EventDefinition",
             "src": "8981:86:6",
             "nodes": [],
@@ -6228,18 +6228,18 @@
             "name": "SetHATBountySplit",
             "nameLocation": "8987:17:6",
             "parameters": {
-              "id": 4890,
+              "id": 4892,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4887,
+                  "id": 4889,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_bountyGovernanceHAT",
                   "nameLocation": "9013:20:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4891,
+                  "scope": 4893,
                   "src": "9005:28:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6248,7 +6248,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4886,
+                    "id": 4888,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "9005:7:6",
@@ -6261,13 +6261,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4889,
+                  "id": 4891,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_bountyHackerHATVested",
                   "nameLocation": "9043:22:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4891,
+                  "scope": 4893,
                   "src": "9035:30:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6276,7 +6276,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4888,
+                    "id": 4890,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "9035:7:6",
@@ -6292,7 +6292,7 @@
             }
           },
           {
-            "id": 4895,
+            "id": 4897,
             "nodeType": "EventDefinition",
             "src": "9072:49:6",
             "nodes": [],
@@ -6301,18 +6301,18 @@
             "name": "SetArbitrator",
             "nameLocation": "9078:13:6",
             "parameters": {
-              "id": 4894,
+              "id": 4896,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4893,
+                  "id": 4895,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_arbitrator",
                   "nameLocation": "9108:11:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4895,
+                  "scope": 4897,
                   "src": "9092:27:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6321,7 +6321,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4892,
+                    "id": 4894,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "9092:7:6",
@@ -6338,7 +6338,7 @@
             }
           },
           {
-            "id": 4899,
+            "id": 4901,
             "nodeType": "EventDefinition",
             "src": "9126:51:6",
             "nodes": [],
@@ -6347,18 +6347,18 @@
             "name": "SetChallengePeriod",
             "nameLocation": "9132:18:6",
             "parameters": {
-              "id": 4898,
+              "id": 4900,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4897,
+                  "id": 4899,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_challengePeriod",
                   "nameLocation": "9159:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4899,
+                  "scope": 4901,
                   "src": "9151:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6367,7 +6367,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4896,
+                    "id": 4898,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "9151:7:6",
@@ -6383,7 +6383,7 @@
             }
           },
           {
-            "id": 4903,
+            "id": 4905,
             "nodeType": "EventDefinition",
             "src": "9182:65:6",
             "nodes": [],
@@ -6392,18 +6392,18 @@
             "name": "SetChallengeTimeOutPeriod",
             "nameLocation": "9188:25:6",
             "parameters": {
-              "id": 4902,
+              "id": 4904,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4901,
+                  "id": 4903,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_challengeTimeOutPeriod",
                   "nameLocation": "9222:23:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4903,
+                  "scope": 4905,
                   "src": "9214:31:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6412,7 +6412,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4900,
+                    "id": 4902,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "9214:7:6",
@@ -6428,7 +6428,7 @@
             }
           },
           {
-            "id": 4908,
+            "id": 4910,
             "nodeType": "EventDefinition",
             "src": "9252:89:6",
             "nodes": [],
@@ -6437,42 +6437,42 @@
             "name": "SetArbitratorCanChangeBounty",
             "nameLocation": "9258:28:6",
             "parameters": {
-              "id": 4907,
+              "id": 4909,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4906,
+                  "id": 4908,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_arbitratorCanChangeBounty",
                   "nameLocation": "9313:26:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4908,
+                  "scope": 4910,
                   "src": "9287:52:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4688",
+                    "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4690",
                     "typeString": "enum IHATVault.ArbitratorCanChangeBounty"
                   },
                   "typeName": {
-                    "id": 4905,
+                    "id": 4907,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4904,
+                      "id": 4906,
                       "name": "ArbitratorCanChangeBounty",
                       "nameLocations": [
                         "9287:25:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4688,
+                      "referencedDeclaration": 4690,
                       "src": "9287:25:6"
                     },
-                    "referencedDeclaration": 4688,
+                    "referencedDeclaration": 4690,
                     "src": "9287:25:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4688",
+                      "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4690",
                       "typeString": "enum IHATVault.ArbitratorCanChangeBounty"
                     }
                   },
@@ -6483,7 +6483,7 @@
             }
           },
           {
-            "id": 4914,
+            "id": 4916,
             "nodeType": "EventDefinition",
             "src": "9346:103:6",
             "nodes": [],
@@ -6492,18 +6492,18 @@
             "name": "WithdrawRequest",
             "nameLocation": "9352:15:6",
             "parameters": {
-              "id": 4913,
+              "id": 4915,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4910,
+                  "id": 4912,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "_beneficiary",
                   "nameLocation": "9393:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4914,
+                  "scope": 4916,
                   "src": "9377:28:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6512,7 +6512,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4909,
+                    "id": 4911,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "9377:7:6",
@@ -6526,13 +6526,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4912,
+                  "id": 4914,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "_withdrawEnableTime",
                   "nameLocation": "9423:19:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4914,
+                  "scope": 4916,
                   "src": "9415:27:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6541,7 +6541,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4911,
+                    "id": 4913,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "9415:7:6",
@@ -6557,12 +6557,12 @@
             }
           },
           {
-            "id": 4921,
+            "id": 4923,
             "nodeType": "FunctionDefinition",
             "src": "9709:61:6",
             "nodes": [],
             "documentation": {
-              "id": 4915,
+              "id": 4917,
               "nodeType": "StructuredDocumentation",
               "src": "9455:249:6",
               "text": " @notice Initialize a vault instance\n @param _params The vault initialization parameters\n @dev See {IHATVault-VaultInitParams} for more details\n @dev Called when the vault is created in {IHATVaultsRegistry-createVault}"
@@ -6574,41 +6574,41 @@
             "name": "initialize",
             "nameLocation": "9718:10:6",
             "parameters": {
-              "id": 4919,
+              "id": 4921,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4918,
+                  "id": 4920,
                   "mutability": "mutable",
                   "name": "_params",
                   "nameLocation": "9752:7:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4921,
+                  "scope": 4923,
                   "src": "9729:30:6",
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_VaultInitParams_$4730_memory_ptr",
+                    "typeIdentifier": "t_struct$_VaultInitParams_$4732_memory_ptr",
                     "typeString": "struct IHATVault.VaultInitParams"
                   },
                   "typeName": {
-                    "id": 4917,
+                    "id": 4919,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4916,
+                      "id": 4918,
                       "name": "VaultInitParams",
                       "nameLocations": [
                         "9729:15:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4730,
+                      "referencedDeclaration": 4732,
                       "src": "9729:15:6"
                     },
-                    "referencedDeclaration": 4730,
+                    "referencedDeclaration": 4732,
                     "src": "9729:15:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_VaultInitParams_$4730_storage_ptr",
+                      "typeIdentifier": "t_struct$_VaultInitParams_$4732_storage_ptr",
                       "typeString": "struct IHATVault.VaultInitParams"
                     }
                   },
@@ -6618,23 +6618,23 @@
               "src": "9728:32:6"
             },
             "returnParameters": {
-              "id": 4920,
+              "id": 4922,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "9769:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4933,
+            "id": 4935,
             "nodeType": "FunctionDefinition",
             "src": "10698:187:6",
             "nodes": [],
             "documentation": {
-              "id": 4922,
+              "id": 4924,
               "nodeType": "StructuredDocumentation",
               "src": "9960:733:6",
               "text": " @notice Called by the committee to submit a claim for a bounty payout.\n This function should be called only on a safety period, when withdrawals\n are disabled, and while there's no other active claim. Cannot be called\n when the registry is in an emergency pause.\n Upon a call to this function by the committee the vault's withdrawals\n will be disabled until the claim is approved or dismissed. Also from the\n time of this call the arbitrator will have a period of \n {HATVaultsRegistry.challengePeriod} to challenge the claim.\n @param _beneficiary The submitted claim's beneficiary\n @param _bountyPercentage The submitted claim's bug requested reward percentage"
@@ -6646,17 +6646,17 @@
             "name": "submitClaim",
             "nameLocation": "10707:11:6",
             "parameters": {
-              "id": 4929,
+              "id": 4931,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4924,
+                  "id": 4926,
                   "mutability": "mutable",
                   "name": "_beneficiary",
                   "nameLocation": "10736:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4933,
+                  "scope": 4935,
                   "src": "10728:20:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6665,7 +6665,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4923,
+                    "id": 4925,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "10728:7:6",
@@ -6679,12 +6679,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4926,
+                  "id": 4928,
                   "mutability": "mutable",
                   "name": "_bountyPercentage",
                   "nameLocation": "10767:17:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4933,
+                  "scope": 4935,
                   "src": "10759:25:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6693,7 +6693,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4925,
+                    "id": 4927,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "10759:7:6",
@@ -6706,12 +6706,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4928,
+                  "id": 4930,
                   "mutability": "mutable",
                   "name": "_descriptionHash",
                   "nameLocation": "10811:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4933,
+                  "scope": 4935,
                   "src": "10795:32:6",
                   "stateVariable": false,
                   "storageLocation": "calldata",
@@ -6720,7 +6720,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 4927,
+                    "id": 4929,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "10795:6:6",
@@ -6735,17 +6735,17 @@
               "src": "10718:115:6"
             },
             "returnParameters": {
-              "id": 4932,
+              "id": 4934,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4931,
+                  "id": 4933,
                   "mutability": "mutable",
                   "name": "claimId",
                   "nameLocation": "10876:7:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4933,
+                  "scope": 4935,
                   "src": "10868:15:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6754,7 +6754,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4930,
+                    "id": 4932,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "10868:7:6",
@@ -6768,18 +6768,18 @@
               ],
               "src": "10867:17:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4939,
+            "id": 4941,
             "nodeType": "FunctionDefinition",
             "src": "11188:51:6",
             "nodes": [],
             "documentation": {
-              "id": 4934,
+              "id": 4936,
               "nodeType": "StructuredDocumentation",
               "src": "10895:288:6",
               "text": " @notice Called by the arbitrator or governance to challenge a claim for a bounty\n payout that had been previously submitted by the committee.\n Can only be called during the challenge period after submission of the\n claim.\n @param _claimId The claim ID"
@@ -6791,17 +6791,17 @@
             "name": "challengeClaim",
             "nameLocation": "11197:14:6",
             "parameters": {
-              "id": 4937,
+              "id": 4939,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4936,
+                  "id": 4938,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "11220:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4939,
+                  "scope": 4941,
                   "src": "11212:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6810,7 +6810,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4935,
+                    "id": 4937,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "11212:7:6",
@@ -6825,23 +6825,23 @@
               "src": "11211:18:6"
             },
             "returnParameters": {
-              "id": 4938,
+              "id": 4940,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "11238:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4947,
+            "id": 4949,
             "nodeType": "FunctionDefinition",
             "src": "11870:84:6",
             "nodes": [],
             "documentation": {
-              "id": 4940,
+              "id": 4942,
               "nodeType": "StructuredDocumentation",
               "src": "11245:620:6",
               "text": " @notice Approve a claim for a bounty submitted by a committee, and\n pay out bounty to hacker and committee. Also transfer to the \n HATVaultsRegistry the part of the bounty that will be swapped to HAT \n tokens.\n If the claim had been previously challenged, this is only callable by\n the arbitrator. Otherwise, callable by anyone after challengePeriod had\n passed.\n @param _claimId The claim ID\n @param _bountyPercentage The percentage of the vault's balance that will\n be sent as a bounty. This value will be ignored if the caller is not the\n arbitrator."
@@ -6853,17 +6853,17 @@
             "name": "approveClaim",
             "nameLocation": "11879:12:6",
             "parameters": {
-              "id": 4945,
+              "id": 4947,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4942,
+                  "id": 4944,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "11900:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4947,
+                  "scope": 4949,
                   "src": "11892:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6872,7 +6872,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4941,
+                    "id": 4943,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "11892:7:6",
@@ -6885,12 +6885,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4944,
+                  "id": 4946,
                   "mutability": "mutable",
                   "name": "_bountyPercentage",
                   "nameLocation": "11918:17:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4947,
+                  "scope": 4949,
                   "src": "11910:25:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6899,7 +6899,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4943,
+                    "id": 4945,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "11910:7:6",
@@ -6914,23 +6914,23 @@
               "src": "11891:45:6"
             },
             "returnParameters": {
-              "id": 4946,
+              "id": 4948,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "11953:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4953,
+            "id": 4955,
             "nodeType": "FunctionDefinition",
             "src": "12181:49:6",
             "nodes": [],
             "documentation": {
-              "id": 4948,
+              "id": 4950,
               "nodeType": "StructuredDocumentation",
               "src": "11960:216:6",
               "text": " @notice Dismiss the active claim for bounty payout submitted by the\n committee.\n Called either by the arbitrator, or by anyone if the claim has timed out.\n @param _claimId The claim ID"
@@ -6942,17 +6942,17 @@
             "name": "dismissClaim",
             "nameLocation": "12190:12:6",
             "parameters": {
-              "id": 4951,
+              "id": 4953,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4950,
+                  "id": 4952,
                   "mutability": "mutable",
                   "name": "_claimId",
                   "nameLocation": "12211:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4953,
+                  "scope": 4955,
                   "src": "12203:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6961,7 +6961,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 4949,
+                    "id": 4951,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "12203:7:6",
@@ -6976,23 +6976,23 @@
               "src": "12202:18:6"
             },
             "returnParameters": {
-              "id": 4952,
+              "id": 4954,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "12229:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4959,
+            "id": 4961,
             "nodeType": "FunctionDefinition",
             "src": "12665:51:6",
             "nodes": [],
             "documentation": {
-              "id": 4954,
+              "id": 4956,
               "nodeType": "StructuredDocumentation",
               "src": "12420:240:6",
               "text": " @notice Set new committee address. Can be called by existing committee,\n or by the the vault's owner in the case that the committee hadn't checked in\n yet.\n @param _committee The address of the new committee "
@@ -7004,17 +7004,17 @@
             "name": "setCommittee",
             "nameLocation": "12674:12:6",
             "parameters": {
-              "id": 4957,
+              "id": 4959,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4956,
+                  "id": 4958,
                   "mutability": "mutable",
                   "name": "_committee",
                   "nameLocation": "12695:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4959,
+                  "scope": 4961,
                   "src": "12687:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7023,7 +7023,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4955,
+                    "id": 4957,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "12687:7:6",
@@ -7039,23 +7039,23 @@
               "src": "12686:20:6"
             },
             "returnParameters": {
-              "id": 4958,
+              "id": 4960,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "12715:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4967,
+            "id": 4969,
             "nodeType": "FunctionDefinition",
             "src": "13080:72:6",
             "nodes": [],
             "documentation": {
-              "id": 4960,
+              "id": 4962,
               "nodeType": "StructuredDocumentation",
               "src": "12722:353:6",
               "text": " @notice Called by the vault's owner to set the vesting params for the\n part of the bounty that the hacker gets vested in the vault's native\n token\n @param _duration Duration of the vesting period. Must be smaller than\n 120 days and bigger than `_periods`\n @param _periods Number of vesting periods. Cannot be 0."
@@ -7067,17 +7067,17 @@
             "name": "setVestingParams",
             "nameLocation": "13089:16:6",
             "parameters": {
-              "id": 4965,
+              "id": 4967,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4962,
+                  "id": 4964,
                   "mutability": "mutable",
                   "name": "_duration",
                   "nameLocation": "13114:9:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4967,
+                  "scope": 4969,
                   "src": "13106:17:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7086,7 +7086,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4961,
+                    "id": 4963,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "13106:7:6",
@@ -7099,12 +7099,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4964,
+                  "id": 4966,
                   "mutability": "mutable",
                   "name": "_periods",
                   "nameLocation": "13133:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4967,
+                  "scope": 4969,
                   "src": "13125:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7113,7 +7113,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4963,
+                    "id": 4965,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "13125:7:6",
@@ -7128,23 +7128,23 @@
               "src": "13105:37:6"
             },
             "returnParameters": {
-              "id": 4966,
+              "id": 4968,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "13151:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4974,
+            "id": 4976,
             "nodeType": "FunctionDefinition",
             "src": "13396:66:6",
             "nodes": [],
             "documentation": {
-              "id": 4968,
+              "id": 4970,
               "nodeType": "StructuredDocumentation",
               "src": "13158:233:6",
               "text": " @notice Called by the vault's owner to set the vault token bounty split\n upon an approval.\n Can only be called if is no active claim and not during safety periods.\n @param _bountySplit The bounty split"
@@ -7156,41 +7156,41 @@
             "name": "setBountySplit",
             "nameLocation": "13405:14:6",
             "parameters": {
-              "id": 4972,
+              "id": 4974,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4971,
+                  "id": 4973,
                   "mutability": "mutable",
                   "name": "_bountySplit",
                   "nameLocation": "13439:12:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4974,
+                  "scope": 4976,
                   "src": "13420:31:6",
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_BountySplit_$4695_memory_ptr",
+                    "typeIdentifier": "t_struct$_BountySplit_$4697_memory_ptr",
                     "typeString": "struct IHATVault.BountySplit"
                   },
                   "typeName": {
-                    "id": 4970,
+                    "id": 4972,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 4969,
+                      "id": 4971,
                       "name": "BountySplit",
                       "nameLocations": [
                         "13420:11:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4695,
+                      "referencedDeclaration": 4697,
                       "src": "13420:11:6"
                     },
-                    "referencedDeclaration": 4695,
+                    "referencedDeclaration": 4697,
                     "src": "13420:11:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_BountySplit_$4695_storage_ptr",
+                      "typeIdentifier": "t_struct$_BountySplit_$4697_storage_ptr",
                       "typeString": "struct IHATVault.BountySplit"
                     }
                   },
@@ -7200,23 +7200,23 @@
               "src": "13419:33:6"
             },
             "returnParameters": {
-              "id": 4973,
+              "id": 4975,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "13461:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4980,
+            "id": 4982,
             "nodeType": "FunctionDefinition",
             "src": "13672:49:6",
             "nodes": [],
             "documentation": {
-              "id": 4975,
+              "id": 4977,
               "nodeType": "StructuredDocumentation",
               "src": "13468:199:6",
               "text": " @notice Called by the registry's fee setter to set the fee for \n withdrawals from the vault.\n @param _fee The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE`"
@@ -7228,17 +7228,17 @@
             "name": "setWithdrawalFee",
             "nameLocation": "13681:16:6",
             "parameters": {
-              "id": 4978,
+              "id": 4980,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4977,
+                  "id": 4979,
                   "mutability": "mutable",
                   "name": "_fee",
                   "nameLocation": "13706:4:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4980,
+                  "scope": 4982,
                   "src": "13698:12:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7247,7 +7247,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4976,
+                    "id": 4978,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "13698:7:6",
@@ -7262,23 +7262,23 @@
               "src": "13697:14:6"
             },
             "returnParameters": {
-              "id": 4979,
+              "id": 4981,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "13720:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4984,
+            "id": 4986,
             "nodeType": "FunctionDefinition",
             "src": "13866:37:6",
             "nodes": [],
             "documentation": {
-              "id": 4981,
+              "id": 4983,
               "nodeType": "StructuredDocumentation",
               "src": "13727:134:6",
               "text": " @notice Called by the vault's committee to claim it's role.\n Deposits are enabled only after committee check in."
@@ -7290,29 +7290,29 @@
             "name": "committeeCheckIn",
             "nameLocation": "13875:16:6",
             "parameters": {
-              "id": 4982,
+              "id": 4984,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "13891:2:6"
             },
             "returnParameters": {
-              "id": 4983,
+              "id": 4985,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "13902:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4990,
+            "id": 4992,
             "nodeType": "FunctionDefinition",
             "src": "14443:58:6",
             "nodes": [],
             "documentation": {
-              "id": 4985,
+              "id": 4987,
               "nodeType": "StructuredDocumentation",
               "src": "13909:529:6",
               "text": " @notice Called by the vault's owner to set a pending request for the\n maximum percentage of the vault that can be paid out as a bounty.\n Cannot be called if there is an active claim that has been submitted.\n Max bounty should be less than or equal to 90% (defined as 9000).\n The pending value can be set by the owner after the time delay (of \n {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.\n @param _maxBounty The maximum bounty percentage that can be paid out"
@@ -7324,17 +7324,17 @@
             "name": "setPendingMaxBounty",
             "nameLocation": "14452:19:6",
             "parameters": {
-              "id": 4988,
+              "id": 4990,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4987,
+                  "id": 4989,
                   "mutability": "mutable",
                   "name": "_maxBounty",
                   "nameLocation": "14480:10:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4990,
+                  "scope": 4992,
                   "src": "14472:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7343,7 +7343,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4986,
+                    "id": 4988,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "14472:7:6",
@@ -7358,23 +7358,23 @@
               "src": "14471:20:6"
             },
             "returnParameters": {
-              "id": 4989,
+              "id": 4991,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "14500:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4994,
+            "id": 4996,
             "nodeType": "FunctionDefinition",
             "src": "14853:33:6",
             "nodes": [],
             "documentation": {
-              "id": 4991,
+              "id": 4993,
               "nodeType": "StructuredDocumentation",
               "src": "14507:341:6",
               "text": " @notice Called by the vault's owner to set the vault's max bounty to\n the already pending max bounty.\n Cannot be called if there are active claims that have been submitted.\n Can only be called if there is a max bounty pending approval, and the\n time delay since setting the pending max bounty had passed."
@@ -7386,29 +7386,29 @@
             "name": "setMaxBounty",
             "nameLocation": "14862:12:6",
             "parameters": {
-              "id": 4992,
+              "id": 4994,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "14874:2:6"
             },
             "returnParameters": {
-              "id": 4993,
+              "id": 4995,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "14885:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5000,
+            "id": 5002,
             "nodeType": "FunctionDefinition",
             "src": "15033:54:6",
             "nodes": [],
             "documentation": {
-              "id": 4995,
+              "id": 4997,
               "nodeType": "StructuredDocumentation",
               "src": "14892:136:6",
               "text": " @notice Called by the vault's owner to disable all deposits to the vault\n @param _depositPause Are deposits paused"
@@ -7420,17 +7420,17 @@
             "name": "setDepositPause",
             "nameLocation": "15042:15:6",
             "parameters": {
-              "id": 4998,
+              "id": 5000,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4997,
+                  "id": 4999,
                   "mutability": "mutable",
                   "name": "_depositPause",
                   "nameLocation": "15063:13:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5000,
+                  "scope": 5002,
                   "src": "15058:18:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7439,7 +7439,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 4996,
+                    "id": 4998,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "15058:4:6",
@@ -7454,23 +7454,23 @@
               "src": "15057:20:6"
             },
             "returnParameters": {
-              "id": 4999,
+              "id": 5001,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "15086:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5006,
+            "id": 5008,
             "nodeType": "FunctionDefinition",
             "src": "15287:70:6",
             "nodes": [],
             "documentation": {
-              "id": 5001,
+              "id": 5003,
               "nodeType": "StructuredDocumentation",
               "src": "15093:189:6",
               "text": " @notice Called by the registry's owner to change the description of the\n vault in the Hats.finance UI\n @param _descriptionHash the hash of the vault's description"
@@ -7482,17 +7482,17 @@
             "name": "setVaultDescription",
             "nameLocation": "15296:19:6",
             "parameters": {
-              "id": 5004,
+              "id": 5006,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5003,
+                  "id": 5005,
                   "mutability": "mutable",
                   "name": "_descriptionHash",
                   "nameLocation": "15330:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5006,
+                  "scope": 5008,
                   "src": "15316:30:6",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -7501,7 +7501,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 5002,
+                    "id": 5004,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "15316:6:6",
@@ -7516,23 +7516,23 @@
               "src": "15315:32:6"
             },
             "returnParameters": {
-              "id": 5005,
+              "id": 5007,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "15356:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5013,
+            "id": 5015,
             "nodeType": "FunctionDefinition",
             "src": "15520:78:6",
             "nodes": [],
             "documentation": {
-              "id": 5007,
+              "id": 5009,
               "nodeType": "StructuredDocumentation",
               "src": "15363:152:6",
               "text": " @notice Called by the registry's owner to set the vault's reward controller\n @param _newRewardController The new reward controller"
@@ -7544,41 +7544,41 @@
             "name": "setRewardController",
             "nameLocation": "15529:19:6",
             "parameters": {
-              "id": 5011,
+              "id": 5013,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5010,
+                  "id": 5012,
                   "mutability": "mutable",
                   "name": "_newRewardController",
                   "nameLocation": "15567:20:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5013,
+                  "scope": 5015,
                   "src": "15549:38:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_IRewardController_$5661",
+                    "typeIdentifier": "t_contract$_IRewardController_$5663",
                     "typeString": "contract IRewardController"
                   },
                   "typeName": {
-                    "id": 5009,
+                    "id": 5011,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 5008,
+                      "id": 5010,
                       "name": "IRewardController",
                       "nameLocations": [
                         "15549:17:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 5661,
+                      "referencedDeclaration": 5663,
                       "src": "15549:17:6"
                     },
-                    "referencedDeclaration": 5661,
+                    "referencedDeclaration": 5663,
                     "src": "15549:17:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IRewardController_$5661",
+                      "typeIdentifier": "t_contract$_IRewardController_$5663",
                       "typeString": "contract IRewardController"
                     }
                   },
@@ -7588,23 +7588,23 @@
               "src": "15548:40:6"
             },
             "returnParameters": {
-              "id": 5012,
+              "id": 5014,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "15597:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5021,
+            "id": 5023,
             "nodeType": "FunctionDefinition",
             "src": "15975:129:6",
             "nodes": [],
             "documentation": {
-              "id": 5014,
+              "id": 5016,
               "nodeType": "StructuredDocumentation",
               "src": "15604:366:6",
               "text": " @notice Called by the registry's owner to set the vault HAT token bounty \n split upon an approval.\n If the value passed is the special \"null\" value the vault will use the\n registry's default value.\n @param _bountyGovernanceHAT The HAT bounty for governance\n @param _bountyHackerHATVested The HAT bounty vested for the hacker"
@@ -7616,17 +7616,17 @@
             "name": "setHATBountySplit",
             "nameLocation": "15984:17:6",
             "parameters": {
-              "id": 5019,
+              "id": 5021,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5016,
+                  "id": 5018,
                   "mutability": "mutable",
                   "name": "_bountyGovernanceHAT",
                   "nameLocation": "16019:20:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5021,
+                  "scope": 5023,
                   "src": "16011:28:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7635,7 +7635,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5015,
+                    "id": 5017,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "16011:7:6",
@@ -7648,12 +7648,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5018,
+                  "id": 5020,
                   "mutability": "mutable",
                   "name": "_bountyHackerHATVested",
                   "nameLocation": "16057:22:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5021,
+                  "scope": 5023,
                   "src": "16049:30:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7662,7 +7662,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5017,
+                    "id": 5019,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "16049:7:6",
@@ -7677,23 +7677,23 @@
               "src": "16001:84:6"
             },
             "returnParameters": {
-              "id": 5020,
+              "id": 5022,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "16103:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5027,
+            "id": 5029,
             "nodeType": "FunctionDefinition",
             "src": "16366:53:6",
             "nodes": [],
             "documentation": {
-              "id": 5022,
+              "id": 5024,
               "nodeType": "StructuredDocumentation",
               "src": "16110:251:6",
               "text": " @notice Called by the registry's owner to set the vault arbitrator\n If the value passed is the special \"null\" value the vault will use the\n registry's default value.\n @param _arbitrator The address of vault's arbitrator"
@@ -7705,17 +7705,17 @@
             "name": "setArbitrator",
             "nameLocation": "16375:13:6",
             "parameters": {
-              "id": 5025,
+              "id": 5027,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5024,
+                  "id": 5026,
                   "mutability": "mutable",
                   "name": "_arbitrator",
                   "nameLocation": "16397:11:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5027,
+                  "scope": 5029,
                   "src": "16389:19:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7724,7 +7724,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5023,
+                    "id": 5025,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "16389:7:6",
@@ -7740,23 +7740,23 @@
               "src": "16388:21:6"
             },
             "returnParameters": {
-              "id": 5026,
+              "id": 5028,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "16418:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5033,
+            "id": 5035,
             "nodeType": "FunctionDefinition",
             "src": "16789:63:6",
             "nodes": [],
             "documentation": {
-              "id": 5028,
+              "id": 5030,
               "nodeType": "StructuredDocumentation",
               "src": "16425:359:6",
               "text": " @notice Called by the registry's owner to set the period of time after\n a claim for a bounty payout has been submitted that it can be challenged\n by the arbitrator.\n If the value passed is the special \"null\" value the vault will use the\n registry's default value.\n @param _challengePeriod The vault's challenge period"
@@ -7768,17 +7768,17 @@
             "name": "setChallengePeriod",
             "nameLocation": "16798:18:6",
             "parameters": {
-              "id": 5031,
+              "id": 5033,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5030,
+                  "id": 5032,
                   "mutability": "mutable",
                   "name": "_challengePeriod",
                   "nameLocation": "16825:16:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5033,
+                  "scope": 5035,
                   "src": "16817:24:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7787,7 +7787,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5029,
+                    "id": 5031,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "16817:7:6",
@@ -7802,23 +7802,23 @@
               "src": "16816:26:6"
             },
             "returnParameters": {
-              "id": 5032,
+              "id": 5034,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "16851:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5039,
+            "id": 5041,
             "nodeType": "FunctionDefinition",
             "src": "17201:85:6",
             "nodes": [],
             "documentation": {
-              "id": 5034,
+              "id": 5036,
               "nodeType": "StructuredDocumentation",
               "src": "16858:338:6",
               "text": " @notice Called by the registry's owner to set the period of time after\n which a claim for a bounty payout can be dismissed by anyone.\n If the value passed is the special \"null\" value the vault will use the\n registry's default value.\n @param _challengeTimeOutPeriod The vault's challenge timeout period"
@@ -7830,17 +7830,17 @@
             "name": "setChallengeTimeOutPeriod",
             "nameLocation": "17210:25:6",
             "parameters": {
-              "id": 5037,
+              "id": 5039,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5036,
+                  "id": 5038,
                   "mutability": "mutable",
                   "name": "_challengeTimeOutPeriod",
                   "nameLocation": "17244:23:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5039,
+                  "scope": 5041,
                   "src": "17236:31:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7849,7 +7849,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5035,
+                    "id": 5037,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "17236:7:6",
@@ -7864,23 +7864,23 @@
               "src": "17235:33:6"
             },
             "returnParameters": {
-              "id": 5038,
+              "id": 5040,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "17285:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5046,
+            "id": 5048,
             "nodeType": "FunctionDefinition",
             "src": "17634:101:6",
             "nodes": [],
             "documentation": {
-              "id": 5040,
+              "id": 5042,
               "nodeType": "StructuredDocumentation",
               "src": "17292:337:6",
               "text": " @notice Called by the registry's owner to set whether the arbitrator\n can change a claim bounty percentage\n If the value passed is the special \"null\" value the vault will use the\n registry's default value.\n @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage"
@@ -7892,41 +7892,41 @@
             "name": "setArbitratorCanChangeBounty",
             "nameLocation": "17643:28:6",
             "parameters": {
-              "id": 5044,
+              "id": 5046,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5043,
+                  "id": 5045,
                   "mutability": "mutable",
                   "name": "_arbitratorCanChangeBounty",
                   "nameLocation": "17698:26:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5046,
+                  "scope": 5048,
                   "src": "17672:52:6",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4688",
+                    "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4690",
                     "typeString": "enum IHATVault.ArbitratorCanChangeBounty"
                   },
                   "typeName": {
-                    "id": 5042,
+                    "id": 5044,
                     "nodeType": "UserDefinedTypeName",
                     "pathNode": {
-                      "id": 5041,
+                      "id": 5043,
                       "name": "ArbitratorCanChangeBounty",
                       "nameLocations": [
                         "17672:25:6"
                       ],
                       "nodeType": "IdentifierPath",
-                      "referencedDeclaration": 4688,
+                      "referencedDeclaration": 4690,
                       "src": "17672:25:6"
                     },
-                    "referencedDeclaration": 4688,
+                    "referencedDeclaration": 4690,
                     "src": "17672:25:6",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4688",
+                      "typeIdentifier": "t_enum$_ArbitratorCanChangeBounty_$4690",
                       "typeString": "enum IHATVault.ArbitratorCanChangeBounty"
                     }
                   },
@@ -7936,23 +7936,23 @@
               "src": "17671:54:6"
             },
             "returnParameters": {
-              "id": 5045,
+              "id": 5047,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "17734:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5050,
+            "id": 5052,
             "nodeType": "FunctionDefinition",
             "src": "18360:36:6",
             "nodes": [],
             "documentation": {
-              "id": 5047,
+              "id": 5049,
               "nodeType": "StructuredDocumentation",
               "src": "17925:430:6",
               "text": " @notice Submit a request to withdraw funds from the vault.\n The request will only be approved if there is no previous active\n withdraw request.\n The request will be pending for a period of\n {HATVaultsRegistry.generalParameters.withdrawRequestPendingPeriod},\n after which a withdraw will be possible for a duration of\n {HATVaultsRegistry.generalParameters.withdrawRequestEnablePeriod}"
@@ -7964,29 +7964,29 @@
             "name": "withdrawRequest",
             "nameLocation": "18369:15:6",
             "parameters": {
-              "id": 5048,
+              "id": 5050,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "18384:2:6"
             },
             "returnParameters": {
-              "id": 5049,
+              "id": 5051,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "18395:0:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5062,
+            "id": 5064,
             "nodeType": "FunctionDefinition",
             "src": "19025:126:6",
             "nodes": [],
             "documentation": {
-              "id": 5051,
+              "id": 5053,
               "nodeType": "StructuredDocumentation",
               "src": "18402:618:6",
               "text": " @notice Withdraw previously deposited funds from the vault and claim\n the HAT reward that the user has earned.\n Can only be performed if a withdraw request has been previously\n submitted, and the pending period had passed, and while the withdraw\n enabled timeout had not passed. Withdrawals are not permitted during\n safety periods or while there is an active claim for a bounty payout.\n @param assets Amount of tokens to withdraw\n @param receiver Address of receiver of the funds\n @param owner Address of owner of the funds\n @dev See {IERC4626-withdraw}."
@@ -7998,17 +7998,17 @@
             "name": "withdrawAndClaim",
             "nameLocation": "19034:16:6",
             "parameters": {
-              "id": 5058,
+              "id": 5060,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5053,
+                  "id": 5055,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "19059:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5062,
+                  "scope": 5064,
                   "src": "19051:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8017,7 +8017,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5052,
+                    "id": 5054,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "19051:7:6",
@@ -8030,12 +8030,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5055,
+                  "id": 5057,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "19075:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5062,
+                  "scope": 5064,
                   "src": "19067:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8044,7 +8044,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5054,
+                    "id": 5056,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "19067:7:6",
@@ -8058,12 +8058,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5057,
+                  "id": 5059,
                   "mutability": "mutable",
                   "name": "owner",
                   "nameLocation": "19093:5:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5062,
+                  "scope": 5064,
                   "src": "19085:13:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8072,7 +8072,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5056,
+                    "id": 5058,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "19085:7:6",
@@ -8088,17 +8088,17 @@
               "src": "19050:49:6"
             },
             "returnParameters": {
-              "id": 5061,
+              "id": 5063,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5060,
+                  "id": 5062,
                   "mutability": "mutable",
                   "name": "shares",
                   "nameLocation": "19143:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5062,
+                  "scope": 5064,
                   "src": "19135:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8107,7 +8107,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5059,
+                    "id": 5061,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "19135:7:6",
@@ -8121,18 +8121,18 @@
               ],
               "src": "19134:16:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5074,
+            "id": 5076,
             "nodeType": "FunctionDefinition",
             "src": "19801:124:6",
             "nodes": [],
             "documentation": {
-              "id": 5063,
+              "id": 5065,
               "nodeType": "StructuredDocumentation",
               "src": "19157:639:6",
               "text": " @notice Redeem shares in the vault for the respective amount\n of underlying assets and claim the HAT reward that the user has earned.\n Can only be performed if a withdraw request has been previously\n submitted, and the pending period had passed, and while the withdraw\n enabled timeout had not passed. Withdrawals are not permitted during\n safety periods or while there is an active claim for a bounty payout.\n @param shares Amount of shares to redeem\n @param receiver Address of receiver of the funds \n @param owner Address of owner of the funds \n @dev See {IERC4626-redeem}."
@@ -8144,17 +8144,17 @@
             "name": "redeemAndClaim",
             "nameLocation": "19810:14:6",
             "parameters": {
-              "id": 5070,
+              "id": 5072,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5065,
+                  "id": 5067,
                   "mutability": "mutable",
                   "name": "shares",
                   "nameLocation": "19833:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5074,
+                  "scope": 5076,
                   "src": "19825:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8163,7 +8163,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5064,
+                    "id": 5066,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "19825:7:6",
@@ -8176,12 +8176,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5067,
+                  "id": 5069,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "19849:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5074,
+                  "scope": 5076,
                   "src": "19841:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8190,7 +8190,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5066,
+                    "id": 5068,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "19841:7:6",
@@ -8204,12 +8204,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5069,
+                  "id": 5071,
                   "mutability": "mutable",
                   "name": "owner",
                   "nameLocation": "19867:5:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5074,
+                  "scope": 5076,
                   "src": "19859:13:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8218,7 +8218,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5068,
+                    "id": 5070,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "19859:7:6",
@@ -8234,17 +8234,17 @@
               "src": "19824:49:6"
             },
             "returnParameters": {
-              "id": 5073,
+              "id": 5075,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5072,
+                  "id": 5074,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "19917:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5074,
+                  "scope": 5076,
                   "src": "19909:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8253,7 +8253,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5071,
+                    "id": 5073,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "19909:7:6",
@@ -8267,18 +8267,18 @@
               ],
               "src": "19908:16:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5082,
+            "id": 5084,
             "nodeType": "FunctionDefinition",
             "src": "20516:79:6",
             "nodes": [],
             "documentation": {
-              "id": 5075,
+              "id": 5077,
               "nodeType": "StructuredDocumentation",
               "src": "19931:580:6",
               "text": " @notice Redeem all of the user's shares in the vault for the respective amount\n of underlying assets without calling the reward controller, meaning user renounces\n their uncommited part of the reward.\n Can only be performed if a withdraw request has been previously\n submitted, and the pending period had passed, and while the withdraw\n enabled timeout had not passed. Withdrawals are not permitted during\n safety periods or while there is an active claim for a bounty payout.\n @param receiver Address of receiver of the funds "
@@ -8290,17 +8290,17 @@
             "name": "emergencyWithdraw",
             "nameLocation": "20525:17:6",
             "parameters": {
-              "id": 5078,
+              "id": 5080,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5077,
+                  "id": 5079,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "20551:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5082,
+                  "scope": 5084,
                   "src": "20543:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8309,7 +8309,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5076,
+                    "id": 5078,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "20543:7:6",
@@ -8325,17 +8325,17 @@
               "src": "20542:18:6"
             },
             "returnParameters": {
-              "id": 5081,
+              "id": 5083,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5080,
+                  "id": 5082,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "20587:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5082,
+                  "scope": 5084,
                   "src": "20579:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8344,7 +8344,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5079,
+                    "id": 5081,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "20579:7:6",
@@ -8358,21 +8358,21 @@
               ],
               "src": "20578:16:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5094,
+            "id": 5096,
             "nodeType": "FunctionDefinition",
             "src": "21225:111:6",
             "nodes": [],
             "baseFunctions": [
-              8145
+              8147
             ],
             "documentation": {
-              "id": 5083,
+              "id": 5085,
               "nodeType": "StructuredDocumentation",
               "src": "20601:619:6",
               "text": " @notice Withdraw previously deposited funds from the vault, without\n transferring the accumulated HAT reward.\n Can only be performed if a withdraw request has been previously\n submitted, and the pending period had passed, and while the withdraw\n enabled timeout had not passed. Withdrawals are not permitted during\n safety periods or while there is an active claim for a bounty payout.\n @param assets Amount of tokens to withdraw\n @param receiver Address of receiver of the funds \n @param owner Address of owner of the funds \n @dev See {IERC4626-withdraw}."
@@ -8384,17 +8384,17 @@
             "name": "withdraw",
             "nameLocation": "21234:8:6",
             "parameters": {
-              "id": 5090,
+              "id": 5092,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5085,
+                  "id": 5087,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "21251:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5094,
+                  "scope": 5096,
                   "src": "21243:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8403,7 +8403,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5084,
+                    "id": 5086,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "21243:7:6",
@@ -8416,12 +8416,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5087,
+                  "id": 5089,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "21267:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5094,
+                  "scope": 5096,
                   "src": "21259:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8430,7 +8430,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5086,
+                    "id": 5088,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "21259:7:6",
@@ -8444,12 +8444,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5089,
+                  "id": 5091,
                   "mutability": "mutable",
                   "name": "owner",
                   "nameLocation": "21285:5:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5094,
+                  "scope": 5096,
                   "src": "21277:13:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8458,7 +8458,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5088,
+                    "id": 5090,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "21277:7:6",
@@ -8474,17 +8474,17 @@
               "src": "21242:49:6"
             },
             "returnParameters": {
-              "id": 5093,
+              "id": 5095,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5092,
+                  "id": 5094,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5094,
+                  "scope": 5096,
                   "src": "21327:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8493,7 +8493,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5091,
+                    "id": 5093,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "21327:7:6",
@@ -8507,21 +8507,21 @@
               ],
               "src": "21326:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5106,
+            "id": 5108,
             "nodeType": "FunctionDefinition",
             "src": "21985:110:6",
             "nodes": [],
             "baseFunctions": [
-              8173
+              8175
             ],
             "documentation": {
-              "id": 5095,
+              "id": 5097,
               "nodeType": "StructuredDocumentation",
               "src": "21342:638:6",
               "text": " @notice Redeem shares in the vault for the respective amount\n of underlying assets, without transferring the accumulated HAT reward.\n Can only be performed if a withdraw request has been previously\n submitted, and the pending period had passed, and while the withdraw\n enabled timeout had not passed. Withdrawals are not permitted during\n safety periods or while there is an active claim for a bounty payout.\n @param shares Amount of shares to redeem\n @param receiver Address of receiver of the funds \n @param owner Address of owner of the funds \n @dev See {IERC4626-redeem}."
@@ -8533,17 +8533,17 @@
             "name": "redeem",
             "nameLocation": "21994:6:6",
             "parameters": {
-              "id": 5102,
+              "id": 5104,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5097,
+                  "id": 5099,
                   "mutability": "mutable",
                   "name": "shares",
                   "nameLocation": "22009:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5106,
+                  "scope": 5108,
                   "src": "22001:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8552,7 +8552,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5096,
+                    "id": 5098,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "22001:7:6",
@@ -8565,12 +8565,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5099,
+                  "id": 5101,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "22025:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5106,
+                  "scope": 5108,
                   "src": "22017:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8579,7 +8579,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5098,
+                    "id": 5100,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "22017:7:6",
@@ -8593,12 +8593,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5101,
+                  "id": 5103,
                   "mutability": "mutable",
                   "name": "owner",
                   "nameLocation": "22043:5:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5106,
+                  "scope": 5108,
                   "src": "22035:13:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8607,7 +8607,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5100,
+                    "id": 5102,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "22035:7:6",
@@ -8623,17 +8623,17 @@
               "src": "22000:49:6"
             },
             "returnParameters": {
-              "id": 5105,
+              "id": 5107,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5104,
+                  "id": 5106,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5106,
+                  "scope": 5108,
                   "src": "22086:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8642,7 +8642,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5103,
+                    "id": 5105,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "22086:7:6",
@@ -8656,21 +8656,21 @@
               ],
               "src": "22085:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5116,
+            "id": 5118,
             "nodeType": "FunctionDefinition",
             "src": "22447:95:6",
             "nodes": [],
             "baseFunctions": [
-              8091
+              8093
             ],
             "documentation": {
-              "id": 5107,
+              "id": 5109,
               "nodeType": "StructuredDocumentation",
               "src": "22101:341:6",
               "text": " @dev Deposit funds to the vault. Can only be called if the committee had\n checked in and deposits are not paused, and the registry is not in an emergency pause.\n @param receiver Reciever of the shares from the deposit\n @param assets Amount of vault's native token to deposit\n @dev See {IERC4626-deposit}."
@@ -8682,17 +8682,17 @@
             "name": "deposit",
             "nameLocation": "22456:7:6",
             "parameters": {
-              "id": 5112,
+              "id": 5114,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5109,
+                  "id": 5111,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "22472:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5116,
+                  "scope": 5118,
                   "src": "22464:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8701,7 +8701,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5108,
+                    "id": 5110,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "22464:7:6",
@@ -8714,12 +8714,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5111,
+                  "id": 5113,
                   "mutability": "mutable",
                   "name": "receiver",
                   "nameLocation": "22488:8:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5116,
+                  "scope": 5118,
                   "src": "22480:16:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8728,7 +8728,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5110,
+                    "id": 5112,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "22480:7:6",
@@ -8744,17 +8744,17 @@
               "src": "22463:34:6"
             },
             "returnParameters": {
-              "id": 5115,
+              "id": 5117,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5114,
+                  "id": 5116,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5116,
+                  "scope": 5118,
                   "src": "22533:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8763,7 +8763,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5113,
+                    "id": 5115,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "22533:7:6",
@@ -8777,18 +8777,18 @@
               ],
               "src": "22532:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5124,
+            "id": 5126,
             "nodeType": "FunctionDefinition",
             "src": "22903:88:6",
             "nodes": [],
             "documentation": {
-              "id": 5117,
+              "id": 5119,
               "nodeType": "StructuredDocumentation",
               "src": "22732:166:6",
               "text": " @param _rewardController the reward controller to check\n @return bool Whether the reward contoller was previously used in the vault and removed"
@@ -8800,17 +8800,17 @@
             "name": "rewardControllerRemoved",
             "nameLocation": "22912:23:6",
             "parameters": {
-              "id": 5120,
+              "id": 5122,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5119,
+                  "id": 5121,
                   "mutability": "mutable",
                   "name": "_rewardController",
                   "nameLocation": "22944:17:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5124,
+                  "scope": 5126,
                   "src": "22936:25:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8819,7 +8819,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5118,
+                    "id": 5120,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "22936:7:6",
@@ -8835,17 +8835,17 @@
               "src": "22935:27:6"
             },
             "returnParameters": {
-              "id": 5123,
+              "id": 5125,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5122,
+                  "id": 5124,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5124,
+                  "scope": 5126,
                   "src": "22985:4:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8854,7 +8854,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5121,
+                    "id": 5123,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "22985:4:6",
@@ -8868,18 +8868,18 @@
               ],
               "src": "22984:6:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5130,
+            "id": 5132,
             "nodeType": "FunctionDefinition",
             "src": "23280:65:6",
             "nodes": [],
             "documentation": {
-              "id": 5125,
+              "id": 5127,
               "nodeType": "StructuredDocumentation",
               "src": "22997:278:6",
               "text": " @notice Returns the vault HAT bounty split part that goes to the governance\n If no specific value for this vault has been set, the registry's default\n value will be returned.\n @return The vault's HAT bounty split part that goes to the governance"
@@ -8891,23 +8891,23 @@
             "name": "getBountyGovernanceHAT",
             "nameLocation": "23289:22:6",
             "parameters": {
-              "id": 5126,
+              "id": 5128,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "23311:2:6"
             },
             "returnParameters": {
-              "id": 5129,
+              "id": 5131,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5128,
+                  "id": 5130,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5130,
+                  "scope": 5132,
                   "src": "23336:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8916,7 +8916,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5127,
+                    "id": 5129,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "23336:7:6",
@@ -8930,18 +8930,18 @@
               ],
               "src": "23335:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5136,
+            "id": 5138,
             "nodeType": "FunctionDefinition",
             "src": "23644:67:6",
             "nodes": [],
             "documentation": {
-              "id": 5131,
+              "id": 5133,
               "nodeType": "StructuredDocumentation",
               "src": "23355:284:6",
               "text": " @notice Returns the vault HAT bounty split part that is veested for the hacker\n If no specific value for this vault has been set, the registry's default\n value will be returned.\n @return The vault's HAT bounty split part that is veested for the hacker"
@@ -8953,23 +8953,23 @@
             "name": "getBountyHackerHATVested",
             "nameLocation": "23653:24:6",
             "parameters": {
-              "id": 5132,
+              "id": 5134,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "23677:2:6"
             },
             "returnParameters": {
-              "id": 5135,
+              "id": 5137,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5134,
+                  "id": 5136,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5136,
+                  "scope": 5138,
                   "src": "23702:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8978,7 +8978,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5133,
+                    "id": 5135,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "23702:7:6",
@@ -8992,18 +8992,18 @@
               ],
               "src": "23701:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5142,
+            "id": 5144,
             "nodeType": "FunctionDefinition",
             "src": "23954:56:6",
             "nodes": [],
             "documentation": {
-              "id": 5137,
+              "id": 5139,
               "nodeType": "StructuredDocumentation",
               "src": "23717:232:6",
               "text": " @notice Returns the address of the vault's arbitrator\n If no specific value for this vault has been set, the registry's default\n value will be returned.\n @return The address of the vault's arbitrator"
@@ -9015,23 +9015,23 @@
             "name": "getArbitrator",
             "nameLocation": "23963:13:6",
             "parameters": {
-              "id": 5138,
+              "id": 5140,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "23976:2:6"
             },
             "returnParameters": {
-              "id": 5141,
+              "id": 5143,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5140,
+                  "id": 5142,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5142,
+                  "scope": 5144,
                   "src": "24001:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9040,7 +9040,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5139,
+                    "id": 5141,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "24001:7:6",
@@ -9055,18 +9055,18 @@
               ],
               "src": "24000:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5148,
+            "id": 5150,
             "nodeType": "FunctionDefinition",
             "src": "24329:61:6",
             "nodes": [],
             "documentation": {
-              "id": 5143,
+              "id": 5145,
               "nodeType": "StructuredDocumentation",
               "src": "24016:308:6",
               "text": " @notice Returns the period of time after a claim for a bounty payout has\n been submitted that it can be challenged by the arbitrator.\n If no specific value for this vault has been set, the registry's default\n value will be returned.\n @return The vault's challenge period"
@@ -9078,23 +9078,23 @@
             "name": "getChallengePeriod",
             "nameLocation": "24338:18:6",
             "parameters": {
-              "id": 5144,
+              "id": 5146,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "24356:2:6"
             },
             "returnParameters": {
-              "id": 5147,
+              "id": 5149,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5146,
+                  "id": 5148,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5148,
+                  "scope": 5150,
                   "src": "24381:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9103,7 +9103,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5145,
+                    "id": 5147,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "24381:7:6",
@@ -9117,18 +9117,18 @@
               ],
               "src": "24380:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5154,
+            "id": 5156,
             "nodeType": "FunctionDefinition",
             "src": "24687:68:6",
             "nodes": [],
             "documentation": {
-              "id": 5149,
+              "id": 5151,
               "nodeType": "StructuredDocumentation",
               "src": "24396:286:6",
               "text": " @notice Returns the period of time after which a claim for a bounty\n payout can be dismissed by anyone.\n If no specific value for this vault has been set, the registry's default\n value will be returned.\n @return The vault's challenge timeout period"
@@ -9140,23 +9140,23 @@
             "name": "getChallengeTimeOutPeriod",
             "nameLocation": "24696:25:6",
             "parameters": {
-              "id": 5150,
+              "id": 5152,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "24721:2:6"
             },
             "returnParameters": {
-              "id": 5153,
+              "id": 5155,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5152,
+                  "id": 5154,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5154,
+                  "scope": 5156,
                   "src": "24746:7:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9165,7 +9165,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5151,
+                    "id": 5153,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "24746:7:6",
@@ -9179,18 +9179,18 @@
               ],
               "src": "24745:9:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5164,
+            "id": 5166,
             "nodeType": "FunctionDefinition",
             "src": "25130:99:6",
             "nodes": [],
             "documentation": {
-              "id": 5155,
+              "id": 5157,
               "nodeType": "StructuredDocumentation",
               "src": "24761:364:6",
               "text": " @notice Returns the amount of shares to be burned to give the user the exact\n amount of assets requested plus cover for the fee. Also returns the amount assets\n to be paid as fee.\n @return shares The amount of shares to be burned to get the requested amount of assets\n @return fee The amount of assets that will be paid as fee"
@@ -9202,17 +9202,17 @@
             "name": "previewWithdrawAndFee",
             "nameLocation": "25139:21:6",
             "parameters": {
-              "id": 5158,
+              "id": 5160,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5157,
+                  "id": 5159,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "25169:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5164,
+                  "scope": 5166,
                   "src": "25161:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9221,7 +9221,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5156,
+                    "id": 5158,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25161:7:6",
@@ -9236,17 +9236,17 @@
               "src": "25160:16:6"
             },
             "returnParameters": {
-              "id": 5163,
+              "id": 5165,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5160,
+                  "id": 5162,
                   "mutability": "mutable",
                   "name": "shares",
                   "nameLocation": "25208:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5164,
+                  "scope": 5166,
                   "src": "25200:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9255,7 +9255,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5159,
+                    "id": 5161,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25200:7:6",
@@ -9268,12 +9268,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5162,
+                  "id": 5164,
                   "mutability": "mutable",
                   "name": "fee",
                   "nameLocation": "25224:3:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5164,
+                  "scope": 5166,
                   "src": "25216:11:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9282,7 +9282,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5161,
+                    "id": 5163,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25216:7:6",
@@ -9296,18 +9296,18 @@
               ],
               "src": "25199:29:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 5174,
+            "id": 5176,
             "nodeType": "FunctionDefinition",
             "src": "25576:97:6",
             "nodes": [],
             "documentation": {
-              "id": 5165,
+              "id": 5167,
               "nodeType": "StructuredDocumentation",
               "src": "25236:335:6",
               "text": " @notice Returns the amount of assets to be sent to the user for the exact\n amount of shares to redeem. Also returns the amount assets to be paid as fee.\n @return assets amount of assets to be sent in exchange for the amount of shares specified\n @return fee The amount of assets that will be paid as fee"
@@ -9319,17 +9319,17 @@
             "name": "previewRedeemAndFee",
             "nameLocation": "25585:19:6",
             "parameters": {
-              "id": 5168,
+              "id": 5170,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5167,
+                  "id": 5169,
                   "mutability": "mutable",
                   "name": "shares",
                   "nameLocation": "25613:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5174,
+                  "scope": 5176,
                   "src": "25605:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9338,7 +9338,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5166,
+                    "id": 5168,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25605:7:6",
@@ -9353,17 +9353,17 @@
               "src": "25604:16:6"
             },
             "returnParameters": {
-              "id": 5173,
+              "id": 5175,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5170,
+                  "id": 5172,
                   "mutability": "mutable",
                   "name": "assets",
                   "nameLocation": "25652:6:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5174,
+                  "scope": 5176,
                   "src": "25644:14:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9372,7 +9372,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5169,
+                    "id": 5171,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25644:7:6",
@@ -9385,12 +9385,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 5172,
+                  "id": 5174,
                   "mutability": "mutable",
                   "name": "fee",
                   "nameLocation": "25668:3:6",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5174,
+                  "scope": 5176,
                   "src": "25660:11:6",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -9399,7 +9399,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5171,
+                    "id": 5173,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "25660:7:6",
@@ -9413,7 +9413,7 @@
               ],
               "src": "25643:29:6"
             },
-            "scope": 5175,
+            "scope": 5177,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
@@ -9423,16 +9423,16 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 4683,
+              "id": 4685,
               "name": "IERC4626Upgradeable",
               "nameLocations": [
                 "2370:19:6"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 8174,
+              "referencedDeclaration": 8176,
               "src": "2370:19:6"
             },
-            "id": 4684,
+            "id": 4686,
             "nodeType": "InheritanceSpecifier",
             "src": "2370:19:6"
           }
@@ -9441,23 +9441,22 @@
         "contractDependencies": [],
         "contractKind": "interface",
         "documentation": {
-          "id": 4682,
+          "id": 4684,
           "nodeType": "StructuredDocumentation",
           "src": "351:1995:6",
           "text": "@title Interface for Hats.finance Vaults\n @author Hats.finance\n @notice A HATVault holds the funds for a specific project's bug bounties.\n The HATVault can be deposited into in a permissionless maner using\n the vault’s native token. When a bug is submitted and approved, the bounty \n is paid out using the funds in the vault. Bounties are paid out as a\n percentage of the vault. The percentage is set according to the severity of\n the bug. Vaults have regular safety periods (typically for an hour twice a\n day) which are time for the committee to make decisions.\n In addition to the roles defined in the HATVaultsRegistry, every HATVault \n has the roles:\n Committee - The only address which can submit a claim for a bounty payout\n and set the maximum bounty.\n User - Anyone can deposit the vault's native token into the vault and \n recieve shares for it. Shares represent the user's relative part in the\n vault, and when a bounty is paid out, users lose part of their deposits\n (based on percentage paid), but keep their share of the vault.\n Users also receive rewards for their deposits, which can be claimed at any\n  time.\n To withdraw previously deposited tokens, a user must first send a withdraw\n request, and the withdrawal will be made available after a pending period.\n Withdrawals are not permitted during safety periods or while there is an \n active claim for a bounty payout.\n Bounties are payed out distributed between a few channels, and that \n distribution is set upon creation (the hacker gets part in direct transfer,\n part in vested reward and part in vested HAT token, part gets rewarded to\n the committee, part gets swapped to HAT token and burned and/or sent to Hats\n governance).\n NOTE: Vaults should not use tokens which do not guarantee that the amount\n specified is the amount transferred\n This project is open-source and can be found at:\n https://github.com/hats-finance/hats-contracts"
         },
         "fullyImplemented": false,
         "linearizedBaseContracts": [
-          5175,
-          8174,
-          9695,
-          9073
+          5177,
+          8176,
+          9697,
+          9075
         ],
         "name": "IHATVault",
         "nameLocation": "2357:9:6",
-        "scope": 5176,
+        "scope": 5178,
         "usedErrors": [
-          4732,
           4734,
           4736,
           4738,
@@ -9494,7 +9493,8 @@
           4800,
           4802,
           4804,
-          4806
+          4806,
+          4808
         ]
       }
     ],

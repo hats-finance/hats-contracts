@@ -1,0 +1,11 @@
+- array length should not be checked on each iteration
+- Increments can be unchecked 
+- ABI.ENCODE() IS LESS EFFICIENT THAN ABI.ENCODEPACKED()
+  - Changing abi.encode function to abi.encodePacked can save gas since the abi.encode function pads extra null bytes at the end of the call data, which is unnecessary. Also, in general, abi.encodePacked is more gas-efficient (see Solidity-Encode-Gas-Comparison https://github.com/ConnorBlockchain/Solidity-Encode-Gas-Comparison).
+- Bytes constants are more efficient than string constants 
+  - bytes32 uses less gas because it fits in a single word of the EVM, and string is a dynamically sized-type which has current limitations in Solidity (such as can’t be returned from a function to a contract).
+- UNCHECKING ARITHMETICS OPERATIONS THAT CAN’T UNDERFLOW/OVERFLOW
+- No need to explicitly initialize variables with default values  
+-  X = X + Y IS CHEAPER THAN X += Y
+- Using private rather than public for constants, saves gas
+- USE NAMED RETURNS FOR LOCAL VARIABLES WHERE IT IS POSSIBLE 

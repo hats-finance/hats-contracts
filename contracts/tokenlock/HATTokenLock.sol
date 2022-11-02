@@ -45,6 +45,7 @@ contract HATTokenLock is TokenLock {
     /// @param _delegatee Address of delegatee
     function delegate(address _delegatee)
         external
+        payable
         onlyBeneficiary
     {
         require(canDelegate, "delegate is disable");

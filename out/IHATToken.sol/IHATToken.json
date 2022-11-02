@@ -786,23 +786,23 @@
   },
   "ast": {
     "absolutePath": "contracts/interfaces/IHATToken.sol",
-    "id": 4676,
+    "id": 4678,
     "exportedSymbols": {
       "IERC20Permit": [
-        14010
+        14012
       ],
       "IHATToken": [
-        4675
+        4677
       ],
       "IVotes": [
-        12290
+        12292
       ]
     },
     "nodeType": "SourceUnit",
     "src": "32:828:5",
     "nodes": [
       {
-        "id": 4639,
+        "id": 4641,
         "nodeType": "PragmaDirective",
         "src": "32:23:5",
         "nodes": [],
@@ -813,38 +813,38 @@
         ]
       },
       {
-        "id": 4640,
+        "id": 4642,
         "nodeType": "ImportDirective",
         "src": "57:61:5",
         "nodes": [],
         "absolutePath": "node_modules/@openzeppelin/contracts/governance/utils/IVotes.sol",
         "file": "@openzeppelin/contracts/governance/utils/IVotes.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 4676,
-        "sourceUnit": 12291,
+        "scope": 4678,
+        "sourceUnit": 12293,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 4641,
+        "id": 4643,
         "nodeType": "ImportDirective",
         "src": "119:79:5",
         "nodes": [],
         "absolutePath": "node_modules/@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol",
         "file": "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 4676,
-        "sourceUnit": 14011,
+        "scope": 4678,
+        "sourceUnit": 14013,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 4675,
+        "id": 4677,
         "nodeType": "ContractDefinition",
         "src": "200:659:5",
         "nodes": [
           {
-            "id": 4647,
+            "id": 4649,
             "nodeType": "ErrorDefinition",
             "src": "303:19:5",
             "nodes": [],
@@ -852,20 +852,20 @@
             "name": "ZeroAmount",
             "nameLocation": "309:10:5",
             "parameters": {
-              "id": 4646,
+              "id": 4648,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "319:2:5"
             }
           },
           {
-            "id": 4654,
+            "id": 4656,
             "nodeType": "EventDefinition",
             "src": "398:60:5",
             "nodes": [],
             "anonymous": false,
             "documentation": {
-              "id": 4648,
+              "id": 4650,
               "nodeType": "StructuredDocumentation",
               "src": "328:65:5",
               "text": "@notice An event thats emitted when the minter address is set"
@@ -874,18 +874,18 @@
             "name": "MinterSet",
             "nameLocation": "404:9:5",
             "parameters": {
-              "id": 4653,
+              "id": 4655,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4650,
+                  "id": 4652,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "minter",
                   "nameLocation": "430:6:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4654,
+                  "scope": 4656,
                   "src": "414:22:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -894,7 +894,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4649,
+                    "id": 4651,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "414:7:5",
@@ -908,13 +908,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 4652,
+                  "id": 4654,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "seedAmount",
                   "nameLocation": "446:10:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4654,
+                  "scope": 4656,
                   "src": "438:18:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -923,7 +923,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4651,
+                    "id": 4653,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "438:7:5",
@@ -939,12 +939,12 @@
             }
           },
           {
-            "id": 4662,
+            "id": 4664,
             "nodeType": "FunctionDefinition",
             "src": "683:66:5",
             "nodes": [],
             "documentation": {
-              "id": 4655,
+              "id": 4657,
               "nodeType": "StructuredDocumentation",
               "src": "464:214:5",
               "text": " @notice Set the minter address, can only be called by the owner (governance)\n @param _minter The address of the minter\n @param _seedAmount The amount of tokens to seed the minter with"
@@ -956,17 +956,17 @@
             "name": "setMinter",
             "nameLocation": "692:9:5",
             "parameters": {
-              "id": 4660,
+              "id": 4662,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4657,
+                  "id": 4659,
                   "mutability": "mutable",
                   "name": "_minter",
                   "nameLocation": "710:7:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4662,
+                  "scope": 4664,
                   "src": "702:15:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -975,7 +975,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4656,
+                    "id": 4658,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "702:7:5",
@@ -989,12 +989,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4659,
+                  "id": 4661,
                   "mutability": "mutable",
                   "name": "_seedAmount",
                   "nameLocation": "727:11:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4662,
+                  "scope": 4664,
                   "src": "719:19:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1003,7 +1003,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4658,
+                    "id": 4660,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "719:7:5",
@@ -1018,18 +1018,18 @@
               "src": "701:38:5"
             },
             "returnParameters": {
-              "id": 4661,
+              "id": 4663,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "748:0:5"
             },
-            "scope": 4675,
+            "scope": 4677,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4667,
+            "id": 4669,
             "nodeType": "FunctionDefinition",
             "src": "755:40:5",
             "nodes": [],
@@ -1040,17 +1040,17 @@
             "name": "burn",
             "nameLocation": "764:4:5",
             "parameters": {
-              "id": 4665,
+              "id": 4667,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4664,
+                  "id": 4666,
                   "mutability": "mutable",
                   "name": "_amount",
                   "nameLocation": "777:7:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4667,
+                  "scope": 4669,
                   "src": "769:15:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1059,7 +1059,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4663,
+                    "id": 4665,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "769:7:5",
@@ -1074,18 +1074,18 @@
               "src": "768:17:5"
             },
             "returnParameters": {
-              "id": 4666,
+              "id": 4668,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "794:0:5"
             },
-            "scope": 4675,
+            "scope": 4677,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
           },
           {
-            "id": 4674,
+            "id": 4676,
             "nodeType": "FunctionDefinition",
             "src": "801:55:5",
             "nodes": [],
@@ -1096,17 +1096,17 @@
             "name": "mint",
             "nameLocation": "810:4:5",
             "parameters": {
-              "id": 4672,
+              "id": 4674,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4669,
+                  "id": 4671,
                   "mutability": "mutable",
                   "name": "_account",
                   "nameLocation": "823:8:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4674,
+                  "scope": 4676,
                   "src": "815:16:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1115,7 +1115,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 4668,
+                    "id": 4670,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "815:7:5",
@@ -1129,12 +1129,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 4671,
+                  "id": 4673,
                   "mutability": "mutable",
                   "name": "_amount",
                   "nameLocation": "838:7:5",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4674,
+                  "scope": 4676,
                   "src": "833:12:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1143,7 +1143,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4670,
+                    "id": 4672,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "833:4:5",
@@ -1158,12 +1158,12 @@
               "src": "814:32:5"
             },
             "returnParameters": {
-              "id": 4673,
+              "id": 4675,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "855:0:5"
             },
-            "scope": 4675,
+            "scope": 4677,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
@@ -1173,31 +1173,31 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 4642,
+              "id": 4644,
               "name": "IVotes",
               "nameLocations": [
                 "223:6:5"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 12290,
+              "referencedDeclaration": 12292,
               "src": "223:6:5"
             },
-            "id": 4643,
+            "id": 4645,
             "nodeType": "InheritanceSpecifier",
             "src": "223:6:5"
           },
           {
             "baseName": {
-              "id": 4644,
+              "id": 4646,
               "name": "IERC20Permit",
               "nameLocations": [
                 "231:12:5"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 14010,
+              "referencedDeclaration": 14012,
               "src": "231:12:5"
             },
-            "id": 4645,
+            "id": 4647,
             "nodeType": "InheritanceSpecifier",
             "src": "231:12:5"
           }
@@ -1207,15 +1207,15 @@
         "contractKind": "interface",
         "fullyImplemented": false,
         "linearizedBaseContracts": [
-          4675,
-          14010,
-          12290
+          4677,
+          14012,
+          12292
         ],
         "name": "IHATToken",
         "nameLocation": "210:9:5",
-        "scope": 4676,
+        "scope": 4678,
         "usedErrors": [
-          4647
+          4649
         ]
       }
     ],

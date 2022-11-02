@@ -63,17 +63,17 @@
   },
   "ast": {
     "absolutePath": "node_modules/@openzeppelin/contracts/proxy/Clones.sol",
-    "id": 12371,
+    "id": 12373,
     "exportedSymbols": {
       "Clones": [
-        12370
+        12372
       ]
     },
     "nodeType": "SourceUnit",
     "src": "100:3602:41",
     "nodes": [
       {
-        "id": 12292,
+        "id": 12294,
         "nodeType": "PragmaDirective",
         "src": "100:23:41",
         "nodes": [],
@@ -85,17 +85,17 @@
         ]
       },
       {
-        "id": 12370,
+        "id": 12372,
         "nodeType": "ContractDefinition",
         "src": "755:2946:41",
         "nodes": [
           {
-            "id": 12313,
+            "id": 12315,
             "nodeType": "FunctionDefinition",
             "src": "973:558:41",
             "nodes": [],
             "body": {
-              "id": 12312,
+              "id": 12314,
               "nodeType": "Block",
               "src": "1048:483:41",
               "nodes": [],
@@ -315,21 +315,21 @@
                   "evmVersion": "london",
                   "externalReferences": [
                     {
-                      "declaration": 12296,
+                      "declaration": 12298,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "1284:14:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12299,
+                      "declaration": 12301,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "1416:8:41",
                       "valueSize": 1
                     }
                   ],
-                  "id": 12301,
+                  "id": 12303,
                   "nodeType": "InlineAssembly",
                   "src": "1101:357:41"
                 },
@@ -341,17 +341,17 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 12308,
+                        "id": 12310,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 12303,
+                          "id": 12305,
                           "name": "instance",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 12299,
+                          "referencedDeclaration": 12301,
                           "src": "1475:8:41",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -364,7 +364,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 12306,
+                              "id": 12308,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -386,7 +386,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 12305,
+                            "id": 12307,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -398,14 +398,14 @@
                               "typeString": "type(address)"
                             },
                             "typeName": {
-                              "id": 12304,
+                              "id": 12306,
                               "name": "address",
                               "nodeType": "ElementaryTypeName",
                               "src": "1487:7:41",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 12307,
+                          "id": 12309,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -429,7 +429,7 @@
                       },
                       {
                         "hexValue": "455243313136373a20637265617465206661696c6564",
-                        "id": 12309,
+                        "id": 12311,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -455,7 +455,7 @@
                           "typeString": "literal_string \"ERC1167: create failed\""
                         }
                       ],
-                      "id": 12302,
+                      "id": 12304,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -469,7 +469,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 12310,
+                    "id": 12312,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -485,14 +485,14 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 12311,
+                  "id": 12313,
                   "nodeType": "ExpressionStatement",
                   "src": "1467:57:41"
                 }
               ]
             },
             "documentation": {
-              "id": 12294,
+              "id": 12296,
               "nodeType": "StructuredDocumentation",
               "src": "776:192:41",
               "text": " @dev Deploys and returns the address of a clone that mimics the behaviour of `implementation`.\n This function uses the create opcode, which should never revert."
@@ -503,17 +503,17 @@
             "name": "clone",
             "nameLocation": "982:5:41",
             "parameters": {
-              "id": 12297,
+              "id": 12299,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12296,
+                  "id": 12298,
                   "mutability": "mutable",
                   "name": "implementation",
                   "nameLocation": "996:14:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12313,
+                  "scope": 12315,
                   "src": "988:22:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -522,7 +522,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12295,
+                    "id": 12297,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "988:7:41",
@@ -538,17 +538,17 @@
               "src": "987:24:41"
             },
             "returnParameters": {
-              "id": 12300,
+              "id": 12302,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12299,
+                  "id": 12301,
                   "mutability": "mutable",
                   "name": "instance",
                   "nameLocation": "1038:8:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12313,
+                  "scope": 12315,
                   "src": "1030:16:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -557,7 +557,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12298,
+                    "id": 12300,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1030:7:41",
@@ -572,18 +572,18 @@
               ],
               "src": "1029:18:41"
             },
-            "scope": 12370,
+            "scope": 12372,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
           },
           {
-            "id": 12335,
+            "id": 12337,
             "nodeType": "FunctionDefinition",
             "src": "1906:593:41",
             "nodes": [],
             "body": {
-              "id": 12334,
+              "id": 12336,
               "nodeType": "Block",
               "src": "2008:491:41",
               "nodes": [],
@@ -808,28 +808,28 @@
                   "evmVersion": "london",
                   "externalReferences": [
                     {
-                      "declaration": 12316,
+                      "declaration": 12318,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "2244:14:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12321,
+                      "declaration": 12323,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "2376:8:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12318,
+                      "declaration": 12320,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "2410:4:41",
                       "valueSize": 1
                     }
                   ],
-                  "id": 12323,
+                  "id": 12325,
                   "nodeType": "InlineAssembly",
                   "src": "2061:364:41"
                 },
@@ -841,17 +841,17 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 12330,
+                        "id": 12332,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 12325,
+                          "id": 12327,
                           "name": "instance",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 12321,
+                          "referencedDeclaration": 12323,
                           "src": "2442:8:41",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -864,7 +864,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 12328,
+                              "id": 12330,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -886,7 +886,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 12327,
+                            "id": 12329,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -898,14 +898,14 @@
                               "typeString": "type(address)"
                             },
                             "typeName": {
-                              "id": 12326,
+                              "id": 12328,
                               "name": "address",
                               "nodeType": "ElementaryTypeName",
                               "src": "2454:7:41",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 12329,
+                          "id": 12331,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -929,7 +929,7 @@
                       },
                       {
                         "hexValue": "455243313136373a2063726561746532206661696c6564",
-                        "id": 12331,
+                        "id": 12333,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -955,7 +955,7 @@
                           "typeString": "literal_string \"ERC1167: create2 failed\""
                         }
                       ],
-                      "id": 12324,
+                      "id": 12326,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -969,7 +969,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 12332,
+                    "id": 12334,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -985,14 +985,14 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 12333,
+                  "id": 12335,
                   "nodeType": "ExpressionStatement",
                   "src": "2434:58:41"
                 }
               ]
             },
             "documentation": {
-              "id": 12314,
+              "id": 12316,
               "nodeType": "StructuredDocumentation",
               "src": "1537:364:41",
               "text": " @dev Deploys and returns the address of a clone that mimics the behaviour of `implementation`.\n This function uses the create2 opcode and a `salt` to deterministically deploy\n the clone. Using the same `implementation` and `salt` multiple time will revert, since\n the clones cannot be deployed twice at the same address."
@@ -1003,17 +1003,17 @@
             "name": "cloneDeterministic",
             "nameLocation": "1915:18:41",
             "parameters": {
-              "id": 12319,
+              "id": 12321,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12316,
+                  "id": 12318,
                   "mutability": "mutable",
                   "name": "implementation",
                   "nameLocation": "1942:14:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12335,
+                  "scope": 12337,
                   "src": "1934:22:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1022,7 +1022,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12315,
+                    "id": 12317,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1934:7:41",
@@ -1036,12 +1036,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 12318,
+                  "id": 12320,
                   "mutability": "mutable",
                   "name": "salt",
                   "nameLocation": "1966:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12335,
+                  "scope": 12337,
                   "src": "1958:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1050,7 +1050,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 12317,
+                    "id": 12319,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "1958:7:41",
@@ -1065,17 +1065,17 @@
               "src": "1933:38:41"
             },
             "returnParameters": {
-              "id": 12322,
+              "id": 12324,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12321,
+                  "id": 12323,
                   "mutability": "mutable",
                   "name": "instance",
                   "nameLocation": "1998:8:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12335,
+                  "scope": 12337,
                   "src": "1990:16:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1084,7 +1084,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12320,
+                    "id": 12322,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1990:7:41",
@@ -1099,18 +1099,18 @@
               ],
               "src": "1989:18:41"
             },
-            "scope": 12370,
+            "scope": 12372,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
           },
           {
-            "id": 12349,
+            "id": 12351,
             "nodeType": "FunctionDefinition",
             "src": "2609:747:41",
             "nodes": [],
             "body": {
-              "id": 12348,
+              "id": 12350,
               "nodeType": "Block",
               "src": "2774:582:41",
               "nodes": [],
@@ -1506,42 +1506,42 @@
                   "evmVersion": "london",
                   "externalReferences": [
                     {
-                      "declaration": 12342,
+                      "declaration": 12344,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "3175:8:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12338,
+                      "declaration": 12340,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "3010:14:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12345,
+                      "declaration": 12347,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "3296:9:41",
                       "valueSize": 1
                     },
                     {
-                      "declaration": 12340,
+                      "declaration": 12342,
                       "isOffset": false,
                       "isSlot": false,
                       "src": "3221:4:41",
                       "valueSize": 1
                     }
                   ],
-                  "id": 12347,
+                  "id": 12349,
                   "nodeType": "InlineAssembly",
                   "src": "2827:523:41"
                 }
               ]
             },
             "documentation": {
-              "id": 12336,
+              "id": 12338,
               "nodeType": "StructuredDocumentation",
               "src": "2505:99:41",
               "text": " @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}."
@@ -1552,17 +1552,17 @@
             "name": "predictDeterministicAddress",
             "nameLocation": "2618:27:41",
             "parameters": {
-              "id": 12343,
+              "id": 12345,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12338,
+                  "id": 12340,
                   "mutability": "mutable",
                   "name": "implementation",
                   "nameLocation": "2663:14:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12349,
+                  "scope": 12351,
                   "src": "2655:22:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1571,7 +1571,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12337,
+                    "id": 12339,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2655:7:41",
@@ -1585,12 +1585,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 12340,
+                  "id": 12342,
                   "mutability": "mutable",
                   "name": "salt",
                   "nameLocation": "2695:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12349,
+                  "scope": 12351,
                   "src": "2687:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1599,7 +1599,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 12339,
+                    "id": 12341,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "2687:7:41",
@@ -1612,12 +1612,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 12342,
+                  "id": 12344,
                   "mutability": "mutable",
                   "name": "deployer",
                   "nameLocation": "2717:8:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12349,
+                  "scope": 12351,
                   "src": "2709:16:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1626,7 +1626,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12341,
+                    "id": 12343,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2709:7:41",
@@ -1642,17 +1642,17 @@
               "src": "2645:86:41"
             },
             "returnParameters": {
-              "id": 12346,
+              "id": 12348,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12345,
+                  "id": 12347,
                   "mutability": "mutable",
                   "name": "predicted",
                   "nameLocation": "2763:9:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12349,
+                  "scope": 12351,
                   "src": "2755:17:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1661,7 +1661,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12344,
+                    "id": 12346,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "2755:7:41",
@@ -1676,18 +1676,18 @@
               ],
               "src": "2754:19:41"
             },
-            "scope": 12370,
+            "scope": 12372,
             "stateMutability": "pure",
             "virtual": false,
             "visibility": "internal"
           },
           {
-            "id": 12369,
+            "id": 12371,
             "nodeType": "FunctionDefinition",
             "src": "3466:233:41",
             "nodes": [],
             "body": {
-              "id": 12368,
+              "id": 12370,
               "nodeType": "Block",
               "src": "3611:88:41",
               "nodes": [],
@@ -1696,11 +1696,11 @@
                   "expression": {
                     "arguments": [
                       {
-                        "id": 12360,
+                        "id": 12362,
                         "name": "implementation",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 12352,
+                        "referencedDeclaration": 12354,
                         "src": "3656:14:41",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
@@ -1708,11 +1708,11 @@
                         }
                       },
                       {
-                        "id": 12361,
+                        "id": 12363,
                         "name": "salt",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 12354,
+                        "referencedDeclaration": 12356,
                         "src": "3672:4:41",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -1722,14 +1722,14 @@
                       {
                         "arguments": [
                           {
-                            "id": 12364,
+                            "id": 12366,
                             "name": "this",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": -28,
                             "src": "3686:4:41",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_contract$_Clones_$12370",
+                              "typeIdentifier": "t_contract$_Clones_$12372",
                               "typeString": "library Clones"
                             }
                           }
@@ -1737,11 +1737,11 @@
                         "expression": {
                           "argumentTypes": [
                             {
-                              "typeIdentifier": "t_contract$_Clones_$12370",
+                              "typeIdentifier": "t_contract$_Clones_$12372",
                               "typeString": "library Clones"
                             }
                           ],
-                          "id": 12363,
+                          "id": 12365,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -1753,14 +1753,14 @@
                             "typeString": "type(address)"
                           },
                           "typeName": {
-                            "id": 12362,
+                            "id": 12364,
                             "name": "address",
                             "nodeType": "ElementaryTypeName",
                             "src": "3678:7:41",
                             "typeDescriptions": {}
                           }
                         },
-                        "id": 12365,
+                        "id": 12367,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -1792,21 +1792,21 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 12359,
+                      "id": 12361,
                       "name": "predictDeterministicAddress",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        12349,
-                        12369
+                        12351,
+                        12371
                       ],
-                      "referencedDeclaration": 12349,
+                      "referencedDeclaration": 12351,
                       "src": "3628:27:41",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_address_$_t_bytes32_$_t_address_$returns$_t_address_$",
                         "typeString": "function (address,bytes32,address) pure returns (address)"
                       }
                     },
-                    "id": 12366,
+                    "id": 12368,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -1822,15 +1822,15 @@
                       "typeString": "address"
                     }
                   },
-                  "functionReturnParameters": 12358,
-                  "id": 12367,
+                  "functionReturnParameters": 12360,
+                  "id": 12369,
                   "nodeType": "Return",
                   "src": "3621:71:41"
                 }
               ]
             },
             "documentation": {
-              "id": 12350,
+              "id": 12352,
               "nodeType": "StructuredDocumentation",
               "src": "3362:99:41",
               "text": " @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}."
@@ -1841,17 +1841,17 @@
             "name": "predictDeterministicAddress",
             "nameLocation": "3475:27:41",
             "parameters": {
-              "id": 12355,
+              "id": 12357,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12352,
+                  "id": 12354,
                   "mutability": "mutable",
                   "name": "implementation",
                   "nameLocation": "3511:14:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12369,
+                  "scope": 12371,
                   "src": "3503:22:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1860,7 +1860,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12351,
+                    "id": 12353,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "3503:7:41",
@@ -1874,12 +1874,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 12354,
+                  "id": 12356,
                   "mutability": "mutable",
                   "name": "salt",
                   "nameLocation": "3535:4:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12369,
+                  "scope": 12371,
                   "src": "3527:12:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1888,7 +1888,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 12353,
+                    "id": 12355,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "3527:7:41",
@@ -1903,17 +1903,17 @@
               "src": "3502:38:41"
             },
             "returnParameters": {
-              "id": 12358,
+              "id": 12360,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 12357,
+                  "id": 12359,
                   "mutability": "mutable",
                   "name": "predicted",
                   "nameLocation": "3596:9:41",
                   "nodeType": "VariableDeclaration",
-                  "scope": 12369,
+                  "scope": 12371,
                   "src": "3588:17:41",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1922,7 +1922,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 12356,
+                    "id": 12358,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "3588:7:41",
@@ -1937,7 +1937,7 @@
               ],
               "src": "3587:19:41"
             },
-            "scope": 12370,
+            "scope": 12372,
             "stateMutability": "view",
             "virtual": false,
             "visibility": "internal"
@@ -1949,18 +1949,18 @@
         "contractDependencies": [],
         "contractKind": "library",
         "documentation": {
-          "id": 12293,
+          "id": 12295,
           "nodeType": "StructuredDocumentation",
           "src": "125:629:41",
           "text": " @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for\n deploying minimal proxy contracts, also known as \"clones\".\n > To simply and cheaply clone contract functionality in an immutable way, this standard specifies\n > a minimal bytecode implementation that delegates all calls to a known, fixed address.\n The library includes functions to deploy a proxy using either `create` (traditional deployment) or `create2`\n (salted deterministic deployment). It also includes functions to predict the addresses of clones deployed using the\n deterministic method.\n _Available since v3.4._"
         },
         "fullyImplemented": true,
         "linearizedBaseContracts": [
-          12370
+          12372
         ],
         "name": "Clones",
         "nameLocation": "763:6:41",
-        "scope": 12371,
+        "scope": 12373,
         "usedErrors": []
       }
     ],

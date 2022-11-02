@@ -17,36 +17,36 @@ contract HATTimelockController is TimelockController {
     
     // The following functions are not subject to the timelock
 
-    function approveClaim(HATVault _vault, bytes32 _claimId, uint256 _bountyPercentage) external onlyRole(PROPOSER_ROLE) {
+    function approveClaim(HATVault _vault, bytes32 _claimId, uint256 _bountyPercentage) external payable onlyRole(PROPOSER_ROLE) {
         _vault.approveClaim(_claimId, _bountyPercentage);
     }
 
-    function challengeClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
+    function challengeClaim(HATVault _vault, bytes32 _claimId) external payable onlyRole(PROPOSER_ROLE) {
         _vault.challengeClaim(_claimId);
     }
 
-    function dismissClaim(HATVault _vault, bytes32 _claimId) external onlyRole(PROPOSER_ROLE) {
+    function dismissClaim(HATVault _vault, bytes32 _claimId) external payable onlyRole(PROPOSER_ROLE) {
         _vault.dismissClaim(_claimId);
     }
 
-    function setDepositPause(HATVault _vault, bool _depositPause) external onlyRole(PROPOSER_ROLE) {
+    function setDepositPause(HATVault _vault, bool _depositPause) external payable onlyRole(PROPOSER_ROLE) {
         _vault.setDepositPause(_depositPause);
     }
 
-    function setVaultVisibility(HATVault _vault, bool _visible) external onlyRole(PROPOSER_ROLE) {
+    function setVaultVisibility(HATVault _vault, bool _visible) external payable onlyRole(PROPOSER_ROLE) {
         _vault.registry().setVaultVisibility(address(_vault), _visible);
     }
 
-    function setVaultDescription(HATVault _vault, string memory _descriptionHash) external onlyRole(PROPOSER_ROLE) {
+    function setVaultDescription(HATVault _vault, string memory _descriptionHash) external payable onlyRole(PROPOSER_ROLE) {
         _vault.setVaultDescription(_descriptionHash);
     }
 
     function setAllocPoint(HATVault _vault, uint256 _allocPoint)
-    external onlyRole(PROPOSER_ROLE) {
+    external payable onlyRole(PROPOSER_ROLE) {
         _vault.rewardController().setAllocPoint(address(_vault), _allocPoint);
     }
 
-    function setCommittee(HATVault _vault, address _committee) external onlyRole(PROPOSER_ROLE) {
+    function setCommittee(HATVault _vault, address _committee) external payable onlyRole(PROPOSER_ROLE) {
         _vault.setCommittee(_committee);
     }
 
@@ -58,7 +58,7 @@ contract HATTimelockController is TimelockController {
         address _routingContract,
         bytes calldata _routingPayload
     )
-    external
+    external payable
     onlyRole(PROPOSER_ROLE) {
         _registry.swapAndSend(
             _asset,
@@ -69,7 +69,7 @@ contract HATTimelockController is TimelockController {
         );
     }
 
-    function setEmergencyPaused(HATVaultsRegistry _registry, bool _isEmergencyPaused) external onlyRole(PROPOSER_ROLE) {
+    function setEmergencyPaused(HATVaultsRegistry _registry, bool _isEmergencyPaused) external payable onlyRole(PROPOSER_ROLE) {
         _registry.setEmergencyPaused(_isEmergencyPaused);
     }
 }

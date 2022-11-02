@@ -244,8 +244,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             activeClaim.arbitrator != msg.sender
         ) revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
-            revert ChallengePeriodEnded();
+        unchecked {
+         if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
+            revert ChallengePeriodEnded();   
+        }
+        
         if (activeClaim.challengedAt != 0) {
             revert ClaimAlreadyChallenged();
         } 
@@ -261,18 +264,22 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         
         
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
-            // cannot approve an expired claim
-            revert ClaimExpired();
+        unchecked {
+            if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
+             // cannot approve an expired claim
+             revert ClaimExpired();
+           }
         } 
         if (claim.challengedAt != 0) {
             // the claim was challenged, and only the arbitrator can approve it, within the timeout period
-            if (
+            unchecked {
+                if (
                 msg.sender != claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
             ) {
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+               }
             }
             // the arbitrator can update the bounty if needed
             if (claim.arbitratorCanChangeBounty) {
@@ -280,10 +287,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             }
         } else {
             // the claim can be approved by anyone if the challengePeriod passed without a challenge
-            if (
+            unchecked {
+                if (
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp <= claim.createdAt + claim.challengePeriod
-            ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+               ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            }
         }
 
         address tokenLock;
@@ -595,11 +604,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* --------------------------------- Getters -------------------------------------- */
 
     /** @notice See {IHATVault-getBountyGovernanceHAT}. */
-    function getBountyGovernanceHAT() public view returns(uint256) {
+    function getBountyGovernanceHAT() public view returns(uint256 _bountyGovernanceHAT) {
         if (bountyGovernanceHAT != NULL_UINT) {
-            return bountyGovernanceHAT;
+            _bountyGovernanceHAT = bountyGovernanceHAT;
         } else {
-            return registry.defaultBountyGovernanceHAT();
+            _bountyGovernanceHAT = registry.defaultBountyGovernanceHAT();
         }
     }
 
