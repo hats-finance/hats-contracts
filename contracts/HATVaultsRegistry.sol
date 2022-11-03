@@ -45,9 +45,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 governanceAmountSwapped;
     }
 
-    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 internal constant HUNDRED_PERCENT = 10000;
     // the maximum percentage of the bounty that will be converted in HATs
-    uint256 public constant MAX_HAT_SPLIT = 2000;
+    uint256 internal constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -64,6 +64,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ITokenLockFactory public immutable tokenLockFactory;
     // feeSetter sets the withdrawal fee
     address public feeSetter;
+        bool public defaultArbitratorCanChangeBounty;
+
+    bool public isEmergencyPaused;
 
     // the token into which a part of the the bounty will be swapped into
     IERC20 public immutable HAT;
@@ -80,9 +83,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
-    bool public defaultArbitratorCanChangeBounty;
 
-    bool public isEmergencyPaused;
 
     /**
     * @notice initialize -
@@ -138,9 +139,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-logClaim}. */
-    function logClaim(string memory _descriptionHash) external payable {
-        if (generalParameters.claimFee > 0) {
-            if (msg.value < generalParameters.claimFee)
+    function logClaim(string calldata _descriptionHash) external payable {
+        uint256 _generalParameters = generalParameters.claimFee;
+        if (_generalParameters > 0) {
+            if (msg.value < _generalParameters)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
             payable(owner()).transfer(msg.value);
@@ -319,8 +321,11 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+        for (uint256 i = 0; i < _beneficiaries.length; ) {
             swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+            unchecked {
+                ++i;
+            }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
@@ -329,7 +334,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+        for (uint256 i = 0; i < _beneficiaries.length;) {
             uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
@@ -355,9 +360,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 _HAT.safeTransfer(tokenLock, hackerReward);
             }
             emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            unchecked {
+                ++i;
+            }
         }
-        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
-        emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));
+        address _owner = owner(); 
+        uint256 _swaps = swapData.hatsReceived - swapData.totalHackerReward;
+        _HAT.safeTransfer(_owner, _swaps);
+        emit SwapAndSend(_owner, swapData.governanceAmountSwapped, _swaps, address(0));
 
     }
 
