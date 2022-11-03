@@ -43,11 +43,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 hatsReceived;
         uint256 totalHackerReward;
         uint256 governanceAmountSwapped;
+        uint256[] hackerRewards;
     }
 
-    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint16 public constant HUNDRED_PERCENT = 10000;
     // the maximum percentage of the bounty that will be converted in HATs
-    uint256 public constant MAX_HAT_SPLIT = 2000;
+    uint16 public constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -78,8 +79,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     uint256 public defaultBountyHackerHATVested;
 
     address public defaultArbitrator;
-    uint256 public defaultChallengePeriod;
-    uint256 public defaultChallengeTimeOutPeriod;
+    uint24 public defaultChallengePeriod;
+    uint24 public defaultChallengeTimeOutPeriod;
     bool public defaultArbitratorCanChangeBounty;
 
     bool public isEmergencyPaused;
@@ -167,14 +168,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
-    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
+    function setDefaultChallengePeriod(uint24 _defaultChallengePeriod) external onlyOwner {
         validateChallengePeriod(_defaultChallengePeriod);
         defaultChallengePeriod = _defaultChallengePeriod;
         emit SetDefaultChallengePeriod(_defaultChallengePeriod);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}. */
-    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
+    function setDefaultChallengeTimeOutPeriod(uint24 _defaultChallengeTimeOutPeriod) external onlyOwner {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
@@ -193,7 +194,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawRequestParams}. */
-    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
+    function setWithdrawRequestParams(uint24 _withdrawRequestPendingPeriod, uint24  _withdrawRequestEnablePeriod)
         external 
         onlyOwner
     {
@@ -215,7 +216,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawSafetyPeriod}. */
-    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner { 
+    function setWithdrawSafetyPeriod(uint16 _withdrawPeriod, uint16 _safetyPeriod) external onlyOwner { 
         if (_withdrawPeriod < 1 hours) revert WithdrawPeriodTooShort();
         if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
@@ -224,7 +225,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setHatVestingParams}. */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
+    function setHatVestingParams(uint24 _duration, uint24 _periods) external onlyOwner {
         if (_duration >= 180 days) revert HatVestingDurationTooLong();
         if (_periods == 0) revert HatVestingPeriodsCannotBeZero();
         if (_duration < _periods) revert HatVestingDurationSmallerThanPeriods();
@@ -234,7 +235,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setMaxBountyDelay}. */
-    function setMaxBountyDelay(uint256 _delay) external onlyOwner {
+    function setMaxBountyDelay(uint24 _delay) external onlyOwner {
         if (_delay < 2 days) revert DelayTooShort();
         generalParameters.setMaxBountyDelay = _delay;
         emit SetMaxBountyDelay(_delay);
@@ -249,8 +250,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 _maxBounty,
         HATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods,
+        uint24 _bountyVestingDuration,
+        uint24 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 
@@ -260,7 +261,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         HATVault(vault).initialize(
             IHATVault.VaultInitParams({
-                rewardController: _rewardController,
+                rewardController: _rewardController, //Can create a vault with a malicious reward controller?
                 vestingDuration: _bountyVestingDuration,
                 vestingPeriods: _bountyVestingPeriods,
                 maxBounty: _maxBounty,
@@ -296,6 +297,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-addTokensToSwap}. */
+    //Anyone can call this. Is there any benefit?
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
@@ -318,22 +320,27 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ) external onlyOwner {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
+        swapData.hackerRewards = new uint256[](_beneficiaries.length);
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+
+        for (uint256 i = 0; i < _beneficiaries.length;) { 
+            swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
+            swapData.amount += swapData.hackerRewards[i]; 
+            unchecked { i++; }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
         (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
-        
+
         swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
-            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+        for (uint256 i = 0; i < _beneficiaries.length;) {
+            uint256 hackerReward = swapData.hatsReceived * swapData.hackerRewards[i] / swapData.amount;
+            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * swapData.hackerRewards[i] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+            // it gets updated here
+            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * swapData.hackerRewards[i] / swapData.amount;
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
@@ -355,6 +362,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 _HAT.safeTransfer(tokenLock, hackerReward);
             }
             emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            
+            unchecked { i++; }
         }
         _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
         emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));

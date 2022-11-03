@@ -16,8 +16,8 @@ contract VaultsManagerMock {
                     uint256 _maxBounty,
                     HATVault.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256 _bountyVestingDuration,
-                    uint256 _bountyVestingPeriods) external {
+                    uint24 _bountyVestingDuration,
+                    uint24 _bountyVestingPeriods) external {
 
         for (uint256 i=0; i < _assets.length; i++) {
             address vault = _hatVaults.createVault(_assets[i],

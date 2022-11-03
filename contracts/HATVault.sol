@@ -13,6 +13,7 @@ import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 import "./HATVaultsRegistry.sol";
+import "hardhat/console.sol";
 
 /** @title A Hats.finance vault which holds the funds for a specific project's
 * bug bounties
@@ -73,14 +74,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 timestamp;
     }
 
+
     uint256 public constant NULL_UINT = type(uint256).max;
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
-    uint256 public constant HUNDRED_PERCENT = 10000;
-    uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
-    uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
-    uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
-    uint256 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
-
+    uint16 public constant HUNDRED_PERCENT = 10000;
+    uint16 public constant MAX_BOUNTY_LIMIT = 9000;
+    uint16 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
+    uint72 public constant HUNDRED_PERCENT_SQRD = 100000000;
+    uint16 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
 
@@ -90,13 +91,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     IHATVault.BountySplit public bountySplit;
     uint256 public maxBounty;
-    uint256 public vestingDuration;
-    uint256 public vestingPeriods;
+    uint24 public vestingDuration;
+    uint24 public vestingPeriods;
 
     bool public committeeCheckedIn;
     uint256 public withdrawalFee;
 
-    uint256 internal nonce;
+    uint96 internal nonce;
 
     address public committee;
 
@@ -200,6 +201,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /* ---------------------------------- Claim --------------------------------------- */
 
     /** @notice See {IHATVault-submitClaim}. */
+
     function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
         external onlyCommittee noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
@@ -236,6 +238,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
+        //only arbitrator or owner
         if (
             registry.owner() != msg.sender &&
             activeClaim.arbitrator != msg.sender
@@ -292,8 +295,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         );
 
         IERC20 asset = IERC20(asset());
+        //This doesn't need to be wrapped as an IERC20, it keeps getting converted to the address
         if (claimBounty.hackerVested > 0) {
             //hacker gets part of bounty to a vesting contract
+            //TODO: Loop back around and make sure these args are safe
             tokenLock = tokenLockFactory.createTokenLock(
                 address(asset),
                 0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
@@ -362,7 +367,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-setCommittee}. */
     function setCommittee(address _committee) external {
         // vault owner can update committee only if committee was not checked in yet.
-        if (msg.sender == owner() && committee != msg.sender) {
+
+        if (msg.sender == owner() && committee != msg.sender) { //Prevents owner from changing committee if they already active
             if (committeeCheckedIn)
                 revert CommitteeAlreadyCheckedIn();
         } else {
@@ -375,7 +381,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setVestingParams}. */
-    function setVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
+    function setVestingParams(uint24 _duration, uint24 _periods) external onlyOwner {
         _setVestingParams(_duration, _periods);
     }
 
@@ -413,11 +419,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function setMaxBounty() external onlyOwner noActiveClaim {
         if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
-        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-
+        // //Note: Since this variable is only used once, probably would be more gas efficient to not store it in memory
+        // IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp - pendingMaxBounty.timestamp <
-            generalParameters.setMaxBountyDelay)
+            registry.getGeneralParameters().setMaxBountyDelay)
             revert DelayPeriodForSettingMaxBountyHadNotPassed();
         maxBounty = pendingMaxBounty.maxBounty;
         delete pendingMaxBounty;
@@ -445,8 +452,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     
     /** @notice See {IHATVault-setHATBountySplit}. */
     function setHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) external onlyRegistryOwner {
-        bountyGovernanceHAT = _bountyGovernanceHAT;
-        bountyHackerHATVested = _bountyHackerHATVested;
+        bountyGovernanceHAT = _bountyGovernanceHAT; //change to Max %
+        bountyHackerHATVested = _bountyHackerHATVested; // Leave as null int
 
         registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
 
@@ -732,7 +739,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
     }
 
-    function _setVestingParams(uint256 _duration, uint256 _periods) internal {
+    function _setVestingParams(uint24 _duration, uint24 _periods) internal {
         if (_duration > 120 days) revert VestingDurationTooLong();
         if (_periods == 0) revert VestingPeriodsCannotBeZero();
         if (_duration < _periods) revert VestingDurationSmallerThanPeriods();
@@ -777,7 +784,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * @return claimBounty The bounty distribution for this specific claim
     */
     function _calcClaimBounty(
-        uint256 _bountyPercentage,
+        uint256 _bountyPercentage, //All of these are out of 100 percent (uint256(10000))
         uint256 _bountyGovernanceHAT,
         uint256 _bountyHackerHATVested
     ) internal view returns(IHATVault.ClaimBounty memory claimBounty) {

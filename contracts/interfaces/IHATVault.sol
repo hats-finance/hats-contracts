@@ -92,8 +92,8 @@ interface IHATVault is IERC4626Upgradeable {
     */
     struct VaultInitParams {
         IRewardController rewardController;
-        uint256 vestingDuration;
-        uint256 vestingPeriods;
+        uint24 vestingDuration;
+        uint24 vestingPeriods;
         uint256 maxBounty;
         IHATVault.BountySplit bountySplit;
         IERC20 asset;
@@ -200,8 +200,8 @@ interface IHATVault is IERC4626Upgradeable {
     event DismissClaim(bytes32 indexed _claimId);
     event SetCommittee(address indexed _committee);
     event SetVestingParams(
-        uint256 _duration,
-        uint256 _periods
+        uint24 _duration,
+        uint24 _periods
     );
     event SetBountySplit(BountySplit _bountySplit);
     event SetWithdrawalFee(uint256 _newFee);
@@ -307,7 +307,7 @@ interface IHATVault is IERC4626Upgradeable {
     * 120 days and bigger than `_periods`
     * @param _periods Number of vesting periods. Cannot be 0.
     */
-    function setVestingParams(uint256 _duration, uint256 _periods) external;
+    function setVestingParams(uint24 _duration, uint24 _periods) external;
 
     /**
     * @notice Called by the vault's owner to set the vault token bounty split

@@ -78,13 +78,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         vault.lastRewardBlock = block.number;
 
-        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
-
-        if (totalShares != 0) {
+        if (IERC20Upgradeable(_vault).totalSupply() != 0) {
             uint256 reward = getVaultReward(_vault, lastRewardBlock);
-            vault.rewardPerShare += (reward * REWARD_PRECISION / totalShares);
+            vault.rewardPerShare += (reward * REWARD_PRECISION / IERC20Upgradeable(_vault).totalSupply());
         }
-
         if (globalVaultsUpdates.length != 0) {
             vaultInfo[_vault].lastProcessedVaultUpdate = globalVaultsUpdates.length - 1;
         }
@@ -137,7 +134,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
         if (userShares != 0) {
-            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+            unclaimedReward[_vault][_user] += (userShares * rewardPerShare / REWARD_PRECISION) - rewardDebt[_vault][_user];
         }
 
         if (_sharesChange != 0) {
@@ -158,7 +155,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     /** @notice See {IRewardController-claimReward}. */
     function claimReward(address _vault, address _user) external {
         _commitUserBalance(_vault, _user, 0, true);
-
         uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
         if (userUnclaimedReward > 0) {
             unclaimedReward[_vault][_user] = 0;
@@ -173,15 +169,22 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if (globalVaultsUpdates.length == 0) {
             return 0;
         }
-        uint256 vaultAllocPoint = vaultInfo[_vault].allocPoint;
-        uint256 i = vaultInfo[_vault].lastProcessedVaultUpdate;
-        for (; i < globalVaultsUpdates.length-1; i++) {
+
+        VaultInfo memory vault = vaultInfo[_vault];
+        uint256 vaultAllocPoint = vault.allocPoint;
+        uint256 i = vault.lastProcessedVaultUpdate;
+
+        uint256 globalVaultsUpdatesLength = globalVaultsUpdates.length-1;
+
+        for (; i < globalVaultsUpdatesLength;) {
             uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
             reward += getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             vaultAllocPoint,
                                             globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
+
+            unchecked { i++; }
         }
         return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,
@@ -196,13 +199,14 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if ((_fromBlock >= startBlock && _toBlock >= _fromBlock) && _totalAllocPoint > 0) {
             uint256 result;
             uint256 i = (_fromBlock - startBlock) / epochLength + 1;
-            for (; i <= NUMBER_OF_EPOCHS; i++) {
+            for (; i <= NUMBER_OF_EPOCHS;) {
                 uint256 endBlock = epochLength * i + startBlock;
                 if (_toBlock <= endBlock) {
                     break;
                 }
                 result += (endBlock - _fromBlock) * epochRewardPerBlock[i-1];
                 _fromBlock = endBlock;
+                unchecked { i++; }
             }
             result += (_toBlock - _fromBlock) * (i > NUMBER_OF_EPOCHS ? 0 : epochRewardPerBlock[i-1]);
             reward = result * _allocPoint / _totalAllocPoint;
