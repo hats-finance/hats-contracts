@@ -36,7 +36,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
 
     function mint(address _account, uint _amount) external {
         if (_amount == 0) revert ZeroAmount();
-        minters[msg.sender] -= _amount;
+        minters[msg.sender] -= _amount; //@audit-info unchecking doesn't save gas
         _mint(_account, _amount);
     }
 

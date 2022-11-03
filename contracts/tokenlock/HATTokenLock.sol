@@ -7,7 +7,7 @@ import "../HATToken.sol";
 
 contract HATTokenLock is TokenLock {
 
-    bool public canDelegate;
+    bool public canDelegate; //@audit-info replacing with uint256 breaks tests
 
     // Initializer
     function initialize(

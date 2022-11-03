@@ -78,7 +78,7 @@ contract UniSwapV3RouterMock {
     /// @notice Returns the number of pools in the path
    /// @param path The encoded swap path
    /// @return The number of pools in the path
-    function numPools(bytes memory path) internal pure returns (uint256) {
+    function numPools(bytes memory path) internal pure returns (uint256) { //@audit-info can't be calldata
            // Ignore the first token address. From then on every fee and token offset indicates a pool.
         return ((path.length - ADDR_SIZE) / NEXT_OFFSET);
     }

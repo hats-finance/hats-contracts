@@ -25,7 +25,7 @@ interface IRewardController {
         address _hatsGovernance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
-        uint256[24] memory _epochRewardPerBlock
+        uint256[24] calldata _epochRewardPerBlock
     ) external;
 
     /**
@@ -47,7 +47,7 @@ interface IRewardController {
     * Reward can only be set for epochs which have not yet started
     * @param _epochRewardPerBlock reward per block for each epoch
     */
-    function setEpochRewardPerBlock(uint256[24] memory _epochRewardPerBlock) external;
+    function setEpochRewardPerBlock(uint256[24] calldata _epochRewardPerBlock) external;
 
     /**
     * @notice Called by the vault to update a user claimable reward after deposit or withdraw.

@@ -45,9 +45,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 governanceAmountSwapped;
     }
 
-    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint256 internal constant HUNDRED_PERCENT = 10000;
     // the maximum percentage of the bounty that will be converted in HATs
-    uint256 public constant MAX_HAT_SPLIT = 2000;
+    uint256 internal constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -77,9 +77,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
     uint256 public defaultBountyHackerHATVested;
 
-    address public defaultArbitrator;
     uint256 public defaultChallengePeriod;
     uint256 public defaultChallengeTimeOutPeriod;
+    address public defaultArbitrator;
     bool public defaultArbitratorCanChangeBounty;
 
     bool public isEmergencyPaused;
@@ -138,9 +138,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-logClaim}. */
-    function logClaim(string memory _descriptionHash) external payable {
-        if (generalParameters.claimFee > 0) {
-            if (msg.value < generalParameters.claimFee)
+    function logClaim(string calldata _descriptionHash) external payable {
+        uint256 claimFee = generalParameters.claimFee;
+        if (claimFee > 0) {
+            if (msg.value < claimFee)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
             payable(owner()).transfer(msg.value);
@@ -247,8 +248,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        HATVault.BountySplit memory _bountySplit,
-        string memory _descriptionHash,
+        HATVault.BountySplit calldata _bountySplit,
+        string calldata _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods,
         bool _isPaused
@@ -319,45 +320,59 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+        mapping(address => uint256) storage _assetHackersHatReward = hackersHatReward[_asset];
+
+        for (uint256 i; i < _beneficiaries.length;) {
+            swapData.amount += _assetHackersHatReward[_beneficiaries[i]];
+            unchecked {
+                ++i;
+            }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
         (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
         
-        swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
-        governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
+        uint256 governanceHatRewardAsset = governanceHatReward[_asset];
+        uint256 calcSwap = (swapData.amount - swapData.amountUnused) / swapData.amount;
+        swapData.governanceAmountSwapped = calcSwap * governanceHatRewardAsset;
+        governanceHatReward[_asset] = swapData.amountUnused * governanceHatRewardAsset / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
-            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+        for (uint256 i; i < _beneficiaries.length;) {
+            address _beneficiary = _beneficiaries[i];
+            uint256 _hackersHatReward = _assetHackersHatReward[_beneficiary];
+            uint256 hackerReward = swapData.hatsReceived * _hackersHatReward / swapData.amount;
+            uint256 hackerAmountSwapped = calcSwap * _hackersHatReward;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
-            address tokenLock;
-            if (hackerReward > 0) {
-                // hacker gets her reward via vesting contract
-                tokenLock = tokenLockFactory.createTokenLock(
-                    address(_HAT),
-                    0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
-                    _beneficiaries[i],
-                    hackerReward,
-                    // solhint-disable-next-line not-rely-on-time
-                    block.timestamp, //start
-                    // solhint-disable-next-line not-rely-on-time
-                    block.timestamp + generalParameters.hatVestingDuration, //end
-                    generalParameters.hatVestingPeriods,
-                    0, // no release start
-                    0, // no cliff
-                    ITokenLock.Revocability.Disabled,
-                    true
-                );
-                _HAT.safeTransfer(tokenLock, hackerReward);
+            _assetHackersHatReward[_beneficiary] = swapData.amountUnused * _hackersHatReward / swapData.amount;
+            unchecked {
+                address tokenLock;
+                if (hackerReward > 0) {
+                    // hacker gets her reward via vesting contract
+                        tokenLock = tokenLockFactory.createTokenLock(
+                            address(_HAT),
+                            0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
+                            _beneficiary,
+                            hackerReward,
+                            // solhint-disable-next-line not-rely-on-time
+                            block.timestamp, //start
+                            // solhint-disable-next-line not-rely-on-time
+                            block.timestamp + generalParameters.hatVestingDuration, //end
+                            generalParameters.hatVestingPeriods,
+                            0, // no release start
+                            0, // no cliff
+                            ITokenLock.Revocability.Disabled,
+                            true
+                        );
+                    _HAT.safeTransfer(tokenLock, hackerReward);
+                }
+                emit SwapAndSend(_beneficiary, hackerAmountSwapped, hackerReward, tokenLock);
+                ++i;
             }
-            emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
         }
-        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
-        emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));
+        address _owner = owner();
+        uint256 amountSent = swapData.hatsReceived - swapData.totalHackerReward;
+        _HAT.safeTransfer(_owner, amountSent);
+        emit SwapAndSend(_owner, swapData.governanceAmountSwapped, amountSent, address(0));
 
     }
 

@@ -59,10 +59,10 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
     // State
 
-    bool public isRevoked;
-    bool public isInitialized;
-    bool public isAccepted;
-    uint256 public releasedAmount;
+    bool internal isRevoked;
+    bool internal isInitialized;
+    bool internal isAccepted;
+    uint256 internal releasedAmount;
 
     // -- Events --
 
@@ -111,9 +111,11 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @dev Can only be called by the owner
      */
     function cancelLock() external onlyOwner {
-        require(isAccepted == false, "Cannot cancel accepted contract");
-
-        token.safeTransfer(owner(), currentBalance());
+        require(!isAccepted, "Cannot cancel accepted contract");
+        uint256 balance = currentBalance();
+        if(balance > 0){
+            token.safeTransfer(owner(), balance);
+        }
 
         emit LockCanceled();
     }
@@ -126,13 +128,14 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      */
     function release() external override onlyBeneficiary {
         uint256 amountToRelease = releasableAmount();
-        require(amountToRelease > 0, "No available releasable amount");
+        require(amountToRelease != 0, "No available releasable amount");
 
         releasedAmount += amountToRelease;
+        address _beneficiary = beneficiary;
 
-        token.safeTransfer(beneficiary, amountToRelease);
+        token.safeTransfer(_beneficiary, amountToRelease);
 
-        emit TokensReleased(beneficiary, amountToRelease);
+        emit TokensReleased(_beneficiary, amountToRelease);
 
         trySelfDestruct();
     }
@@ -143,12 +146,13 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @param _amount Amount of tokens to withdraw
      */
     function withdrawSurplus(uint256 _amount) external override onlyBeneficiary {
-        require(_amount > 0, "Amount cannot be zero");
+        require(_amount != 0, "Amount cannot be zero");
         require(surplusAmount() >= _amount, "Amount requested > surplus available");
+        address _beneficiary = beneficiary;
 
-        token.safeTransfer(beneficiary, _amount);
+        token.safeTransfer(_beneficiary, _amount);
 
-        emit TokensWithdrawn(beneficiary, _amount);
+        emit TokensWithdrawn(_beneficiary, _amount);
 
         trySelfDestruct();
     }
@@ -159,10 +163,10 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      */
     function revoke() external override onlyOwner {
         require(revocable == Revocability.Enabled, "Contract is non-revocable");
-        require(isRevoked == false, "Already revoked");
+        require(!isRevoked, "Already revoked");
 
         uint256 unvestedAmount = managedAmount - vestedAmount();
-        require(unvestedAmount > 0, "No available unvested amount");
+        require(unvestedAmount != 0, "No available unvested amount");
 
         isRevoked = true;
 
@@ -174,7 +178,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
     /// @dev sweeps out accidentally sent tokens
     /// @param _token Address of token to sweep
     function sweepToken(IERC20 _token) external {
-        address sweeper = owner() == address(0) ? beneficiary : owner();
+        address sweeper = owner() == address(0) ? beneficiary : owner(); //@audit-info caching owner() is more expensive. Changing with != is also more expensive
         require(msg.sender == sweeper, "!auth");
         require(_token != token, "cannot sweep vested token");
         uint256 tokenBalance = _token.balanceOf(address(this));
@@ -222,7 +226,9 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         if (current <= startTime) {
             return 0;
         }
-        return current - startTime;
+        unchecked {
+            return current - startTime;
+        }
     }
 
     /**
@@ -305,22 +311,24 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @dev Considers the schedule and takes into account already released tokens
      * @return Amount of tokens ready to be released
      */
-    function releasableAmount() public override view returns (uint256) {
+    function releasableAmount() public override view returns (uint256) { //@audit no gas saved by caching but I'm still doing it
         // If a release start time is set no tokens are available for release before this date
         // If not set it follows the default schedule and tokens are available on
         // the first period passed
-        if (releaseStartTime > 0 && currentTime() < releaseStartTime) {
+        uint256 _releaseStartTime = releaseStartTime;
+        if (_releaseStartTime > 0 && currentTime() < _releaseStartTime) {
             return 0;
         }
 
         // Vesting cliff is activated and it has not passed means nothing is vested yet
         // so funds cannot be released
-        if (revocable == Revocability.Enabled && vestingCliffTime > 0 && currentTime() < vestingCliffTime) {
+        uint256 _vestingCliffTime = vestingCliffTime;
+        if (_vestingCliffTime > 0 && revocable == Revocability.Enabled && currentTime() < _vestingCliffTime) {
             return 0;
         }
 
         // A beneficiary can never have more releasable tokens than the contract balance
-        uint256 releasable = availableAmount() - releasedAmount;
+        uint256 releasable = availableAmount() - releasedAmount; //@audit-info unchecked doesn't seem to save gas
         return MathUtils.min(currentBalance(), releasable);
     }
 
@@ -342,7 +350,9 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         uint256 balance = currentBalance();
         uint256 outstandingAmount = totalOutstandingAmount();
         if (balance > outstandingAmount) {
-            return balance - outstandingAmount;
+            unchecked {
+                return balance - outstandingAmount;
+            }
         }
         return 0;
     }
@@ -374,7 +384,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         require(!isInitialized, "Already initialized");
         require(_beneficiary != address(0), "Beneficiary cannot be zero");
         require(_token != address(0), "Token cannot be zero");
-        require(_managedAmount > 0, "Managed tokens cannot be zero");
+        require(_managedAmount != 0, "Managed tokens cannot be zero");
         require(_startTime != 0, "Start time must be set");
         require(_startTime < _endTime, "Start time > end time");
         require(_periods >= MIN_PERIOD, "Periods cannot be below minimum");

@@ -42,18 +42,18 @@ module.exports = {
     excludeContracts: ["mocks/", "HATToken"]
   },
   networks: {
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [process.env.RINKEBY_PK],
-      gasPrice: "auto",
-      gas: "auto",
-    },
-    mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [process.env.PRIVATE_KEY],
-      gasPrice: "auto",
-      gas: "auto",
-    },
+    // rinkeby: {
+    //   url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
+    //   accounts: [process.env.RINKEBY_PK],
+    //   gasPrice: "auto",
+    //   gas: "auto",
+    // },
+    // mainnet: {
+    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+    //   accounts: [process.env.PRIVATE_KEY],
+    //   gasPrice: "auto",
+    //   gas: "auto",
+    // },
     hardhat: {
       allowUnlimitedContractSize: true,
       accounts: [

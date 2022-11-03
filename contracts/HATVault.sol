@@ -62,9 +62,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 challengedAt;
         uint256 bountyGovernanceHAT;
         uint256 bountyHackerHATVested;
-        address arbitrator;
         uint256 challengePeriod;
         uint256 challengeTimeOutPeriod;
+        address arbitrator;
         bool arbitratorCanChangeBounty;
     }
 
@@ -75,11 +75,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     uint256 public constant NULL_UINT = type(uint256).max;
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
-    uint256 public constant HUNDRED_PERCENT = 10000;
-    uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
-    uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
-    uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
-    uint256 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
+    uint256 internal constant HUNDRED_PERCENT = 10000;
+    uint256 internal constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
+    uint256 internal constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
+    uint256 internal constant HUNDRED_PERCENT_SQRD = 100000000;
+    uint256 internal constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
@@ -93,16 +93,16 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 public vestingDuration;
     uint256 public vestingPeriods;
 
-    bool public committeeCheckedIn;
     uint256 public withdrawalFee;
 
     uint256 internal nonce;
 
     address public committee;
+    bool internal committeeCheckedIn;
 
-    PendingMaxBounty public pendingMaxBounty;
+    PendingMaxBounty internal pendingMaxBounty;
 
-    bool public depositPause;
+    bool internal depositPause;
 
     // Time of when withdrawal period starts for every user that has an
     // active withdraw request. (time when last withdraw request pending 
@@ -116,14 +116,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract (out of {HUNDRED_PERCENT})
     uint256 internal bountyHackerHATVested;
 
-    // address of the arbitrator - which can dispute claims and override the committee's decisions
-    address internal arbitrator;
     // time during which a claim can be challenged by the arbitrator
     uint256 internal challengePeriod;
     // time after which a challenged claim is automatically dismissed
     uint256 internal challengeTimeOutPeriod;
     // whether the arbitrator can change bounty of claims
     ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
+    // address of the arbitrator - which can dispute claims and override the committee's decisions
+    address internal arbitrator;
 
     bool private _isEmergencyWithdraw;
 
@@ -151,9 +151,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp %
-        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
-            generalParameters.withdrawPeriod) revert SafetyPeriod();
+        unchecked {
+            if (block.timestamp %
+            (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
+                generalParameters.withdrawPeriod) revert SafetyPeriod();
+        }
         _;
     }
 
@@ -169,7 +171,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-initialize}. */
-    function initialize(IHATVault.VaultInitParams memory _params) external initializer {
+    function initialize(IHATVault.VaultInitParams calldata _params) external initializer {
         if (_params.maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);
@@ -201,48 +203,54 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-submitClaim}. */
     function submitClaim(address _beneficiary, uint256 _bountyPercentage, string calldata _descriptionHash)
-        external onlyCommittee noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
-        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
-        // require we are in safetyPeriod
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
-        generalParameters.withdrawPeriod) revert NotSafetyPeriod();
-        if (_bountyPercentage > maxBounty)
-            revert BountyPercentageHigherThanMaxBounty();
-        claimId = keccak256(abi.encodePacked(address(this), nonce++));
-        activeClaim = Claim({
-            claimId: claimId,
-            beneficiary: _beneficiary,
-            bountyPercentage: _bountyPercentage,
-            committee: msg.sender,
+        external notEmergencyPaused noActiveClaim onlyCommittee returns (bytes32 claimId) {
+        unchecked {
+            if (_bountyPercentage > maxBounty)
+                revert BountyPercentageHigherThanMaxBounty();
+            IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+            // require we are in safetyPeriod
             // solhint-disable-next-line not-rely-on-time
-            createdAt: block.timestamp,
-            challengedAt: 0,
-            bountyGovernanceHAT: getBountyGovernanceHAT(),
-            bountyHackerHATVested: getBountyHackerHATVested(),
-            arbitrator: getArbitrator(),
-            challengePeriod: getChallengePeriod(),
-            challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
-            arbitratorCanChangeBounty: getArbitratorCanChangeBounty()
-        });
+            if (block.timestamp % (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) <
+            generalParameters.withdrawPeriod) revert NotSafetyPeriod();
 
-        emit SubmitClaim(
-            claimId,
-            msg.sender,
-            _beneficiary,
-            _bountyPercentage,
-            _descriptionHash
-        );
+            claimId = keccak256(abi.encodePacked(address(this), nonce++));
+            
+            activeClaim = Claim({
+                claimId: claimId,
+                beneficiary: _beneficiary,
+                bountyPercentage: _bountyPercentage,
+                committee: msg.sender,
+                // solhint-disable-next-line not-rely-on-time
+                createdAt: block.timestamp,
+                challengedAt: 0,
+                bountyGovernanceHAT: getBountyGovernanceHAT(),
+                bountyHackerHATVested: getBountyHackerHATVested(),
+                arbitrator: getArbitrator(),
+                challengePeriod: getChallengePeriod(),
+                challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
+                arbitratorCanChangeBounty: getArbitratorCanChangeBounty()
+            });
+
+            emit SubmitClaim(
+                claimId,
+                msg.sender,
+                _beneficiary,
+                _bountyPercentage,
+                _descriptionHash
+            );
+        }
     }
 
     function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         if (
-            registry.owner() != msg.sender &&
-            activeClaim.arbitrator != msg.sender
+            activeClaim.arbitrator != msg.sender &&
+            registry.owner() != msg.sender
         ) revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
-            revert ChallengePeriodEnded();
+        unchecked {
+            if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
+                revert ChallengePeriodEnded();
+        }
         if (activeClaim.challengedAt != 0) {
             revert ClaimAlreadyChallenged();
         } 
@@ -264,12 +272,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         } 
         if (claim.challengedAt != 0) {
             // the claim was challenged, and only the arbitrator can approve it, within the timeout period
-            if (
-                msg.sender != claim.arbitrator ||
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
-            ) {
-                revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+            unchecked {
+                if (
+                    msg.sender != claim.arbitrator ||
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
+                ) {
+                    revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+                }
             }
             // the arbitrator can update the bounty if needed
             if (claim.arbitratorCanChangeBounty) {
@@ -277,10 +287,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             }
         } else {
             // the claim can be approved by anyone if the challengePeriod passed without a challenge
-            if (
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= claim.createdAt + claim.challengePeriod
-            ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            unchecked {
+                if (
+                    // solhint-disable-next-line not-rely-on-time
+                    block.timestamp <= claim.createdAt + claim.challengePeriod
+                ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+            }
         }
 
         address tokenLock;
@@ -291,11 +303,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             claim.bountyHackerHATVested
         );
 
-        IERC20 asset = IERC20(asset());
+        IERC20 _asset = IERC20(asset());
         if (claimBounty.hackerVested > 0) {
             //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
-                address(asset),
+                address(_asset),
                 0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                 claim.beneficiary,
                 claimBounty.hackerVested,
@@ -309,24 +321,25 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 ITokenLock.Revocability.Disabled,
                 false
             );
-            asset.safeTransfer(tokenLock, claimBounty.hackerVested);
+            _asset.safeTransfer(tokenLock, claimBounty.hackerVested);
         }
 
-        asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
-        asset.safeTransfer(claim.committee, claimBounty.committee);
+        _asset.safeTransfer(claim.beneficiary, claimBounty.hacker);
+        _asset.safeTransfer(claim.committee, claimBounty.committee);
 
         // send to the registry the amount of tokens which should be swapped 
         // to HAT so it could call swapAndSend in a separate tx.
-        asset.safeApprove(address(registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
-        registry.addTokensToSwap(
-            asset,
+        HATVaultsRegistry _registry = registry;
+        _asset.safeApprove(address(_registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
+        _registry.addTokensToSwap(
+            _asset,
             claim.beneficiary,
             claimBounty.hackerHatVested,
             claimBounty.governanceHat
         );
 
         // make sure to reset approval
-        asset.safeApprove(address(registry), 0);
+        _asset.safeApprove(address(_registry), 0);
 
         emit ApproveClaim(
             _claimId,
@@ -340,15 +353,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-dismissClaim}. */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
-        Claim memory claim = activeClaim;
-
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
-            if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
+        uint256 _challengeTimeOutPeriod = activeClaim.challengeTimeOutPeriod;
+        uint256 _challengedAt = activeClaim.challengedAt;
+        if (block.timestamp < activeClaim.createdAt + activeClaim.challengePeriod + _challengeTimeOutPeriod) {
+            if (_challengedAt == 0) revert OnlyCallableIfChallenged();
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp < claim.challengedAt + claim.challengeTimeOutPeriod && 
-                msg.sender != claim.arbitrator
+                block.timestamp < _challengedAt + _challengeTimeOutPeriod && 
+                msg.sender != activeClaim.arbitrator
             ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         } // else the claim is expired and should be dismissed
         delete activeClaim;
@@ -380,7 +393,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setBountySplit}. */
-    function setBountySplit(IHATVault.BountySplit memory _bountySplit) external onlyOwner noActiveClaim noSafetyPeriod {
+    function setBountySplit(IHATVault.BountySplit calldata _bountySplit) external onlyOwner noActiveClaim noSafetyPeriod {
         _validateSplit(_bountySplit);
         bountySplit = _bountySplit;
         emit SetBountySplit(_bountySplit);
@@ -406,22 +419,26 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty.timestamp = block.timestamp;
-        emit SetPendingMaxBounty(_maxBounty, pendingMaxBounty.timestamp);
+        emit SetPendingMaxBounty(_maxBounty, block.timestamp);
     }
 
     /** @notice See {IHATVault-setMaxBounty}. */
     function setMaxBounty() external onlyOwner noActiveClaim {
-        if (pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
+        uint256 _timestamp = pendingMaxBounty.timestamp;
+        if (_timestamp == 0) revert NoPendingMaxBounty();
 
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
 
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp - pendingMaxBounty.timestamp <
-            generalParameters.setMaxBountyDelay)
-            revert DelayPeriodForSettingMaxBountyHadNotPassed();
-        maxBounty = pendingMaxBounty.maxBounty;
+        unchecked {
+            if (block.timestamp - _timestamp <
+                generalParameters.setMaxBountyDelay)
+                revert DelayPeriodForSettingMaxBountyHadNotPassed();
+        }
+        uint256 _maxBounty = pendingMaxBounty.maxBounty;
+        maxBounty = _maxBounty;
         delete pendingMaxBounty;
-        emit SetMaxBounty(maxBounty);
+        emit SetMaxBounty(_maxBounty);
     }
 
     /** @notice See {IHATVault-setDepositPause}. */
@@ -431,7 +448,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-setVaultDescription}. */
-    function setVaultDescription(string memory _descriptionHash) external onlyRegistryOwner {
+    function setVaultDescription(string calldata _descriptionHash) external onlyRegistryOwner {
         emit SetVaultDescription(_descriptionHash);
     }
 
@@ -496,43 +513,44 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
         // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
-        withdrawEnableStartTime[msg.sender] = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
-        emit WithdrawRequest(msg.sender, withdrawEnableStartTime[msg.sender]);
+        uint256 _withdrawEnableStartTime = block.timestamp + generalParameters.withdrawRequestPendingPeriod;
+        withdrawEnableStartTime[msg.sender] = _withdrawEnableStartTime;
+        emit WithdrawRequest(msg.sender, _withdrawEnableStartTime);
     }
 
     /** @notice See {IHATVault-withdrawAndClaim}. */
-    function withdrawAndClaim(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
-        shares = withdraw(assets, receiver, owner);
-        rewardController.claimReward(address(this), owner);
+    function withdrawAndClaim(uint256 assets, address receiver, address _owner) external returns (uint256 shares) {
+        shares = withdraw(assets, receiver, _owner);
+        rewardController.claimReward(address(this), _owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
-    function redeemAndClaim(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
-        assets = redeem(shares, receiver, owner);
-        rewardController.claimReward(address(this), owner);
+    function redeemAndClaim(uint256 shares, address receiver, address _owner) external returns (uint256 assets) {
+        assets = redeem(shares, receiver, _owner);
+        rewardController.claimReward(address(this), _owner);
     }
 
     /** @notice See {IHATVault-emergencyWithdraw}. */
     function emergencyWithdraw(address receiver) external returns (uint256 assets) {
         _isEmergencyWithdraw = true;
-        assets = redeem(balanceOf(_msgSender()), receiver, _msgSender());
+        assets = redeem(balanceOf(msg.sender), receiver, msg.sender);
         _isEmergencyWithdraw = false;
     }
 
     /** @notice See {IHATVault-withdraw}. */
-    function withdraw(uint256 assets, address receiver, address owner) 
+    function withdraw(uint256 assets, address receiver, address _owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         (uint256 shares, uint256 fee) = previewWithdrawAndFee(assets);
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
+        _withdraw(msg.sender, receiver, _owner, assets, shares, fee);
 
         return shares;
     }
 
     /** @notice See {IHATVault-redeem}. */
-    function redeem(uint256 shares, address receiver, address owner) 
+    function redeem(uint256 shares, address receiver, address _owner) 
         public override(IHATVault, ERC4626Upgradeable) virtual returns (uint256) {
         (uint256 assets, uint256 fee) = previewRedeemAndFee(shares);
-        _withdraw(_msgSender(), receiver, owner, assets, shares, fee);
+        _withdraw(msg.sender, receiver, _owner, assets, shares, fee);
 
         return assets;
     }
@@ -553,15 +571,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IERC4626Upgradeable-maxWithdraw}. */
-    function maxWithdraw(address owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(owner)) return 0;
-        return previewRedeem(balanceOf(owner));
+    function maxWithdraw(address _owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
+        if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(_owner)) return 0;
+        return previewRedeem(balanceOf(_owner));
     }
 
     /** @notice See {IERC4626Upgradeable-maxRedeem}. */
-    function maxRedeem(address owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(owner)) return 0;
-        return balanceOf(owner);
+    function maxRedeem(address _owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
+        if (activeClaim.createdAt != 0 || !_isWithdrawEnabledForUser(_owner)) return 0;
+        return balanceOf(_owner);
     }
 
     /** @notice See {IERC4626Upgradeable-previewWithdraw}. */
@@ -576,15 +594,20 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-previewWithdrawAndFee}. */
     function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
-        fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
+        uint256 _withdrawalFee = withdrawalFee;
+        unchecked {
+            fee = assets * _withdrawalFee / (HUNDRED_PERCENT - _withdrawalFee);
+        }
         shares = _convertToShares(assets + fee, MathUpgradeable.Rounding.Up);
     }
 
     /** @notice See {IHATVault-previewRedeemAndFee}. */
     function previewRedeemAndFee(uint256 shares) public view returns (uint256 assets, uint256 fee) {
         uint256 assetsPlusFee = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
-        fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
-        assets = assetsPlusFee - fee;
+        unchecked {
+            fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
+            assets = assetsPlusFee - fee;
+        }
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -593,8 +616,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getBountyGovernanceHAT}. */
     function getBountyGovernanceHAT() public view returns(uint256) {
-        if (bountyGovernanceHAT != NULL_UINT) {
-            return bountyGovernanceHAT;
+        uint256 _bountyGovernanceHAT = bountyGovernanceHAT;
+        if (_bountyGovernanceHAT != NULL_UINT) {
+            return _bountyGovernanceHAT;
         } else {
             return registry.defaultBountyGovernanceHAT();
         }
@@ -602,8 +626,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getBountyHackerHATVested}. */
     function getBountyHackerHATVested() public view returns(uint256) {
-        if (bountyHackerHATVested != NULL_UINT) {
-            return bountyHackerHATVested;
+        uint256 _bountyHackerHATVested = bountyHackerHATVested;
+        if (_bountyHackerHATVested != NULL_UINT) {
+            return _bountyHackerHATVested;
         } else {
             return registry.defaultBountyHackerHATVested();
         }
@@ -611,8 +636,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getArbitrator}. */
     function getArbitrator() public view returns(address) {
-        if (arbitrator != NULL_ADDRESS) {
-            return arbitrator;
+        address _arbitrator = arbitrator;
+        if (_arbitrator != NULL_ADDRESS) {
+            return _arbitrator;
         } else {
             return registry.defaultArbitrator();
         }
@@ -620,8 +646,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getChallengePeriod}. */
     function getChallengePeriod() public view returns(uint256) {
-        if (challengePeriod != NULL_UINT) {
-            return challengePeriod;
+        uint256 _challengePeriod = challengePeriod;
+        if (_challengePeriod != NULL_UINT) {
+            return _challengePeriod;
         } else {
             return registry.defaultChallengePeriod();
         }
@@ -629,8 +656,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getChallengeTimeOutPeriod}. */
     function getChallengeTimeOutPeriod() public view returns(uint256) {
-        if (challengeTimeOutPeriod != NULL_UINT) {
-            return challengeTimeOutPeriod;
+        uint256 _challengeTimeOutPeriod = challengeTimeOutPeriod;
+        if (_challengeTimeOutPeriod != NULL_UINT) {
+            return _challengeTimeOutPeriod;
         } else {
             return registry.defaultChallengeTimeOutPeriod();
         }
@@ -638,8 +666,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-getArbitratorCanChangeBounty}. */
     function getArbitratorCanChangeBounty() public view returns(bool) {
-        if (arbitratorCanChangeBounty != ArbitratorCanChangeBounty.DEFAULT) {
-            return arbitratorCanChangeBounty == ArbitratorCanChangeBounty.YES;
+        ArbitratorCanChangeBounty _arbitratorCanChangeBounty = arbitratorCanChangeBounty;
+        if (_arbitratorCanChangeBounty != ArbitratorCanChangeBounty.DEFAULT) {
+            return _arbitratorCanChangeBounty == ArbitratorCanChangeBounty.YES;
         } else {
             return registry.defaultArbitratorCanChangeBounty();
         }
@@ -665,7 +694,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     ) internal override virtual nonReentrant {
         if (!committeeCheckedIn)
             revert CommitteeNotCheckedInYet();
-        if (withdrawEnableStartTime[receiver] != 0 && receiver == caller) {
+        if (receiver == caller && withdrawEnableStartTime[receiver] != 0) {
             // clear withdraw request if caller deposits in her own account
             withdrawEnableStartTime[receiver] = 0;
         }
@@ -677,25 +706,25 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function _withdraw(
         address caller,
         address receiver,
-        address owner,
+        address _owner,
         uint256 assets,
         uint256 shares,
         uint256 fee
     ) internal nonReentrant {
         if (assets == 0) revert WithdrawMustBeGreaterThanZero();
-        if (caller != owner) {
-            _spendAllowance(owner, caller, shares);
+        if (caller != _owner) {
+            _spendAllowance(_owner, caller, shares);
         }
 
-        _burn(owner, shares);
+        _burn(_owner, shares);
 
-        IERC20 asset = IERC20(asset());
+        IERC20 _asset = IERC20(asset());
         if (fee > 0) {
-            asset.safeTransfer(registry.owner(), fee);
+            _asset.safeTransfer(registry.owner(), fee);
         }
-        asset.safeTransfer(receiver, assets);
+        _asset.safeTransfer(receiver, assets);
 
-        emit Withdraw(caller, receiver, owner, assets, shares);
+        emit Withdraw(caller, receiver, _owner, assets, shares);
     }
 
     function _beforeTokenTransfer(
@@ -707,13 +736,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (from == to) revert CannotTransferToSelf();
         // deposit/mint/transfer
         if (to != address(0)) {
-            if (registry.isEmergencyPaused()) revert SystemInEmergencyPause();
+            HATVaultsRegistry _registry = registry;
+            if (_registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             // because then we would need to reset their withdraw request
-            if (withdrawEnableStartTime[to] != 0) {
-                IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+            uint256 withdrawEnableStartTimeTo = withdrawEnableStartTime[to];
+            if (withdrawEnableStartTimeTo != 0) {
+                IHATVaultsRegistry.GeneralParameters memory generalParameters = _registry.getGeneralParameters();
                 // solhint-disable-next-line not-rely-on-time
-                if (block.timestamp < withdrawEnableStartTime[to] + generalParameters.withdrawRequestEnablePeriod)
+                if (block.timestamp < withdrawEnableStartTimeTo + generalParameters.withdrawRequestEnablePeriod)
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
             rewardController.commitUserBalance(to, amount, true);
@@ -757,13 +788,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             generalParameters.withdrawPeriod) return false;
         // check that withdrawRequestPendingPeriod had passed
         // solhint-disable-next-line not-rely-on-time
-        return (block.timestamp >= withdrawEnableStartTime[_user] &&
+        uint256 withdrawEnableStartTimeUser = withdrawEnableStartTime[_user];
+        return (block.timestamp >= withdrawEnableStartTimeUser &&
         // check that withdrawRequestEnablePeriod had not passed and that the
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
             block.timestamp <
-                withdrawEnableStartTime[_user] +
+                withdrawEnableStartTimeUser +
                 generalParameters.withdrawRequestEnablePeriod);
     }
 
@@ -781,14 +813,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 _bountyGovernanceHAT,
         uint256 _bountyHackerHATVested
     ) internal view returns(IHATVault.ClaimBounty memory claimBounty) {
-        uint256 totalSupply = totalAssets();
-        if (totalSupply == 0) {
+        uint256 _totalSupply = totalAssets();
+        if (_totalSupply == 0) {
           return claimBounty;
         }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
 
-        uint256 totalBountyAmount = totalSupply * _bountyPercentage;
+        uint256 totalBountyAmount = _totalSupply * _bountyPercentage;
 
         uint256 governanceHatAmount = totalBountyAmount * _bountyGovernanceHAT / HUNDRED_PERCENT_SQRD;
         uint256 hackerHatVestedAmount = totalBountyAmount * _bountyHackerHATVested / HUNDRED_PERCENT_SQRD;
@@ -819,12 +851,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * function will revert in case the bounty split is not legal.
     * @param _bountySplit The bounty split to check
     */
-    function _validateSplit(IHATVault.BountySplit memory _bountySplit) internal pure {
+    function _validateSplit(IHATVault.BountySplit calldata _bountySplit) internal pure {
         if (_bountySplit.committee > MAX_COMMITTEE_BOUNTY) revert CommitteeBountyCannotBeMoreThanMax();
-        if (_bountySplit.hackerVested +
-            _bountySplit.hacker +
-            _bountySplit.committee != HUNDRED_PERCENT)
-            revert TotalSplitPercentageShouldBeHundredPercent();
+        unchecked {
+            if (_bountySplit.hackerVested +
+                _bountySplit.hacker +
+                _bountySplit.committee != HUNDRED_PERCENT)
+                revert TotalSplitPercentageShouldBeHundredPercent();
+        }
     }
 
     /* -------------------------------------------------------------------------------- */

@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
     // -- State --
 
-    address public masterCopy;
+    address internal masterCopy;
 
     // -- Events --
 
@@ -117,7 +117,7 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
 
     //this private function is to handle stack too deep issue
     function  deployProxyPrivate(
-        bytes memory _initializer,
+        bytes memory _initializer, //@audit-info can't be calldata
         address _beneficiary,
         address _token,
         uint256 _managedAmount,

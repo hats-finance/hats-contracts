@@ -326,7 +326,7 @@ interface IHATVaultsRegistry {
      * @param _descriptionHash - a hash of an IPFS encrypted file which 
      * describes the claim.
      */
-    function logClaim(string memory _descriptionHash) external payable;
+    function logClaim(string calldata _descriptionHash) external payable;
 
     /**
      * @notice Called by governance to set the default percentage of each claim bounty
@@ -483,8 +483,8 @@ interface IHATVaultsRegistry {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        IHATVault.BountySplit memory _bountySplit,
-        string memory _descriptionHash,
+        IHATVault.BountySplit calldata _bountySplit,
+        string calldata _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods,
         bool _isPaused
