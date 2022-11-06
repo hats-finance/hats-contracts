@@ -259,7 +259,7 @@ contract("HATToken", (accounts) => {
   it("CappedToken ", async () => {
     const token = await HATToken.new(accounts[0]);
     const cap = web3.utils.toWei("100000000");
-    await token.setMinter(accounts[0], web3.utils.toWei("16000000"));
+    await token.setMinter(accounts[0], web3.utils.toWei("160000000"));
     await token.mint(accounts[1], cap);
 
     var amount = await token.balanceOf(accounts[1]);
