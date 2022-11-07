@@ -14,13 +14,13 @@ import "./ITokenLock.sol";
 /**
  * @title HatTokenLock
  * @notice Contract that manages an unlocking schedule of tokens.
- * The contract lock manage a number of tokens deposited into the contract to ensure that
+ * The contract lock holds a certain amount of tokens deposited  and insures that
  * they can only be released under certain time conditions.
  *
  * This contract implements a release scheduled based on periods and tokens are released in steps
  * after each period ends. It can be configured with one period in which case it is like a plain TimeLock.
- * It also supports revocation to be used for vesting schedules. In case that the contract is defined as revocable,
- * the owner can revoke the contract at any time and the unvested tokens will be sent to the owner, even if the 
+ * The contract also supports revocation to be used for vesting schedules. In case that the contract is configured to be  revocable,
+ * the owner can revoke the contract at any time and the unvested tokens will be sent back to the owner, even if the 
  * the beneficiary has accepted the lock.
  *
  * The contract supports receiving extra funds than the managed tokens ones that can be
