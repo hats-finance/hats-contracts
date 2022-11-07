@@ -4,8 +4,8 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./OwnableInitializable.sol";
-import "./MathUtils.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./ITokenLock.sol";
 
 // this contract is based on GraphTokenLock
@@ -29,7 +29,7 @@ import "./ITokenLock.sol";
  * default schedule.
  */
 // solhint-disable-next-line indent
-abstract contract TokenLock is OwnableInitializable, ITokenLock {
+abstract contract TokenLock is Ownable, ITokenLock {
     using SafeERC20 for IERC20;
 
     uint256 private constant MIN_PERIOD = 1;
@@ -321,7 +321,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
         // A beneficiary can never have more releasable tokens than the contract balance
         uint256 releasable = availableAmount() - releasedAmount;
-        return MathUtils.min(currentBalance(), releasable);
+        return Math.min(currentBalance(), releasable);
     }
 
     /**
@@ -384,7 +384,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
 
         isInitialized = true;
 
-        OwnableInitializable.initialize(_tokenLockOwner);
+        _transferOwnership(_tokenLockOwner);
         beneficiary = _beneficiary;
         token = IERC20(_token);
 

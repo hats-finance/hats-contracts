@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.16;
 
-import "./CloneFactory.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./ITokenLock.sol";
 import "./ITokenLockFactory.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * This contract receives funds to make the process of creating TokenLock contracts
  * easier by distributing them the initial tokens to be managed.
  */
-contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
+contract TokenLockFactory is ITokenLockFactory, Ownable {
     // -- State --
 
     address public masterCopy;
@@ -130,7 +130,7 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
         bool _canDelegate
     ) private returns (address contractAddress) {
 
-        contractAddress = createClone(masterCopy);
+        contractAddress = Clones.clone(masterCopy);
 
         Address.functionCall(contractAddress, _initializer);
 
