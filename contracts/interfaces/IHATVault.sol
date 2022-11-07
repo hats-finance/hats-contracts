@@ -206,7 +206,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetBountySplit(BountySplit _bountySplit);
     event SetWithdrawalFee(uint256 _newFee);
     event CommitteeCheckedIn();
-    event SetPendingMaxBounty(uint256 _maxBounty, uint256 _timeStamp);
+    event SetPendingMaxBounty(uint256 _maxBounty);
     event SetMaxBounty(uint256 _maxBounty);
     event SetRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);

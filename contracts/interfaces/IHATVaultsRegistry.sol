@@ -164,6 +164,32 @@ interface IHATVaultsRegistry {
     error NotEnoughFeePaid();
 
     /**
+     * @notice Emitted on deployment of the registry
+     * @param _hatVaultImplementation The HATVault implementation address
+     * @param _HAT The HAT token address
+     * @param _tokenLockFactory The token lock factory address
+     * @param _generalParameters The registry's general parameters
+     * @param _bountyGovernanceHAT The HAT bounty for governance
+     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+     * @param _hatGovernance The registry's governance
+     * @param _defaultChallengePeriod The new default challenge period
+     * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
+     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty percentage of claims
+     */
+    event RegistryCreated(
+        address _hatVaultImplementation,
+        address _HAT,
+        address _tokenLockFactory,
+        GeneralParameters _generalParameters,
+        uint256 _bountyGovernanceHAT,
+        uint256 _bountyHackerHATVested,
+        address _hatGovernance,
+        uint256 _defaultChallengePeriod,
+        uint256 _defaultChallengeTimeOutPeriod,
+        bool _defaultArbitratorCanChangeBounty
+    );
+
+    /**
      * @notice Emitted when a claim is logged
      * @param _claimer The address of the claimer
      * @param _descriptionHash - a hash of an ipfs encrypted file which
@@ -232,6 +258,7 @@ interface IHATVaultsRegistry {
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
      * @param _asset The vault's native token
+     * @param _owner The address of the vault's owner
      * @param _committee The address of the vault's committee 
      * @param _rewardController The reward controller for the vault
      * @param _maxBounty The maximum percentage of the vault that can be paid
@@ -248,6 +275,7 @@ interface IHATVaultsRegistry {
     event VaultCreated(
         address indexed _vault,
         address indexed _asset,
+        address indexed _owner,
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
