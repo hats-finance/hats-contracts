@@ -18,7 +18,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
     // solhint-disable-next-line func-visibility
     constructor(address _governance) 
         ERC20("hats.finance", "HAT") 
-        ERC20Capped(10000000e18) 
+        ERC20Capped(100000000e18) 
         ERC20Permit("hats.finance")
     {
         _transferOwnership(_governance);

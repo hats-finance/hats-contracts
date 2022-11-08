@@ -102,6 +102,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     constructor(
         address _hatVaultImplementation,
         address _hatGovernance,
+        address _defaultArbitrator,
         address _HAT,
         uint256 _bountyGovernanceHAT,
         uint256 _bountyHackerHATVested,
@@ -126,10 +127,22 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         defaultBountyGovernanceHAT = _bountyGovernanceHAT;
         defaultBountyHackerHATVested = _bountyHackerHATVested;
-        defaultArbitrator = _hatGovernance;
+        defaultArbitrator = _defaultArbitrator;
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
         defaultArbitratorCanChangeBounty = true;
+        emit RegistryCreated(
+            _hatVaultImplementation,
+            _HAT,
+            address(_tokenLockFactory),
+            generalParameters,
+            _bountyGovernanceHAT,
+            _bountyHackerHATVested,
+            _hatGovernance,
+            defaultChallengePeriod,
+            defaultChallengeTimeOutPeriod,
+            defaultArbitratorCanChangeBounty
+        );
     }
 
     /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */
@@ -279,6 +292,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit VaultCreated(
             vault,
             address(_asset),
+            _owner,
             _committee,
             _rewardController,
             _maxBounty,

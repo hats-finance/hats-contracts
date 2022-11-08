@@ -24,12 +24,14 @@ const {
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
 
-var hatVaultsRegistry;
+let hatVaultImplementation;
+let tokenLockFactory;
+let hatVaultsRegistry;
 let vault;
-var rewardController;
-var hatToken;
-var router;
-var stakingToken;
+let rewardController;
+let hatToken;
+let router;
+let stakingToken;
 let safeWithdrawBlocksIncrement = 3;
 let rewardControllerExpectedHatsBalance;
 
@@ -82,6 +84,8 @@ const setUpGlobalVars = async function(
   });
 
   // copy global variables
+  hatVaultImplementation = setupVars.hatVaultImplementation;
+  tokenLockFactory = setupVars.tokenLockFactory;
   hatVaultsRegistry = setupVars.registry;
   vault = setupVars.vault;
   stakingToken = setupVars.stakingToken;
@@ -218,10 +222,61 @@ contract("HatVaults", (accounts) => {
   }
 
   it("constructor", async () => {
-    await setUpGlobalVars(accounts);
+    await setUpGlobalVars(accounts,
+      50,
+      8000,
+      [7500, 2000, 500],
+      [1500, 500],
+      20,
+      0,
+      100,
+      false,
+      2500000,
+      false
+    );
     assert.equal(await stakingToken.name(), "Staking");
     assert.equal(await hatVaultsRegistry.owner(), accounts[0]);
     assert.equal(await vault.owner(), accounts[0]);
+
+    let logs = await hatVaultsRegistry.getPastEvents('RegistryCreated', {
+      fromBlock: 0,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "RegistryCreated");
+    assert.equal(logs[0].args._hatVaultImplementation, hatVaultImplementation.address);
+    assert.equal(logs[0].args._HAT, hatToken.address);
+    assert.equal(logs[0].args._tokenLockFactory, tokenLockFactory.address);
+    let generalParameters = await hatVaultsRegistry.generalParameters();
+    assert.equal(logs[0].args._generalParameters.hatVestingDuration, generalParameters.hatVestingDuration.toString());
+    assert.equal(logs[0].args._generalParameters.hatVestingPeriods, generalParameters.hatVestingPeriods.toString());
+    assert.equal(logs[0].args._generalParameters.withdrawPeriod, generalParameters.withdrawPeriod.toString());
+    assert.equal(logs[0].args._generalParameters.safetyPeriod, generalParameters.safetyPeriod.toString());
+    assert.equal(logs[0].args._generalParameters.withdrawRequestEnablePeriod, generalParameters.withdrawRequestEnablePeriod.toString());
+    assert.equal(logs[0].args._generalParameters.withdrawRequestPendingPeriod, generalParameters.withdrawRequestPendingPeriod.toString());
+    assert.equal(logs[0].args._generalParameters.setMaxBountyDelay, generalParameters.setMaxBountyDelay.toString());
+    assert.equal(logs[0].args._generalParameters.claimFee, generalParameters.claimFee.toString());
+    assert.equal(logs[0].args._bountyGovernanceHAT, "1500");
+    assert.equal(logs[0].args._bountyHackerHATVested, "500");
+    assert.equal(logs[0].args._hatGovernance, accounts[0]);
+    assert.equal(logs[0].args._hatGovernance, await hatVaultsRegistry.defaultArbitrator());
+    assert.equal(logs[0].args._defaultChallengePeriod.toString(), (await hatVaultsRegistry.defaultChallengePeriod()).toString());
+    assert.equal(logs[0].args._defaultChallengeTimeOutPeriod.toString(), (await hatVaultsRegistry.defaultChallengeTimeOutPeriod()).toString());
+    assert.equal(logs[0].args._defaultArbitratorCanChangeBounty, await hatVaultsRegistry.defaultArbitratorCanChangeBounty());
+
+    logs = await rewardController.getPastEvents('RewardControllerCreated', {
+      fromBlock: 0,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "RewardControllerCreated");
+    assert.equal(logs[0].args._rewardToken, hatToken.address);
+    assert.equal(logs[0].args._governance, accounts[0]);
+    assert.equal(logs[0].args._startBlock.toString(), "50");
+    assert.equal(logs[0].args._epochLength.toString(), "20");
+    for (let i in epochRewardPerBlock) {
+      assert.equal(logs[0].args._epochRewardPerBlock[i].toString(), epochRewardPerBlock[i].toString());
+    }
   });
 
   it("Set reward controller", async () => {
@@ -305,10 +360,10 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
@@ -345,9 +400,9 @@ contract("HatVaults", (accounts) => {
     await vault.emergencyWithdraw(staker, { from: staker });
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount, 0);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount, 0);
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
@@ -359,10 +414,27 @@ contract("HatVaults", (accounts) => {
     expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
+
+    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
+    let rewardPerShare = new web3.utils.BN(
+      (await rewardController.vaultInfo(vault.address)).rewardPerShare
+    );
+
+    assert.equal(tx.logs[0].event, "VaultUpdated");
     assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[0].args._rewardPerShare.toString(), rewardPerShare.toString());
+    assert.equal(tx.logs[0].args._lastProcessedVaultUpdate, globalUpdatesLen - 1);
+
+    assert.equal(tx.logs[1].event, "UserBalanceCommitted");
+    assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._user, staker);
+    assert.equal(tx.logs[1].args._unclaimedReward.toString(), expectedReward.toString());
+    assert.equal(tx.logs[1].args._rewardDebt.toString(), expectedReward.add(prevExpectedReward).toString());
+
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.add(prevExpectedReward).toString()
@@ -406,10 +478,10 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward.toString());
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
@@ -463,7 +535,11 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     assert.equal((await vault.rewardController()), rewardController.address);
-    await rewardController.setAllocPoint(vault.address, 0);
+    tx = await rewardController.setAllocPoint(vault.address, 0);
+
+    assert.equal(tx.logs[1].event, "SetAllocPoint");
+    assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._allocPoint, 0);
 
     tx = await vault.setRewardController(accounts[2]);
     assert.equal(tx.logs[0].event, "SetRewardController");
@@ -507,6 +583,7 @@ contract("HatVaults", (accounts) => {
     );
 
     assert.equal(tx.logs[1].args._asset, stakingToken2.address);
+    assert.equal(tx.logs[1].args._owner, await hatVaultsRegistry.owner());
     assert.equal(tx.logs[1].args._committee, accounts[3]);
     assert.equal(tx.logs[1].args._rewardController, rewardController.address);
     assert.equal(tx.logs[1].args._maxBounty, maxBounty);
@@ -558,10 +635,14 @@ contract("HatVaults", (accounts) => {
       false
     )).logs[1].args._vault);
 
-    await rewardController.setAllocPoint(
+    let tx = await rewardController.setAllocPoint(
       newVault.address,
       100
     );
+
+    assert.equal(tx.logs[0].event, "SetAllocPoint");
+    assert.equal(tx.logs[0].args._vault, newVault.address);
+    assert.equal(tx.logs[0].args._allocPoint, 100);
 
     assert.equal(await newVault.committee(), accounts[3]);
 
@@ -586,7 +667,7 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "OnlyCommittee");
     }
-    let tx = await newVault.committeeCheckIn({ from: accounts[1] });
+    tx = await newVault.committeeCheckIn({ from: accounts[1] });
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
 
     try {
@@ -1029,7 +1110,11 @@ contract("HatVaults", (accounts) => {
     );
 
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await rewardController.updateVault(vault.address);
+    let tx = await rewardController.updateVault(vault.address);
+    assert.equal(tx.logs[0].event, "VaultUpdated");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._rewardPerShare, 0);
+    assert.equal(tx.logs[0].args._lastProcessedVaultUpdate, 0);
   });
 
   it("anyone can create a vault", async () => {
@@ -2049,8 +2134,8 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await calculateExpectedReward(staker);
 
     var tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2085,8 +2170,8 @@ contract("HatVaults", (accounts) => {
     let expectedReward = 0;
 
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2113,8 +2198,8 @@ contract("HatVaults", (accounts) => {
     expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2197,11 +2282,11 @@ contract("HatVaults", (accounts) => {
     });
     let expectedReward = await calculateExpectedReward(staker);
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.equal(tx.logs[0].args._user, staker);
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward.toString());
+    assert.equal(tx.logs[2].args._user, staker);
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       expectedReward.toString()
@@ -2299,8 +2384,8 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await calculateExpectedReward(staker);
 
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2321,8 +2406,8 @@ contract("HatVaults", (accounts) => {
     expectedReward = await calculateExpectedReward(staker2);
 
     tx = await rewardController.claimReward(vault.address, staker2, { from: staker2 });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2399,8 +2484,8 @@ contract("HatVaults", (accounts) => {
     expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
 
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2469,17 +2554,17 @@ contract("HatVaults", (accounts) => {
     let expectedReward = await rewardController.getPendingReward(vault.address, staker);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[2].event, "ClaimReward");
     assert.isTrue(
-      parseInt(tx.logs[0].args._amount.toString()) >=
+      parseInt(tx.logs[2].args._amount.toString()) >=
         parseInt(expectedReward.toString())
     );
-    assert.equal(tx.logs[0].args._user, staker);
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].args._user, staker);
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      tx.logs[0].args._amount.toString()
+      tx.logs[2].args._amount.toString()
     );
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
@@ -2488,7 +2573,7 @@ contract("HatVaults", (accounts) => {
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      tx.logs[0].args._amount.add(balanceOfStakerBefore).toString()
+      tx.logs[2].args._amount.add(balanceOfStakerBefore).toString()
     );
 
     // Deposit redeemed existing reward
@@ -2499,7 +2584,7 @@ contract("HatVaults", (accounts) => {
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      tx.logs[0].args._amount.add(balanceOfStakerBefore).toString()
+      tx.logs[2].args._amount.add(balanceOfStakerBefore).toString()
     );
     assert.equal(await stakingToken.balanceOf(staker), 0);
     assert.equal(
@@ -2521,7 +2606,7 @@ contract("HatVaults", (accounts) => {
     let userHatBalance = await hatToken.balanceOf(staker);
     assert.equal(
       userHatBalance.toString(),
-      tx.logs[0].args._amount.add(balanceOfStakerBefore).toString()
+      tx.logs[2].args._amount.add(balanceOfStakerBefore).toString()
     );
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
@@ -2530,7 +2615,7 @@ contract("HatVaults", (accounts) => {
   });
 
 
-it("getVaultReward - no vault updates will retrun 0 ", async () => {
+it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts);
     const RewardControllerFactory = await ethers.getContractFactory("RewardController");
     rewardController = await RewardControllerFactory.deploy();
@@ -2562,21 +2647,18 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHATVaults({
-      governance: vaultsManager.address,
-      hatToken: hatToken1.address,
-      tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
-        startBlock: 1,
-        epochLength: 10,
-        epochRewardPerBlock
-      },
-      hatVaultsRegistry: {
-        bountyGovernanceHAT: 1000,
-        bountyHackerHATVested: 500
-      },
-      silent: true
-    });
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      epochRewardPerBlock,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      1000,
+      500,
+      tokenLockFactory1.address,
+      true
+    );
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -3103,8 +3185,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
 
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    let totalReward = tx.logs[0].args._amount;
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    let totalReward = tx.logs[2].args._amount;
 
     assert.equal(
       web3.utils.fromWei(await stakingToken.balanceOf(staker)),
@@ -3113,8 +3195,8 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     stakerAmount = await vault.balanceOf(staker2);
     await safeRedeem(vault, stakerAmount, staker2);
     tx = await rewardController.claimReward(vault.address, staker2, { from: staker2 });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    totalReward = totalReward.add(tx.logs[0].args._amount);
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    totalReward = totalReward.add(tx.logs[2].args._amount);
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
       new web3.utils.BN(
@@ -3162,13 +3244,13 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     await safeRedeem(vault, stakerAmount, staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[2].event, "ClaimReward");
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
       new web3.utils.BN(
         web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
       )
-        .sub(tx.logs[0].args._amount)
+        .sub(tx.logs[2].args._amount)
         .toString()
     );
     assert.equal(
@@ -3213,11 +3295,11 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await safeRedeem(vault, web3.utils.toWei("1"), staker2);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker2 });
-    assert.equal(tx.logs[0].event, "ClaimReward");
+    assert.equal(tx.logs[2].event, "ClaimReward");
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
   });
 
   it("deposit mint withdraw redeem after approve claim", async () => {
@@ -3413,14 +3495,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
     assert.equal(
       (await hatToken.balanceOf(rewardController.address)).toString(),
       new web3.utils.BN(
         web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
       )
-        .sub(tx.logs[0].args._amount)
+        .sub(tx.logs[2].args._amount)
         .toString()
     );
     assert.equal((await rewardController.unclaimedReward(vault.address, staker)).toString(), "0");
@@ -4030,7 +4112,17 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     //   assertVMException(ex, "InvalidPoolRange");
     // }
     // await rewardController.massUpdatePools(0, 1);
-    await rewardController.updateVault(vault.address);
+    tx = await rewardController.updateVault(vault.address);
+
+    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
+    let rewardPerShare = new web3.utils.BN(
+      (await rewardController.vaultInfo(vault.address)).rewardPerShare
+    );
+
+    assert.equal(tx.logs[0].event, "VaultUpdated");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._rewardPerShare.toString(), rewardPerShare.toString());
+    assert.equal(tx.logs[0].args._lastProcessedVaultUpdate, globalUpdatesLen - 1);
 
     let expectedReward = await rewardController.getPendingReward(vault.address, staker);
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
@@ -4041,16 +4133,16 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     //and gets all rewards
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      tx.logs[0].args._amount.toString()
+      tx.logs[2].args._amount.toString()
     );
     assert.isTrue(
-      parseInt(tx.logs[0].args._amount.toString()) >=
+      parseInt(tx.logs[2].args._amount.toString()) >=
         parseInt(expectedReward.toString())
     );
     assert.equal(
       hatsAvailable.toString(),
       (await hatToken.balanceOf(rewardController.address))
-        .add(tx.logs[0].args._amount)
+        .add(tx.logs[2].args._amount)
         .toString()
     );
   });
@@ -5671,21 +5763,18 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHATVaults({
-      governance: vaultsManager.address,
-      hatToken: hatToken1.address,
-      tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
-        startBlock: 1,
-        epochLength: 10,
-        epochRewardPerBlock
-      },
-      hatVaultsRegistry: {
-        bountyGovernanceHAT: 1000,
-        bountyHackerHATVested: 500
-      },
-      silent: true
-    });
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      epochRewardPerBlock,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      1000,
+      500,
+      tokenLockFactory1.address,
+      true
+    );
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5719,21 +5808,18 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     var tokenLock1 = await HATTokenLock.new();
     let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHATVaults({
-      governance: vaultsManager.address,
-      hatToken: hatToken1.address,
-      tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
-        startBlock: 1,
-        epochLength: 10,
-        epochRewardPerBlock
-      },
-      hatVaultsRegistry: {
-        bountyGovernanceHAT: 1000,
-        bountyHackerHATVested: 500
-      },
-      silent: true
-    });
+    let deployment = await deployHatVaults(
+      hatToken1.address,
+      1,
+      epochRewardPerBlock,
+      10,
+      vaultsManager.address,
+      hatToken1.address,
+      1000,
+      500,
+      tokenLockFactory1.address,
+      true
+    );
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5813,7 +5899,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("2"));
-    let userHatRewards = tx.logs[0].args._amount;
+    let userHatRewards = tx.logs[2].args._amount;
     assert.equal(
       userHatRewards.toString(),
       (await hatToken.balanceOf(staker)).toString()
@@ -5823,7 +5909,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await utils.mineBlock(1);
     await safeRedeem(vault, web3.utils.toWei("1"), staker);
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    userHatRewards = userHatRewards.add(tx.logs[0].args._amount);
+    userHatRewards = userHatRewards.add(tx.logs[2].args._amount);
     assert.equal(
       userHatRewards.toString(),
       (await hatToken.balanceOf(staker)).toString()
@@ -5867,10 +5953,14 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
       false
     )).logs[1].args._vault);
 
-    await rewardController.setAllocPoint(
+    let tx2 = await rewardController.setAllocPoint(
       newVault.address,
       100
     );
+
+    assert.equal(tx2.logs[0].event, "SetAllocPoint");
+    assert.equal(tx2.logs[0].args._vault, newVault.address);
+    assert.equal(tx2.logs[0].args._allocPoint, 100);
 
     //5
     await newVault.setCommittee(accounts[0], { from: accounts[1] });
@@ -6000,7 +6090,7 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("0.97087378640776699"));
     tx = await rewardController.claimReward(newVault.address, staker, { from: staker });
     assert.equal(
-      (await hatToken.balanceOf(staker)).sub(tx.logs[0].args._amount).toString(),
+      (await hatToken.balanceOf(staker)).sub(tx.logs[2].args._amount).toString(),
       web3.utils.toWei("1")
     );
     await newVault.redeem(web3.utils.toWei("2"), staker2, staker2, { from: staker2 });
@@ -6048,11 +6138,11 @@ it("getVaultReward - no vault updates will retrun 0 ", async () => {
     await hatToken.setMinter(accounts[0], expectedReward);
     await hatToken.mint(rewardController.address, expectedReward);
     let tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._amount.toString(), expectedReward.toString());
-    assert.equal(tx.logs[0].args._user, staker);
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.isFalse(tx.logs[0].args._amount.eq(0));
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward.toString());
+    assert.equal(tx.logs[2].args._user, staker);
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.isFalse(tx.logs[2].args._amount.eq(0));
   });
 });
 

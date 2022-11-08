@@ -9,20 +9,30 @@ interface IRewardController {
     // Not enough rewards to transfer to user
     error NotEnoughRewardsToTransferToUser();
 
+    event RewardControllerCreated(
+        address _rewardToken,
+        address _governance,
+        uint256 _startBlock,
+        uint256 _epochLength,
+        uint256[24] _epochRewardPerBlock
+    );
     event SetEpochRewardPerBlock(uint256[24] _epochRewardPerBlock);
+    event SetAllocPoint(address indexed _vault, uint256 _allocPoint);
+    event VaultUpdated(address indexed _vault, uint256 _rewardPerShare, uint256 _lastProcessedVaultUpdate);
+    event UserBalanceCommitted(address indexed _vault, address indexed _user, uint256 _unclaimedReward, uint256 _rewardDebt);
     event ClaimReward(address indexed _vault, address indexed _user, uint256 _amount);
 
     /**
      * @notice Initializes the reward controller
      * @param _rewardToken The address of the ERC20 token to be distributed as rewards
-     * @param _hatsGovernance The hats governance address, to be given ownership of the reward controller
+     * @param _governance The hats governance address, to be given ownership of the reward controller
      * @param _startRewardingBlock The block number from which to start rewarding
      * @param _epochLength The length of a rewarding epoch
      * @param _epochRewardPerBlock The reward per block for each of the 24 epochs
      */
     function initialize(
         address _rewardToken,
-        address _hatsGovernance,
+        address _governance,
         uint256 _startRewardingBlock,
         uint256 _epochLength,
         uint256[24] memory _epochRewardPerBlock
