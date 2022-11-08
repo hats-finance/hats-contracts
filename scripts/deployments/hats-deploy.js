@@ -73,7 +73,7 @@ async function main() {
 
   if (network.name !== "hardhat") {
     console.log("Verifying contracts");
-    hatsVerify(ADDRESSES[network.name]);
+    await hatsVerify(ADDRESSES[network.name]);
   }
 }
 

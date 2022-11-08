@@ -54,6 +54,7 @@ async function main(config) {
   await verifyContract(hatVaultsRegistry, [
     hatVaultImplementation,
     hatTimelockController,
+    arbitrator,
     hatToken,
     bountyGovernanceHAT,
     bountyHackerHATVested,

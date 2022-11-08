@@ -1,15 +1,15 @@
 {
   "goerli": {
     "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
-    "arbitrator": "0x9AB82C320635918ea9E48C0065f03C5827837552",
-    "hatTimelockController": "0xCE94b023259E6a49EB37339aCaA3F8e711b88e04",
-    "hatToken": "0x399442fdb7AcFe008679b28863dfD7B18d1D1e59",
-    "hatTokenLock": "0xcBd1763C9CD705DDf0b7aEbB7f36A7b00E890729",
-    "tokenLockFactory": "0x3210583B5C969E18dEaa35BD501dA9Cb08A24fA0",
-    "hatVaultsRegistry": "0x7D2fe5A25a39e62Ca7D598681488203d3d126213",
-    "rewardController": "0x551e68Ad1992C41669aa5C70723Aec4007D250E6",
+    "arbitrator": "0x76553265660Bfd54f3b5B253d5FA110a79F39803",
+    "hatTimelockController": "0xa4c588e0B0881C3e176132BFaDfaC9d88cfD9674",
+    "hatToken": "0x0a2F5e61044d2a613Fae6063ee08B0A8d45C2d66",
+    "hatTokenLock": "0x588F2A60b890d46D1A46a86207AC8a3b516827Ae",
+    "tokenLockFactory": "0x2D4498e2387135a3ed1078D1037A306218a8E41d",
+    "hatVaultsRegistry": "0x75A56A657F2e8DB88d282166c0ff5a425ddEd905",
+    "rewardController": "0x66788EF8C832b54276Ee5276972fC95a412D18AB",
     "rewardControllerImplementation": "0x88B38959E07805517fa0FfaB375f4cFf49D0F640",
-    "hatVaultImplementation": "0xC576716913d026fd6528486c726144168608beD2"
+    "hatVaultImplementation": "0x25E632D6714a668233F9ea252c36e6d2D951e6FC"
   },
   "hardhat": {
     "arbitrator": "0x3619DbE27d7c1e7E91aA738697Ae7Bc5FC3eACA5",

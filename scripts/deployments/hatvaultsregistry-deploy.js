@@ -69,7 +69,7 @@ async function main(config) {
     await hatVaultImplementation.deployed();
 
     if (!silent) {
-        console.log("HATVault address: " + hatVaultImplementation.address);
+        console.log("HATVault implementation address: " + hatVaultImplementation.address);
     }
     let tokenLockFactory = config["tokenLockFactory"];
 
