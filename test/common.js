@@ -94,6 +94,7 @@ const setup = async function(
 
   let deployment = await deployHATVaults({
     governance: accounts[0],
+    arbitrator: accounts[0],
     hatToken: hatToken.address,
     tokenLockFactory: tokenLockFactory.address,
     rewardController: {

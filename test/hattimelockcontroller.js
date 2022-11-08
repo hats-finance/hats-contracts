@@ -70,6 +70,7 @@ const setup = async function(
     },
     silent: true
   });
+  arbitratorContract = await HATGovernanceArbitrator.at(deployment.arbitrator);
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
     deployment.rewardController.address

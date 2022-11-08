@@ -47,9 +47,11 @@ async function main() {
     hatVaultsRegistry,
     rewardController,
     rewardControllerImplementation,
-    hatVaultImplementation
+    hatVaultImplementation,
+    arbitrator
   } = (await deployHATVaults(config));
 
+  config["arbitrator"] = arbitrator;
   config["hatVaultsRegistry"] = hatVaultsRegistry.address;
   config["rewardController"] = rewardController.address;
   config["rewardControllerImplementation"] = rewardControllerImplementation.address;
@@ -57,6 +59,7 @@ async function main() {
 
   ADDRESSES[network.name] = {
     governance: config["governance"],
+    arbitrator: config["arbitrator"],
     hatTimelockController: config["hatTimelockController"],
     hatToken: config["hatToken"],
     hatTokenLock: config["hatTokenLock"],

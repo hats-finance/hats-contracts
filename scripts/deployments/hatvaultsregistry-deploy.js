@@ -12,11 +12,23 @@ async function main(config) {
     const deployerAddress = await deployer.getAddress();
 
     let governance = config["governance"];
+    let arbitrator = config["arbitrator"];
 
     if (config["hatTimelockController"]) {
         governance = config["hatTimelockController"];
     } else if (!governance && network.name === "hardhat") {
         governance = deployerAddress;
+    }
+
+    if (!arbitrator) {
+        const HATGovernanceArbitrator = await ethers.getContractFactory("HATGovernanceArbitrator");
+        const hatGovernanceArbitrator = await HATGovernanceArbitrator.deploy();
+        await hatGovernanceArbitrator.deployed();
+        await hatGovernanceArbitrator.transferOwnership(governance);
+        arbitrator = hatGovernanceArbitrator.address;
+        if (!silent) {
+            console.log("HATGovernanceArbitrator address: " + arbitrator);
+        }
     }
 
     let hatToken = config["hatToken"];
@@ -72,6 +84,7 @@ async function main(config) {
     const hatVaultsRegistry = await HATVaultsRegistry.deploy(
         hatVaultImplementation.address,
         governance,
+        arbitrator,
         hatToken,
         bountyGovernanceHAT,
         bountyHackerHATVested,
@@ -84,7 +97,7 @@ async function main(config) {
         console.log("HATVaultsRegistry address:", hatVaultsRegistry.address);
     }
 
-    return { hatVaultsRegistry, rewardController, rewardControllerImplementation, hatVaultImplementation };
+    return { hatVaultsRegistry, rewardController, rewardControllerImplementation, hatVaultImplementation, arbitrator };
 }
 
 if (require.main === module) {
