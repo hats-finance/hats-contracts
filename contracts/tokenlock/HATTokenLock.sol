@@ -37,8 +37,9 @@ contract HATTokenLock is TokenLock {
         );
         if (_canDelegate) {
             _token.delegate(_beneficiary);
+            canDelegate = true;  //@audit gas saving here
         }
-        canDelegate = _canDelegate;
+        
     }
 
     /// @dev delegate voting power

@@ -44,9 +44,11 @@ contract OwnableInitializable {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) external virtual onlyOwner {
+    function transferOwnership(address newOwner) external virtual {
         require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
+        address oldOwner;
+        require((oldOwner = _owner) == msg.sender, "Ownable: caller is not the owner");  //@audit gas saving here.
+        emit OwnershipTransferred(oldOwner, newOwner);
         _owner = newOwner;
     }
 

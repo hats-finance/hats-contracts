@@ -319,28 +319,36 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+        for (uint256 i = 0; i < _beneficiaries.length; ) {
             swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+            unchecked {
+                ++i;
+            }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
-        IERC20 _HAT = HAT;
+        //IERC20 _HAT = HAT;
         (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
         
         swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
-            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+        uint256 hhR;
+        address ben;
+        uint256 hackerReward;
+        for (uint256 i = 0; i < _beneficiaries.length; ) {
+            ben = _beneficiaries[i];
+            hhR = hackersHatReward[_asset][ben];
+            hackerReward = swapData.hatsReceived * hhR / swapData.amount;
+            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hhR / swapData.amount;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+            hackersHatReward[_asset][ben] = swapData.amountUnused * hhR/ swapData.amount;
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
                 tokenLock = tokenLockFactory.createTokenLock(
-                    address(_HAT),
+                    address(HAT),
                     0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
-                    _beneficiaries[i],
+                    ben,
                     hackerReward,
                     // solhint-disable-next-line not-rely-on-time
                     block.timestamp, //start
@@ -352,18 +360,42 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                     ITokenLock.Revocability.Disabled,
                     true
                 );
-                _HAT.safeTransfer(tokenLock, hackerReward);
+                HAT.safeTransfer(tokenLock, hackerReward);
             }
-            emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            emit SwapAndSend(ben, hackerAmountSwapped, hackerReward, tokenLock);
+            unchecked {
+                ++i;
+            }
         }
-        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
-        emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));
+        uint256 sub = swapData.hatsReceived - swapData.totalHackerReward;
+        HAT.safeTransfer(owner(), sub);
+        emit SwapAndSend(owner(), swapData.governanceAmountSwapped, sub, address(0));
 
     }
 
     /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   
     function getGeneralParameters() external view returns (GeneralParameters memory) {
         return generalParameters;
+    }
+
+    function getwithdrawPeriod() external view returns (uint256) {
+        return generalParameters.withdrawPeriod;
+    }
+
+    function getsafetyPeriod() external view returns (uint256) {
+        return generalParameters.safetyPeriod;
+    }
+
+    function getwithdrawRequestEnablePeriod() external view returns (uint256) {
+        return generalParameters.withdrawRequestEnablePeriod;
+    }
+
+    function getwithdrawRequestPendingPeriod() external view returns (uint256) {
+        return generalParameters.withdrawRequestPendingPeriod;
+    }
+
+    function getsetMaxBountyDelay() external view returns (uint256) {
+        return generalParameters.setMaxBountyDelay;
     }
 
     /** @notice See {IHATVaultsRegistry-getNumberOfVaults}. */

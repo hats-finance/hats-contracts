@@ -546,6 +546,13 @@ interface IHATVaultsRegistry {
         view 
         returns(GeneralParameters memory);
 
+    
+    function getwithdrawPeriod() external view returns (uint256);
+    function getsafetyPeriod() external view returns (uint256);
+    function getwithdrawRequestEnablePeriod() external view returns (uint256);
+    function getwithdrawRequestPendingPeriod() external view returns (uint256);
+    function getsetMaxBountyDelay() external view returns (uint256);
+
     /**
      * @notice Returns the number of vaults that have been previously created
      * @return The number of vaults in the registry
