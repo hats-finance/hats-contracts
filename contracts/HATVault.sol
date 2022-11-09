@@ -148,12 +148,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     modifier noSafetyPeriod() {
-        IHATVaultsRegistry.GeneralParameters memory generalParameters = registry.getGeneralParameters();
+        uint256 _withdrawPeriod = registry.getWithdrawPeriod();
         // disable withdraw for safetyPeriod (e.g 1 hour) after each withdrawPeriod(e.g 11 hours)
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp %
-        (generalParameters.withdrawPeriod + generalParameters.safetyPeriod) >=
-            generalParameters.withdrawPeriod) revert SafetyPeriod();
+        if (block.timestamp % (_withdrawPeriod + registry.getSafetyPeriod()) >= _withdrawPeriod) //TODO unchecked?
+            revert SafetyPeriod();
         _;
     }
 
