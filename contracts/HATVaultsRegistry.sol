@@ -43,6 +43,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 hatsReceived;
         uint256 totalHackerReward;
         uint256 governanceAmountSwapped;
+        uint256[] hackerRewards;
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
@@ -151,9 +152,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-logClaim}. */
-    function logClaim(string memory _descriptionHash) external payable {
-        if (generalParameters.claimFee > 0) {
-            if (msg.value < generalParameters.claimFee)
+    function logClaim(string calldata _descriptionHash) external payable {
+        uint256 _claimFee = generalParameters.claimFee;
+        if (_claimFee > 0) {
+            if (msg.value < _claimFee)
                 revert NotEnoughFeePaid();
             // solhint-disable-next-line indent
             payable(owner()).transfer(msg.value);
@@ -260,8 +262,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        HATVault.BountySplit memory _bountySplit,
-        string memory _descriptionHash,
+        HATVault.BountySplit calldata _bountySplit,
+        string calldata _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods,
         bool _isPaused
@@ -332,9 +334,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ) external onlyOwner {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
+        swapData.hackerRewards = new uint256[](_beneficiaries.length);
         swapData.amount = governanceHatReward[_asset];
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            swapData.amount += hackersHatReward[_asset][_beneficiaries[i]];
+        for (uint256 i = 0; i < _beneficiaries.length;) { 
+            swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
+            swapData.amount += swapData.hackerRewards[i]; 
+            unchecked { i++; }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
@@ -343,11 +348,11 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
         governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
 
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            uint256 hackerReward = swapData.hatsReceived * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
-            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+        for (uint256 i = 0; i < _beneficiaries.length;) {
+            uint256 hackerReward = swapData.hatsReceived * swapData.hackerRewards[i] / swapData.amount;
+            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * swapData.hackerRewards[i] / swapData.amount;
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * hackersHatReward[_asset][_beneficiaries[i]] / swapData.amount;
+            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * swapData.hackerRewards[i] / swapData.amount;
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
@@ -369,10 +374,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 _HAT.safeTransfer(tokenLock, hackerReward);
             }
             emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            unchecked { i++; }
         }
-        _HAT.safeTransfer(owner(), swapData.hatsReceived - swapData.totalHackerReward);
-        emit SwapAndSend(owner(), swapData.governanceAmountSwapped, swapData.hatsReceived - swapData.totalHackerReward, address(0));
-
+        address _owner = owner(); 
+        uint256 _amountToOwner= swapData.hatsReceived - swapData.totalHackerReward;
+        _HAT.safeTransfer(_owner, _amountToOwner);
+        emit SwapAndSend(_owner, swapData.governanceAmountSwapped, _amountToOwner, address(0));
     }
 
     /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   

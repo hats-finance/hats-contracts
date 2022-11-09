@@ -227,7 +227,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @dev See {IHATVault-VaultInitParams} for more details
     * @dev Called when the vault is created in {IHATVaultsRegistry-createVault}
     */
-    function initialize(VaultInitParams memory _params) external;
+    function initialize(VaultInitParams calldata _params) external;
 
     /* -------------------------------------------------------------------------------- */
 
@@ -315,7 +315,7 @@ interface IHATVault is IERC4626Upgradeable {
     * Can only be called if is no active claim and not during safety periods.
     * @param _bountySplit The bounty split
     */
-    function setBountySplit(BountySplit memory _bountySplit) external;
+    function setBountySplit(BountySplit calldata _bountySplit) external;
 
     /**
     * @notice Called by the registry's fee setter to set the fee for 
@@ -361,7 +361,7 @@ interface IHATVault is IERC4626Upgradeable {
     * vault in the Hats.finance UI
     * @param _descriptionHash the hash of the vault's description
     */
-    function setVaultDescription(string memory _descriptionHash) external;
+    function setVaultDescription(string calldata _descriptionHash) external;
 
     /**
     * @notice Called by the registry's owner to set the vault's reward controller
