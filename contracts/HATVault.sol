@@ -723,7 +723,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             uint256 _withdrawEnableStartTime = withdrawEnableStartTime[to];
             if (_withdrawEnableStartTime != 0) {
                 // solhint-disable-next-line not-rely-on-time
-                if (block.timestamp < withdrawEnableStartTime[to] + _registry.getWithdrawRequestEnablePeriod())
+                if (block.timestamp < _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod())
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
             rewardController.commitUserBalance(to, amount, true);
@@ -830,7 +830,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     */
     function _validateSplit(IHATVault.BountySplit calldata _bountySplit) internal pure {
         if (_bountySplit.committee > MAX_COMMITTEE_BOUNTY) revert CommitteeBountyCannotBeMoreThanMax();
-        if (_bountySplit.hackerVested +
+        if (_bountySplit.hackerVested +//TODO unchecked?
             _bountySplit.hacker +
             _bountySplit.committee != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();

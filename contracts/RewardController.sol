@@ -92,7 +92,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 lastRewardBlock = vault.lastRewardBlock;
         if (lastRewardBlock == 0) {
             uint256 _startBlock = startBlock;
-            vaultInfo[_vault].lastRewardBlock = block.number > _startBlock ? block.number : _startBlock;
+            vault.lastRewardBlock = block.number > _startBlock ? block.number : _startBlock;
             return;
         }
         if (block.number == lastRewardBlock) {

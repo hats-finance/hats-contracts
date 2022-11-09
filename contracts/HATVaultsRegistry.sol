@@ -44,6 +44,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 totalHackerReward;
         uint256 governanceAmountSwapped;
         uint256[] hackerRewards;
+        uint256 governanceHatReward;
+        uint256 usedPart;
     }
 
     uint256 public constant HUNDRED_PERCENT = 10000;
@@ -257,7 +259,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     /** @notice See {IHATVaultsRegistry-createVault}. */
     function createVault(
-        IERC20 _asset,
+        IERC20 asset_,
         address _owner,
         address _committee,
         IRewardController _rewardController,
@@ -280,7 +282,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 vestingPeriods: _bountyVestingPeriods,
                 maxBounty: _maxBounty,
                 bountySplit: _bountySplit,
-                asset: _asset,
+                asset: asset_,
                 owner: _owner,
                 committee: _committee,
                 isPaused: _isPaused,
@@ -292,7 +294,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         emit VaultCreated(
             vault,
-            address(_asset),
+            address(asset_),
             _owner,
             _committee,
             _rewardController,
@@ -335,7 +337,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         // Needed to avoid a "stack too deep" error
         SwapData memory swapData;
         swapData.hackerRewards = new uint256[](_beneficiaries.length);
-        swapData.amount = governanceHatReward[_asset];
+        swapData.governanceHatReward = governanceHatReward[_asset];
+        swapData.amount = swapData.governanceHatReward;
         for (uint256 i = 0; i < _beneficiaries.length;) { 
             swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
             swapData.amount += swapData.hackerRewards[i]; 
@@ -345,12 +348,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         IERC20 _HAT = HAT;
         (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
         
-        swapData.governanceAmountSwapped = (swapData.amount - swapData.amountUnused) * governanceHatReward[_asset] / swapData.amount;
-        governanceHatReward[_asset] = swapData.amountUnused * governanceHatReward[_asset] / swapData.amount;
+        swapData.usedPart = (swapData.amount - swapData.amountUnused) / swapData.amount;
+        swapData.governanceAmountSwapped = swapData.usedPart * swapData.governanceHatReward;
+        governanceHatReward[_asset]  = swapData.amountUnused * swapData.governanceHatReward / swapData.amount;
 
         for (uint256 i = 0; i < _beneficiaries.length;) {
             uint256 hackerReward = swapData.hatsReceived * swapData.hackerRewards[i] / swapData.amount;
-            uint256 hackerAmountSwapped = (swapData.amount - swapData.amountUnused) * swapData.hackerRewards[i] / swapData.amount;
+            uint256 hackerAmountSwapped = swapData.usedPart * swapData.hackerRewards[i];
             swapData.totalHackerReward += hackerReward;
             hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * swapData.hackerRewards[i] / swapData.amount;
             address tokenLock;
