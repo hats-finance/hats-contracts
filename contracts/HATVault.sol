@@ -240,7 +240,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (msg.sender !=  activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
+        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)//TODO unchecked?
             revert ChallengePeriodEnded();
         if (activeClaim.challengedAt != 0) {
             revert ClaimAlreadyChallenged();
@@ -266,10 +266,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             if (
                 msg.sender != claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
-            ) {
+                block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod//TODO unchecked?
+            )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
-            }
             // the arbitrator can update the bounty if needed
             if (claim.arbitratorCanChangeBounty && _bountyPercentage != 0) {
                 claim.bountyPercentage = _bountyPercentage;
@@ -278,8 +277,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // the claim can be approved by anyone if the challengePeriod passed without a challenge
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= claim.createdAt + claim.challengePeriod
-            ) revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+                block.timestamp <= claim.createdAt + claim.challengePeriod//TODO unchecked?
+            ) 
+                revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
         address tokenLock;
@@ -340,15 +340,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-dismissClaim}. */
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
-        Claim memory claim = activeClaim;
-
+        uint256 _challengeTimeOutPeriod = activeClaim.challengeTimeOutPeriod;
+        uint256 _challengedAt = activeClaim.challengedAt;
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
-            if (claim.challengedAt == 0) revert OnlyCallableIfChallenged();
+        if (block.timestamp < activeClaim.createdAt + activeClaim.challengePeriod + _challengeTimeOutPeriod) {
+            if (_challengedAt == 0) revert OnlyCallableIfChallenged();
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp < claim.challengedAt + claim.challengeTimeOutPeriod && 
-                msg.sender != claim.arbitrator
+                block.timestamp < _challengedAt + _challengeTimeOutPeriod && 
+                msg.sender != activeClaim.arbitrator
             ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         } // else the claim is expired and should be dismissed
         delete activeClaim;
@@ -415,7 +415,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp - _pendingMaxBounty.timestamp < registry.getSetMaxBountyDelay())
+        if (block.timestamp - _pendingMaxBounty.timestamp < registry.getSetMaxBountyDelay())//TODO unchecked?
             revert DelayPeriodForSettingMaxBountyHadNotPassed();
 
         uint256 _maxBounty = pendingMaxBounty.maxBounty;
