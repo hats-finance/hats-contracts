@@ -91,7 +91,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         VaultInfo storage vault = vaultInfo[_vault];
         uint256 lastRewardBlock = vault.lastRewardBlock;
         if (lastRewardBlock == 0) {
-            vaultInfo[_vault].lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+            uint256 _startBlock = startBlock;
+            vaultInfo[_vault].lastRewardBlock = block.number > _startBlock ? block.number : _startBlock;
             return;
         }
         if (block.number == lastRewardBlock) {
@@ -122,14 +123,18 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _startBlock = startBlock;
         if (block.number < _startBlock) {
             epochRewardPerBlock = _epochRewardPerBlock;
+            emit SetEpochRewardPerBlock(_epochRewardPerBlock);
         }  else { //TODO unchecked { ??
             uint256 nextEpoch = (block.number - _startBlock) / epochLength + 1;
             // if rewards are ongoing, update the future rewards but keep past and current
             for (; nextEpoch < NUMBER_OF_EPOCHS; nextEpoch++) {
-                epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch];
+                epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch]; 
+                /*TODO unchecked {
+                    ++nextEpoch;
+                }*/
             }
+            emit SetEpochRewardPerBlock(epochRewardPerBlock);
         }
-        emit SetEpochRewardPerBlock(epochRewardPerBlock);
     }
 
     function _commitUserBalance(
@@ -232,12 +237,12 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
             return unclaimedReward[_vault][_user];
         }
-        VaultInfo memory vault = vaultInfo[_vault];
-        uint256 rewardPerShare = vault.rewardPerShare;
-        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();
+        VaultInfo memory _vaultInfo = vaultInfo[_vault];
+        uint256 rewardPerShare = _vaultInfo.rewardPerShare;
+        uint256 totalShares = IERC20Upgradeable(_vault).totalSupply();//TODO _? = IERC20Upgradeable(_vault)
 
-        if (vault.lastRewardBlock != 0 && block.number > vault.lastRewardBlock && totalShares > 0) {
-            uint256 reward = getVaultReward(_vault, vault.lastRewardBlock);
+        if (_vaultInfo.lastRewardBlock != 0 && block.number > _vaultInfo.lastRewardBlock && totalShares > 0) {
+            uint256 reward = getVaultReward(_vault, _vaultInfo.lastRewardBlock);
             rewardPerShare += (reward * REWARD_PRECISION / totalShares);
         }
 

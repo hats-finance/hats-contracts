@@ -418,13 +418,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp - _pendingMaxBounty.timestamp < registry.getSetMaxBountyDelay())
             revert DelayPeriodForSettingMaxBountyHadNotPassed();
-        maxBounty = _pendingMaxBounty.maxBounty;
-        delete pendingMaxBounty;
-        emit SetMaxBounty(maxBounty);
-       /* TODO uint256 _maxBounty = pendingMaxBounty.maxBounty;
+
+        uint256 _maxBounty = pendingMaxBounty.maxBounty;
         maxBounty = _maxBounty;
         delete pendingMaxBounty;
-        emit SetMaxBounty(_maxBounty);*/
+        emit SetMaxBounty(_maxBounty);
     }
 
     /** @notice See {IHATVault-setDepositPause}. */
@@ -498,11 +496,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function withdrawRequest() external nonReentrant {
         // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
-       /*TODO uint256 _withdrawEnableStartTime = block.timestamp + registry.getWithdrawRequestPendingPeriod();
+        uint256 _withdrawEnableStartTime = block.timestamp + registry.getWithdrawRequestPendingPeriod();
         withdrawEnableStartTime[msg.sender] = _withdrawEnableStartTime;
-        emit WithdrawRequest(msg.sender, _withdrawEnableStartTime);*/
-        withdrawEnableStartTime[msg.sender] = block.timestamp + registry.getWithdrawRequestPendingPeriod();
-        emit WithdrawRequest(msg.sender, withdrawEnableStartTime[msg.sender]);
+        emit WithdrawRequest(msg.sender, _withdrawEnableStartTime);
     }
 
     /** @notice See {IHATVault-withdrawAndClaim}. */

@@ -573,6 +573,45 @@ interface IHATVaultsRegistry {
         external 
         view 
         returns(GeneralParameters memory);
+    
+    /**
+     * @notice Returns the withdraw enable period for all vaults. The safety
+     * period starts when finished.
+     * @return Withdraw enable period for all vaults
+     */
+    function getWithdrawPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw disable period - time for the committee to
+     * gather and decide on actions, withdrawals are not possible in this
+     * time. The withdraw period starts when finished.
+     * @return Safety period for all vaults
+     */
+    function getSafetyPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw request enable period for all vaults -
+     * period of time after withdrawRequestPendingPeriod where it is possible
+     * to withdraw, and after which withdrawals are not possible.
+     * @return Withdraw request enable period for all vaults
+     */
+    function getWithdrawRequestEnablePeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw request pending period for all vaults -
+     * period of time that has to pass after withdraw request until withdraw
+     * is possible
+     * @return Withdraw request pending period for all vaults
+     */
+    function getWithdrawRequestPendingPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the set max bounty delay for all vaults - period of
+     * time that has to pass after setting a pending max bounty before it can
+     * be set as the new max bounty
+     * @return Set max bounty delay for all vaults
+     */
+    function getSetMaxBountyDelay() external view returns (uint256);
 
     /**
      * @notice Returns the number of vaults that have been previously created
