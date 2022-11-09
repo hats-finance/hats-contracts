@@ -387,6 +387,26 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         return generalParameters;
     }
 
+      function getWithdrawPeriod() external view returns (uint256) {
+        return generalParameters.withdrawPeriod;
+    }
+
+    function getSafetyPeriod() external view returns (uint256) {
+        return generalParameters.safetyPeriod;
+    }
+
+    function getWithdrawRequestEnablePeriod() external view returns (uint256) {
+        return generalParameters.withdrawRequestEnablePeriod;
+    }
+
+    function getWithdrawRequestPendingPeriod() external view returns (uint256) {
+        return generalParameters.withdrawRequestPendingPeriod;
+    }
+
+    function getSetMaxBountyDelay() external view returns (uint256) {
+        return generalParameters.setMaxBountyDelay;
+    }
+
     /** @notice See {IHATVaultsRegistry-getNumberOfVaults}. */
     function getNumberOfVaults() external view returns(uint256) {
         return hatVaults.length;
