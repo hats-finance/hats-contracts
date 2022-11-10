@@ -159,8 +159,9 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         uint256 userShares = IERC20Upgradeable(_vault).balanceOf(_user);
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
+        mapping(address => uint256) storage vaultRewardDebt = rewardDebt[_vault];
         if (userShares != 0) {
-            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - rewardDebt[_vault][_user];
+            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - vaultRewardDebt[_user];
         }
 
         if (_sharesChange != 0) {
@@ -171,7 +172,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }
         }
         uint256 newRewardDebt = userShares * rewardPerShare / REWARD_PRECISION;
-        rewardDebt[_vault][_user] = newRewardDebt;
+        vaultRewardDebt[_user] = newRewardDebt;
         emit UserBalanceCommitted(_vault, _user, unclaimedReward[_vault][_user], newRewardDebt);
     }
 
@@ -183,10 +184,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     /** @notice See {IRewardController-claimReward}. */
     function claimReward(address _vault, address _user) external {
         _commitUserBalance(_vault, _user, 0, true);
-
-        uint256 userUnclaimedReward = unclaimedReward[_vault][_user];
+        mapping(address => uint256) storage vaultUnclaimedReward = unclaimedReward[_vault];
+        uint256 userUnclaimedReward = vaultUnclaimedReward[_user];
         if (userUnclaimedReward > 0) {
-            unclaimedReward[_vault][_user] = 0;
+            vaultUnclaimedReward[_user] = 0;
             rewardToken.safeTransfer(_user, userUnclaimedReward);
         }
 
@@ -199,12 +200,15 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         if (_globalVaultsUpdatesLength == 0) {
             return 0;
         }
-        VaultInfo memory vault = vaultInfo[_vault];
-        uint256 vaultAllocPoint = vault.allocPoint;
-        uint256 i = vault.lastProcessedVaultUpdate;
-
-        for (; i < _globalVaultsUpdatesLength - 1;) {
-            uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;
+        VaultInfo memory _vaultInfo = vaultInfo[_vault];
+        uint256 vaultAllocPoint = _vaultInfo.allocPoint;
+        uint256 i = _vaultInfo.lastProcessedVaultUpdate;
+        uint256 globalVaultsUpdatesLastIndex;
+        unchecked { // reach here only if _globalVaultsUpdatesLength > 0
+            globalVaultsUpdatesLastIndex = _globalVaultsUpdatesLength - 1;
+        }    
+        for (; i < globalVaultsUpdatesLastIndex;) { 
+            uint256 nextUpdateBlock = globalVaultsUpdates[i+1].blockNumber;//TODO   unchecked {?
             reward += getRewardForBlocksRange(_fromBlock,
                                             nextUpdateBlock,
                                             vaultAllocPoint,
