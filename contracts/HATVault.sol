@@ -205,7 +205,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 withdrawPeriod = _registry.getWithdrawPeriod();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp % (withdrawPeriod + _registry.getSafetyPeriod()) < withdrawPeriod)
+        if (block.timestamp % (withdrawPeriod + _registry.getSafetyPeriod()) < withdrawPeriod)//TODO unchecked {?
             revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
@@ -257,13 +257,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         
         
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {
+        if (block.timestamp >= claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod) {//TODO unchecked?
             // cannot approve an expired claim
             revert ClaimExpired();
         } 
         if (claim.challengedAt != 0) {
             // the claim was challenged, and only the arbitrator can approve it, within the timeout period
-            if (
+            if (//TODO unchecked?
                 msg.sender != claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod//TODO unchecked?
