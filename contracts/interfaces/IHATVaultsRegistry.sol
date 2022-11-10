@@ -488,7 +488,7 @@ interface IHATVaultsRegistry {
      * @notice Create a new vault
      * NOTE: Vaults should not use tokens which do not guarantee that the 
      * amount specified is the amount transferred
-     * @param asset_ The vault's native token
+     * @param _asset The vault's native token
      * @param _committee The address of the vault's committee 
      * @param _rewardController The reward controller for the vault
      * @param _maxBounty The maximum percentage of the vault that can be paid
@@ -506,7 +506,7 @@ interface IHATVaultsRegistry {
      * @return vault The address of the new vault
      */
     function createVault(
-        IERC20 asset_,
+        IERC20 _asset,
         address _owner,
         address _committee,
         IRewardController _rewardController,

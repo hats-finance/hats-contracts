@@ -63,19 +63,28 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     /** @notice See {IRewardController-setAllocPoint}. */
     function setAllocPoint(address _vault, uint256 _allocPoint) external onlyOwner {        
         updateVault(_vault);
+        uint256 totalAllocPoint;
         uint256 _globalVaultsUpdatesLength = globalVaultsUpdates.length;
-        uint256 _globalVaultsUpdatesLastIndex;
-        unchecked { // only used in case _globalVaultsUpdatesLength > 0
-            _globalVaultsUpdatesLastIndex = _globalVaultsUpdatesLength - 1;
-        }
+        bool isAllocated;
+
         //TODO         VaultInfo storage vault = vaultInfo[_vault]; ?
-        uint256 totalAllocPoint = (_globalVaultsUpdatesLength == 0) ? _allocPoint :
-        globalVaultsUpdates[_globalVaultsUpdatesLastIndex].totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
-        if (_globalVaultsUpdatesLength > 0 &&
-            globalVaultsUpdates[_globalVaultsUpdatesLastIndex].blockNumber == block.number) {
-            // already update in this block
-            globalVaultsUpdates[_globalVaultsUpdatesLastIndex].totalAllocPoint = totalAllocPoint;
+         if (_globalVaultsUpdatesLength != 0) {
+            uint256 _globalVaultsUpdatesLastIndex;
+            unchecked { // only used in case _globalVaultsUpdatesLength > 0
+                _globalVaultsUpdatesLastIndex = _globalVaultsUpdatesLength - 1;
+            }
+            VaultUpdate storage vaultUpdate = globalVaultsUpdates[_globalVaultsUpdatesLastIndex];
+            totalAllocPoint = vaultUpdate.totalAllocPoint - vaultInfo[_vault].allocPoint + _allocPoint;
+            if (vaultUpdate.blockNumber == block.number) {
+                // already update in this block
+                vaultUpdate.totalAllocPoint = totalAllocPoint;
+                isAllocated = true;
+            }
         } else {
+            totalAllocPoint = _allocPoint;
+        }
+
+        if (!isAllocated) {
             globalVaultsUpdates.push(VaultUpdate({
                 blockNumber: block.number,
                 totalAllocPoint: totalAllocPoint

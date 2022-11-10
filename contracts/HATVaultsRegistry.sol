@@ -259,7 +259,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     /** @notice See {IHATVaultsRegistry-createVault}. */
     function createVault(
-        IERC20 asset_,
+        IERC20 _asset,
         address _owner,
         address _committee,
         IRewardController _rewardController,
@@ -282,7 +282,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 vestingPeriods: _bountyVestingPeriods,
                 maxBounty: _maxBounty,
                 bountySplit: _bountySplit,
-                asset: asset_,
+                asset: _asset,
                 owner: _owner,
                 committee: _committee,
                 isPaused: _isPaused,
@@ -294,7 +294,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         emit VaultCreated(
             vault,
-            address(asset_),
+            address(_asset),
             _owner,
             _committee,
             _rewardController,
