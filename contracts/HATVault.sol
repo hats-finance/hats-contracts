@@ -210,7 +210,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
         //TODO         unchecked { ?
-        claimId = keccak256(abi.encodePacked(address(this), nonce++));
+        claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
             claimId: claimId,
             beneficiary: _beneficiary,

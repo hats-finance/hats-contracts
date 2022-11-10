@@ -342,7 +342,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         for (uint256 i = 0; i < _beneficiaries.length;) { 
             swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
             swapData.amount += swapData.hackerRewards[i]; 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
         if (swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
@@ -378,7 +378,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 _HAT.safeTransfer(tokenLock, hackerReward);
             }
             emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
-            unchecked { i++; }
+            unchecked { ++i; }
         }
         address _owner = owner(); 
         uint256 _amountToOwner= swapData.hatsReceived - swapData.totalHackerReward;

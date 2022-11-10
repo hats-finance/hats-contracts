@@ -136,7 +136,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }  else { //TODO unchecked { ??
             uint256 nextEpoch = (block.number - _startBlock) / epochLength + 1;
             // if rewards are ongoing, update the future rewards but keep past and current
-            for (; nextEpoch < NUMBER_OF_EPOCHS; nextEpoch++) {
+            for (; nextEpoch < NUMBER_OF_EPOCHS; ++nextEpoch) {
                 epochRewardPerBlock[nextEpoch] = _epochRewardPerBlock[nextEpoch]; 
                 /*TODO unchecked {
                     ++nextEpoch;
@@ -214,7 +214,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                                             vaultAllocPoint,
                                             globalVaultsUpdates[i].totalAllocPoint);
             _fromBlock = nextUpdateBlock;
-            unchecked { i++; }
+            unchecked { ++i; }
         }
         return reward + getRewardForBlocksRange(_fromBlock,
                                                 block.number,
@@ -242,7 +242,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 }
                 result += (endBlock - _fromBlock) * epochReward;
                 _fromBlock = endBlock;
-                unchecked { i++; }
+                unchecked { ++i; }
             }
             uint256 blockDifference;
             unchecked { // i >= 1, _toBlock >= _fromBlock
