@@ -6168,7 +6168,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await utils.increaseTime(60 * 60 * 24);
 
-    const tx = await vault.approveClaim(claimId, bountyPercentage);
+    await vault.approveClaim(claimId, bountyPercentage);
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), (HUNDRED_PERCENT - bountyPercentage) * MINIMAL_AMOUNT_OF_SHARES/HUNDRED_PERCENT);
 
   });
@@ -6189,7 +6189,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
      */
     await setUpGlobalVars( accounts);
     const MINIMAL_AMOUNT_OF_SHARES = await vault.MINIMAL_AMOUNT_OF_SHARES();
-    assert.equal((await vault.totalSupply()).toString(), "0")
+    assert.equal((await vault.totalSupply()).toString(), "0");
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     var staker = accounts[1];
@@ -6200,15 +6200,15 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken.approve(vault.address, web3.utils.toWei("1.5", "ether"), {
       from: staker2,
     });
-    await stakingToken.mint(staker, "1000000");
+    const stakerInitialDeposit = MINIMAL_AMOUNT_OF_SHARES;
+    await stakingToken.mint(staker, stakerInitialDeposit); 
 
     //Stake minimum amount
-    const initialDeposit = MINIMAL_AMOUNT_OF_SHARES;
-    let tx = await vault.deposit(MINIMAL_AMOUNT_OF_SHARES, staker, { from: staker });
+    await vault.deposit(MINIMAL_AMOUNT_OF_SHARES, staker, { from: staker });
     //Makes sure all values are set properly
-    assert.equal((await vault.balanceOf(staker)).toString(), initialDeposit);
-    assert.equal((await vault.totalSupply()).toString(), initialDeposit)
-    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), initialDeposit);
+    assert.equal((await vault.balanceOf(staker)).toString(), stakerInitialDeposit);
+    assert.equal((await vault.totalSupply()).toString(), stakerInitialDeposit);
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), stakerInitialDeposit);
 
     //Now we transfer a large amount of tokens to the vault.
     await stakingToken.mint(staker, web3.utils.toWei('1', 'ether'));
@@ -6216,10 +6216,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       from: staker,
     });
 
-    await stakingToken.mint(staker2, web3.utils.toWei('1.5', 'ether'));
 
     //Number of shares have rounded down
-    await vault.deposit(web3.utils.toWei('1.5', 'ether'), staker2, { from: staker2 });
+    const staker2InitialDeposit = web3.utils.toWei('1.5', 'ether');
+    await stakingToken.mint(staker2, staker2InitialDeposit);
+    await vault.deposit(staker2InitialDeposit, staker2, { from: staker2 });
     assert.equal((await vault.totalSupply()).toString(), "2499999");
     assert.equal((await vault.balanceOf(staker2)).toString(), "1499999");
 
@@ -6228,7 +6229,16 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     const stakerBalance = await stakingToken.balanceOf(staker);
     const stakerDifference = 1e18 - stakerBalance;
     // the rounding error should be relatively small, less than original deposit divided by MINIMAL_STAKING_AMOUNT
-    assert.isAtMost(stakerDifference, initialDeposit/MINIMAL_AMOUNT_OF_SHARES);
+    assert.isAtMost(stakerDifference, stakerInitialDeposit/MINIMAL_AMOUNT_OF_SHARES);
+
+    // similarly, staker2 will loose some, but no significant part, of their deposit
+    await safeRedeem(vault, (await vault.balanceOf(staker2)), staker2);
+    const staker2Balance = await stakingToken.balanceOf(staker2);
+    const staker2Difference = 1e18 - staker2Balance;
+    // the rounding error should be relatively small, less than original deposit divided by MINIMAL_STAKING_AMOUNT
+    assert.isAtMost(staker2Difference, staker2InitialDeposit/MINIMAL_AMOUNT_OF_SHARES);
+
+
   });
 });
 
