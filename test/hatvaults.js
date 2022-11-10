@@ -6153,25 +6153,49 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts);
     const staker = accounts[1];
     const MINIMAL_AMOUNT_OF_SHARES = 1000000;
-    const bountyPercentage = 8000;
     await stakingToken.mint(staker, "10000000");
     await stakingToken.approve(vault.address, "10000000", { from: staker});
     // 1e6 is the minimum deposit
-    assertFunctionRaisesException(vault.deposit("1", staker, { from: staker }), "Somethingsomething");
-    assertFunctionRaisesException(vault.deposit((MINIMAL_AMOUNT_OF_SHARES-1), staker, { from: staker }), "Somethingsomething");
+    await assertFunctionRaisesException(vault.deposit("1", staker, { from: staker }), "FirstDepositMustBeLarger");
+    await assertFunctionRaisesException(vault.deposit((MINIMAL_AMOUNT_OF_SHARES-1), staker, { from: staker }), "FirstDepositMustBeLarger");
+    await vault.deposit(MINIMAL_AMOUNT_OF_SHARES, staker, { from: staker });
+
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), MINIMAL_AMOUNT_OF_SHARES);
+
+    // redeem all the remaining tokens except 1
+    await assertFunctionRaisesException(vault.previewRedeemAndFee(MINIMAL_AMOUNT_OF_SHARES-1), "LastWithdrawMustWithdrawAll");
+    await assertFunctionRaisesException(safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES-1, staker), "LastWithdrawMustWithdrawAll");
+    await safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES, staker);
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "0");
+    assert.equal((await vault.totalSupply()).toString(), "0");
+
+  });
+
+  it("minumum amount of shares must be at least MINIMAL_AMOUNT_OF_SHARES", async () => {
+    await setUpGlobalVars(accounts);
+    const staker = accounts[1];
+    const MINIMAL_AMOUNT_OF_SHARES = 1000000;
+    const bountyPercentage = 8000;
+    
+    await stakingToken.mint(staker, "10000000");
+    await stakingToken.approve(vault.address, "10000000", { from: staker});
     await vault.deposit(MINIMAL_AMOUNT_OF_SHARES, staker, { from: staker });
 
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), MINIMAL_AMOUNT_OF_SHARES);
     // now pay out a large amount
     await advanceToSafetyPeriod();
     const claimId = await submitClaim(vault, { accounts, bountyPercentage});
-
     await utils.increaseTime(60 * 60 * 24);
-
     await vault.approveClaim(claimId, bountyPercentage);
+
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), (HUNDRED_PERCENT - bountyPercentage) * MINIMAL_AMOUNT_OF_SHARES/HUNDRED_PERCENT);
 
+    // redeem all the remaining tokens except 1
+    // await safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES-1, staker);
+    // assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "1");
+    // assert.equal((await vault.totalSupply()).toString(), "1");
   });
+
 
   it("First depositor can partially steal deposits and DoS vault", async () => {
     /**
@@ -6230,6 +6254,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     const stakerDifference = 1e18 - stakerBalance;
     // the rounding error should be relatively small, less than original deposit divided by MINIMAL_STAKING_AMOUNT
     assert.isAtMost(stakerDifference, stakerInitialDeposit/MINIMAL_AMOUNT_OF_SHARES);
+    // staker now has no shares anymore
+    assert.equal((await vault.balanceOf(staker)).toString(), "0");
+
 
     // similarly, staker2 will loose some, but no significant part, of their deposit
     await safeRedeem(vault, (await vault.balanceOf(staker2)), staker2);

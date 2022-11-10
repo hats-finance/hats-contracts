@@ -385,7 +385,7 @@ contract("HatTimelockController", (accounts) => {
 
     let claimId = await submitClaim(vault, { accounts });
 
-    assertFunctionRaisesException(
+    await assertFunctionRaisesException(
       vault.challengeClaim(claimId),
       "OnlyArbitratorOrRegistryOwner"
     );
