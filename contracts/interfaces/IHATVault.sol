@@ -179,6 +179,8 @@ interface IHATVault is IERC4626Upgradeable {
     error AmountCannotBeZero();
     // Cannot transfer shares to self
     error CannotTransferToSelf();
+    // first deposit must return at least MINIMAL_AMOUNT_OF_SHARES
+    error FirstDepositMustBeLarger();
 
     
     event SubmitClaim(
