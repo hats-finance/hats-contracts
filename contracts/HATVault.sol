@@ -50,7 +50,6 @@ import "./HATVaultsRegistry.sol";
 */
 contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
-    using MathUpgradeable for uint256;
 
     struct Claim {
         bytes32 claimId;
