@@ -200,21 +200,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit SetVaultDescription(_params.descriptionHash);
     }
 
-    /* ERC4626 Overrides to avoid unreasonably inflating share value */
-    function _convertToShares(uint256 assets, MathUpgradeable.Rounding rounding) internal view virtual override(ERC4626Upgradeable) returns (uint256 shares) {
-        shares = super._convertToShares(assets, rounding);
-        if (shares > 0 && shares + totalSupply() < MINIMAL_AMOUNT_OF_SHARES) {
-          revert FirstDepositMustBeLarger();
-        }
-    }
 
-    function _convertToAssets(uint256 shares, MathUpgradeable.Rounding rounding) internal view virtual override(ERC4626Upgradeable)  returns (uint256 assets) {
-        assets = super._convertToAssets(shares, rounding);
-        uint256 remainingShares = totalSupply() - shares;
-        if (remainingShares > 0 && remainingShares < MINIMAL_AMOUNT_OF_SHARES) {
-           revert LastWithdrawMustWithdrawAll();
-        }
-    }
     /* ---------------------------------- Claim --------------------------------------- */
 
     /** @notice See {IHATVault-submitClaim}. */
@@ -747,6 +733,19 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             if (!_isEmergencyWithdraw) {
                 rewardController.commitUserBalance(from, amount, false);
             }
+        }
+    }
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        if (totalSupply() > 0 && totalSupply() < MINIMAL_AMOUNT_OF_SHARES) {
+          if (from == address(0)) {
+            revert FirstDepositMustBeLarger();
+          } else {
+            revert LastWithdrawMustWithdrawAll();
+          }
         }
     }
 
