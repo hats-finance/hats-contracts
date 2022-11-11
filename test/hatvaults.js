@@ -6156,15 +6156,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken.mint(staker, "10000000");
     await stakingToken.approve(vault.address, "10000000", { from: staker});
     // 1e6 is the minimum deposit
-    await assertFunctionRaisesException(vault.deposit("1", staker, { from: staker }), "FirstDepositMustBeLarger");
-    await assertFunctionRaisesException(vault.deposit((MINIMAL_AMOUNT_OF_SHARES-1), staker, { from: staker }), "FirstDepositMustBeLarger");
+    await assertFunctionRaisesException(vault.deposit("1", staker, { from: staker }), "AmountOfSharesMustBeMoreThanMinimalAmount");
+    await assertFunctionRaisesException(vault.deposit((MINIMAL_AMOUNT_OF_SHARES-1), staker, { from: staker }), "AmountOfSharesMustBeMoreThanMinimalAmount");
     await vault.deposit(MINIMAL_AMOUNT_OF_SHARES, staker, { from: staker });
 
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), MINIMAL_AMOUNT_OF_SHARES);
 
     // redeem all the remaining tokens except 1
-    await assertFunctionRaisesException(vault.previewRedeemAndFee(MINIMAL_AMOUNT_OF_SHARES-1), "LastWithdrawMustWithdrawAll");
-    await assertFunctionRaisesException(safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES-1, staker), "LastWithdrawMustWithdrawAll");
+    await assertFunctionRaisesException(safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES-1, staker), "AmountOfSharesMustBeMoreThanMinimalAmount");
     await safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES, staker);
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "0");
     assert.equal((await vault.totalSupply()).toString(), "0");

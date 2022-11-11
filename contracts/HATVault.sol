@@ -741,11 +741,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 amount
     ) internal virtual override {
         if (totalSupply() > 0 && totalSupply() < MINIMAL_AMOUNT_OF_SHARES) {
-          if (from == address(0)) {
-            revert FirstDepositMustBeLarger();
-          } else {
-            revert LastWithdrawMustWithdrawAll();
-          }
+          revert AmountOfSharesMustBeMoreThanMinimalAmount();
         }
     }
 
