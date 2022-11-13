@@ -50,6 +50,7 @@ import "./HATVaultsRegistry.sol";
 */
 contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
+    using MathUpgradeable for uint256;
 
     struct Claim {
         bytes32 claimId;
@@ -576,14 +577,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-previewWithdrawAndFee}. */
     function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
-        fee = assets * withdrawalFee / (HUNDRED_PERCENT - withdrawalFee);
+        fee = assets.mulDiv(withdrawalFee, (HUNDRED_PERCENT - withdrawalFee));
         shares = _convertToShares(assets + fee, MathUpgradeable.Rounding.Up);
     }
 
     /** @notice See {IHATVault-previewRedeemAndFee}. */
     function previewRedeemAndFee(uint256 shares) public view returns (uint256 assets, uint256 fee) {
         uint256 assetsPlusFee = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
-        fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
+        fee = assetsPlusFee.mulDiv(withdrawalFee, HUNDRED_PERCENT);
         assets = assetsPlusFee - fee;
     }
 
