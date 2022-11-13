@@ -791,16 +791,16 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
-        uint256 governanceHatAmount = totalBountyAmount * _bountyGovernanceHAT / HUNDRED_PERCENT_SQRD;
-        uint256 hackerHatVestedAmount = totalBountyAmount * _bountyHackerHATVested / HUNDRED_PERCENT_SQRD;
+        uint256 governanceHatAmount = totalBountyAmount.mulDiv(_bountyGovernanceHAT, HUNDRED_PERCENT_SQRD);
+        uint256 hackerHatVestedAmount = totalBountyAmount.mulDiv(_bountyHackerHATVested, HUNDRED_PERCENT_SQRD);
 
         totalBountyAmount -= (governanceHatAmount + hackerHatVestedAmount) * HUNDRED_PERCENT;
 
         claimBounty.governanceHat = governanceHatAmount;
         claimBounty.hackerHatVested = hackerHatVestedAmount;
 
-        uint256 hackerVestedAmount = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
-        uint256 hackerAmount = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
+        uint256 hackerVestedAmount = totalBountyAmount.mulDiv(bountySplit.hackerVested, HUNDRED_PERCENT_SQRD);
+        uint256 hackerAmount = totalBountyAmount.mulDiv(bountySplit.hacker, HUNDRED_PERCENT_SQRD);
 
         totalBountyAmount -= (hackerVestedAmount + hackerAmount) * HUNDRED_PERCENT;
 
