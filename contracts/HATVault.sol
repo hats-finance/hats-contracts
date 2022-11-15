@@ -210,7 +210,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        //TODO         unchecked { ?
         claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
             claimId: claimId,
@@ -241,7 +240,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (msg.sender !=  activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)//TODO unchecked?
+        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
             revert ChallengePeriodEnded();
         if (activeClaim.challengedAt != 0) {
             revert ClaimAlreadyChallenged();
@@ -264,7 +263,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         } 
         if (claim.challengedAt != 0) {
             // the claim was challenged, and only the arbitrator can approve it, within the timeout period
-            if (//TODO unchecked?
+            if (
                 msg.sender != claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp > claim.challengedAt + claim.challengeTimeOutPeriod
@@ -416,7 +415,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_pendingMaxBounty.timestamp == 0) revert NoPendingMaxBounty();
 
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp - _pendingMaxBounty.timestamp < registry.getSetMaxBountyDelay())//TODO unchecked?
+        if (block.timestamp - _pendingMaxBounty.timestamp < registry.getSetMaxBountyDelay())
             revert DelayPeriodForSettingMaxBountyHadNotPassed();
 
         uint16 _maxBounty = pendingMaxBounty.maxBounty;
@@ -831,7 +830,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     */
     function _validateSplit(IHATVault.BountySplit calldata _bountySplit) internal pure {
         if (_bountySplit.committee > MAX_COMMITTEE_BOUNTY) revert CommitteeBountyCannotBeMoreThanMax();
-        if (_bountySplit.hackerVested +//TODO unchecked?
+        if (_bountySplit.hackerVested +
             _bountySplit.hacker +
             _bountySplit.committee != HUNDRED_PERCENT)
             revert TotalSplitPercentageShouldBeHundredPercent();
