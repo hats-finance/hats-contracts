@@ -259,7 +259,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._bountyGovernanceHAT, "1500");
     assert.equal(logs[0].args._bountyHackerHATVested, "500");
     assert.equal(logs[0].args._hatGovernance, accounts[0]);
-    assert.equal(logs[0].args._hatGovernance, await hatVaultsRegistry.defaultArbitrator());
+    assert.equal(logs[0].args._defaultArbitrator, await hatVaultsRegistry.defaultArbitrator());
     assert.equal(logs[0].args._defaultChallengePeriod.toString(), (await hatVaultsRegistry.defaultChallengePeriod()).toString());
     assert.equal(logs[0].args._defaultChallengeTimeOutPeriod.toString(), (await hatVaultsRegistry.defaultChallengeTimeOutPeriod()).toString());
     assert.equal(logs[0].args._defaultArbitratorCanChangeBounty, await hatVaultsRegistry.defaultArbitratorCanChangeBounty());
@@ -539,6 +539,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(tx.logs[1].event, "SetAllocPoint");
     assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._prevAllocPoint, 100);
     assert.equal(tx.logs[1].args._allocPoint, 0);
 
     tx = await vault.setRewardController(accounts[2]);
@@ -642,6 +643,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(tx.logs[0].event, "SetAllocPoint");
     assert.equal(tx.logs[0].args._vault, newVault.address);
+    assert.equal(tx.logs[0].args._prevAllocPoint, 0);
     assert.equal(tx.logs[0].args._allocPoint, 100);
 
     assert.equal(await newVault.committee(), accounts[3]);
@@ -5972,6 +5974,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     assert.equal(tx2.logs[0].event, "SetAllocPoint");
     assert.equal(tx2.logs[0].args._vault, newVault.address);
+    assert.equal(tx2.logs[0].args._prevAllocPoint, 0);
     assert.equal(tx2.logs[0].args._allocPoint, 100);
 
     //5

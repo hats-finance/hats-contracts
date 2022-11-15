@@ -141,6 +141,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _bountyGovernanceHAT,
             _bountyHackerHATVested,
             _hatGovernance,
+            _defaultArbitrator,
             defaultChallengePeriod,
             defaultChallengeTimeOutPeriod,
             defaultArbitratorCanChangeBounty

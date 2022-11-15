@@ -185,6 +185,7 @@ interface IHATVaultsRegistry {
         uint256 _bountyGovernanceHAT,
         uint256 _bountyHackerHATVested,
         address _hatGovernance,
+        address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
         uint256 _defaultChallengeTimeOutPeriod,
         bool _defaultArbitratorCanChangeBounty
