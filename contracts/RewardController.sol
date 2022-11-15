@@ -76,8 +76,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }));
         }
 
+        emit SetAllocPoint(_vault, vaultInfo[_vault].allocPoint, _allocPoint);
         vaultInfo[_vault].allocPoint = _allocPoint;
-        emit SetAllocPoint(_vault, _allocPoint);
     }
 
     /** @notice See {IRewardController-updateVault}. */
