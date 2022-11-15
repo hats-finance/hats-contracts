@@ -48,6 +48,12 @@ module.exports = {
       gasPrice: "auto",
       gas: "auto",
     },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.GOERLI_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.PRIVATE_KEY],

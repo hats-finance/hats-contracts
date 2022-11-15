@@ -5,6 +5,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./tokenlock/TokenLockFactory.sol";
@@ -262,7 +263,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _committee,
         IRewardController _rewardController,
         uint256 _maxBounty,
-        HATVault.BountySplit memory _bountySplit,
+        IHATVault.BountySplit memory _bountySplit,
         string memory _descriptionHash,
         uint256 _bountyVestingDuration,
         uint256 _bountyVestingPeriods,
@@ -439,7 +440,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         amountUnused = _amount - (assetBalanceBefore - _asset.balanceOf(address(this)));
         if (hatsReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
-            
+
         IERC20(_asset).safeApprove(address(_routingContract), 0);
     }
 }
