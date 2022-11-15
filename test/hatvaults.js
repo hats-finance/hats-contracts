@@ -259,7 +259,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._bountyGovernanceHAT, "1500");
     assert.equal(logs[0].args._bountyHackerHATVested, "500");
     assert.equal(logs[0].args._hatGovernance, accounts[0]);
-    assert.equal(logs[0].args._hatGovernance, await hatVaultsRegistry.defaultArbitrator());
+    assert.equal(logs[0].args._defaultArbitrator, await hatVaultsRegistry.defaultArbitrator());
     assert.equal(logs[0].args._defaultChallengePeriod.toString(), (await hatVaultsRegistry.defaultChallengePeriod()).toString());
     assert.equal(logs[0].args._defaultChallengeTimeOutPeriod.toString(), (await hatVaultsRegistry.defaultChallengeTimeOutPeriod()).toString());
     assert.equal(logs[0].args._defaultArbitratorCanChangeBounty, await hatVaultsRegistry.defaultArbitratorCanChangeBounty());
