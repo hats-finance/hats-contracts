@@ -250,13 +250,13 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetArbitrator");
     assert.equal(tx.logs[0].args._arbitrator, await vault.NULL_ADDRESS());
 
-    tx = await vault.setChallengePeriod(await vault.NULL_UINT());
+    tx = await vault.setChallengePeriod(await vault.NULL_UINT32());
     assert.equal(tx.logs[0].event, "SetChallengePeriod");
-    assert.equal(tx.logs[0].args._challengePeriod.toString(), (await vault.NULL_UINT()).toString());
+    assert.equal(tx.logs[0].args._challengePeriod.toString(), (await vault.NULL_UINT32()).toString());
 
-    tx = await vault.setChallengeTimeOutPeriod(await vault.NULL_UINT());
+    tx = await vault.setChallengeTimeOutPeriod(await vault.NULL_UINT32());
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._challengeTimeOutPeriod.toString(), (await vault.NULL_UINT()).toString());
+    assert.equal(tx.logs[0].args._challengeTimeOutPeriod.toString(), (await vault.NULL_UINT32()).toString());
 
     tx = await vault.setArbitratorCanChangeBounty(2);
     assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");

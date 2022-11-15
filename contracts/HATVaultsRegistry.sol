@@ -48,9 +48,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 usedPart;
     }
 
-    uint256 public constant HUNDRED_PERCENT = 10000;
+    uint16 public constant HUNDRED_PERCENT = 10000;
     // the maximum percentage of the bounty that will be converted in HATs
-    uint256 public constant MAX_HAT_SPLIT = 2000;
+    uint16 public constant MAX_HAT_SPLIT = 2000;
 
     address public immutable hatVaultImplementation;
     address[] public hatVaults;
@@ -65,27 +65,28 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // PARAMETERS FOR ALL VAULTS
     IHATVaultsRegistry.GeneralParameters public generalParameters;
     ITokenLockFactory public immutable tokenLockFactory;
-    // feeSetter sets the withdrawal fee
-    address public feeSetter;
 
     // the token into which a part of the the bounty will be swapped into
     IERC20 public immutable HAT;
+    
+    // feeSetter sets the withdrawal fee
+    address public feeSetter;
 
     // How the bountyGovernanceHAT and bountyHackerHATVested set how to divide the hats 
     // bounties of the vault, in percentages (out of `HUNDRED_PERCENT`)
     // The precentages are taken from the total bounty
  
     // the default percentage of the total bounty to be swapped to HATs and sent to governance
-    uint256 public defaultBountyGovernanceHAT;
+    uint16 public defaultBountyGovernanceHAT;
     // the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-    uint256 public defaultBountyHackerHATVested;
+    uint16 public defaultBountyHackerHATVested;
 
     address public defaultArbitrator;
-    uint256 public defaultChallengePeriod;
-    uint256 public defaultChallengeTimeOutPeriod;
     bool public defaultArbitratorCanChangeBounty;
 
     bool public isEmergencyPaused;
+    uint32 public defaultChallengePeriod;
+    uint32 public defaultChallengeTimeOutPeriod;
 
     /**
     * @notice initialize -
@@ -106,8 +107,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _hatGovernance,
         address _defaultArbitrator,
         address _HAT,
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested,
+        uint16 _bountyGovernanceHAT,
+        uint16 _bountyHackerHATVested,
         ITokenLockFactory _tokenLockFactory
     ) {
         _transferOwnership(_hatGovernance);
@@ -167,8 +168,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     /** @notice See {IHATVaultsRegistry-setDefaultHATBountySplit}. */
     function setDefaultHATBountySplit(
-        uint256 _defaultBountyGovernanceHAT,
-        uint256 _defaultBountyHackerHATVested
+        uint16 _defaultBountyGovernanceHAT,
+        uint16 _defaultBountyHackerHATVested
     ) external onlyOwner {
         validateHATSplit(_defaultBountyGovernanceHAT, _defaultBountyHackerHATVested);
         defaultBountyGovernanceHAT = _defaultBountyGovernanceHAT;
@@ -184,14 +185,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengePeriod}. */
-    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) external onlyOwner {
+    function setDefaultChallengePeriod(uint32 _defaultChallengePeriod) external onlyOwner {
         validateChallengePeriod(_defaultChallengePeriod);
         defaultChallengePeriod = _defaultChallengePeriod;
         emit SetDefaultChallengePeriod(_defaultChallengePeriod);
     }
 
     /** @notice See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}. */
-    function setDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod) external onlyOwner {
+    function setDefaultChallengeTimeOutPeriod(uint32 _defaultChallengeTimeOutPeriod) external onlyOwner {
         validateChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
         defaultChallengeTimeOutPeriod = _defaultChallengeTimeOutPeriod;
         emit SetDefaultChallengeTimeOutPeriod(_defaultChallengeTimeOutPeriod);
@@ -210,7 +211,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawRequestParams}. */
-    function setWithdrawRequestParams(uint256 _withdrawRequestPendingPeriod, uint256  _withdrawRequestEnablePeriod)
+    function setWithdrawRequestParams(uint32 _withdrawRequestPendingPeriod, uint32  _withdrawRequestEnablePeriod)
         external 
         onlyOwner
     {
@@ -232,7 +233,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setWithdrawSafetyPeriod}. */
-    function setWithdrawSafetyPeriod(uint256 _withdrawPeriod, uint256 _safetyPeriod) external onlyOwner { 
+    function setWithdrawSafetyPeriod(uint32 _withdrawPeriod, uint32 _safetyPeriod) external onlyOwner { 
         if (_withdrawPeriod < 1 hours) revert WithdrawPeriodTooShort();
         if (_safetyPeriod > 6 hours) revert SafetyPeriodTooLong();
         generalParameters.withdrawPeriod = _withdrawPeriod;
@@ -241,7 +242,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setHatVestingParams}. */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) external onlyOwner {
+    function setHatVestingParams(uint32 _duration, uint32 _periods) external onlyOwner {
         if (_duration >= 180 days) revert HatVestingDurationTooLong();
         if (_periods == 0) revert HatVestingPeriodsCannotBeZero();
         if (_duration < _periods) revert HatVestingDurationSmallerThanPeriods();
@@ -251,7 +252,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-setMaxBountyDelay}. */
-    function setMaxBountyDelay(uint256 _delay) external onlyOwner {
+    function setMaxBountyDelay(uint32 _delay) external onlyOwner {
         if (_delay < 2 days) revert DelayTooShort();
         generalParameters.setMaxBountyDelay = _delay;
         emit SetMaxBountyDelay(_delay);
@@ -263,11 +264,11 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _owner,
         address _committee,
         IRewardController _rewardController,
-        uint256 _maxBounty,
+        uint16 _maxBounty,
         HATVault.BountySplit calldata _bountySplit,
         string calldata _descriptionHash,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods,
+        uint32 _bountyVestingDuration,
+        uint32 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 
@@ -417,19 +418,19 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-validateHATSplit}. */
-    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested) public pure {
+    function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) public pure {
         if (_bountyGovernanceHAT + _bountyHackerHATVested > MAX_HAT_SPLIT)
             revert TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
     }
 
     /** @notice See {IHATVaultsRegistry-validateChallengePeriod}. */
-    function validateChallengePeriod(uint256 _challengePeriod) public pure {
+    function validateChallengePeriod(uint32 _challengePeriod) public pure {
         if (_challengePeriod < 1 days) revert ChallengePeriodTooShort();
         if (_challengePeriod > 5 days) revert ChallengePeriodTooLong();
     }
 
     /** @notice See {IHATVaultsRegistry-validateChallengeTimeOutPeriod}. */
-    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) public pure {
+    function validateChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) public pure {
         if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
         if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
     }
