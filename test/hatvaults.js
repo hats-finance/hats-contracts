@@ -11,7 +11,7 @@ const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
 
-const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 const {
   assertFunctionRaisesException,
   assertVMException,
@@ -260,7 +260,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._bountyGovernanceHAT, "1500");
     assert.equal(logs[0].args._bountyHackerHATVested, "500");
     assert.equal(logs[0].args._hatGovernance, accounts[0]);
-    assert.equal(logs[0].args._hatGovernance, await hatVaultsRegistry.defaultArbitrator());
+    assert.equal(logs[0].args._defaultArbitrator, await hatVaultsRegistry.defaultArbitrator());
     assert.equal(logs[0].args._defaultChallengePeriod.toString(), (await hatVaultsRegistry.defaultChallengePeriod()).toString());
     assert.equal(logs[0].args._defaultChallengeTimeOutPeriod.toString(), (await hatVaultsRegistry.defaultChallengeTimeOutPeriod()).toString());
     assert.equal(logs[0].args._defaultArbitratorCanChangeBounty, await hatVaultsRegistry.defaultArbitratorCanChangeBounty());
@@ -540,6 +540,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(tx.logs[1].event, "SetAllocPoint");
     assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._prevAllocPoint, 100);
     assert.equal(tx.logs[1].args._allocPoint, 0);
 
     tx = await vault.setRewardController(accounts[2]);
@@ -643,6 +644,7 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(tx.logs[0].event, "SetAllocPoint");
     assert.equal(tx.logs[0].args._vault, newVault.address);
+    assert.equal(tx.logs[0].args._prevAllocPoint, 0);
     assert.equal(tx.logs[0].args._allocPoint, 100);
 
     assert.equal(await newVault.committee(), accounts[3]);
@@ -2646,21 +2648,24 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts);
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      accounts[0],
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      arbitrator: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5785,21 +5790,24 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("update vault before setting reward controller alloc points", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      accounts[0],
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      arbitrator: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5831,21 +5839,24 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("add/set vault on the same block", async () => {
     let hatToken1 = await HATTokenMock.new(accounts[0]);
     var tokenLock1 = await HATTokenLock.new();
-    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address);
+    let tokenLockFactory1 = await TokenLockFactory.new(tokenLock1.address, accounts[0]);
     var vaultsManager = await VaultsManagerMock.new();
-    let deployment = await deployHatVaults(
-      hatToken1.address,
-      1,
-      epochRewardPerBlock,
-      10,
-      vaultsManager.address,
-      hatToken1.address,
-      1000,
-      500,
-      tokenLockFactory1.address,
-      accounts[0],
-      true
-    );
+    let deployment = await deployHATVaults({
+      governance: vaultsManager.address,
+      arbitrator: vaultsManager.address,
+      hatToken: hatToken1.address,
+      tokenLockFactory: tokenLockFactory1.address,
+      rewardController: {
+        startBlock: 1,
+        epochLength: 10,
+        epochRewardPerBlock
+      },
+      hatVaultsRegistry: {
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 500
+      },
+      silent: true
+    });
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
@@ -5986,6 +5997,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     assert.equal(tx2.logs[0].event, "SetAllocPoint");
     assert.equal(tx2.logs[0].args._vault, newVault.address);
+    assert.equal(tx2.logs[0].args._prevAllocPoint, 0);
     assert.equal(tx2.logs[0].args._allocPoint, 100);
 
     //5
