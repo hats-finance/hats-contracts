@@ -81,7 +81,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 public constant MAX_WITHDRAWAL_FEE = 2e2; // Max fee is 2%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 10e2; // Max committee bounty can be up to 10%
 
-    uint256 public constant MINIMAL_AMOUNT_OF_SHARES = 1e6; // to reduce rounding errors, the number of shares is either 0, or > than this number
+    uint256 public constant MINIMAL_AMOUNT_OF_SHARES = 1e3; // to reduce rounding errors, the number of shares is either 0, or > than this number
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
