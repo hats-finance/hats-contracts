@@ -6,6 +6,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
 
@@ -13,6 +14,7 @@ import "./interfaces/IRewardController.sol";
 
 contract RewardController is IRewardController, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using Math for uint256;
 
     struct VaultInfo {
         uint256 rewardPerShare;
@@ -90,8 +92,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             }));
         }
 
+        emit SetAllocPoint(_vault, vaultInfo[_vault].allocPoint, _allocPoint);
         vaultInfo[_vault].allocPoint = _allocPoint;
-        emit SetAllocPoint(_vault, _allocPoint);
     }
 
     /** @notice See {IRewardController-updateVault}. */
@@ -113,7 +115,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         if (totalShares != 0) {
             uint256 reward = getVaultReward(_vault, lastRewardBlock);
-            vault.rewardPerShare += (reward * REWARD_PRECISION / totalShares);
+            vault.rewardPerShare += reward.mulDiv(REWARD_PRECISION, totalShares);
         }
 
         uint256 _globalVaultsUpdatesLength = globalVaultsUpdates.length;
@@ -156,7 +158,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 rewardPerShare = vaultInfo[_vault].rewardPerShare;
         mapping(address => uint256) storage vaultRewardDebt = rewardDebt[_vault];
         if (userShares != 0) {
-            unclaimedReward[_vault][_user] += userShares * rewardPerShare / REWARD_PRECISION - vaultRewardDebt[_user];
+            unclaimedReward[_vault][_user] += userShares.mulDiv(rewardPerShare, REWARD_PRECISION) - vaultRewardDebt[_user];
         }
 
         if (_sharesChange != 0) {
@@ -166,7 +168,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 userShares -= _sharesChange;
             }
         }
-        uint256 newRewardDebt = userShares * rewardPerShare / REWARD_PRECISION;
+        uint256 newRewardDebt = userShares.mulDiv(rewardPerShare, REWARD_PRECISION);
         vaultRewardDebt[_user] = newRewardDebt;
         emit UserBalanceCommitted(_vault, _user, unclaimedReward[_vault][_user], newRewardDebt);
     }
@@ -245,7 +247,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
                 blockDifference = _toBlock - _fromBlock;
             }
             result += blockDifference * epochReward;
-            reward = result * _allocPoint / _totalAllocPoint;
+            reward = result.mulDiv(_allocPoint, _totalAllocPoint);
         }
     }
 
@@ -262,10 +264,10 @@ contract RewardController is IRewardController, OwnableUpgradeable {
 
         if (totalShares > 0 && _vaultInfo.lastRewardBlock != 0 && block.number > _vaultInfo.lastRewardBlock) {
             uint256 reward = getVaultReward(_vault, _vaultInfo.lastRewardBlock);
-            rewardPerShare += (reward * REWARD_PRECISION / totalShares);
+            rewardPerShare += reward.mulDiv(REWARD_PRECISION, totalShares);
         }
 
-        return IERC20Upgradeable(_vault).balanceOf(_user) * rewardPerShare / REWARD_PRECISION + 
+        return IERC20Upgradeable(_vault).balanceOf(_user).mulDiv(rewardPerShare, REWARD_PRECISION) + 
                 vaultUnclaimedReward[_user] - rewardDebt[_vault][_user];
     }
 

@@ -50,6 +50,7 @@ import "./HATVaultsRegistry.sol";
 */
 contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
+    using MathUpgradeable for uint256;
 
     struct Claim {
         bytes32 claimId;
@@ -577,14 +578,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-previewWithdrawAndFee}. */
     function previewWithdrawAndFee(uint256 assets) public view returns (uint256 shares, uint256 fee) {
         uint256 _withdrawalFee = withdrawalFee;
-        fee = assets * _withdrawalFee / (HUNDRED_PERCENT - _withdrawalFee);
+        fee = assets.mulDiv(_withdrawalFee, (HUNDRED_PERCENT - _withdrawalFee));
         shares = _convertToShares(assets + fee, MathUpgradeable.Rounding.Up);
     }
 
     /** @notice See {IHATVault-previewRedeemAndFee}. */
     function previewRedeemAndFee(uint256 shares) public view returns (uint256 assets, uint256 fee) {
         uint256 assetsPlusFee = _convertToAssets(shares, MathUpgradeable.Rounding.Down);
-        fee = assetsPlusFee * withdrawalFee / HUNDRED_PERCENT;
+        fee = assetsPlusFee.mulDiv(withdrawalFee, HUNDRED_PERCENT);
         unchecked { // fee will always be maximun 20% of assetsPlusFee
             assets = assetsPlusFee - fee;
         }
@@ -799,16 +800,16 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         uint256 totalBountyAmount = totalSupply * _bountyPercentage;
 
-        uint256 governanceHatAmount = totalBountyAmount * _bountyGovernanceHAT / HUNDRED_PERCENT_SQRD;
-        uint256 hackerHatVestedAmount = totalBountyAmount * _bountyHackerHATVested / HUNDRED_PERCENT_SQRD;
+        uint256 governanceHatAmount = totalBountyAmount.mulDiv(_bountyGovernanceHAT, HUNDRED_PERCENT_SQRD);
+        uint256 hackerHatVestedAmount = totalBountyAmount.mulDiv(_bountyHackerHATVested, HUNDRED_PERCENT_SQRD);
 
         totalBountyAmount -= (governanceHatAmount + hackerHatVestedAmount) * HUNDRED_PERCENT;
 
         claimBounty.governanceHat = governanceHatAmount;
         claimBounty.hackerHatVested = hackerHatVestedAmount;
 
-        uint256 hackerVestedAmount = totalBountyAmount * bountySplit.hackerVested / HUNDRED_PERCENT_SQRD;
-        uint256 hackerAmount = totalBountyAmount * bountySplit.hacker / HUNDRED_PERCENT_SQRD;
+        uint256 hackerVestedAmount = totalBountyAmount.mulDiv(bountySplit.hackerVested, HUNDRED_PERCENT_SQRD);
+        uint256 hackerAmount = totalBountyAmount.mulDiv(bountySplit.hacker, HUNDRED_PERCENT_SQRD);
 
         totalBountyAmount -= (hackerVestedAmount + hackerAmount) * HUNDRED_PERCENT;
 

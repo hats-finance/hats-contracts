@@ -5,7 +5,9 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IRewardController.sol";
 import "./interfaces/IHATVaultsRegistry.sol";
@@ -35,6 +37,7 @@ import "./HATVault.sol";
  */
 contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     using SafeERC20 for IERC20;
+    using Math for uint256;
 
     // Used in {swapAndSend} to avoid a "stack too deep" error
     struct SwapData {
@@ -142,6 +145,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _bountyGovernanceHAT,
             _bountyHackerHATVested,
             _hatGovernance,
+            _defaultArbitrator,
             defaultChallengePeriod,
             defaultChallengeTimeOutPeriod,
             defaultArbitratorCanChangeBounty
@@ -351,13 +355,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         
         swapData.usedPart = (swapData.amount - swapData.amountUnused) / swapData.amount;
         swapData.governanceAmountSwapped = swapData.usedPart * swapData.governanceHatReward;
-        governanceHatReward[_asset]  = swapData.amountUnused * swapData.governanceHatReward / swapData.amount;
+        governanceHatReward[_asset]  = swapData.amountUnused.mulDiv(swapData.governanceHatReward, swapData.amount);
 
         for (uint256 i = 0; i < _beneficiaries.length;) {
-            uint256 hackerReward = swapData.hatsReceived * swapData.hackerRewards[i] / swapData.amount;
+            uint256 hackerReward = swapData.hatsReceived.mulDiv(swapData.hackerRewards[i], swapData.amount);
             uint256 hackerAmountSwapped = swapData.usedPart * swapData.hackerRewards[i];
             swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused * swapData.hackerRewards[i] / swapData.amount;
+            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused.mulDiv(swapData.hackerRewards[i], swapData.amount);
             address tokenLock;
             if (hackerReward > 0) {
                 // hacker gets her reward via vesting contract
@@ -469,7 +473,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         amountUnused = _amount - (assetBalanceBefore - _asset.balanceOf(address(this)));
         if (hatsReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
-            
+
         IERC20(_asset).safeApprove(address(_routingContract), 0);
     }
 }
