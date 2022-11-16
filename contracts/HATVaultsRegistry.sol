@@ -391,27 +391,27 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit SwapAndSend(_owner, swapData.governanceAmountSwapped, _amountToOwner, address(0));
     }
 
-    /** @notice See {IHATVaultsRegistry-getGeneralParameters}. */   
-    function getGeneralParameters() external view returns (GeneralParameters memory) {
-        return generalParameters;
-    }
-
+    /** @notice See {IHATVaultsRegistry-getWithdrawPeriod}. */   
       function getWithdrawPeriod() external view returns (uint256) {
         return generalParameters.withdrawPeriod;
     }
 
+    /** @notice See {IHATVaultsRegistry-getSafetyPeriod}. */   
     function getSafetyPeriod() external view returns (uint256) {
         return generalParameters.safetyPeriod;
     }
 
+    /** @notice See {IHATVaultsRegistry-getWithdrawRequestEnablePeriod}. */   
     function getWithdrawRequestEnablePeriod() external view returns (uint256) {
         return generalParameters.withdrawRequestEnablePeriod;
     }
 
+    /** @notice See {IHATVaultsRegistry-getWithdrawRequestPendingPeriod}. */   
     function getWithdrawRequestPendingPeriod() external view returns (uint256) {
         return generalParameters.withdrawRequestPendingPeriod;
     }
 
+    /** @notice See {IHATVaultsRegistry-getSetMaxBountyDelay}. */   
     function getSetMaxBountyDelay() external view returns (uint256) {
         return generalParameters.setMaxBountyDelay;
     }

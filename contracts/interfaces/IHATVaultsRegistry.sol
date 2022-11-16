@@ -568,15 +568,6 @@ interface IHATVaultsRegistry {
     ) external;
   
     /**
-     * @notice Returns the general parameters for all vaults
-     * @return {GeneralParameters} General parameters for all vaults
-     */    
-    function getGeneralParameters()
-        external 
-        view 
-        returns(GeneralParameters memory);
-    
-    /**
      * @notice Returns the withdraw enable period for all vaults. The safety
      * period starts when finished.
      * @return Withdraw enable period for all vaults
