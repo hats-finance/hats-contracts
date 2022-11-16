@@ -5,6 +5,7 @@ pragma solidity 0.8.16;
 
 import "./IRewardController.sol";
 import "./IHATVault.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /** @title Interface for the Hats.finance Vault Registry
  * @author hats.finance
@@ -164,6 +165,11 @@ interface IHATVaultsRegistry {
     error NotEnoughFeePaid();
 
     /**
+     * @notice Raised on {LogClaim} if the transfer of the claim fee failed
+     */
+    error ClaimFeeTransferFailed();
+
+    /**
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
      * @param _HAT The HAT token address
@@ -184,6 +190,7 @@ interface IHATVaultsRegistry {
         uint256 _bountyGovernanceHAT,
         uint256 _bountyHackerHATVested,
         address _hatGovernance,
+        address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
         uint256 _defaultChallengeTimeOutPeriod,
         bool _defaultArbitratorCanChangeBounty

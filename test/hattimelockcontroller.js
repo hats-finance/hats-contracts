@@ -10,7 +10,7 @@ const RewardController = artifacts.require("./RewardController.sol");
 const HATGovernanceArbitrator = artifacts.require("./HATGovernanceArbitrator.sol");
 const utils = require("./utils.js");
 
-const { deployHatVaults } = require("../scripts/hatvaultsdeploy.js");
+const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 
 var hatVaultsRegistry;
 var vault;
@@ -54,20 +54,23 @@ const setup = async function(
   }
   router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
   var tokenLock = await HATTokenLock.new();
-  tokenLockFactory = await TokenLockFactory.new(tokenLock.address);
-  arbitratorContract = await HATGovernanceArbitrator.new();
-  let deployment = await deployHatVaults(
-    hatToken.address,
-    startBlock,
-    epochRewardPerBlock,
-    halvingAfterBlock,
-    accounts[0],
-    hatToken.address,
-    ...hatBountySplit,
-    tokenLockFactory.address,
-    arbitratorContract.address,
-    true
-  );
+  tokenLockFactory = await TokenLockFactory.new(tokenLock.address, accounts[0]);
+  let deployment = await deployHATVaults({
+    governance: accounts[0],
+    hatToken: hatToken.address,
+    tokenLockFactory: tokenLockFactory.address,
+    rewardController: {
+      startBlock,
+      epochLength: halvingAfterBlock,
+      epochRewardPerBlock
+    },
+    hatVaultsRegistry: {
+      bountyGovernanceHAT: hatBountySplit[0],
+      bountyHackerHATVested: hatBountySplit[1]
+    },
+    silent: true
+  });
+  arbitratorContract = await HATGovernanceArbitrator.at(deployment.arbitrator);
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
     deployment.rewardController.address
