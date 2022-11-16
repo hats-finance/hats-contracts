@@ -6,6 +6,7 @@ const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const VaultsManagerMock = artifacts.require("./VaultsManagerMock.sol");
+const EtherTransferFail = artifacts.require("./EtherTransferFail.sol");
 const RewardController = artifacts.require("./RewardController.sol");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
@@ -5343,6 +5344,28 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(tx.logs[0].event, "LogClaim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
+  });
+
+  it("logClaim to revert on transfer fail", async () => {
+    await setUpGlobalVars(accounts);
+    let someHash = "0x00000000000000000000000000000000000001";
+    let fee = web3.utils.toWei("1");
+
+    await hatVaultsRegistry.setClaimFee(fee);
+
+    var etherTransferFail = await EtherTransferFail.new();
+
+    await hatVaultsRegistry.transferOwnership(etherTransferFail.address);
+  
+    try {
+      await hatVaultsRegistry.logClaim(someHash, {
+        from: accounts[3],
+        value: fee,
+      });
+      assert(false, "fee transfer fail");
+    } catch (ex) {
+      assertVMException(ex, "ClaimFeeTransferFailed");
+    }
   });
 
   it("vesting", async () => {
