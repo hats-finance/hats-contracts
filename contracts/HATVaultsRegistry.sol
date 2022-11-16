@@ -159,8 +159,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         if (generalParameters.claimFee > 0) {
             if (msg.value < generalParameters.claimFee)
                 revert NotEnoughFeePaid();
-            // solhint-disable-next-line indent
-            payable(owner()).transfer(msg.value);
+            // solhint-disable-next-line avoid-low-level-calls
+            (bool success,) = payable(owner()).call{value: msg.value}("");
+            if (!success) revert ClaimFeeTransferFailed();
         }
         emit LogClaim(msg.sender, _descriptionHash);
     }
