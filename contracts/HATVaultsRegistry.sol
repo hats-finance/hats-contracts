@@ -359,7 +359,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         for (uint256 i = 0; i < _beneficiaries.length;) {
             uint256 _hackerReward = _swapData.hatsReceived.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
             uint256 _hackerAmountSwapped = _swapData.usedPart * _swapData.hackerRewards[i];
-            _swapData.totalHackerReward += hackerReward;
+            _swapData.totalHackerReward += _hackerReward;
             hackersHatReward[_asset][_beneficiaries[i]] = _swapData.amountUnused.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
             address _tokenLock;
             if (_hackerReward > 0) {
@@ -381,7 +381,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                 );
                 _HAT.safeTransfer(_tokenLock, _hackerReward);
             }
-            emit SwapAndSend(_beneficiaries[i], _hackerAmountSwapped, _hackerReward, tokenLock);
+            emit SwapAndSend(_beneficiaries[i], _hackerAmountSwapped, _hackerReward, _tokenLock);
             unchecked { ++i; }
         }
         address _owner = owner(); 
