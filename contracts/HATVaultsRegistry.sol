@@ -353,13 +353,13 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         IERC20 _HAT = HAT;
         (_swapData.hatsReceived, _swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), _swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
         
-        _swapData.usedPart = (_swapData.amount - _swapData.amountUnused) / _swapData.amount;
-        _swapData.governanceAmountSwapped = _swapData.usedPart * _swapData.governanceHatReward;
+        _swapData.usedPart = (_swapData.amount - _swapData.amountUnused);
+        _swapData.governanceAmountSwapped = _swapData.usedPart.mulDiv(_swapData.governanceHatReward, _swapData.amount);
         governanceHatReward[_asset]  = _swapData.amountUnused.mulDiv(_swapData.governanceHatReward, _swapData.amount);
 
         for (uint256 i = 0; i < _beneficiaries.length;) {
             uint256 _hackerReward = _swapData.hatsReceived.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
-            uint256 _hackerAmountSwapped = _swapData.usedPart * _swapData.hackerRewards[i];
+            uint256 _hackerAmountSwapped = _swapData.usedPart.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
             _swapData.totalHackerReward += _hackerReward;
             hackersHatReward[_asset][_beneficiaries[i]] = _swapData.amountUnused.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
             address _tokenLock;
@@ -386,7 +386,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             unchecked { ++i; }
         }
         address _owner = owner(); 
-        uint256 _amountToOwner= _swapData.hatsReceived - _swapData.totalHackerReward;
+        uint256 _amountToOwner = _swapData.hatsReceived - _swapData.totalHackerReward;
         _HAT.safeTransfer(_owner, _amountToOwner);
         emit SwapAndSend(_owner, _swapData.governanceAmountSwapped, _amountToOwner, address(0));
     }
