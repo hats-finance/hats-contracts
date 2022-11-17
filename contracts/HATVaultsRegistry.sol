@@ -270,7 +270,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         address _committee,
         IRewardController _rewardController,
         uint16 _maxBounty,
-        HATVault.BountySplit calldata _bountySplit,
+        IHATVault.BountySplit calldata _bountySplit,
         string calldata _descriptionHash,
         uint32 _bountyVestingDuration,
         uint32 _bountyVestingPeriods,
