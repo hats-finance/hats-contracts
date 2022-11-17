@@ -41,10 +41,10 @@
         }
     },
     "optimism_goerli": {
-        "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
+        "governance": "0x0B7602011EC2B862Bc157fF08d27b1018aEb18d5",
         "timelockDelay": 300,
         "executors": [
-            "0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"
+            "0x0B7602011EC2B862Bc157fF08d27b1018aEb18d5"
         ],
         "rewardController": {
             "startBlock": null,

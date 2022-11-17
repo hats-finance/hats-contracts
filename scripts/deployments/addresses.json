@@ -23,15 +23,15 @@
     "hatVaultImplementation": "0xD6C850aeBFDC46D7F4c207e445cC0d6B0919BDBe"
   },
   "optimism_goerli": {
-    "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
-    "arbitrator": "0x39983d251e6e6674d20CE097205D52C08d7DC6D1",
-    "hatTimelockController": "0x66922e992e07030CEaC25E1919E9C31153F85b6f",
-    "hatToken": "0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257",
-    "hatTokenLock": "0x7690166442e81B473D6eb413e865AA6379490371",
-    "tokenLockFactory": "0x844522DfC17F1ff13f0Af683934a2eD3950D1B44",
-    "hatVaultsRegistry": "0xcBe0b90bfe99f827B8BCB5C5Ac4b17107caEA814",
-    "rewardController": "0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4",
+    "governance": "0x0B7602011EC2B862Bc157fF08d27b1018aEb18d5",
+    "arbitrator": "0x34782E01dB347Eb5449ab9329Bd6E92eA493b160",
+    "hatTimelockController": "0x878Cab06E6f4a85D90E5f236d326a41Ef6f44F9f",
+    "hatToken": "0xC570c434ba30a2fa5C07E590833246E18aa6B0a3",
+    "hatTokenLock": "0xadd155731473A9501881234A865FF79668F1B6cF",
+    "tokenLockFactory": "0x312917812e76d78C5B1139C28d5C1D3A272d171d",
+    "hatVaultsRegistry": "0x1065A9e3AC47f2624293727F4b8319A0a10F6015",
+    "rewardController": "0xf972D95812aCda82502Fb2e9072736C6d6EE41be",
     "rewardControllerImplementation": "0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48",
-    "hatVaultImplementation": "0xe198CBb727758b9Ad38a12E1ad475a843e5e730F"
+    "hatVaultImplementation": "0x2Ff0509D0e9a78Bf58815D768f4487f0645824F0"
   }
 }
