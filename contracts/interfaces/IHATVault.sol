@@ -54,11 +54,11 @@ interface IHATVault is IERC4626Upgradeable {
     // values are in percentages and should add up to 100% (defined as 10000)
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
-        uint256 hackerVested;
+        uint16 hackerVested;
         // the percentage of tokens that are sent directly to the hacker
-        uint256 hacker;
+        uint16 hacker;
         // the percentage sent to the committee
-        uint256 committee;
+        uint16 committee;
     }
 
     // How to divide a bounty for a claim that has been approved
@@ -92,9 +92,9 @@ interface IHATVault is IERC4626Upgradeable {
     */
     struct VaultInitParams {
         IRewardController rewardController;
-        uint256 vestingDuration;
-        uint256 vestingPeriods;
-        uint256 maxBounty;
+        uint32 vestingDuration;
+        uint32 vestingPeriods;
+        uint16 maxBounty;
         IHATVault.BountySplit bountySplit;
         IERC20 asset;
         address owner;
@@ -229,7 +229,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @dev See {IHATVault-VaultInitParams} for more details
     * @dev Called when the vault is created in {IHATVaultsRegistry-createVault}
     */
-    function initialize(VaultInitParams memory _params) external;
+    function initialize(VaultInitParams calldata _params) external;
 
     /* -------------------------------------------------------------------------------- */
 
@@ -249,7 +249,7 @@ interface IHATVault is IERC4626Upgradeable {
      */
     function submitClaim(
         address _beneficiary, 
-        uint256 _bountyPercentage, 
+        uint16 _bountyPercentage, 
         string calldata _descriptionHash
     )
         external
@@ -278,7 +278,7 @@ interface IHATVault is IERC4626Upgradeable {
     * be sent as a bounty. This value will be ignored if the caller is not the
     * arbitrator.
     */
-    function approveClaim(bytes32 _claimId, uint256 _bountyPercentage)
+    function approveClaim(bytes32 _claimId, uint16 _bountyPercentage)
         external;
 
     /**
@@ -309,7 +309,7 @@ interface IHATVault is IERC4626Upgradeable {
     * 120 days and bigger than `_periods`
     * @param _periods Number of vesting periods. Cannot be 0.
     */
-    function setVestingParams(uint256 _duration, uint256 _periods) external;
+    function setVestingParams(uint32 _duration, uint32 _periods) external;
 
     /**
     * @notice Called by the vault's owner to set the vault token bounty split
@@ -317,7 +317,7 @@ interface IHATVault is IERC4626Upgradeable {
     * Can only be called if is no active claim and not during safety periods.
     * @param _bountySplit The bounty split
     */
-    function setBountySplit(BountySplit memory _bountySplit) external;
+    function setBountySplit(BountySplit calldata _bountySplit) external;
 
     /**
     * @notice Called by the registry's fee setter to set the fee for 
@@ -341,7 +341,7 @@ interface IHATVault is IERC4626Upgradeable {
     * {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
-    function setPendingMaxBounty(uint256 _maxBounty) external;
+    function setPendingMaxBounty(uint16 _maxBounty) external;
 
     /**
     * @notice Called by the vault's owner to set the vault's max bounty to
@@ -363,7 +363,7 @@ interface IHATVault is IERC4626Upgradeable {
     * vault in the Hats.finance UI
     * @param _descriptionHash the hash of the vault's description
     */
-    function setVaultDescription(string memory _descriptionHash) external;
+    function setVaultDescription(string calldata _descriptionHash) external;
 
     /**
     * @notice Called by the registry's owner to set the vault's reward controller
@@ -380,8 +380,8 @@ interface IHATVault is IERC4626Upgradeable {
     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
     */
     function setHATBountySplit(
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested
+        uint16 _bountyGovernanceHAT,
+        uint16 _bountyHackerHATVested
     ) 
         external;
 
@@ -401,7 +401,7 @@ interface IHATVault is IERC4626Upgradeable {
     * registry's default value.
     * @param _challengePeriod The vault's challenge period
     */
-    function setChallengePeriod(uint256 _challengePeriod) external;
+    function setChallengePeriod(uint32 _challengePeriod) external;
 
     /**
     * @notice Called by the registry's owner to set the period of time after
@@ -410,7 +410,7 @@ interface IHATVault is IERC4626Upgradeable {
     * registry's default value.
     * @param _challengeTimeOutPeriod The vault's challenge timeout period
     */
-    function setChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
+    function setChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod)
         external;
 
     /**
@@ -540,15 +540,15 @@ interface IHATVault is IERC4626Upgradeable {
     * value will be returned.
     * @return The vault's HAT bounty split part that goes to the governance
     */
-    function getBountyGovernanceHAT() external view returns(uint256);
+    function getBountyGovernanceHAT() external view returns(uint16);
     
     /** 
-    * @notice Returns the vault HAT bounty split part that is veested for the hacker
+    * @notice Returns the vault HAT bounty split part that is vested for the hacker
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split part that is veested for the hacker
+    * @return The vault's HAT bounty split part that is vested for the hacker
     */
-    function getBountyHackerHATVested() external view returns(uint256);
+    function getBountyHackerHATVested() external view returns(uint16);
 
     /** 
     * @notice Returns the address of the vault's arbitrator
@@ -565,7 +565,7 @@ interface IHATVault is IERC4626Upgradeable {
     * value will be returned.
     * @return The vault's challenge period
     */
-    function getChallengePeriod() external view returns(uint256);
+    function getChallengePeriod() external view returns(uint32);
 
     /** 
     * @notice Returns the period of time after which a claim for a bounty
@@ -574,7 +574,7 @@ interface IHATVault is IERC4626Upgradeable {
     * value will be returned.
     * @return The vault's challenge timeout period
     */
-    function getChallengeTimeOutPeriod() external view returns(uint256);
+    function getChallengeTimeOutPeriod() external view returns(uint32);
 
     /** 
     * @notice Returns the amount of shares to be burned to give the user the exact

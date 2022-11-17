@@ -13,11 +13,11 @@ contract VaultsManagerMock {
                     uint256 _allocPoint,
                     IERC20[] memory _assets,
                     address _committee,
-                    uint256 _maxBounty,
+                    uint16 _maxBounty,
                     HATVault.BountySplit memory _bountySplit,
                     string memory _descriptionHash,
-                    uint256 _bountyVestingDuration,
-                    uint256 _bountyVestingPeriods) external {
+                    uint32 _bountyVestingDuration,
+                    uint32 _bountyVestingPeriods) external {
 
         for (uint256 i=0; i < _assets.length; i++) {
             address vault = _hatVaults.createVault(_assets[i],
