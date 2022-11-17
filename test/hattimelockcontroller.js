@@ -305,6 +305,13 @@ contract("HatTimelockController", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     try {
+      await arbitratorContract.approveClaim(vault.address, claimId);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
       await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, {
         from: accounts[3],
       });
@@ -406,6 +413,23 @@ contract("HatTimelockController", (accounts) => {
       vault.dismissClaim(claimId),
       "OnlyCallableIfChallenged"
     );
+
+    try {
+      await arbitratorContract.dismissClaim(vault.address, claimId);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
     await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId);
   });
 
@@ -429,12 +453,30 @@ contract("HatTimelockController", (accounts) => {
       false
     )).receipt.rawLogs[0].address);
 
+    try {
+      await hatTimelockController.setAllocPoint(newVault.address, 100, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
     await hatTimelockController.setAllocPoint(
       newVault.address,
       100
     );
 
     assert.equal(await newVault.committee(), accounts[3]);
+
+    try {
+      await hatTimelockController.setCommittee(newVault.address, accounts[1], {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
 
     try {
       await newVault.setCommittee(accounts[2]);
@@ -470,6 +512,15 @@ contract("HatTimelockController", (accounts) => {
     });
 
     await stakingToken.mint(staker, web3.utils.toWei("1"));
+
+    try {
+      await hatTimelockController.setEmergencyPaused(hatVaultsRegistry.address, true, {
+        from: accounts[1],
+      });
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
 
     try {
       await hatVaultsRegistry.setEmergencyPaused(true);

@@ -477,6 +477,7 @@ contract("TokenLock", (accounts) => {
       assertVMException(ex);
     }
   });
+
   it("delegate", async () => {
     await setup(accounts, 2, true);
     assert.equal(await tokenLock.canDelegate(), true);
@@ -499,6 +500,14 @@ contract("TokenLock", (accounts) => {
     } catch (ex) {
       assertVMException(ex);
     }
+
+    try {
+      await tokenLockFactory.setMasterCopy(accounts[1], { from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
     await tokenLockFactory.setMasterCopy(accounts[1]);
   });
 
