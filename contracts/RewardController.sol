@@ -137,7 +137,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             uint256 _nextEpoch = (block.number - _startBlock) / epochLength + 1;
             // if rewards are ongoing, update the future rewards but keep past and current
             for (; _nextEpoch < NUMBER_OF_EPOCHS; ++_nextEpoch) {
-                epochRewardPerBlock[_nextEpoch] = _epochRewardPerBlock[_nextEpoch]; 
+                epochRewardPerBlock[_nextEpoch] = _epochRewardPerBlock[_nextEpoch];
             }
             emit SetEpochRewardPerBlock(epochRewardPerBlock);
         }
