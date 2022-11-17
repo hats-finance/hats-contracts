@@ -78,11 +78,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint16 public constant NULL_UINT16 = type(uint16).max;
     uint32 public constant NULL_UINT32 = type(uint32).max;
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
-    uint256 public constant HUNDRED_PERCENT = 10000;
-    uint256 public constant MAX_BOUNTY_LIMIT = 9000; // Max bounty can be up to 90%
-    uint256 public constant MAX_COMMITTEE_BOUNTY = 1000; // Max committee bounty can be up to 10%
-    uint256 public constant HUNDRED_PERCENT_SQRD = 100000000;
-    uint256 public constant MAX_WITHDRAWAL_FEE = 200; // Max fee is 2%
+    uint256 public constant HUNDRED_PERCENT = 1e4;
+    uint256 public constant HUNDRED_PERCENT_SQRD = 1e8;
+    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty can be up to 90%
+    uint256 public constant MAX_WITHDRAWAL_FEE = 2e2; // Max fee is 2%
+    uint256 public constant MAX_COMMITTEE_BOUNTY = 10e2; // Max committee bounty can be up to 10%
+
+    uint256 public constant MINIMAL_AMOUNT_OF_SHARES = 1e3; // to reduce rounding errors, the number of shares is either 0, or > than this number
 
     HATVaultsRegistry public registry;
     ITokenLockFactory public tokenLockFactory;
@@ -197,6 +199,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         emit SetVaultDescription(_params.descriptionHash);
     }
+
 
     /* ---------------------------------- Claim --------------------------------------- */
 
@@ -740,6 +743,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             if (!_isEmergencyWithdraw) {
                 rewardController.commitUserBalance(_from, _amount, false);
             }
+        }
+    }
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        if (totalSupply() > 0 && totalSupply() < MINIMAL_AMOUNT_OF_SHARES) {
+          revert AmountOfSharesMustBeMoreThanMinimalAmount();
         }
     }
 

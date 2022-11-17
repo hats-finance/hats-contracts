@@ -165,6 +165,11 @@ interface IHATVaultsRegistry {
     error NotEnoughFeePaid();
 
     /**
+     * @notice Raised on {LogClaim} if the transfer of the claim fee failed
+     */
+    error ClaimFeeTransferFailed();
+
+    /**
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
      * @param _HAT The HAT token address
