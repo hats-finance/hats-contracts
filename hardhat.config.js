@@ -50,7 +50,7 @@ module.exports = {
     },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: process.env.GOERLI_PK,
+      accounts: [process.env.GOERLI_PK],
       gasPrice: "auto",
       gas: "auto",
     },
