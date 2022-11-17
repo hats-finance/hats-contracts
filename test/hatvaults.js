@@ -6227,7 +6227,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   });
 
 
-  it.only("First depositor can partially steal deposits and DoS vault", async () => {
+  it("First depositor can partially steal deposits and DoS vault", async () => {
     /**
      * TEST the following scenario:
      * - The first vault's depositor is able to compromise vaults by minting a minimum amount of shares 
