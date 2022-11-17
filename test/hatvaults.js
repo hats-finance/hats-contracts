@@ -1058,10 +1058,10 @@ contract("HatVaults", (accounts) => {
       "500"
     );
 
-    tx = await vault.setHATBountySplit(await vault.NULL_UINT(), await vault.NULL_UINT());
+    tx = await vault.setHATBountySplit(await vault.NULL_UINT16(), await vault.NULL_UINT16());
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
-    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), (await vault.NULL_UINT()).toString());
-    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), (await vault.NULL_UINT()).toString());
+    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), (await vault.NULL_UINT16()).toString());
+    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), (await vault.NULL_UINT16()).toString());
 
     assert.equal(
       (await vault.getBountyGovernanceHAT()).toString(),

@@ -37,24 +37,24 @@ interface IHATVaultsRegistry {
     // a struct with parameters for all vaults
     struct GeneralParameters {
         // vesting duration for the part of the bounty given to the hacker in HAT tokens
-        uint256 hatVestingDuration;
+        uint32 hatVestingDuration;
         // vesting periods for the part of the bounty given to the hacker in HAT tokens
-        uint256 hatVestingPeriods;
+        uint32 hatVestingPeriods;
         // withdraw enable period. safetyPeriod starts when finished.
-        uint256 withdrawPeriod;
+        uint32 withdrawPeriod;
         // withdraw disable period - time for the committee to gather and decide on actions,
         // withdrawals are not possible in this time. withdrawPeriod starts when finished.
-        uint256 safetyPeriod;
+        uint32 safetyPeriod;
         // period of time after withdrawRequestPendingPeriod where it is possible to withdraw
         // (after which withdrawals are not possible)
-        uint256 withdrawRequestEnablePeriod;
+        uint32 withdrawRequestEnablePeriod;
         // period of time that has to pass after withdraw request until withdraw is possible
-        uint256 withdrawRequestPendingPeriod;
+        uint32 withdrawRequestPendingPeriod;
         // period of time that has to pass after setting a pending max
         // bounty before it can be set as the new max bounty
-        uint256 setMaxBountyDelay;
+        uint32 setMaxBountyDelay;
         // fee in ETH to be transferred with every logging of a claim
-        uint256 claimFee;  
+        uint256 claimFee;
     }
 
     /**
@@ -361,7 +361,7 @@ interface IHATVaultsRegistry {
      * @param _descriptionHash - a hash of an IPFS encrypted file which 
      * describes the claim.
      */
-    function logClaim(string memory _descriptionHash) external payable;
+    function logClaim(string calldata _descriptionHash) external payable;
 
     /**
      * @notice Called by governance to set the default percentage of each claim bounty
@@ -370,8 +370,8 @@ interface IHATVaultsRegistry {
      * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
      */
     function setDefaultHATBountySplit(
-        uint256 _defaultBountyGovernanceHAT,
-        uint256 _defaultBountyHackerHATVested
+        uint16 _defaultBountyGovernanceHAT,
+        uint16 _defaultBountyHackerHATVested
     ) 
         external;
 
@@ -383,7 +383,7 @@ interface IHATVaultsRegistry {
      * @param _bountyGovernanceHAT The HAT bounty for governance
      * @param _bountyHackerHATVested The HAT bounty vested for the hacker
      */
-    function validateHATSplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
+    function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested)
          external
          pure;
 
@@ -397,7 +397,7 @@ interface IHATVaultsRegistry {
      * @notice Called by governance to set the default challenge period
      * @param _defaultChallengePeriod The default challenge period
      */
-    function setDefaultChallengePeriod(uint256 _defaultChallengePeriod) 
+    function setDefaultChallengePeriod(uint32 _defaultChallengePeriod) 
         external;
 
     /**
@@ -405,7 +405,7 @@ interface IHATVaultsRegistry {
      * @param _defaultChallengeTimeOutPeriod The Default challenge timeout
      */
     function setDefaultChallengeTimeOutPeriod(
-        uint256 _defaultChallengeTimeOutPeriod
+        uint32 _defaultChallengeTimeOutPeriod
     ) 
         external;
 
@@ -420,14 +420,14 @@ interface IHATVaultsRegistry {
      * is greater than 1 day and less than 5 days.
      * @param _challengePeriod The challenge period to check
      */
-    function validateChallengePeriod(uint256 _challengePeriod) external pure;
+    function validateChallengePeriod(uint32 _challengePeriod) external pure;
 
     /**
      * @notice Check that the given challenge timeout period is legal, meaning
      * that it is greater than 2 days and less than 85 days.
      * @param _challengeTimeOutPeriod The challenge timeout period to check
      */
-    function validateChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod) external pure;
+    function validateChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) external pure;
    
     /**
      * @notice Called by governance to set the fee setter role
@@ -443,8 +443,8 @@ interface IHATVaultsRegistry {
      * has ended during which withdrawal is enabled
      */
     function setWithdrawRequestParams(
-        uint256 _withdrawRequestPendingPeriod,
-        uint256  _withdrawRequestEnablePeriod
+        uint32 _withdrawRequestPendingPeriod,
+        uint32  _withdrawRequestEnablePeriod
     )
         external;
 
@@ -469,8 +469,8 @@ interface IHATVaultsRegistry {
      * can be submitted and withdrawals are disabled. Must be at most 6 hours.
      */
     function setWithdrawSafetyPeriod(
-        uint256 _withdrawPeriod,
-        uint256 _safetyPeriod
+        uint32 _withdrawPeriod,
+        uint32 _safetyPeriod
     ) 
         external;
 
@@ -482,14 +482,14 @@ interface IHATVaultsRegistry {
      * @param _periods The number of vesting periods. Must be more than 0 and 
      * less then the vesting duration.
      */
-    function setHatVestingParams(uint256 _duration, uint256 _periods) external;
+    function setHatVestingParams(uint32 _duration, uint32 _periods) external;
 
     /**
      * @notice Called by governance to set the timelock delay for setting the
      * max bounty (the time between setPendingMaxBounty and setMaxBounty)
      * @param _delay The time period for the delay. Must be at least 2 days.
      */
-    function setMaxBountyDelay(uint256 _delay) external;
+    function setMaxBountyDelay(uint32 _delay) external;
 
     /**
      * @notice Create a new vault
@@ -517,11 +517,11 @@ interface IHATVaultsRegistry {
         address _owner,
         address _committee,
         IRewardController _rewardController,
-        uint256 _maxBounty,
-        IHATVault.BountySplit memory _bountySplit,
-        string memory _descriptionHash,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods,
+        uint16 _maxBounty,
+        IHATVault.BountySplit calldata _bountySplit,
+        string calldata _descriptionHash,
+        uint32 _bountyVestingDuration,
+        uint32 _bountyVestingPeriods,
         bool _isPaused
     ) 
     external 
@@ -573,13 +573,43 @@ interface IHATVaultsRegistry {
     ) external;
   
     /**
-     * @notice Returns the general parameters for all vaults
-     * @return {GeneralParameters} General parameters for all vaults
-     */    
-    function getGeneralParameters()
-        external 
-        view 
-        returns(GeneralParameters memory);
+     * @notice Returns the withdraw enable period for all vaults. The safety
+     * period starts when finished.
+     * @return Withdraw enable period for all vaults
+     */
+    function getWithdrawPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw disable period - time for the committee to
+     * gather and decide on actions, withdrawals are not possible in this
+     * time. The withdraw period starts when finished.
+     * @return Safety period for all vaults
+     */
+    function getSafetyPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw request enable period for all vaults -
+     * period of time after withdrawRequestPendingPeriod where it is possible
+     * to withdraw, and after which withdrawals are not possible.
+     * @return Withdraw request enable period for all vaults
+     */
+    function getWithdrawRequestEnablePeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the withdraw request pending period for all vaults -
+     * period of time that has to pass after withdraw request until withdraw
+     * is possible
+     * @return Withdraw request pending period for all vaults
+     */
+    function getWithdrawRequestPendingPeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns the set max bounty delay for all vaults - period of
+     * time that has to pass after setting a pending max bounty before it can
+     * be set as the new max bounty
+     * @return Set max bounty delay for all vaults
+     */
+    function getSetMaxBountyDelay() external view returns (uint256);
 
     /**
      * @notice Returns the number of vaults that have been previously created
