@@ -326,10 +326,9 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         uint256 _hackersHatReward,
         uint256 _governanceHatReward
     ) external {
-        uint256 amount = _hackersHatReward + _governanceHatReward;
         hackersHatReward[address(_asset)][_hacker] += _hackersHatReward;
         governanceHatReward[address(_asset)] += _governanceHatReward;
-        _asset.safeTransferFrom(msg.sender, address(this), amount);
+        _asset.safeTransferFrom(msg.sender, address(this), _hackersHatReward + _governanceHatReward);
     }
 
     /** @notice See {IHATVaultsRegistry-swapAndSend}. */
@@ -341,36 +340,36 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         bytes calldata _routingPayload
     ) external onlyOwner {
         // Needed to avoid a "stack too deep" error
-        SwapData memory swapData;
-        swapData.hackerRewards = new uint256[](_beneficiaries.length);
-        swapData.governanceHatReward = governanceHatReward[_asset];
-        swapData.amount = swapData.governanceHatReward;
+        SwapData memory _swapData;
+        _swapData.hackerRewards = new uint256[](_beneficiaries.length);
+        _swapData.governanceHatReward = governanceHatReward[_asset];
+        _swapData.amount = _swapData.governanceHatReward;
         for (uint256 i = 0; i < _beneficiaries.length;) { 
-            swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
-            swapData.amount += swapData.hackerRewards[i]; 
+            _swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
+            _swapData.amount += _swapData.hackerRewards[i]; 
             unchecked { ++i; }
         }
-        if (swapData.amount == 0) revert AmountToSwapIsZero();
+        if (_swapData.amount == 0) revert AmountToSwapIsZero();
         IERC20 _HAT = HAT;
-        (swapData.hatsReceived, swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
+        (_swapData.hatsReceived, _swapData.amountUnused) = _swapTokenForHAT(IERC20(_asset), _swapData.amount, _amountOutMinimum, _routingContract, _routingPayload);
         
-        swapData.usedPart = (swapData.amount - swapData.amountUnused) / swapData.amount;
-        swapData.governanceAmountSwapped = swapData.usedPart * swapData.governanceHatReward;
-        governanceHatReward[_asset]  = swapData.amountUnused.mulDiv(swapData.governanceHatReward, swapData.amount);
+        _swapData.usedPart = (_swapData.amount - _swapData.amountUnused) / _swapData.amount;
+        _swapData.governanceAmountSwapped = _swapData.usedPart * _swapData.governanceHatReward;
+        governanceHatReward[_asset]  = _swapData.amountUnused.mulDiv(_swapData.governanceHatReward, _swapData.amount);
 
         for (uint256 i = 0; i < _beneficiaries.length;) {
-            uint256 hackerReward = swapData.hatsReceived.mulDiv(swapData.hackerRewards[i], swapData.amount);
-            uint256 hackerAmountSwapped = swapData.usedPart * swapData.hackerRewards[i];
-            swapData.totalHackerReward += hackerReward;
-            hackersHatReward[_asset][_beneficiaries[i]] = swapData.amountUnused.mulDiv(swapData.hackerRewards[i], swapData.amount);
-            address tokenLock;
-            if (hackerReward > 0) {
+            uint256 _hackerReward = _swapData.hatsReceived.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
+            uint256 _hackerAmountSwapped = _swapData.usedPart * _swapData.hackerRewards[i];
+            _swapData.totalHackerReward += _hackerReward;
+            hackersHatReward[_asset][_beneficiaries[i]] = _swapData.amountUnused.mulDiv(_swapData.hackerRewards[i], _swapData.amount);
+            address _tokenLock;
+            if (_hackerReward > 0) {
                 // hacker gets her reward via vesting contract
-                tokenLock = tokenLockFactory.createTokenLock(
+                _tokenLock = tokenLockFactory.createTokenLock(
                     address(_HAT),
                     0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
                     _beneficiaries[i],
-                    hackerReward,
+                    _hackerReward,
                     // solhint-disable-next-line not-rely-on-time
                     block.timestamp, //start
                     // solhint-disable-next-line not-rely-on-time
@@ -381,15 +380,15 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                     ITokenLock.Revocability.Disabled,
                     true
                 );
-                _HAT.safeTransfer(tokenLock, hackerReward);
+                _HAT.safeTransfer(_tokenLock, _hackerReward);
             }
-            emit SwapAndSend(_beneficiaries[i], hackerAmountSwapped, hackerReward, tokenLock);
+            emit SwapAndSend(_beneficiaries[i], _hackerAmountSwapped, _hackerReward, _tokenLock);
             unchecked { ++i; }
         }
         address _owner = owner(); 
-        uint256 _amountToOwner= swapData.hatsReceived - swapData.totalHackerReward;
+        uint256 _amountToOwner= _swapData.hatsReceived - _swapData.totalHackerReward;
         _HAT.safeTransfer(_owner, _amountToOwner);
-        emit SwapAndSend(_owner, swapData.governanceAmountSwapped, _amountToOwner, address(0));
+        emit SwapAndSend(_owner, _swapData.governanceAmountSwapped, _amountToOwner, address(0));
     }
 
     /** @notice See {IHATVaultsRegistry-getWithdrawPeriod}. */   
@@ -464,14 +463,14 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         }
 
         IERC20(_asset).safeApprove(_routingContract, _amount);
-        uint256 balanceBefore = _HAT.balanceOf(address(this));
-        uint256 assetBalanceBefore = _asset.balanceOf(address(this));
+        uint256 _balanceBefore = _HAT.balanceOf(address(this));
+        uint256 _assetBalanceBefore = _asset.balanceOf(address(this));
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = _routingContract.call(_routingPayload);
         if (!success) revert SwapFailed();
-        hatsReceived = _HAT.balanceOf(address(this)) - balanceBefore;
-        amountUnused = _amount - (assetBalanceBefore - _asset.balanceOf(address(this)));
+        hatsReceived = _HAT.balanceOf(address(this)) - _balanceBefore;
+        amountUnused = _amount - (_assetBalanceBefore - _asset.balanceOf(address(this)));
         if (hatsReceived < _amountOutMinimum)
             revert AmountSwappedLessThanMinimum();
 
