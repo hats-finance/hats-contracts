@@ -264,52 +264,26 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-createVault}. */
-    function createVault(
-        IERC20 _asset,
-        address _owner,
-        address _committee,
-        IRewardController _rewardController,
-        uint16 _maxBounty,
-        HATVault.BountySplit calldata _bountySplit,
-        string calldata _descriptionHash,
-        uint32 _bountyVestingDuration,
-        uint32 _bountyVestingPeriods,
-        bool _isPaused
-    ) 
-    external 
-    returns(address vault)
-    {
+    function createVault(IHATVault.VaultInitParams calldata _params) external returns(address vault) {
         vault = Clones.clone(hatVaultImplementation);
 
-        HATVault(vault).initialize(
-            IHATVault.VaultInitParams({
-                rewardController: _rewardController,
-                vestingDuration: _bountyVestingDuration,
-                vestingPeriods: _bountyVestingPeriods,
-                maxBounty: _maxBounty,
-                bountySplit: _bountySplit,
-                asset: _asset,
-                owner: _owner,
-                committee: _committee,
-                isPaused: _isPaused,
-                descriptionHash: _descriptionHash
-            })
-        );
+        HATVault(vault).initialize(_params);
 
         hatVaults.push(vault);
 
         emit VaultCreated(
             vault,
-            address(_asset),
-            _owner,
-            _committee,
-            _rewardController,
-            _maxBounty,
-            _bountySplit,
-            _descriptionHash,
-            _bountyVestingDuration,
-            _bountyVestingPeriods,
-            _isPaused
+            address(_params.asset),
+            _params.owner,
+            _params.committee,
+            _params.symbol,
+            _params.rewardController,
+            _params.maxBounty,
+            _params.bountySplit,
+            _params.descriptionHash,
+            _params.vestingDuration,
+            _params.vestingPeriods,
+            _params.isPaused
         );
     }
 

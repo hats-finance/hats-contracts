@@ -568,18 +568,19 @@ contract("HatVaults", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let tx = await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[3],
-      rewardController.address,
-      maxBounty,
-      bountySplit,
-      "_descriptionHash1",
-      86400,
-      10,
-      false
-    );
+    let tx = await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[3],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: maxBounty,
+      bountySplit: bountySplit,
+      descriptionHash: "_descriptionHash1",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    });
     assert.equal(tx.logs[1].event, "VaultCreated");
     assert.equal(
       tx.logs[1].args._vault,
@@ -589,6 +590,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].args._asset, stakingToken2.address);
     assert.equal(tx.logs[1].args._owner, await hatVaultsRegistry.owner());
     assert.equal(tx.logs[1].args._committee, accounts[3]);
+    assert.equal(tx.logs[1].args._symbol, "VLT");
     assert.equal(tx.logs[1].args._rewardController, rewardController.address);
     assert.equal(tx.logs[1].args._maxBounty, maxBounty);
     assert.equal(tx.logs[1].args._bountySplit.hackerVested, "7000");
@@ -605,6 +607,10 @@ contract("HatVaults", (accounts) => {
     });
     assert.equal(logs[0].event, "SetVaultDescription");
     assert.equal(logs[0].args._descriptionHash, "_descriptionHash1");
+
+    let vault = await HATVault.at(tx.logs[1].args._vault);
+    assert.equal(await vault.name(), "HATVault VLT");
+    assert.equal(await vault.symbol(), "VLT");
   });
 
   it("setCommittee", async () => {
@@ -626,18 +632,19 @@ contract("HatVaults", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[3],
-      rewardController.address,
-      maxBounty,
-      bountySplit,
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[3],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: maxBounty,
+      bountySplit: bountySplit,
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     let tx = await rewardController.setAllocPoint(
       newVault.address,
@@ -1029,16 +1036,19 @@ contract("HatVaults", (accounts) => {
     );
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false,
+      {
+        asset: stakingToken.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+      },
       { from: accounts[1] }
     )).logs[1].args._vault);
 
@@ -1128,16 +1138,19 @@ contract("HatVaults", (accounts) => {
     assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "1");
 
     let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false,
+      {
+        asset: stakingToken.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+      },
       { from: accounts[1] }
     )).logs[1].args._vault);
 
@@ -4347,18 +4360,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("approve+ swapAndSend with HAT vault", async () => {
     await setUpGlobalVars(accounts);
     var staker = accounts[4];
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      hatToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: hatToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
     await hatVaultsRegistry.setDefaultChallengePeriod(60 * 60 * 24);
 
     await rewardController.setAllocPoint(
@@ -4463,18 +4477,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("approve + swapAndSend 2 vaults with same token", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [600, 400]);
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [8400, 1500, 100],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [8400, 1500, 100],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     await newVault.setHATBountySplit(500, 400);
 
@@ -5039,18 +5054,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("swapAndSend 2 vaults with same token", async () => {
     await setUpGlobalVars(accounts);
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [8400, 1500, 100],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [8400, 1500, 100],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -5641,18 +5657,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[0],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[0],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 200);
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
@@ -5696,70 +5713,74 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
 
     try {
-      await hatVaultsRegistry.createVault(
-        stakingToken2.address,
-        await hatVaultsRegistry.owner(),
-        accounts[1],
-        rewardController.address,
-        8000,
-        [7000, 2500, 500],
-        "_descriptionHash",
-        10,
-        86400,
-        false
-      );
+      await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 10,
+        vestingPeriods: 86400,
+        isPaused: false
+      });
       assert(false, "vesting duration smaller than period");
     } catch (ex) {
       assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
 
     try {
-      await hatVaultsRegistry.createVault(
-        stakingToken2.address,
-        await hatVaultsRegistry.owner(),
-        accounts[1],
-        rewardController.address,
-        8000,
-        [7000, 2500, 500],
-        "_descriptionHash",
-        121 * 24 * 3600,
-        10,
-        false
-      );
+      await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 121 * 24 * 3600,
+        vestingPeriods: 10,
+        isPaused: false
+      });
       assert(false, "vesting duration is too long");
     } catch (ex) {
       assertVMException(ex, "VestingDurationTooLong");
     }
 
     try {
-      await hatVaultsRegistry.createVault(
-        stakingToken2.address,
-        await hatVaultsRegistry.owner(),
-        accounts[1],
-        rewardController.address,
-        8000,
-        [7000, 2500, 500],
-        "_descriptionHash",
-        86400,
-        0,
-        false
-      );
+      await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 0,
+        isPaused: false
+      });
       assert(false, "vesting period cannot be zero");
     } catch (ex) {
       assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -5818,18 +5839,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    const vault1 = await HATVault.at((await hatVaultsRegistry1.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController1.address,
-      8000,
-      [8400, 1500, 100],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    const vault1 = await HATVault.at((await hatVaultsRegistry1.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [8400, 1500, 100],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     await rewardController1.updateVault(vault1.address);
     await rewardController1.updateVault(vault1.address);
@@ -5979,18 +6001,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       from: staker,
     });
     //10
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     let tx2 = await rewardController.setAllocPoint(
       newVault.address,
@@ -6072,18 +6095,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      hatToken.address,
-      await hatVaultsRegistry.owner(),
-      accounts[1],
-      rewardController.address,
-      8000,
-      [7000, 2500, 500],
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).logs[1].args._vault);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: hatToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
 
     await rewardController.setAllocPoint(
       newVault.address,
