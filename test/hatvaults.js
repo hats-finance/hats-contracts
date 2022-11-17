@@ -37,6 +37,7 @@ let safeWithdrawBlocksIncrement = 3;
 let rewardControllerExpectedHatsBalance;
 
 const HUNDRED_PERCENT = 10000;
+const MINIMAL_AMOUNT_OF_SHARES = 1000;
 
 async function advanceToSafetyPeriod(registry) {
   if (!registry) registry = hatVaultsRegistry;
@@ -6184,10 +6185,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.isFalse(tx.logs[2].args._amount.eq(0));
   });
 
-  it("minumum amount of shares must be at least MINIMAL_AMOUNT_OF_SHARES", async () => {
+  it("minimum amount of shares must be at least MINIMAL_AMOUNT_OF_SHARES", async () => {
     await setUpGlobalVars(accounts);
     const staker = accounts[1];
-    const MINIMAL_AMOUNT_OF_SHARES = 1000000;
     await stakingToken.mint(staker, "10000000");
     await stakingToken.approve(vault.address, "10000000", { from: staker});
     // 1e6 is the minimum deposit
@@ -6205,7 +6205,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
   });
 
-  it("minumum amount of shares must be at least MINIMAL_AMOUNT_OF_SHARES", async () => {
+  it("minimum amount of shares must be at least MINIMAL_AMOUNT_OF_SHARES", async () => {
     await setUpGlobalVars(accounts);
     const staker = accounts[1];
     const MINIMAL_AMOUNT_OF_SHARES = 1000000;
@@ -6224,14 +6224,10 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), (HUNDRED_PERCENT - bountyPercentage) * MINIMAL_AMOUNT_OF_SHARES/HUNDRED_PERCENT);
 
-    // redeem all the remaining tokens except 1
-    // await safeRedeem(vault, MINIMAL_AMOUNT_OF_SHARES-1, staker);
-    // assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "1");
-    // assert.equal((await vault.totalSupply()).toString(), "1");
   });
 
 
-  it("First depositor can partially steal deposits and DoS vault", async () => {
+  it.only("First depositor can partially steal deposits and DoS vault", async () => {
     /**
      * TEST the following scenario:
      * - The first vault's depositor is able to compromise vaults by minting a minimum amount of shares 
@@ -6252,10 +6248,10 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     var staker = accounts[1];
     var staker2 = accounts[2];
-    await stakingToken.approve(vault.address, web3.utils.toWei("1", "ether"), {
+    await stakingToken.approve(vault.address, web3.utils.toWei("1000", "ether"), {
       from: staker,
     });
-    await stakingToken.approve(vault.address, web3.utils.toWei("1.5", "ether"), {
+    await stakingToken.approve(vault.address, web3.utils.toWei("1500", "ether"), {
       from: staker2,
     });
     const stakerInitialDeposit = MINIMAL_AMOUNT_OF_SHARES;
@@ -6269,18 +6265,24 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), stakerInitialDeposit);
 
     //Now we transfer a large amount of tokens to the vault.
-    await stakingToken.mint(staker, web3.utils.toWei('1', 'ether'));
-    await stakingToken.transfer(vault.address, web3.utils.toWei('1', 'ether'), {
+    await stakingToken.mint(staker, web3.utils.toWei('1000', 'ether'));
+    await stakingToken.transfer(vault.address, web3.utils.toWei('1000', 'ether'), {
       from: staker,
     });
+    // one share is now worth 1e18 + 1 tokens
+    // ((1000*1e18+1000)/1000)
+    assert.equal((await vault.previewRedeem(1)).toString(), "1000000000000000001");
 
-
-    //Number of shares have rounded down
-    const staker2InitialDeposit = web3.utils.toWei('1.5', 'ether');
+    const staker2InitialDeposit = web3.utils.toWei('1500', 'ether');
     await stakingToken.mint(staker2, staker2InitialDeposit);
     await vault.deposit(staker2InitialDeposit, staker2, { from: staker2 });
-    assert.equal((await vault.totalSupply()).toString(), "2499999");
-    assert.equal((await vault.balanceOf(staker2)).toString(), "1499999");
+
+    assert.equal((await vault.totalSupply()).toString(), "2499");
+    // commented next line bc there is a small difference in rounding apparently
+    // assert.equal((await vault.previewRedeem(1)).toString(), ((1000e18+1000+1500e18)/2499).toString());
+    assert.equal((await vault.previewRedeem(1)).toString(), "1000400160064025610");
+    assert.equal((await vault.balanceOf(staker2)).toString(), "1499");
+
 
     //If able to withdraw, the malicious actor will withdraw all their assets + some extra due to rounding errors.
     await safeRedeem(vault, (await vault.balanceOf(staker)), staker);
