@@ -241,7 +241,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
-        if (msg.sender !=  activeClaim.arbitrator && msg.sender != registry.owner())
+        if (msg.sender != activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
