@@ -9,6 +9,9 @@ interface IHATToken is IVotes, IERC20Permit {
     // Amount for minting or burning cannot be zero
     error ZeroAmount();
 
+    // Token transfers had not been enabled yet
+    error TransfersDisabled();
+
     /// @notice An event thats emitted when the minter address is set
     event MinterSet(address indexed minter, uint256 seedAmount);
 

@@ -12,10 +12,13 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
     /// minter -> minting seedAmount
     mapping (address => uint256) public minters;
 
+    /// @notice Whether the token is transferable or not
+    /// @dev Set to false on deployment, and can only be set to true by the owner and cannot be set back to false
+    bool public transferable;
+
     /**
      * @notice Construct a new HAT token
      */
-    // solhint-disable-next-line func-visibility
     constructor(address _governance) 
         ERC20("hats.finance", "HAT") 
         ERC20Capped(100000000e18) 
@@ -29,20 +32,28 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
         emit MinterSet(_minter, _seedAmount);
     }
 
+    function setTransferable() external onlyOwner {
+        transferable = true;
+    }
+
     function burn(uint256 _amount) external {
         if (_amount == 0) revert ZeroAmount();
         return _burn(msg.sender, _amount);
     }
 
-    function mint(address _account, uint _amount) external {
+    function mint(address _account, uint256 _amount) external {
         if (_amount == 0) revert ZeroAmount();
         minters[msg.sender] -= _amount;
         _mint(_account, _amount);
     }
 
+    function _transfer(address from, address to, uint256 amount) internal override {
+        if (!transferable) revert TransfersDisabled();
+        return super._transfer(from, to, amount);
+    }
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
-       super._afterTokenTransfer(from, to, amount);
+        super._afterTokenTransfer(from, to, amount);
     }
 
     function _burn(address account, uint256 amount) internal override(ERC20, ERC20Votes) {

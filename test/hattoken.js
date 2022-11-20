@@ -24,12 +24,14 @@ function assertVMException(error) {
 contract("HATToken", (accounts) => {
   it("should put 0 tokens in the first account", async () => {
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     let balance = await token.balanceOf.call(accounts[0]);
     assert.equal(balance.valueOf(), 0);
   });
 
   it("should be owned by gov set on creation", async () => {
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     let governance = await token.owner();
     assert.equal(governance, accounts[0]);
   });
@@ -38,6 +40,7 @@ contract("HATToken", (accounts) => {
     let governance, totalSupply, userSupply;
     governance = accounts[0];
     const token = await HATToken.new(governance);
+    await token.setTransferable({from: governance});
     totalSupply = await token.totalSupply();
     userSupply = await token.balanceOf(governance);
     assert.equal(totalSupply, 0);
@@ -132,7 +135,6 @@ contract("HATToken", (accounts) => {
 
   it("totalSupply is 0 on init", async () => {
     const token = await HATToken.new(accounts[0]);
-
     const totalSupply = await token.totalSupply();
 
     assert.equal(totalSupply.toNumber(), 0);
@@ -430,6 +432,7 @@ contract("HATToken", (accounts) => {
 
   it("transfer from and to 0 address not allowed", async () => {
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     await token.setMinter(accounts[0], web3.utils.toWei("1000"));
     await token.mint(accounts[1], web3.utils.toWei("100"));
     let value = web3.utils.toWei("10");
@@ -465,6 +468,7 @@ contract("HATToken", (accounts) => {
 
   it("approve", async () => {
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     await token.setMinter(accounts[0], web3.utils.toWei("1000"));
     await token.mint(accounts[1], web3.utils.toWei("100"));
     let value = web3.utils.toWei("10");
@@ -510,6 +514,7 @@ contract("HATToken", (accounts) => {
 
   it("approve max", async () => {
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     await token.setMinter(accounts[0], web3.utils.toWei("1000"));
     await token.mint(accounts[1], web3.utils.toWei("100"));
     let value = web3.utils
@@ -571,6 +576,7 @@ contract("HATToken", (accounts) => {
     const wallet = Wallet.generate();
     const owner = wallet.getAddressString();
     const token = await HATToken.new(accounts[0]);
+    await token.setTransferable({from: accounts[0]});
     await token.setMinter(accounts[0], web3.utils.toWei("1000"));
     await token.mint(owner, web3.utils.toWei("100"));
 
@@ -879,4 +885,47 @@ contract("HATToken", (accounts) => {
       "0x0000000000000000000000000000000000000000"
     );
   });
+
+  describe("setTransferable", () => {
+    it("can only be called by owner", async () => {
+      const token = await HATToken.new(accounts[0]);
+      assert.equal(await token.transferable(), false);
+      try {
+        await token.setTransferable({from: accounts[1]});
+        assert(false, "setTransferable can only be called by owner");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+      await token.setTransferable({from: accounts[0]});
+      assert.equal(await token.transferable(), true);
+    });
+
+    it("transfer allowed after", async () => {
+      const token = await HATToken.new(accounts[0]);
+      await token.setTransferable({from: accounts[0]});
+      await token.setMinter(accounts[0], web3.utils.toWei("1000"));
+      await token.mint(accounts[1], web3.utils.toWei("100"));
+      await token.transfer(accounts[2], web3.utils.toWei("1"),{ from: accounts[1] });
+      recipientBalance = (await token.balanceOf(accounts[2])).toString();
+      assert.equal(recipientBalance, web3.utils.toWei("1"));
+    });
+
+    it("transfer not allowed before", async () => {
+      const token = await HATToken.new(accounts[0]);
+      await token.setMinter(accounts[0], web3.utils.toWei("1000"));
+      await token.mint(accounts[1], web3.utils.toWei("100"));
+
+      try {
+        await token.transfer(
+          accounts[2],
+          web3.utils.toWei("1"),
+          { from: accounts[1] }
+        );
+        assert(false, "cannot transfer before setTransferable");
+      } catch (ex) {
+        assertVMException(ex);
+      }
+    });
+  });
+
 });
