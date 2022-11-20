@@ -900,6 +900,15 @@ contract("HATToken", (accounts) => {
       assert.equal(await token.transferable(), true);
     });
 
+    it("cannot be changed back", async () => {
+      const token = await HATToken.new(accounts[0]);
+      assert.equal(await token.transferable(), false);
+      await token.setTransferable({from: accounts[0]});
+      assert.equal(await token.transferable(), true);
+      await token.setTransferable({from: accounts[0]});
+      assert.equal(await token.transferable(), true);
+    });
+
     it("transfer allowed after", async () => {
       const token = await HATToken.new(accounts[0]);
       await token.setTransferable({from: accounts[0]});
