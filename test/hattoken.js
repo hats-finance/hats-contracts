@@ -24,14 +24,12 @@ function assertVMException(error) {
 contract("HATToken", (accounts) => {
   it("should put 0 tokens in the first account", async () => {
     const token = await HATToken.new(accounts[0]);
-    await token.setTransferable({from: accounts[0]});
     let balance = await token.balanceOf.call(accounts[0]);
     assert.equal(balance.valueOf(), 0);
   });
 
   it("should be owned by gov set on creation", async () => {
     const token = await HATToken.new(accounts[0]);
-    await token.setTransferable({from: accounts[0]});
     let governance = await token.owner();
     assert.equal(governance, accounts[0]);
   });
@@ -40,7 +38,6 @@ contract("HATToken", (accounts) => {
     let governance, totalSupply, userSupply;
     governance = accounts[0];
     const token = await HATToken.new(governance);
-    await token.setTransferable({from: governance});
     totalSupply = await token.totalSupply();
     userSupply = await token.balanceOf(governance);
     assert.equal(totalSupply, 0);
