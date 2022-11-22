@@ -51,13 +51,13 @@ module.exports = {
   networks: {
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: process.env.GOERLI_PK,
+      accounts: [process.env.GOERLI_PK],
       gasPrice: "auto",
       gas: "auto",
     },
     optimism_goerli: {
       url: `https://opt-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-      accounts: process.env.OPTIMISM_GOERLI_PK,
+      accounts: [process.env.OPTIMISM_GOERLI_PK],
       gasPrice: "auto",
       gas: "auto",
     },
