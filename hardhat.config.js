@@ -7,6 +7,8 @@ require("hardhat-watcher");
 require("hardhat-gas-reporter");
 require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
+require("@primitivefi/hardhat-dodoc");
+
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -49,13 +51,13 @@ module.exports = {
   networks: {
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [process.env.GOERLI_PK],
+      accounts: process.env.GOERLI_PK,
       gasPrice: "auto",
       gas: "auto",
     },
     optimism_goerli: {
       url: `https://opt-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-      accounts: [process.env.OPTIMISM_GOERLI_PK],
+      accounts: process.env.OPTIMISM_GOERLI_PK,
       gasPrice: "auto",
       gas: "auto",
     },
