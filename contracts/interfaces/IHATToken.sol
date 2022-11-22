@@ -15,6 +15,9 @@ interface IHATToken is IVotes, IERC20Permit {
     /// @notice An event thats emitted when the minter address is set
     event MinterSet(address indexed minter, uint256 seedAmount);
 
+    /// @notice An event thats emitted when the token is set to transferable
+    event TransferableSet();
+    
     /**
      * @notice Set the minter address, can only be called by the owner (governance)
      * @param _minter The address of the minter

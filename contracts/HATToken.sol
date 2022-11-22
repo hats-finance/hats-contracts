@@ -34,6 +34,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
 
     function setTransferable() external onlyOwner {
         transferable = true;
+        emit TransferableSet();
     }
 
     function burn(uint256 _amount) external {

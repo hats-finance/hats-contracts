@@ -897,6 +897,13 @@ contract("HATToken", (accounts) => {
       assert.equal(await token.transferable(), true);
     });
 
+    it("emits TransferableSet event", async () => {
+      const token = await HATToken.new(accounts[0]);
+      const tx = await token.setTransferable({from: accounts[0]});
+      assert.equal(tx.logs.length, 1);
+      assert.equal(tx.logs[0].event, "TransferableSet");
+    });
+
     it("cannot be changed back", async () => {
       const token = await HATToken.new(accounts[0]);
       assert.equal(await token.transferable(), false);
@@ -929,7 +936,7 @@ contract("HATToken", (accounts) => {
         );
         assert(false, "cannot transfer before setTransferable");
       } catch (ex) {
-        assertVMException(ex);
+        assertVMException(ex, "TransfersDisabled");
       }
     });
   });
