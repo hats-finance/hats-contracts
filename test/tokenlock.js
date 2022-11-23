@@ -323,13 +323,13 @@ contract("TokenLock", (accounts) => {
     }
   });
 
-  it("sinceStartTime", async () => {
+  it.only("sinceStartTime", async () => {
     await setup(accounts, 1, false, 100);
     assert.equal(await tokenLock.sinceStartTime(), 0);
     assert.equal(await tokenLock.availableAmount(), 0);
     //each period is 250 seconds
     await utils.increaseTime(350);
-    assert.equal((await tokenLock.sinceStartTime()).toString(), "252");
+    assert.equal((await tokenLock.sinceStartTime()).toString().match("252|253").length, 1);
     assert.equal(await tokenLock.availableAmount(), web3.utils.toWei("0.2"));
   });
 
