@@ -627,6 +627,8 @@ contract("HatVaults", (accounts) => {
         asset: stakingToken.address,
         owner: await hatVaultsRegistry.owner(),
         committee: accounts[1],
+        name: "VAULT",
+        symbol: "VLT",
         rewardController: rewardController.address,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
