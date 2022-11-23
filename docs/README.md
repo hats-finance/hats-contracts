@@ -17,15 +17,15 @@
 - [HATTimelockController](dodoc/HATTimelockController.md)
 - [HATGovernanceArbitrator](dodoc/HATGovernanceArbitrator.md)
 
-    ## Interfaces
-    - [IHATToken](dodoc/interfaces/IHATToken.md)
-    - [IHATVault](dodoc/interfaces/IHATVault.md)
-    - [IHATVaultsRegistry](dodoc/interfaces/IHATVaultsRegistry.md)
-    - [IRewardController](dodoc/interfaces/IRewardController.md)
+### Interfaces
+- [IHATToken](dodoc/interfaces/IHATToken.md)
+- [IHATVault](dodoc/interfaces/IHATVault.md)
+- [IHATVaultsRegistry](dodoc/interfaces/IHATVaultsRegistry.md)
+- [IRewardController](dodoc/interfaces/IRewardController.md)
 
-    ## Tokenlock
-    - [TokenLock](dodoc/tokenlock/TokenLock.md)
-    - [ITokenLock](dodoc/tokenlock/ITokenLock.md)
-    - [HATTokenLock](dodoc/tokenlock/HATTokenLock.md)
-    - [TokenLockFactory](dodoc/tokenlock/TokenLockFactory.md)
-    - [ITokenLockFactory](dodoc/tokenlock/ITokenLockFactory.md)
+### Tokenlock
+- [TokenLock](dodoc/tokenlock/TokenLock.md)
+- [ITokenLock](dodoc/tokenlock/ITokenLock.md)
+- [HATTokenLock](dodoc/tokenlock/HATTokenLock.md)
+- [TokenLockFactory](dodoc/tokenlock/TokenLockFactory.md)
+- [ITokenLockFactory](dodoc/tokenlock/ITokenLockFactory.md)
