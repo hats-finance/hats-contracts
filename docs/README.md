@@ -10,4 +10,4 @@
 - [parameters](parameters.md)
 
 ## Contracts
-- [HATGovernanceArbitrator] (HATGovernanceArbitrator.md)
+- [HATGovernanceArbitrator](HATGovernanceArbitrator.md)
