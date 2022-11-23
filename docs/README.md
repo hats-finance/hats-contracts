@@ -6,8 +6,8 @@
 - [Payout](payout.md)
 
 # System setup
-- [roles](roles.md)
-- [parameters](parameters.md)
+- [Roles](roles.md)
+- [Parameters](parameters.md)
 
 # Contracts
 - [HATToken](dodoc/HATToken.md)
