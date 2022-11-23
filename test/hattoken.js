@@ -64,6 +64,17 @@ contract("HATToken", (accounts) => {
     assert.equal(userSupply, 1300);
   });
 
+  it("only owner can set minter", async () => {
+    const token = await HATToken.new(accounts[0]);
+    try {
+      await token.setMinter(accounts[0], 1000, { from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+    await token.setMinter(accounts[0], 1000);
+  });
+
   it("should allow minting tokens only by minter", async () => {
     const token = await HATToken.new(accounts[0]);
     let governance = await token.owner();

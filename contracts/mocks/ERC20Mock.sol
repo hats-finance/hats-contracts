@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../HATVault.sol";
 
 
 contract ERC20Mock is ERC20 {
@@ -12,6 +13,10 @@ contract ERC20Mock is ERC20 {
     bool public approveDisableFlag;
     bool public approveZeroDisableFlag;
     bool public badTransferFlag;
+    bool public reenterApproveClaim;
+    bool public reenterDeposit;
+    bool public reenterWithdrawRequest;
+    bool public reenterWithdraw;
 
     constructor(
         string memory _name,
@@ -34,6 +39,22 @@ contract ERC20Mock is ERC20 {
 
     function setBadTransferFlag(bool _badTransferFlag) external {
         badTransferFlag = _badTransferFlag;
+    }
+
+    function setReenterApproveClaim(bool _reenterApproveClaim) external {
+        reenterApproveClaim = _reenterApproveClaim;
+    }
+
+    function setReenterDeposit(bool _reenterDeposit) external {
+        reenterDeposit = _reenterDeposit;
+    }
+
+    function setReenterWithdrawRequest(bool _reenterWithdrawRequest) external {
+        reenterWithdrawRequest = _reenterWithdrawRequest;
+    }
+
+    function setReenterWithdraw(bool _reenterWithdraw) external {
+        reenterWithdraw = _reenterWithdraw;
     }
 
     function mint(address _to, uint256 _amount) public {
@@ -61,6 +82,22 @@ contract ERC20Mock is ERC20 {
         address to,
         uint256 amount
     ) internal override {
+        if (reenterApproveClaim) {
+            HATVault(msg.sender).approveClaim("", 1000);
+        }
+
+        if (reenterDeposit) {
+            HATVault(msg.sender).deposit(1, address(this));
+        }
+
+        if (reenterWithdrawRequest) {
+            HATVault(msg.sender).withdrawRequest();
+        }
+
+        if (reenterWithdraw) {
+            HATVault(msg.sender).withdraw(1, address(this), address(this));
+        }
+
         if (badTransferFlag) {
             super._transfer(from, to, amount / 2);
         } else {

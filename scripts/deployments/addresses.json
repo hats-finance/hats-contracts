@@ -21,5 +21,17 @@
     "rewardController": "0xc4905364b78a742ccce7B890A89514061E47068D",
     "rewardControllerImplementation": "0x1A1FEe7EeD918BD762173e4dc5EfDB8a78C924A8",
     "hatVaultImplementation": "0xD6C850aeBFDC46D7F4c207e445cC0d6B0919BDBe"
+  },
+  "optimism_goerli": {
+    "governance": "0x0B7602011EC2B862Bc157fF08d27b1018aEb18d5",
+    "arbitrator": "0x34782E01dB347Eb5449ab9329Bd6E92eA493b160",
+    "hatTimelockController": "0x878Cab06E6f4a85D90E5f236d326a41Ef6f44F9f",
+    "hatToken": "0xC570c434ba30a2fa5C07E590833246E18aa6B0a3",
+    "hatTokenLock": "0xadd155731473A9501881234A865FF79668F1B6cF",
+    "tokenLockFactory": "0x312917812e76d78C5B1139C28d5C1D3A272d171d",
+    "hatVaultsRegistry": "0x1065A9e3AC47f2624293727F4b8319A0a10F6015",
+    "rewardController": "0xf972D95812aCda82502Fb2e9072736C6d6EE41be",
+    "rewardControllerImplementation": "0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48",
+    "hatVaultImplementation": "0x2Ff0509D0e9a78Bf58815D768f4487f0645824F0"
   }
 }

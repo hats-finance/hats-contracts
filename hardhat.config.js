@@ -31,7 +31,12 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: { 
+      mainnet: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
+      optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
+      optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
+    }
   },
   gasReporter: {
     enabled: true,
@@ -42,15 +47,15 @@ module.exports = {
     excludeContracts: ["mocks/", "HATToken"]
   },
   networks: {
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [process.env.RINKEBY_PK],
-      gasPrice: "auto",
-      gas: "auto",
-    },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.GOERLI_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    optimism_goerli: {
+      url: `https://opt-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [process.env.OPTIMISM_GOERLI_PK],
       gasPrice: "auto",
       gas: "auto",
     },

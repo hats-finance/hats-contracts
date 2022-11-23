@@ -538,6 +538,14 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     assert.equal((await vault.rewardController()), rewardController.address);
+
+    try {
+      await rewardController.setAllocPoint(vault.address, 0, { from: accounts[1] });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
     tx = await rewardController.setAllocPoint(vault.address, 0);
 
     assert.equal(tx.logs[1].event, "SetAllocPoint");
@@ -613,6 +621,24 @@ contract("HatVaults", (accounts) => {
     let vault = await HATVault.at(tx.logs[1].args._vault);
     assert.equal(await vault.name(), "HATs Vault VAULT");
     assert.equal(await vault.symbol(), "HATVLT");
+
+    try {
+      await vault.initialize({
+        asset: stakingToken.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
+        rewardController: rewardController.address,
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+      });
+      assert(false, "already initialized");
+    } catch (ex) {
+      assertVMException(ex, "Initializable: contract is already initialized");
+    }
   });
 
   it("setCommittee", async () => {
@@ -891,7 +917,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
-
     await vault.setBountySplit([6800, 2200, 1000]);
     tx = await vault.setHATBountySplit(0, 800);
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
@@ -934,6 +959,13 @@ contract("HatVaults", (accounts) => {
     );
 
     let claimId = tx.logs[0].args._claimId;
+
+    try {
+      await vault.setMaxBounty();
+      assert(false, "active claim exists");
+    } catch (ex) {
+      assertVMException(ex, "ActiveClaimExists");
+    }
 
     await vault.challengeClaim(claimId);
 
@@ -1244,6 +1276,75 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "AmountCannotBeZero");
     }
+  });
+
+  it("deposit and withdraw cannot be reentered", async () => {
+    await setUpGlobalVars(accounts);
+    var staker = accounts[1];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    await stakingToken.setReenterDeposit(true);
+
+    try {
+      await vault.mint(1, staker, { from: staker });
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+
+    try {
+      await vault.deposit(1, staker, { from: staker });
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+
+    await stakingToken.setReenterDeposit(false);
+
+    await stakingToken.setReenterWithdrawRequest(true);
+
+    try {
+      await vault.deposit(1, staker, { from: staker });
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+
+    await stakingToken.setReenterWithdrawRequest(false);
+
+    await vault.deposit(1000000, staker, { from: staker });
+
+    await stakingToken.mint(vault.address, web3.utils.toWei("10"));
+
+    await stakingToken.setReenterWithdraw(true);
+
+    try {
+      await safeWithdraw(vault, 1, staker);
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+
+    try {
+      await safeRedeem(vault, 1, staker);
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+
+    await stakingToken.setReenterWithdraw(false);
+
+    await safeWithdraw(vault, 1, staker);
   });
 
   it("withdraw procedure is sane", async () => {
@@ -1801,7 +1902,8 @@ contract("HatVaults", (accounts) => {
       (await vault.balanceOf(staker)),
       web3.utils.toWei("0")
     );
-     assert.equal(
+    
+    assert.equal(
       (await vault.maxWithdraw(staker)),
       web3.utils.toWei("0")
     );
@@ -1860,7 +1962,7 @@ contract("HatVaults", (accounts) => {
 
   });
 
-  it("previewwithdrawandfee  is calculated correctly", async () => {
+  it("previewWithdrawAndFee is calculated correctly", async () => {
     const { registry, owner }= await setUpGlobalVars(accounts);
     await registry.setFeeSetter(owner);
     await vault.setWithdrawalFee(200, { from: owner });
@@ -1970,6 +2072,10 @@ contract("HatVaults", (accounts) => {
 
     // at this point, staker has deposited a total balance of 1e18 shares
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
+
+    // withdraw request not submitted yet
+    assert.equal(await vault.maxRedeem(staker), "0");
+    assert.equal((await vault.maxWithdraw(staker)), "0");
 
     // however the stakes can maxRedeem 1 share, but maxWithdraw only 0.98 tokens (1 minus fees)
     await vault.withdrawRequest({ from: staker });
@@ -2662,6 +2768,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       1,
       epochRewardPerBlock
     );
+
+    try {
+      await rewardController.initialize(
+        hatToken.address,
+        accounts[0],
+        0,
+        1,
+        epochRewardPerBlock
+      );
+      assert(false, "already initialized");
+    } catch (ex) {
+      assertVMException(ex, "Initializable: contract is already initialized");
+    }
   });
 
   it("getVaultReward - no vault updates will retrun 0 ", async () => {
@@ -3125,6 +3244,12 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
 
+    // cannot claim while an active claim exists
+    assert.equal(
+      (await vault.maxWithdraw(staker)),
+      web3.utils.toWei("0")
+    );
+
     await vault.challengeClaim(claimId);
     await utils.increaseTime(60 * 60 * 24 * 3 + 1);
 
@@ -3192,6 +3317,16 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(tx.logs[0].args._descriptionHash, "description hash");
 
     await utils.increaseTime(60 * 60 * 24 * 3 + 1);
+
+    await stakingToken.setReenterApproveClaim(true);
+    try {
+      await vault.approveClaim(claimId, 8000);
+      assert(false, "fail on reentrancy attempt");
+    } catch (ex) {
+      assertVMException(ex, "ReentrancyGuard: reentrant call");
+    }
+    await stakingToken.setReenterApproveClaim(false);
+
     tx = await vault.approveClaim(claimId, 8000);
 
     assert.equal(
@@ -5348,6 +5483,13 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(tx.logs[0].event, "LogClaim");
     assert.equal(tx.logs[0].args._descriptionHash, someHash);
     assert.equal(tx.logs[0].args._claimer, accounts[3]);
+
+    try {
+      await hatVaultsRegistry.setClaimFee(fee, { from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
 
     tx = await hatVaultsRegistry.setClaimFee(fee);
     assert.equal(tx.logs[0].event, "SetClaimFee");

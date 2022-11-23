@@ -242,7 +242,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
-        if (msg.sender !=  activeClaim.arbitrator && msg.sender != registry.owner())
+        if (msg.sender != activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
@@ -746,11 +746,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             }
         }
     }
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {
+
+    function _afterTokenTransfer(address, address, uint256) internal virtual override {
         if (totalSupply() > 0 && totalSupply() < MINIMAL_AMOUNT_OF_SHARES) {
           revert AmountOfSharesMustBeMoreThanMinimalAmount();
         }
