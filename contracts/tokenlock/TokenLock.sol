@@ -12,7 +12,7 @@ import "./ITokenLock.sol";
 // see https://github.com/graphprotocol/token-distribution/blob/main/contracts/GraphTokenLock.sol
 
 /**
- * @title HatTokenLock
+ * @title TokenLock
  * @notice Contract that manages an unlocking schedule of tokens.
  * The contract lock holds a certain amount of tokens deposited  and insures that
  * they can only be released under certain time conditions.

@@ -210,4 +210,7 @@ module.exports = {
       files: ["./test", "./contracts", "./scripts"],
     },
   },
+  dodoc: {
+    outputDir: 'docs/dodoc',
+  },
 };
