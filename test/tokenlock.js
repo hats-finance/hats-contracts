@@ -323,7 +323,7 @@ contract("TokenLock", (accounts) => {
     }
   });
 
-  it.only("sinceStartTime", async () => {
+  it("sinceStartTime", async () => {
     await setup(accounts, 1, false, 100);
     assert.equal(await tokenLock.sinceStartTime(), 0);
     assert.equal(await tokenLock.availableAmount(), 0);
