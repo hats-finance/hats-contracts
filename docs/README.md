@@ -8,3 +8,6 @@
 ## System setup
 - [roles](roles.md)
 - [parameters](parameters.md)
+
+## Contracts
+- [HATGovernanceArbitrator] (HATGovernanceArbitrator.md)
