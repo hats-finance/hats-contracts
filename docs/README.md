@@ -16,11 +16,13 @@
 - [RewardController](dodoc/RewardController.md)
 - [HATTimelockController](dodoc/HATTimelockController.md)
 - [HATGovernanceArbitrator](dodoc/HATGovernanceArbitrator.md)
+
     ### Interfaces
     - [IHATToken](dodoc/interfaces/IHATToken.md)
     - [IHATVault](dodoc/interfaces/IHATVault.md)
     - [IHATVaultsRegistry](dodoc/interfaces/IHATVaultsRegistry.md)
     - [IRewardController](dodoc/interfaces/IRewardController.md)
+    
     ### Tokenlock
     - [TokenLock](dodoc/tokenlock/TokenLock.md)
     - [ITokenLock](dodoc/tokenlock/ITokenLock.md)
