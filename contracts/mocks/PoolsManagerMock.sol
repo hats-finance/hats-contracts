@@ -24,6 +24,7 @@ contract VaultsManagerMock {
                                     asset: _assets[i],
                                     owner: _hatVaults.owner(),
                                     committee: _committee,
+                                    name: "VAULT",
                                     symbol: "VLT",
                                     rewardController: _rewardController,
                                     maxBounty: _maxBounty,

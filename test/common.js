@@ -134,6 +134,7 @@ const setup = async function(
     asset: stakingToken.address,
     owner: await hatVaultsRegistry.owner(),
     committee: accounts[1],
+    name: "VAULT",
     symbol: "VLT",
     rewardController: rewardController.address,
     maxBounty: options.maxBounty,

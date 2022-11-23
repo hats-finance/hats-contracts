@@ -264,36 +264,9 @@ interface IHATVaultsRegistry {
 
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
-     * @param _asset The vault's native token
-     * @param _owner The address of the vault's owner
-     * @param _committee The address of the vault's committee 
-     * @param _symbol The vault's symbol
-     * @param _rewardController The reward controller for the vault
-     * @param _maxBounty The maximum percentage of the vault that can be paid
-     * out as a bounty. Must be between 0 and 100% (defined as 10000)
-     * @param _bountySplit The way to split the bounty between the hacker, 
-     * hacker vested, and committee.
-     *   Each entry is a number between 0 and 100%
-     *   Total splits should be equal to 100%
-     * @param _descriptionHash Hash of the vault description.
-     * @param _bountyVestingDuration The duration of the vesting period of
-     * the part of the bounty that is vested in vault's native token.
-     * @param _bountyVestingDuration The number of vesting periods
+     * @param _params The vault initialization parameters
      */
-    event VaultCreated(
-        address indexed _vault,
-        address indexed _asset,
-        address indexed _owner,
-        address _committee,
-        string _symbol,
-        IRewardController _rewardController,
-        uint256 _maxBounty,
-        IHATVault.BountySplit _bountySplit,
-        string _descriptionHash,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods,
-        bool _isPaused
-    );
+    event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params);
     
     /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
      * the HATS tokens are sent to beneficiary through vesting contract

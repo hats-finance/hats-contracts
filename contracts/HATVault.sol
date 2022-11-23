@@ -176,7 +176,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_params.maxBounty > MAX_BOUNTY_LIMIT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);
-        __ERC20_init(string.concat("HATVault ", _params.symbol), _params.symbol);
+        __ERC20_init(string.concat("HATs Vault ", _params.name), string.concat("HAT", _params.symbol));
         __ERC4626_init(IERC20MetadataUpgradeable(address(_params.asset)));
         rewardController = _params.rewardController;
         _setVestingParams(_params.vestingDuration, _params.vestingPeriods);

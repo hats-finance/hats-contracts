@@ -73,7 +73,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Initialization parameters for the vault
-    * @param symbol The vault's symbol
+    * @param name The vault's name (concatinated as "HATs Vault " + name)
+    * @param symbol The vault's symbol (concatinated as "HAT" + symbol)
     * @param rewardController The reward controller for the vault
     * @param vestingDuration Duration of the vesting period of the vault's
     * token vested part of the bounty
@@ -92,6 +93,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @dev Needed to avoid a "stack too deep" error
     */
     struct VaultInitParams {
+        string name;
         string symbol;
         IRewardController rewardController;
         uint32 vestingDuration;

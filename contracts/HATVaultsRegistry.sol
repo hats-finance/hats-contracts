@@ -271,20 +271,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
         hatVaults.push(vault);
 
-        emit VaultCreated(
-            vault,
-            address(_params.asset),
-            _params.owner,
-            _params.committee,
-            _params.symbol,
-            _params.rewardController,
-            _params.maxBounty,
-            _params.bountySplit,
-            _params.descriptionHash,
-            _params.vestingDuration,
-            _params.vestingPeriods,
-            _params.isPaused
-        );
+        emit VaultCreated(vault, _params);
     }
 
     /** @notice See {IHATVaultsRegistry-setVaultVisibility}. */
