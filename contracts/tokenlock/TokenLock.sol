@@ -75,17 +75,17 @@ abstract contract TokenLock is Ownable, ITokenLock {
     event LockAccepted();
     event LockCanceled();
 
-    constructor() {
-        endTime = type(uint256).max;
-        isInitialized = true;
-    }
-
     /**
      * @dev Only allow calls from the beneficiary of the contract
      */
     modifier onlyBeneficiary() {
         require(msg.sender == beneficiary, "!auth");
         _;
+    }
+
+    constructor() {
+        endTime = type(uint256).max;
+        isInitialized = true;
     }
 
     /**
