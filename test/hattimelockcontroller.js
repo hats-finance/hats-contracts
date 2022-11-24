@@ -47,6 +47,7 @@ const setup = async function(
   rewardInVaults = 2500000
 ) {
   hatToken = await HATTokenMock.new(accounts[0]);
+  await hatToken.setTransferable({from: accounts[0]});
   stakingToken = await ERC20Mock.new("Staking", "STK");
   var wethAddress = utils.NULL_ADDRESS;
   if (weth) {

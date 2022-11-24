@@ -83,6 +83,7 @@ const setup = async function(
   options = { ...defaultOptions, ...options};
   const committee = accounts[1];
   hatToken = await HATTokenMock.new(accounts[0]);
+  await hatToken.setTransferable({from: accounts[0]});
   stakingToken = await ERC20Mock.new("Staking", "STK");
   let wethAddress = utils.NULL_ADDRESS;
   if (options.weth) {
