@@ -7,6 +7,8 @@ require("hardhat-watcher");
 require("hardhat-gas-reporter");
 require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
+require("@primitivefi/hardhat-dodoc");
+
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -207,5 +209,8 @@ module.exports = {
       ],
       files: ["./test", "./contracts", "./scripts"],
     },
+  },
+  dodoc: {
+    outputDir: 'docs/dodoc',
   },
 };

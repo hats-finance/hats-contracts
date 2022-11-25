@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title TokenLockFactory
-*  a factory of TokenLock contracts.
+ *  a factory of TokenLock contracts.
  *
  * This contract receives funds to make the process of creating TokenLock contracts
  * easier by distributing them the initial tokens to be managed.
