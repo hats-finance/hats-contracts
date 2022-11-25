@@ -619,7 +619,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._descriptionHash, "_descriptionHash1");
 
     let vault = await HATVault.at(tx.logs[1].args._vault);
-    assert.equal(await vault.name(), "HATs Vault VAULT");
+    assert.equal(await vault.name(), "Hats Vault VAULT");
     assert.equal(await vault.symbol(), "HATVLT");
 
     try {

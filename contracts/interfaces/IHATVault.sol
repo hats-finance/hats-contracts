@@ -73,7 +73,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Initialization parameters for the vault
-    * @param name The vault's name (concatenated as "HATs Vault " + name)
+    * @param name The vault's name (concatenated as "Hats Vault " + name)
     * @param symbol The vault's symbol (concatenated as "HAT" + symbol)
     * @param rewardController The reward controller for the vault
     * @param vestingDuration Duration of the vesting period of the vault's
