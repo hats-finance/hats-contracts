@@ -92,18 +92,20 @@ const setup = async function(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  vault = await HATVault.at((await hatVaultsRegistry.createVault(
-    stakingToken.address,
-    await hatVaultsRegistry.owner(),
-    accounts[1],
-    rewardController.address,
-    maxBounty,
-    bountySplit,
-    "_descriptionHash",
-    86400,
-    10,
-    false
-  )).receipt.rawLogs[0].address);
+  vault = await HATVault.at((await hatVaultsRegistry.createVault({
+    asset: stakingToken.address,
+    owner: await hatVaultsRegistry.owner(),
+    committee: accounts[1],
+    name: "VAULT",
+    symbol: "VLT",
+    rewardController: rewardController.address,
+    maxBounty: maxBounty,
+    bountySplit: bountySplit,
+    descriptionHash: "_descriptionHash",
+    vestingDuration: 86400,
+    vestingPeriods: 10,
+    isPaused: false
+  })).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
 
   await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
@@ -441,18 +443,20 @@ contract("HatTimelockController", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[3],
-      rewardController.address,
-      maxBounty,
-      bountySplit,
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).receipt.rawLogs[0].address);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[3],
+        name: "VAULT",
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+    })).receipt.rawLogs[0].address);
 
     try {
       await hatTimelockController.setAllocPoint(newVault.address, 100, {

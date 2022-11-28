@@ -20,16 +20,20 @@ contract VaultsManagerMock {
                     uint32 _bountyVestingPeriods) external {
 
         for (uint256 i=0; i < _assets.length; i++) {
-            address vault = _hatVaults.createVault(_assets[i],
-                                _hatVaults.owner(),
-                                _committee,
-                                _rewardController,
-                                _maxBounty,
-                                _bountySplit,
-                                _descriptionHash,
-                                _bountyVestingDuration,
-                                _bountyVestingPeriods,
-                                false);
+            address vault = _hatVaults.createVault(IHATVault.VaultInitParams({
+                                    asset: _assets[i],
+                                    owner: _hatVaults.owner(),
+                                    committee: _committee,
+                                    name: "VAULT",
+                                    symbol: "VLT",
+                                    rewardController: _rewardController,
+                                    maxBounty: _maxBounty,
+                                    bountySplit: _bountySplit,
+                                    descriptionHash: _descriptionHash,
+                                    vestingDuration: _bountyVestingDuration,
+                                    vestingPeriods: _bountyVestingPeriods,
+                                    isPaused: false
+                                }));
             _rewardController.setAllocPoint(vault, _allocPoint);
         }
     }
