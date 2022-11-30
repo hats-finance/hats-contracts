@@ -13,7 +13,7 @@ import "./interfaces/IRewardController.sol";
 import "./interfaces/IHATVaultsRegistry.sol";
 import "./HATVault.sol";
 
-/** @title Registry to deploy Hats.finance vaults and manage shared parameters
+/** @title Registry to deploy Hats.finance vaults and manage shared parameters 
  * @author Hats.finance
  * @notice Hats.finance is a proactive bounty protocol for white hat hackers and
  * security experts, where projects, community members, and stakeholders

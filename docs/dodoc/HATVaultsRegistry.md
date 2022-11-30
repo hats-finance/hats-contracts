@@ -2,7 +2,7 @@
 
 *Hats.finance*
 
-> Registry to deploy Hats.finance vaults and manage shared parameters
+> Registry to deploy Hats.finance vaults and manage shared parameters 
 
 Hats.finance is a proactive bounty protocol for white hat hackers and security experts, where projects, community members, and stakeholders incentivize protocol security and responsible disclosure. Hats create scalable vaults using the project’s own token. The value of the bounty increases with the success of the token and project. The owner of the registry has the permission to set time limits and bounty parameters and change vaults&#39; info, and to set the other registry roles - fee setter and arbitrator. The arbitrator can challenge submitted claims for bounty payouts made by vaults&#39; committees, approve them with a different bounty percentage or dismiss them. The fee setter can set the fee on withdrawals on all vaults. This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
 
@@ -83,7 +83,7 @@ See {IHATVaultsRegistry-addTokensToSwap}.
 ### createVault
 
 ```solidity
-function createVault(contract IERC20 _asset, address _owner, address _committee, contract IRewardController _rewardController, uint16 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash, uint32 _bountyVestingDuration, uint32 _bountyVestingPeriods, bool _isPaused) external nonpayable returns (address vault)
+function createVault(IHATVault.VaultInitParams _params) external nonpayable returns (address vault)
 ```
 
 
@@ -94,16 +94,7 @@ function createVault(contract IERC20 _asset, address _owner, address _committee,
 
 | Name | Type | Description |
 |---|---|---|
-| _asset | contract IERC20 | undefined |
-| _owner | address | undefined |
-| _committee | address | undefined |
-| _rewardController | contract IRewardController | undefined |
-| _maxBounty | uint16 | undefined |
-| _bountySplit | IHATVault.BountySplit | undefined |
-| _descriptionHash | string | undefined |
-| _bountyVestingDuration | uint32 | undefined |
-| _bountyVestingPeriods | uint32 | undefined |
-| _isPaused | bool | undefined |
+| _params | IHATVault.VaultInitParams | undefined |
 
 #### Returns
 
@@ -1137,7 +1128,7 @@ Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens ar
 ### VaultCreated
 
 ```solidity
-event VaultCreated(address indexed _vault, address indexed _asset, address indexed _owner, address _committee, contract IRewardController _rewardController, uint256 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash, uint256 _bountyVestingDuration, uint256 _bountyVestingPeriods, bool _isPaused)
+event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
 ```
 
 
@@ -1149,16 +1140,7 @@ event VaultCreated(address indexed _vault, address indexed _asset, address index
 | Name | Type | Description |
 |---|---|---|
 | _vault `indexed` | address | undefined |
-| _asset `indexed` | address | undefined |
-| _owner `indexed` | address | undefined |
-| _committee  | address | undefined |
-| _rewardController  | contract IRewardController | undefined |
-| _maxBounty  | uint256 | undefined |
-| _bountySplit  | IHATVault.BountySplit | undefined |
-| _descriptionHash  | string | undefined |
-| _bountyVestingDuration  | uint256 | undefined |
-| _bountyVestingPeriods  | uint256 | undefined |
-| _isPaused  | bool | undefined |
+| _params  | IHATVault.VaultInitParams | undefined |
 
 
 
