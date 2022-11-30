@@ -27,6 +27,7 @@
 |`registry.owner`|`setMaxBountyDelay`| global|2 days |>= 2 days|`registry.setMaxBountyDelay`
 |`registry.owner`|`rewardController`|vault || | `vault.setRewardController` | not a previous reward controller, noActiveClaim
 |`registry.owner`|registry.`owner`| global| _hatGovernance || `registry.transferOwnership`, `registry.renounceOwnership` 
+|`registry.owner`|`vaultDescription`|vault || | `vault.setVaultDescription` | only an event
 |`feeSetter`|`withdrawalFee`|vault|0| `<= 200` (<= 2%) |`vault.setWithdrawalFee`
 |`vault.owner`|`committee`|vault||| `vault.setCommittee` |if committee has not checked in yet
 |`vault.owner`|`vestingPeriods`|vault|| > 0|`vault.setVestingParams` 
@@ -35,7 +36,6 @@
 |`vault.owner`|`bountySplit.hackerVested`|vault| |sum(bountySplit) = 100% |`vault.setBountySplit` |noActiveClaim noSafetyPeriod
 |`vault.owner`|`bountySplit.committee`|vault || sum(bountySplit) = 100%, max 10% | `vault.setBountySplit`|noActiveClaim noSafetyPeriod
 |`vault.owner`|`maxBounty`|vault || `<= 9000` (<= 90%)|`vault.setPendingMaxBounty`, `vault.setMaxBounty` |noActiveClaim
-|`vault.owner`|`vaultDescription`|vault || | `vault.setVaultDescription` | only an event
 |`vault.owner`|`depositPause`|vault || |  `vault.setDepositPause`
 |`vault.owner`|`owner`|vault|_hatGovernance | |  `vault.transferOwnership`, `vault.renounceOwnership`  
 |`vault.committee`|`committee`|vault| || `vault.setCommittee`| after `committeeCheckIn`
