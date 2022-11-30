@@ -439,6 +439,29 @@ See {IRewardController-updateVault}.
 |---|---|---|
 | _vault | address | undefined |
 
+### vaultBalances
+
+```solidity
+function vaultBalances(address, address) external view returns (uint256)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+| _1 | address | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### vaultInfo
 
 ```solidity

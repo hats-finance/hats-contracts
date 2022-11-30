@@ -44,6 +44,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     mapping(address => mapping(address => uint256)) public rewardDebt;
     // vault address => user address => unclaimed reward amount
     mapping(address => mapping(address => uint256)) public unclaimedReward;
+    // vaultbalances
+    mapping(address => mapping(address => uint256)) public vaultBalances;
 
     /** @notice See {IRewardController-initialize}. */
     function initialize(
@@ -154,7 +156,8 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }
         updateVault(_vault);
 
-        uint256 _userShares = IERC20Upgradeable(_vault).balanceOf(_user);
+//        uint256 _userShares = IERC20Upgradeable(_vault).balanceOf(_user);
+        uint256 _userShares = vaultBalances[_vault][_user];
         uint256 _rewardPerShare = vaultInfo[_vault].rewardPerShare;
         mapping(address => uint256) storage vaultRewardDebt = rewardDebt[_vault];
         if (_userShares != 0) {
@@ -170,6 +173,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         }
         uint256 _newRewardDebt = _userShares.mulDiv(_rewardPerShare, REWARD_PRECISION);
         vaultRewardDebt[_user] = _newRewardDebt;
+        vaultBalances[_vault][_user] = _userShares;
         emit UserBalanceCommitted(_vault, _user, unclaimedReward[_vault][_user], _newRewardDebt);
     }
 
@@ -268,7 +272,7 @@ contract RewardController is IRewardController, OwnableUpgradeable {
             _rewardPerShare += reward.mulDiv(REWARD_PRECISION, _totalShares);
         }
 
-        return IERC20Upgradeable(_vault).balanceOf(_user).mulDiv(_rewardPerShare, REWARD_PRECISION) + 
+        return vaultBalances[_vault][_user].mulDiv(_rewardPerShare, REWARD_PRECISION) + 
                 vaultUnclaimedReward[_user] - rewardDebt[_vault][_user];
     }
 

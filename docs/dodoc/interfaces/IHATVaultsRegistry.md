@@ -32,7 +32,7 @@ Transfer the part of the bounty that is supposed to be swapped into HAT tokens f
 ### createVault
 
 ```solidity
-function createVault(contract IERC20 _asset, address _owner, address _committee, contract IRewardController _rewardController, uint16 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash, uint32 _bountyVestingDuration, uint32 _bountyVestingPeriods, bool _isPaused) external nonpayable returns (address vault)
+function createVault(IHATVault.VaultInitParams _params) external nonpayable returns (address vault)
 ```
 
 
@@ -43,16 +43,7 @@ function createVault(contract IERC20 _asset, address _owner, address _committee,
 
 | Name | Type | Description |
 |---|---|---|
-| _asset | contract IERC20 | undefined |
-| _owner | address | undefined |
-| _committee | address | undefined |
-| _rewardController | contract IRewardController | undefined |
-| _maxBounty | uint16 | undefined |
-| _bountySplit | IHATVault.BountySplit | undefined |
-| _descriptionHash | string | undefined |
-| _bountyVestingDuration | uint32 | undefined |
-| _bountyVestingPeriods | uint32 | undefined |
-| _isPaused | bool | undefined |
+| _params | IHATVault.VaultInitParams | undefined |
 
 #### Returns
 
@@ -742,7 +733,7 @@ Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens ar
 ### VaultCreated
 
 ```solidity
-event VaultCreated(address indexed _vault, address indexed _asset, address indexed _owner, address _committee, contract IRewardController _rewardController, uint256 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash, uint256 _bountyVestingDuration, uint256 _bountyVestingPeriods, bool _isPaused)
+event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
 ```
 
 
@@ -754,16 +745,7 @@ event VaultCreated(address indexed _vault, address indexed _asset, address index
 | Name | Type | Description |
 |---|---|---|
 | _vault `indexed` | address | The address of the vault to add to the registry |
-| _asset `indexed` | address | The vault&#39;s native token |
-| _owner `indexed` | address | The address of the vault&#39;s owner |
-| _committee  | address | The address of the vault&#39;s committee  |
-| _rewardController  | contract IRewardController | The reward controller for the vault |
-| _maxBounty  | uint256 | The maximum percentage of the vault that can be paid out as a bounty. Must be between 0 and 100% (defined as 10000) |
-| _bountySplit  | IHATVault.BountySplit | The way to split the bounty between the hacker,  hacker vested, and committee.   Each entry is a number between 0 and 100%   Total splits should be equal to 100% |
-| _descriptionHash  | string | Hash of the vault description. |
-| _bountyVestingDuration  | uint256 | The number of vesting periods |
-| _bountyVestingPeriods  | uint256 | undefined |
-| _isPaused  | bool | undefined |
+| _params  | IHATVault.VaultInitParams | The vault initialization parameters |
 
 
 

@@ -348,7 +348,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("Emergency withdraw", async () => {
+  it.only("Emergency withdraw", async () => {
     await setUpGlobalVars(accounts);
 
     var staker = accounts[1];
