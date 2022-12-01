@@ -37,6 +37,12 @@ async function main(config) {
         hatToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365";
     }
 
+    let rewardToken = config["rewardToken"];
+
+    if (!rewardToken && network.name === "hardhat") {
+        rewardToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365";
+    }
+
     let startBlock = config["rewardController"]["startBlock"];
     if (!startBlock) {
         startBlock = await ethers.provider.getBlockNumber();
@@ -46,7 +52,7 @@ async function main(config) {
 
     const RewardController = await ethers.getContractFactory("RewardController");
     const rewardController = await upgrades.deployProxy(RewardController, [
-        hatToken,
+        rewardToken,
         governance,
         startBlock,
         epochLength,

@@ -84,6 +84,8 @@ const setup = async function(
   const committee = accounts[1];
   hatToken = await HATTokenMock.new(accounts[0]);
   await hatToken.setTransferable({from: accounts[0]});
+  rewardToken = await HATTokenMock.new(accounts[0]);
+  await rewardToken.setTransferable({from: accounts[0]});
   stakingToken = await ERC20Mock.new("Staking", "STK");
   let wethAddress = utils.NULL_ADDRESS;
   if (options.weth) {
@@ -97,6 +99,7 @@ const setup = async function(
     governance: accounts[0],
     arbitrator: accounts[0],
     hatToken: hatToken.address,
+    rewardToken: rewardToken.address,
     tokenLockFactory: tokenLockFactory.address,
     rewardController: {
       startBlock: options.startBlock,
@@ -116,14 +119,14 @@ const setup = async function(
     deployment.rewardController.address
   );
 
-  await hatToken.setMinter(
+  await rewardToken.setMinter(
     accounts[0],
     web3.utils.toWei((2500000 + options.rewardInVaults).toString())
   );
-  await hatToken.mint(router.address, web3.utils.toWei("2500000"));
+  await rewardToken.mint(router.address, web3.utils.toWei("2500000"));
   if (options.rewardInVaults > 0) {
-    await hatToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
-    await hatToken.transfer(
+    await rewardToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
+    await rewardToken.transfer(
       rewardController.address,
       web3.utils.toWei(options.rewardInVaults.toString())
    );
@@ -165,6 +168,7 @@ const setup = async function(
     arbitrator,
     committee, // accounts[1]
     hatToken,
+    rewardToken,
     owner: accounts[0],
     registry,
     hatVaultImplementation,

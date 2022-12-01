@@ -67,6 +67,7 @@ interface IRewardController {
     * @param _isDeposit Whether user deposited or withdrew
     */
     function commitUserBalance(address _user, uint256 _sharesChange, bool _isDeposit) external;
+    
     /**
     * @notice Transfer to the specified user their pending share of rewards.
     * @param _vault The vault address
