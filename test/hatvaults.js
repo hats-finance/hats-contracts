@@ -4778,6 +4778,73 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
+  it("swapAndSend with duplicate beneficiary", async () => {
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
+    var staker = accounts[4];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+    
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+
+    amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+    amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2], accounts[2]],
+      0,
+      router.address,
+      payload
+    );
+    assert.equal(
+      await stakingToken.allowance(hatVaultsRegistry.address, await router.address),
+      0
+    );
+    assert.equal(tx.logs[1].event, "SwapAndSend");
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal(
+      await vestingTokenLock.owner(),
+      "0x0000000000000000000000000000000000000000"
+    );
+    assert.equal(
+      (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
+      tx.logs[1].args._amountSent.toString()
+    );
+    var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
+      .mul(new web3.utils.BN(9))
+      .div(new web3.utils.BN(2))
+      .div(new web3.utils.BN(100));
+    assert.equal(
+      tx.logs[1].args._amountSent.toString(),
+      expectedHackerReward.toString()
+    );
+  });
+
   it("Update vault description", async () => {
     await setUpGlobalVars(accounts);
     assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);

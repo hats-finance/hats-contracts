@@ -307,6 +307,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         _swapData.amount = _swapData.governanceHatReward;
         for (uint256 i = 0; i < _beneficiaries.length;) { 
             _swapData.hackerRewards[i] = hackersHatReward[_asset][_beneficiaries[i]];
+            hackersHatReward[_asset][_beneficiaries[i]] = 0;
             _swapData.amount += _swapData.hackerRewards[i]; 
             unchecked { ++i; }
         }
