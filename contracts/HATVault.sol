@@ -501,8 +501,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // set the withdrawEnableStartTime time to be withdrawRequestPendingPeriod from now
         // solhint-disable-next-line not-rely-on-time
         uint256 _withdrawEnableStartTime = block.timestamp + registry.getWithdrawRequestPendingPeriod();
-        withdrawEnableStartTime[msg.sender] = _withdrawEnableStartTime;
-        emit WithdrawRequest(msg.sender, _withdrawEnableStartTime);
+        address msgSender = _msgSender();
+        withdrawEnableStartTime[msgSender] = _withdrawEnableStartTime;
+        emit WithdrawRequest(msgSender, _withdrawEnableStartTime);
     }
 
     /** @notice See {IHATVault-withdrawAndClaim}. */
@@ -520,7 +521,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-emergencyWithdraw}. */
     function emergencyWithdraw(address receiver) external returns (uint256 assets) {
         _isEmergencyWithdraw = true;
-        assets = redeem(balanceOf(_msgSender()), receiver, _msgSender());
+        address msgSender = _msgSender();
+        assets = redeem(balanceOf(msgSender), receiver, msgSender);
         _isEmergencyWithdraw = false;
     }
 
