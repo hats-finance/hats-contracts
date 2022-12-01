@@ -245,7 +245,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (msg.sender != activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > activeClaim.createdAt + activeClaim.challengePeriod)
+        if (block.timestamp >= activeClaim.createdAt + activeClaim.challengePeriod)
             revert ChallengePeriodEnded();
         if (activeClaim.challengedAt != 0) {
             revert ClaimAlreadyChallenged();
@@ -271,7 +271,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             if (
                 msg.sender != _claim.arbitrator ||
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp > _claim.challengedAt + _claim.challengeTimeOutPeriod
+                block.timestamp >= _claim.challengedAt + _claim.challengeTimeOutPeriod
             )
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
             // the arbitrator can update the bounty if needed
@@ -348,11 +348,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 _challengeTimeOutPeriod = activeClaim.challengeTimeOutPeriod;
         uint256 _challengedAt = activeClaim.challengedAt;
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp < activeClaim.createdAt + activeClaim.challengePeriod + _challengeTimeOutPeriod) {
+        if (block.timestamp <= activeClaim.createdAt + activeClaim.challengePeriod + _challengeTimeOutPeriod) {
             if (_challengedAt == 0) revert OnlyCallableIfChallenged();
             if (
                 // solhint-disable-next-line not-rely-on-time
-                block.timestamp < _challengedAt + _challengeTimeOutPeriod && 
+                block.timestamp <= _challengedAt + _challengeTimeOutPeriod && 
                 msg.sender != activeClaim.arbitrator
             ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
         } // else the claim is expired and should be dismissed
@@ -728,7 +728,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             uint256 _withdrawEnableStartTime = withdrawEnableStartTime[_to];
             if (_withdrawEnableStartTime != 0) {
                 // solhint-disable-next-line not-rely-on-time
-                if (block.timestamp < _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod())
+                if (block.timestamp <= _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod())
                     revert CannotTransferToAnotherUserWithActiveWithdrawRequest();
             }
             rewardController.commitUserBalance(_to, _amount, true);
@@ -784,7 +784,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // last action was withdrawRequest (and not deposit or withdraw, which
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
-            block.timestamp < _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod());
+            block.timestamp <= _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod());
     }
 
     /**
