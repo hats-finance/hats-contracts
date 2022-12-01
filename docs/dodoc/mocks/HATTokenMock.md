@@ -558,6 +558,17 @@ Set the minter address, can only be called by the owner (governance)
 | _minter | address | The address of the minter |
 | _seedAmount | uint256 | The amount of tokens to seed the minter with |
 
+### setTransferable
+
+```solidity
+function setTransferable() external nonpayable
+```
+
+
+
+
+
+
 ### symbol
 
 ```solidity
@@ -672,6 +683,23 @@ function transferOwnership(address newOwner) external nonpayable
 |---|---|---|
 | newOwner | address | undefined |
 
+### transferable
+
+```solidity
+function transferable() external view returns (bool)
+```
+
+Whether the token is transferable or not
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
 
 
 ## Events
@@ -782,9 +810,31 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 | to `indexed` | address | undefined |
 | value  | uint256 | undefined |
 
+### TransferableSet
+
+```solidity
+event TransferableSet()
+```
+
+An event thats emitted when the token is set to transferable
+
+
+
+
 
 
 ## Errors
+
+### TransfersDisabled
+
+```solidity
+error TransfersDisabled()
+```
+
+
+
+
+
 
 ### ZeroAmount
 

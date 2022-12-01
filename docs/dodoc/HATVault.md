@@ -208,6 +208,22 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | challengeTimeOutPeriod | uint32 | undefined |
 | arbitratorCanChangeBounty | bool | undefined |
 
+### addRewardController
+
+```solidity
+function addRewardController(contract IRewardController _rewardController) external nonpayable
+```
+
+See {IHATVault-addRewardController}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _rewardController | contract IRewardController | undefined |
+
 ### allowance
 
 ```solidity
@@ -1083,27 +1099,10 @@ function renounceOwnership() external nonpayable
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
 
-### rewardController
+### rewardControllers
 
 ```solidity
-function rewardController() external view returns (contract IRewardController)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IRewardController | undefined |
-
-### rewardControllerRemoved
-
-```solidity
-function rewardControllerRemoved(address) external view returns (bool)
+function rewardControllers(uint256) external view returns (contract IRewardController)
 ```
 
 
@@ -1114,13 +1113,13 @@ function rewardControllerRemoved(address) external view returns (bool)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | address | undefined |
+| _0 | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | bool | bool Whether the reward contoller was previously used in the vault and removed |
+| _0 | contract IRewardController | undefined |
 
 ### setArbitrator
 
@@ -1277,22 +1276,6 @@ See {IHATVault-setPendingMaxBounty}.
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty | uint16 | undefined |
-
-### setRewardController
-
-```solidity
-function setRewardController(contract IRewardController _rewardController) external nonpayable
-```
-
-See {IHATVault-setRewardController}. 
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _rewardController | contract IRewardController | undefined |
 
 ### setVaultDescription
 
@@ -1634,6 +1617,22 @@ function withdrawalFee() external view returns (uint256)
 
 ## Events
 
+### AddRewardController
+
+```solidity
+event AddRewardController(contract IRewardController indexed _newRewardController)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _newRewardController `indexed` | contract IRewardController | undefined |
+
 ### Approval
 
 ```solidity
@@ -1928,22 +1927,6 @@ event SetPendingMaxBounty(uint256 _maxBounty)
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty  | uint256 | undefined |
-
-### SetRewardController
-
-```solidity
-event SetRewardController(contract IRewardController indexed _newRewardController)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _newRewardController `indexed` | contract IRewardController | undefined |
 
 ### SetVaultDescription
 

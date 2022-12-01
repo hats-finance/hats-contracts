@@ -157,29 +157,29 @@ contract("HatVaults", (accounts) => {
     return await vault.withdraw(amount, staker, withdrawFrom, { from: staker });
   }
 
-  async function calculateExpectedReward(staker, operationBlocksIncrement = 0, currentVault=vault) {
+  async function calculateExpectedReward(staker, operationBlocksIncrement = 0, currentVault=vault, currentRewardController=rewardController) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
-    let lastRewardBlock = (await rewardController.vaultInfo(currentVault.address)).lastRewardBlock;
-    let allocPoint = (await rewardController.vaultInfo(currentVault.address)).allocPoint;
+    let lastRewardBlock = (await currentRewardController.vaultInfo(currentVault.address)).lastRewardBlock;
+    let allocPoint = (await currentRewardController.vaultInfo(currentVault.address)).allocPoint;
     let rewardPerShare = new web3.utils.BN(
-      (await rewardController.vaultInfo(currentVault.address)).rewardPerShare
+      (await currentRewardController.vaultInfo(currentVault.address)).rewardPerShare
     );
     let onee12 = new web3.utils.BN("1000000000000");
     let balanceOf = await currentVault.balanceOf(staker);
     let stakerAmount = balanceOf;
-    let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
+    let globalUpdatesLen = await currentRewardController.getGlobalVaultsUpdatesLength();
     let totalAllocPoint = (
-      await rewardController.globalVaultsUpdates(globalUpdatesLen - 1)
+      await currentRewardController.globalVaultsUpdates(globalUpdatesLen - 1)
     ).totalAllocPoint;
-    let vaultReward = await rewardController.getRewardForBlocksRange(
+    let vaultReward = await currentRewardController.getRewardForBlocksRange(
       lastRewardBlock,
       currentBlockNumber + 1 + operationBlocksIncrement,
       allocPoint,
       totalAllocPoint
     );
     let lpSupply = await currentVault.totalSupply();
-    let rewardDebt = await rewardController.rewardDebt(currentVault.address, staker);
-    let unclaimedReward = await rewardController.unclaimedReward(currentVault.address, staker);
+    let rewardDebt = await currentRewardController.rewardDebt(currentVault.address, staker);
+    let unclaimedReward = await currentRewardController.unclaimedReward(currentVault.address, staker);
     rewardPerShare = rewardPerShare.add(vaultReward.mul(onee12).div(lpSupply));
     return stakerAmount
       .mul(rewardPerShare)
@@ -282,8 +282,24 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it("Set reward controller", async () => {
+  it("Add reward controller", async () => {
     await setUpGlobalVars(accounts);
+
+    const RewardControllerFactory = await ethers.getContractFactory("RewardController");
+    let rewardController2 = await RewardControllerFactory.deploy();
+    await rewardController2.deployed();
+
+    rewardController2 = await RewardController.at(rewardController2.address);
+
+    await rewardController2.initialize(
+      stakingToken.address,
+      accounts[0],
+      (await web3.eth.getBlock("latest")).number,
+      10,
+      epochRewardPerBlock
+    );
+
+    await stakingToken.mint(rewardController2.address, web3.utils.toWei("2500000"));
 
     var staker = accounts[1];
     await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
@@ -292,10 +308,10 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    assert.equal((await vault.rewardController()), rewardController.address);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
 
     try {
-      await vault.setRewardController(accounts[2], { from: accounts[1] });
+      await vault.addRewardController(accounts[2], { from: accounts[1] });
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex, "OnlyRegistryOwner");
@@ -316,7 +332,7 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
 
     try {
-      await vault.setRewardController(accounts[2]);
+      await vault.addRewardController(rewardController2.address);
       assert(false, "cannot propose new reward controller while active claim exists");
     } catch (ex) {
       assertVMException(ex, "ActiveClaimExists");
@@ -324,28 +340,39 @@ contract("HatVaults", (accounts) => {
 
     await vault.dismissClaim(claimId);
 
-    tx = await vault.setRewardController(accounts[2]);
-    assert.equal(tx.logs[0].event, "SetRewardController");
-    assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
+    await rewardController2.setAllocPoint(vault.address, 100);
 
-    assert.equal((await vault.rewardController()), accounts[2]);
+    tx = await vault.addRewardController(rewardController2.address);
+    assert.equal(tx.logs[0].event, "AddRewardController");
+    assert.equal(tx.logs[0].args._newRewardController, rewardController2.address);
+
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
+    assert.equal((await vault.rewardControllers(1)), rewardController2.address);
+
+    let expectedReward = await calculateExpectedReward(staker);
 
     tx = await rewardController.claimReward(vault.address, staker, { from: staker });
-    assert.equal(tx.logs[0].event, "ClaimReward");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._amount.toString(), "0");
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward);
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
-      "0"
+      expectedReward
     );
-    assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), 0);
+    assert.equal((await rewardController.getPendingReward(vault.address, staker)).toNumber(), "0");
 
-    try {
-      await vault.setRewardController(rewardController.address);
-      assert(false, "cannot set to a previous reward controller");
-    } catch (ex) {
-      assertVMException(ex, "CannotSetToPerviousRewardController");
-    }
+    expectedReward = await calculateExpectedReward(staker, 0, vault, rewardController2);
+
+    tx = await rewardController2.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._amount.toString(), expectedReward);
+    assert.equal(
+      (await stakingToken.balanceOf(staker)).toString(),
+      expectedReward
+    );
+
+    assert.equal((await rewardController2.getPendingReward(vault.address, staker)).toNumber(), "0");
   });
 
   it("Emergency withdraw", async () => {
@@ -358,7 +385,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("3"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    assert.equal((await vault.rewardController()), rewardController.address);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
 
     let expectedReward = await calculateExpectedReward(staker);
 
@@ -443,11 +470,12 @@ contract("HatVaults", (accounts) => {
       expectedReward.add(prevExpectedReward).toString()
     );
 
-    tx = await vault.setRewardController(accounts[2]);
-    assert.equal(tx.logs[0].event, "SetRewardController");
+    tx = await vault.addRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "AddRewardController");
     assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 
-    assert.equal((await vault.rewardController()), accounts[2]);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
+    assert.equal((await vault.rewardControllers(1)), accounts[2]);
 
     try {
       await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
@@ -476,7 +504,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("3"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    assert.equal((await vault.rewardController()), rewardController.address);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
 
     let expectedReward = await calculateExpectedReward(staker);
 
@@ -537,7 +565,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
-    assert.equal((await vault.rewardController()), rewardController.address);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
 
     try {
       await rewardController.setAllocPoint(vault.address, 0, { from: accounts[1] });
@@ -553,11 +581,12 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].args._prevAllocPoint, 100);
     assert.equal(tx.logs[1].args._allocPoint, 0);
 
-    tx = await vault.setRewardController(accounts[2]);
-    assert.equal(tx.logs[0].event, "SetRewardController");
+    tx = await vault.addRewardController(accounts[2]);
+    assert.equal(tx.logs[0].event, "AddRewardController");
     assert.equal(tx.logs[0].args._newRewardController, accounts[2]);
 
-    assert.equal((await vault.rewardController()), accounts[2]);
+    assert.equal((await vault.rewardControllers(0)), rewardController.address);
+    assert.equal((await vault.rewardControllers(1)), accounts[2]);
 
     let lastBlockNumber = (await web3.eth.getBlock("latest")).number - 1;
     assert.equal(

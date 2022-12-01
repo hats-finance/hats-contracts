@@ -304,9 +304,31 @@ An event thats emitted when the minter address is set
 | minter `indexed` | address | undefined |
 | seedAmount  | uint256 | undefined |
 
+### TransferableSet
+
+```solidity
+event TransferableSet()
+```
+
+An event thats emitted when the token is set to transferable
+
+
+
+
 
 
 ## Errors
+
+### TransfersDisabled
+
+```solidity
+error TransfersDisabled()
+```
+
+
+
+
+
 
 ### ZeroAmount
 
