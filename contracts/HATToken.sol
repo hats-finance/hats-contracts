@@ -18,6 +18,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
 
     /**
      * @notice Construct a new HAT token
+     * @param _governance The owner of the token
      */
     constructor(address _governance) 
         ERC20("hats.finance", "HAT") 
@@ -39,7 +40,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
 
     function burn(uint256 _amount) external {
         if (_amount == 0) revert ZeroAmount();
-        return _burn(msg.sender, _amount);
+        _burn(msg.sender, _amount);
     }
 
     function mint(address _account, uint256 _amount) external {
@@ -50,7 +51,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
 
     function _transfer(address from, address to, uint256 amount) internal override {
         if (!transferable) revert TransfersDisabled();
-        return super._transfer(from, to, amount);
+        super._transfer(from, to, amount);
     }
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
