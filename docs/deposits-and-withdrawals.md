@@ -1,5 +1,5 @@
 
-# Deposists and Withdrawls
+# Deposists and Withdrawals
 
 Hats finance provides crowd-sourced bug bounties. Parties that are interested in helping protect a project can deposit funds in the Vault. 
 
@@ -17,7 +17,7 @@ User deposits `amount` tokens of the contract at `token` in a `vault`
 
 ## Withdrawal 
 
-The funds that a user has deposited in the vault can be paid out as a bounty to hackers.  Hats has implemented some time limits on withdrawals to make sure that users will not withdraw their funds while a claim is being processed, or just before a claim is being paid out.
+The funds that a user has deposited in the vault can be paid out as a bounty to hackers.  Hats has implemented time limits on withdrawals to make sure that users will not withdraw their funds while a claim is being processed, or just before a claim is being paid out.
 
 Specifcally,  a user cannot withdraw her funds:
 
