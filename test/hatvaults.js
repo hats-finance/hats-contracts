@@ -103,7 +103,7 @@ const setUpGlobalVars = async function(
 
 contract("HatVaults", (accounts) => {
   //this function will increment 4 blocks in local testnet
-  async function safeRedeem(vault, amount, staker, redeemFrom=staker) {
+  async function safeRedeem(vault, amount, staker, redeemFrom=staker, slippage=false) {
     let withdrawPeriod = (
       await hatVaultsRegistry.generalParameters()
     ).withdrawPeriod.toNumber();
@@ -127,10 +127,14 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.redeem(amount, staker, redeemFrom, { from: staker });
+
+    if (slippage) {
+      return await vault.methods["redeem(uint256,address,address,uint256)"](amount, staker, redeemFrom, slippage, { from: staker });
+    }
+    return await vault.methods["redeem(uint256,address,address)"](amount, staker, redeemFrom, { from: staker });
   }
 
-  async function safeWithdraw(vault, amount, staker, withdrawFrom=staker) {
+  async function safeWithdraw(vault, amount, staker, withdrawFrom=staker, slippage=false) {
     let withdrawPeriod = (
       await hatVaultsRegistry.generalParameters()
     ).withdrawPeriod.toNumber();
@@ -154,7 +158,11 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.withdraw(amount, staker, withdrawFrom, { from: staker });
+
+    if (slippage) {
+      return await vault.methods["withdraw(uint256,address,address,uint256)"](amount, staker, withdrawFrom, slippage, { from: staker });
+    }
+    return await vault.methods["withdraw(uint256,address,address)"](amount, staker, withdrawFrom, { from: staker });
   }
 
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0, currentVault=vault, currentRewardController=rewardController) {
@@ -203,7 +211,7 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.redeem(amount, staker, staker, { from: staker });
+    return await vault.methods["redeem(uint256,address,address)"](amount, staker, staker, { from: staker });
   }
 
   async function unsafeWithdraw(vault, amount, staker) {
@@ -221,7 +229,7 @@ contract("HatVaults", (accounts) => {
           withdrawPeriod
       );
     }
-    return await vault.withdraw(amount, staker, staker, { from: staker });
+    return await vault.methods["withdraw(uint256,address,address)"](amount, staker, staker, { from: staker });
   }
 
   it("constructor", async () => {
@@ -1291,7 +1299,7 @@ contract("HatVaults", (accounts) => {
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
     try {
-      await vault.mint(0, staker, { from: staker });
+      await vault.methods["mint(uint256,address)"](0, staker, { from: staker });
       assert(false, "cannot deposit 0");
     } catch (ex) {
       assertVMException(ex, "AmountCannotBeZero");
@@ -1327,7 +1335,7 @@ contract("HatVaults", (accounts) => {
     await stakingToken.setReenterDeposit(true);
 
     try {
-      await vault.mint(1, staker, { from: staker });
+      await vault.methods["mint(uint256,address)"](1, staker, { from: staker });
       assert(false, "fail on reentrancy attempt");
     } catch (ex) {
       assertVMException(ex, "ReentrancyGuard: reentrant call");
@@ -1412,7 +1420,7 @@ contract("HatVaults", (accounts) => {
     }
 
     try {
-      await vault.mint(web3.utils.toWei("1"), staker, { from: staker });
+      await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker });
       assert(false, "cannot mint to a paused vault");
     } catch (ex) {
       assertVMException(ex, "ERC4626: mint more than max");
@@ -1781,7 +1789,7 @@ contract("HatVaults", (accounts) => {
     // check that we indeed cannot redeem
     await utils.increaseTime(7 * 24 * 3600);
     try {
-      await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
+      await vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("0.5"), staker, staker, { from: staker });
       assert(false, "deposit should cancel withdrawRequest");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
@@ -1806,7 +1814,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     try {
-      await vault.redeem(web3.utils.toWei("1"), staker, staker, { from: staker });
+      await vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw without request");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
@@ -1819,7 +1827,7 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await vault.redeem(web3.utils.toWei("1"), staker, staker, { from: staker });
+      await vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "request is pending");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
@@ -1827,17 +1835,17 @@ contract("HatVaults", (accounts) => {
 
     await utils.increaseTime(7 * 24 * 3600);
 
-    await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
+    await vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("0.5"), staker, staker, { from: staker });
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
     try {
-      await vault.redeem(web3.utils.toWei("0.5"), staker, staker, { from: staker });
+      await vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("0.5"), staker, staker, { from: staker });
       assert(false, "no pending request");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
     }
     await vault.withdrawRequest({ from: staker });
     await utils.increaseTime(7 * 24 * 3600);
-    await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker });
+    await vault.methods["redeem(uint256,address,address)"](await vault.balanceOf(staker), staker, staker, { from: staker });
     assert.equal(await vault.withdrawEnableStartTime(staker), 0);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await vault.withdrawRequest({ from: staker });
@@ -3495,7 +3503,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.isFalse(tx.logs[2].args._amount.eq(0));
   });
 
-  it("deposit mint withdraw redeem after approve claim", async () => {
+  it("deposit mint withdraw redeem after approve claim (with slippage protection)", async () => {
     await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
@@ -3546,7 +3554,15 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await vault.totalSupply(), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker2), web3.utils.toWei("0"));
-    tx = await vault.deposit(web3.utils.toWei("0.8"), staker2, { from: staker2 });
+    
+    try {
+      await vault.methods["deposit(uint256,address,uint256)"](web3.utils.toWei("0.8"), staker2, web3.utils.toWei("5"), { from: staker2 });
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "DepositSlippageProtection");
+    }
+
+    tx = await vault.methods["deposit(uint256,address,uint256)"](web3.utils.toWei("0.8"), staker2, web3.utils.toWei("4"), { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("0.8"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("4"));
@@ -3554,7 +3570,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker2), web3.utils.toWei("4"));
 
-    tx = await vault.mint(web3.utils.toWei("1"), staker2, { from: staker2 });
+    try {
+      await vault.methods["mint(uint256,address,uint256)"](web3.utils.toWei("1"), staker2, web3.utils.toWei("0.19"), { from: staker2 });
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "MintSlippageProtection");
+    }
+
+    tx = await vault.methods["mint(uint256,address,uint256)"](web3.utils.toWei("1"), staker2, web3.utils.toWei("0.2"), { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -3569,7 +3592,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    tx = await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2);
+    try {
+      await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2, staker2, web3.utils.toWei("3"));
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "WithdrawSlippageProtection");
+    }
+
+    tx = await safeWithdraw(vault, web3.utils.toWei("0.8"), staker2, staker2, web3.utils.toWei("4"));
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("0.8"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("4"));
@@ -3584,7 +3614,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2);
+    try {
+      await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker2, web3.utils.toWei("0.21"));
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "RedeemSlippageProtection");
+    }
+
+    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker2, web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
@@ -3592,7 +3629,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker2), web3.utils.toWei("0"));
 
-    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker);
+    tx = await safeRedeem(vault, web3.utils.toWei("1"), staker, staker, web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
@@ -3600,7 +3637,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("0"));
     assert.equal(await vault.balanceOf(staker2), web3.utils.toWei("0"));
 
-    tx = await vault.mint(web3.utils.toWei("1"), staker2, { from: staker2 });
+    tx = await vault.methods["mint(uint256,address,uint256)"](web3.utils.toWei("1"), staker2, web3.utils.toWei("1"), { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -3662,7 +3699,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     let expectedReward = await calculateExpectedReward(staker);
-    tx = await vault.redeem(await vault.balanceOf(staker), staker, staker, { from: staker });
+    tx = await vault.methods["redeem(uint256,address,address)"](await vault.balanceOf(staker), staker, staker, { from: staker });
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("0.2"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
@@ -3678,7 +3715,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     let expectedRewardStaker2 = await calculateExpectedReward(staker2);
-    tx = await vault.redeem(await vault.balanceOf(staker2), staker2, staker2, { from: staker2 });
+    tx = await vault.methods["redeem(uint256,address,address)"](await vault.balanceOf(staker2), staker2, staker2, { from: staker2 });
     assert.equal(tx.logs[2].event, "Withdraw");
     assert.equal(tx.logs[2].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[2].args.shares.toString(), web3.utils.toWei("1"));
@@ -3787,7 +3824,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken.mint(staker2, web3.utils.toWei("1"));
 
     //stake
-    let tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+    let tx = await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
     assert.equal(tx.logs[3].args.caller, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
@@ -3807,7 +3844,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken.mint(staker2, web3.utils.toWei("1"));
 
     try {
-      await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+      await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker2 });
       assert(false, "cannot deposit for user with a withdraw request");
     } catch (ex) {
       assertVMException(ex, "CannotTransferToAnotherUserWithActiveWithdrawRequest");
@@ -3816,7 +3853,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
     await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestEnablePeriod.toString()));
 
-    tx = await vault.mint(web3.utils.toWei("1"), staker, { from: staker2 });
+    tx = await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
     assert.equal(tx.logs[3].args.caller, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
@@ -3981,15 +4018,15 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       "RedeemMoreThanMax"
     );
     await assertFunctionRaisesException(
-      vault.redeem(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
       "RedeemMoreThanMax"
     );
     await assertFunctionRaisesException(
-      vault.redeem(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      vault.methods["redeem(uint256,address,address)"](web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
       "RedeemMoreThanMax"
     );
     await assertFunctionRaisesException(
-      vault.withdraw(web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
+      vault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), someAccount, someAccount, { from: someAccount }),
       "RedeemMoreThanMax"
     );
   });
@@ -5894,7 +5931,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await advanceToSafetyPeriod();
 
     try {
-      await vault.withdraw(web3.utils.toWei("1"), staker, staker, { from: staker });
+      await vault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, { from: staker });
       assert(false, "cannot withdraw on safety period");
     } catch (ex) {
       assertVMException(ex, "RedeemMoreThanMax");
@@ -6404,7 +6441,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await hatToken.mint(newVault.address, web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     await advanceToNonSafetyPeriod();
-    var tx = await newVault.withdraw(web3.utils.toWei("1"), staker, staker, {
+    var tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("0.97087378640776699"));
@@ -6413,7 +6450,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       (await hatToken.balanceOf(staker)).sub(tx.logs[2].args._amount).toString(),
       web3.utils.toWei("1")
     );
-    await newVault.redeem(web3.utils.toWei("2"), staker2, staker2, { from: staker2 });
+    await newVault.methods["redeem(uint256,address,address)"](web3.utils.toWei("2"), staker2, staker2, { from: staker2 });
     tx = await rewardController.claimReward(newVault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker2))

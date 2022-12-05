@@ -239,6 +239,30 @@ function deposit(uint256 assets, address receiver) external nonpayable returns (
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### deposit
+
+```solidity
+function deposit(uint256 assets, address receiver, uint256 minShares) external nonpayable returns (uint256)
+```
+
+
+
+*Deposit funds to the vault. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify minimum shares to be minted for slippage protection*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | Amount of vault&#39;s native token to deposit |
+| receiver | address | Reciever of the shares from the deposit |
+| minShares | uint256 | Minimum amount of shares to minted for the assets |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### dismissClaim
 
 ```solidity
@@ -469,6 +493,30 @@ function maxWithdraw(address owner) external view returns (uint256 maxAssets)
 ### mint
 
 ```solidity
+function mint(uint256 shares, address receiver, uint256 maxAssets) external nonpayable returns (uint256)
+```
+
+
+
+*Deposit funds to the vault based on the amount of shares to mint specified. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify maximum assets to be deposited for slippage protection*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | Amount of vault&#39;s shares to mint |
+| receiver | address | Reciever of the shares from the deposit |
+| maxAssets | uint256 | Maximum amount of assets to deposit for the shares |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### mint
+
+```solidity
 function mint(uint256 shares, address receiver) external nonpayable returns (uint256 assets)
 ```
 
@@ -639,6 +687,31 @@ Returns the amount of shares to be burned to give the user the exact amount of a
 |---|---|---|
 | shares | uint256 | The amount of shares to be burned to get the requested amount of assets |
 | fee | uint256 | The amount of assets that will be paid as fee |
+
+### redeem
+
+```solidity
+function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256)
+```
+
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | Amount of shares to redeem |
+| receiver | address | Address of receiver of the funds  |
+| owner | address | Address of owner of the funds |
+| minAssets | uint256 | Minimum amount of assets to receive for the shares |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### redeem
 
@@ -1014,6 +1087,31 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
 | Name | Type | Description |
 |---|---|---|
 | _0 | bool | undefined |
+
+### withdraw
+
+```solidity
+function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256)
+```
+
+Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | Amount of tokens to withdraw |
+| receiver | address | Address of receiver of the funds  |
+| owner | address | Address of owner of the funds |
+| maxShares | uint256 | Maximum amount of shares to burn for the assets |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### withdraw
 
@@ -1660,10 +1758,32 @@ error DelayPeriodForSettingMaxBountyHadNotPassed()
 
 
 
+### DepositSlippageProtection
+
+```solidity
+error DepositSlippageProtection()
+```
+
+
+
+
+
+
 ### MaxBountyCannotBeMoreThanMaxBountyLimit
 
 ```solidity
 error MaxBountyCannotBeMoreThanMaxBountyLimit()
+```
+
+
+
+
+
+
+### MintSlippageProtection
+
+```solidity
+error MintSlippageProtection()
 ```
 
 
@@ -1803,6 +1923,17 @@ error RedeemMoreThanMax()
 
 
 
+### RedeemSlippageProtection
+
+```solidity
+error RedeemSlippageProtection()
+```
+
+
+
+
+
+
 ### SafetyPeriod
 
 ```solidity
@@ -1895,6 +2026,17 @@ error VestingPeriodsCannotBeZero()
 
 ```solidity
 error WithdrawMustBeGreaterThanZero()
+```
+
+
+
+
+
+
+### WithdrawSlippageProtection
+
+```solidity
+error WithdrawSlippageProtection()
 ```
 
 
