@@ -10,6 +10,22 @@ A HATVault holds the funds for a specific project&#39;s bug bounties. The HATVau
 
 ## Methods
 
+### addRewardController
+
+```solidity
+function addRewardController(contract IRewardController _newRewardController) external nonpayable
+```
+
+Called by the registry&#39;s owner to add a reward controller to the vault
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _newRewardController | contract IRewardController | The new reward controller to add |
+
 ### allowance
 
 ```solidity
@@ -672,28 +688,6 @@ Redeem shares in the vault for the respective amount of underlying assets and cl
 |---|---|---|
 | assets | uint256 | undefined |
 
-### rewardControllerRemoved
-
-```solidity
-function rewardControllerRemoved(address _rewardController) external view returns (bool)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _rewardController | address | the reward controller to check |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bool | bool Whether the reward contoller was previously used in the vault and removed |
-
 ### setArbitrator
 
 ```solidity
@@ -849,22 +843,6 @@ Called by the vault&#39;s owner to set a pending request for the maximum percent
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty | uint16 | The maximum bounty percentage that can be paid out |
-
-### setRewardController
-
-```solidity
-function setRewardController(contract IRewardController _newRewardController) external nonpayable
-```
-
-Called by the registry&#39;s owner to set the vault&#39;s reward controller
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _newRewardController | contract IRewardController | The new reward controller |
 
 ### setVaultDescription
 
@@ -1099,6 +1077,22 @@ Submit a request to withdraw funds from the vault. The request will only be appr
 
 
 ## Events
+
+### AddRewardController
+
+```solidity
+event AddRewardController(contract IRewardController indexed _newRewardController)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _newRewardController `indexed` | contract IRewardController | undefined |
 
 ### Approval
 
@@ -1361,22 +1355,6 @@ event SetPendingMaxBounty(uint256 _maxBounty)
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty  | uint256 | undefined |
-
-### SetRewardController
-
-```solidity
-event SetRewardController(contract IRewardController indexed _newRewardController)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _newRewardController `indexed` | contract IRewardController | undefined |
 
 ### SetVaultDescription
 

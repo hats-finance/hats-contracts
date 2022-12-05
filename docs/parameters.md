@@ -25,7 +25,7 @@
 |`registry.owner`|`hatVestingDuration`|global|90 days | < 180 days |  `registry.setHatVestingParams`
 |`registry.owner`|`hatVestingPeriods`|global| 90 | > 0, <= hatVestingDuration |  `registry.setHatVestingParams`
 |`registry.owner`|`setMaxBountyDelay`| global|2 days |>= 2 days|`registry.setMaxBountyDelay`
-|`registry.owner`|`rewardController`|vault || | `vault.setRewardController` | not a previous reward controller, noActiveClaim
+|`registry.owner`|`rewardController`|vault || | `vault.addRewardController` | noActiveClaim
 |`registry.owner`|registry.`owner`| global| _hatGovernance || `registry.transferOwnership`, `registry.renounceOwnership` 
 |`registry.owner`|`vaultDescription`|vault || | `vault.setVaultDescription` | only an event
 |`feeSetter`|`withdrawalFee`|vault|0| `<= 200` (<= 2%) |`vault.setWithdrawalFee`

@@ -213,7 +213,7 @@ interface IHATVault is IERC4626Upgradeable {
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty);
     event SetMaxBounty(uint256 _maxBounty);
-    event SetRewardController(IRewardController indexed _newRewardController);
+    event AddRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
     event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
@@ -369,10 +369,10 @@ interface IHATVault is IERC4626Upgradeable {
     function setVaultDescription(string calldata _descriptionHash) external;
 
     /**
-    * @notice Called by the registry's owner to set the vault's reward controller
-    * @param _newRewardController The new reward controller
+    * @notice Called by the registry's owner to add a reward controller to the vault
+    * @param _newRewardController The new reward controller to add
     */
-    function setRewardController(IRewardController _newRewardController) external;
+    function addRewardController(IRewardController _newRewardController) external;
 
     /**
     * @notice Called by the registry's owner to set the vault HAT token bounty 
@@ -530,12 +530,6 @@ interface IHATVault is IERC4626Upgradeable {
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Getters -------------------------------------- */
-
-    /** 
-    * @param _rewardController the reward controller to check
-    * @return bool Whether the reward contoller was previously used in the vault and removed
-    */
-    function rewardControllerRemoved(address _rewardController) external view returns(bool);
 
     /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance

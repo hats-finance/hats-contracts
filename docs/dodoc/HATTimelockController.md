@@ -584,7 +584,7 @@ function scheduleBatch(address[] targets, uint256[] values, bytes[] payloads, by
 ### setAllocPoint
 
 ```solidity
-function setAllocPoint(contract HATVault _vault, uint256 _allocPoint) external nonpayable
+function setAllocPoint(contract HATVault _vault, contract IRewardController _rewardController, uint256 _allocPoint) external nonpayable
 ```
 
 
@@ -596,6 +596,7 @@ function setAllocPoint(contract HATVault _vault, uint256 _allocPoint) external n
 | Name | Type | Description |
 |---|---|---|
 | _vault | contract HATVault | undefined |
+| _rewardController | contract IRewardController | undefined |
 | _allocPoint | uint256 | undefined |
 
 ### setCommittee
