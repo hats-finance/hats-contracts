@@ -4,7 +4,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./HATVaultsRegistry.sol";
+import "./HATVault.sol";
 
 contract HATGovernanceArbitrator is Ownable {
 

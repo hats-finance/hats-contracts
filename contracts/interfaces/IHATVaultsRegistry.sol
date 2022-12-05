@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.16;
 
-import "./IRewardController.sol";
 import "./IHATVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
