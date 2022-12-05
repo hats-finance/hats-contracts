@@ -3,7 +3,6 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./ITokenLock.sol";
 import "./ITokenLockFactory.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
