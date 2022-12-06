@@ -551,6 +551,34 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         return super.deposit(assets, receiver);
     }
 
+    /** @notice See {IHATVault-deposit}. */
+    function deposit(uint256 assets, address receiver, uint256 minShares) public virtual returns (uint256) {
+        uint256 shares = deposit(assets, receiver);
+        if (shares < minShares) revert DepositSlippageProtection();
+        return shares;
+    }
+
+    /** @notice See {IHATVault-mint}. */
+    function mint(uint256 shares, address receiver, uint256 maxAssets) public virtual returns (uint256) {
+        uint256 assets = mint(shares, receiver);
+        if (assets > maxAssets) revert MintSlippageProtection();
+        return assets;
+    }
+
+    /** @notice See {IHATVault-withdraw}. */
+    function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) public virtual returns (uint256) {
+        uint256 shares = withdraw(assets, receiver, owner);
+        if (shares > maxShares) revert WithdrawSlippageProtection();
+        return shares;
+    }
+
+    /** @notice See {IHATVault-redeem}. */
+    function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) public virtual returns (uint256) {
+        uint256 assets = redeem(shares, receiver, owner);
+        if (assets < minAssets) revert RedeemSlippageProtection();
+        return assets;
+    }
+
     /** @notice See {IERC4626Upgradeable-maxDeposit}. */
     function maxDeposit(address) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         return depositPause ? 0 : MAX_UINT;

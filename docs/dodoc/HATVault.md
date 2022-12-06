@@ -513,6 +513,30 @@ See {IHATVault-deposit}.
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### deposit
+
+```solidity
+function deposit(uint256 assets, address receiver, uint256 minShares) external nonpayable returns (uint256)
+```
+
+See {IHATVault-deposit}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | undefined |
+| receiver | address | undefined |
+| minShares | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### depositPause
 
 ```solidity
@@ -817,6 +841,30 @@ See {IERC4626Upgradeable-maxWithdraw}.
 ### mint
 
 ```solidity
+function mint(uint256 shares, address receiver, uint256 maxAssets) external nonpayable returns (uint256)
+```
+
+See {IHATVault-mint}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | undefined |
+| receiver | address | undefined |
+| maxAssets | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### mint
+
+```solidity
 function mint(uint256 shares, address receiver) external nonpayable returns (uint256)
 ```
 
@@ -1022,6 +1070,31 @@ See {IHATVault-previewWithdrawAndFee}.
 |---|---|---|
 | shares | uint256 | undefined |
 | fee | uint256 | undefined |
+
+### redeem
+
+```solidity
+function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256)
+```
+
+See {IHATVault-redeem}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | undefined |
+| receiver | address | undefined |
+| owner | address | undefined |
+| minAssets | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### redeem
 
@@ -1514,6 +1587,31 @@ function vestingPeriods() external view returns (uint32)
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint32 | undefined |
+
+### withdraw
+
+```solidity
+function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256)
+```
+
+See {IHATVault-withdraw}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | undefined |
+| receiver | address | undefined |
+| owner | address | undefined |
+| maxShares | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### withdraw
 
@@ -2232,10 +2330,32 @@ error DelayPeriodForSettingMaxBountyHadNotPassed()
 
 
 
+### DepositSlippageProtection
+
+```solidity
+error DepositSlippageProtection()
+```
+
+
+
+
+
+
 ### MaxBountyCannotBeMoreThanMaxBountyLimit
 
 ```solidity
 error MaxBountyCannotBeMoreThanMaxBountyLimit()
+```
+
+
+
+
+
+
+### MintSlippageProtection
+
+```solidity
+error MintSlippageProtection()
 ```
 
 
@@ -2375,6 +2495,17 @@ error RedeemMoreThanMax()
 
 
 
+### RedeemSlippageProtection
+
+```solidity
+error RedeemSlippageProtection()
+```
+
+
+
+
+
+
 ### SafetyPeriod
 
 ```solidity
@@ -2467,6 +2598,17 @@ error VestingPeriodsCannotBeZero()
 
 ```solidity
 error WithdrawMustBeGreaterThanZero()
+```
+
+
+
+
+
+
+### WithdrawSlippageProtection
+
+```solidity
+error WithdrawSlippageProtection()
 ```
 
 

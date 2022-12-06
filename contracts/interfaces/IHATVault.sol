@@ -164,7 +164,7 @@ interface IHATVault is IERC4626Upgradeable {
     error ClaimExpired();
     // Challenge period is over
     error ChallengePeriodEnded();
-    // claim can be challenged only once
+    // Claim can be challenged only once
     error ClaimAlreadyChallenged();
     // Only callable if challenged
     error OnlyCallableIfChallenged();
@@ -182,10 +182,18 @@ interface IHATVault is IERC4626Upgradeable {
     error AmountCannotBeZero();
     // Cannot transfer shares to self
     error CannotTransferToSelf();
-    // first deposit must return at least MINIMAL_AMOUNT_OF_SHARES
+    // First deposit must return at least MINIMAL_AMOUNT_OF_SHARES
     error AmountOfSharesMustBeMoreThanMinimalAmount();
- 
-    
+    // Deposit passed max slippage
+    error DepositSlippageProtection();
+    // Mint passed max slippage
+    error MintSlippageProtection();
+    // Withdraw passed max slippage
+    error WithdrawSlippageProtection();
+    // Redeem passed max slippage
+    error RedeemSlippageProtection();
+
+
     event SubmitClaim(
         bytes32 indexed _claimId,
         address indexed _committee,
@@ -525,6 +533,65 @@ interface IHATVault is IERC4626Upgradeable {
     */
     function deposit(uint256 assets, address receiver) 
         external
+        returns (uint256);
+
+    /**
+    * @dev Deposit funds to the vault. Can only be called if the committee had
+    * checked in and deposits are not paused, and the registry is not in an emergency pause.
+    * Allows to specify minimum shares to be minted for slippage protection
+    * @param receiver Reciever of the shares from the deposit
+    * @param assets Amount of vault's native token to deposit
+    * @param minShares Minimum amount of shares to minted for the assets
+    */
+    function deposit(uint256 assets, address receiver, uint256 minShares) 
+        external
+        returns (uint256);
+
+    /**
+    * @dev Deposit funds to the vault based on the amount of shares to mint specified.
+    * Can only be called if the committee had checked in and deposits are not paused,
+    * and the registry is not in an emergency pause.
+    * Allows to specify maximum assets to be deposited for slippage protection
+    * @param receiver Reciever of the shares from the deposit
+    * @param shares Amount of vault's shares to mint
+    * @param maxAssets Maximum amount of assets to deposit for the shares
+    */
+    function mint(uint256 shares, address receiver, uint256 maxAssets) 
+        external
+        returns (uint256);
+
+    /** 
+    * @notice Withdraw previously deposited funds from the vault, without
+    * transferring the accumulated HAT reward.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * Allows to specify maximum shares to be burnt for slippage protection
+    * @param assets Amount of tokens to withdraw
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds
+    * @param maxShares Maximum amount of shares to burn for the assets
+    */
+    function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares)
+        external 
+        returns (uint256);
+
+    /** 
+    * @notice Redeem shares in the vault for the respective amount
+    * of underlying assets, without transferring the accumulated HAT reward.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * Allows to specify minimum assets to be received for slippage protection
+    * @param shares Amount of shares to redeem
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds
+    * @param minAssets Minimum amount of assets to receive for the shares
+    */
+    function redeem(uint256 shares, address receiver, address owner, uint256 minAssets)
+        external  
         returns (uint256);
 
     /* -------------------------------------------------------------------------------- */
