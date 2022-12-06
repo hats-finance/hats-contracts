@@ -48,6 +48,8 @@ const setup = async function(
 ) {
   hatToken = await HATTokenMock.new(accounts[0]);
   await hatToken.setTransferable({from: accounts[0]});
+  rewardToken = await HATTokenMock.new(accounts[0]);
+  await rewardToken.setTransferable({from: accounts[0]});
   stakingToken = await ERC20Mock.new("Staking", "STK");
   var wethAddress = utils.NULL_ADDRESS;
   if (weth) {
@@ -59,6 +61,7 @@ const setup = async function(
   let deployment = await deployHATVaults({
     governance: accounts[0],
     hatToken: hatToken.address,
+    rewardToken: rewardToken.address,
     tokenLockFactory: tokenLockFactory.address,
     rewardController: {
       startBlock,
@@ -82,13 +85,13 @@ const setup = async function(
     [accounts[0]]
   );
 
-  await hatToken.setMinter(
+  await rewardToken.setMinter(
     accounts[0],
     web3.utils.toWei((2500000 + rewardInVaults).toString())
   );
-  await hatToken.mint(router.address, web3.utils.toWei("2500000"));
-  await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await hatToken.transfer(
+  await rewardToken.mint(router.address, web3.utils.toWei("2500000"));
+  await rewardToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
+  await rewardToken.transfer(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
@@ -121,7 +124,7 @@ const setup = async function(
   await vault.committeeCheckIn({ from: accounts[1] });
 };
 
-contract("HatTimelockController", (accounts) => {
+contract.only("HatTimelockController", (accounts) => {
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await rewardController.vaultInfo(vault.address)).lastRewardBlock;
@@ -199,7 +202,7 @@ contract("HatTimelockController", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    assert.equal(await hatToken.balanceOf(staker), 0);
+    assert.equal(await rewardToken.balanceOf(staker), 0);
     await hatTimelockController.setVaultVisibility(vault.address, true);
     await hatTimelockController.setVaultVisibility(vault.address, true);
     await hatTimelockController.setAllocPoint(vault.address, 200);
@@ -207,7 +210,7 @@ contract("HatTimelockController", (accounts) => {
     assert.equal(await stakingToken.balanceOf(staker), 0);
     await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(
-      (await hatToken.balanceOf(staker)).toString(),
+      (await rewardToken.balanceOf(staker)).toString(),
       expectedReward.toString()
     );
     assert.equal(await stakingToken.balanceOf(staker), 0);
