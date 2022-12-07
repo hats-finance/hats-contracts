@@ -124,7 +124,7 @@ const setup = async function(
   await vault.committeeCheckIn({ from: accounts[1] });
 };
 
-contract.only("HatTimelockController", (accounts) => {
+contract("HatTimelockController", (accounts) => {
   async function calculateExpectedReward(staker, operationBlocksIncrement = 0) {
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     let lastRewardBlock = (await rewardController.vaultInfo(vault.address)).lastRewardBlock;
