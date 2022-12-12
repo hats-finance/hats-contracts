@@ -2,7 +2,6 @@
 ## Parameters
 |owner| parameter name  | scope| default | limits  |  setter | comments
 |-|-|-|-|-|-|-|
-|`registry.owner`|`isEmergencyPaused`|global|false |  |`setEmergencyPaused`|
 |`registry.owner`|`defaultBountyGovernanceHAT`|global ||+defaultBountyHackerHatVested <= 20% |`registry.setDefaultHATBountySplit`
 |`registry.owner`|`bountyGovernanceHAT`|vault ||+bountyHackerHatVested <= 20%|`vault.setHATBountySplit`
 |`registry.owner`|`defaultBountyHackerHATVested`|global||+defaultBountyGovernanceHAT <= 20%|`registry.setDefaultHATBountySplit`
@@ -28,6 +27,7 @@
 |`registry.owner`|`rewardController`|vault || | `vault.addRewardController` | noActiveClaim
 |`registry.owner`|registry.`owner`| global| _hatGovernance || `registry.transferOwnership`, `registry.renounceOwnership` 
 |`registry.owner`|`vaultDescription`|vault || | `vault.setVaultDescription` | only an event
+|`registry.owner`|`isEmergencyPaused`|global|false |  |`setEmergencyPaused`| emergency pause will pause deposits and payout, but not  emergency withdrawals
 |`feeSetter`|`withdrawalFee`|vault|0| `<= 200` (<= 2%) |`vault.setWithdrawalFee`
 |`vault.owner`|`committee`|vault||| `vault.setCommittee` |if committee has not checked in yet
 |`vault.owner`|`vestingPeriods`|vault|| > 0|`vault.setVestingParams` 
