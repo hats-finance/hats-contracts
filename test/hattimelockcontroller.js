@@ -85,16 +85,25 @@ const setup = async function(
     [accounts[0]]
   );
 
-  await rewardToken.setMinter(
+  // mint some hat tokens to the router so they are available for swapping
+  await hatToken.setMinter(
     accounts[0],
-    web3.utils.toWei((2500000 + rewardInVaults).toString())
+    web3.utils.toWei((2500000).toString())
   );
-  await rewardToken.mint(router.address, web3.utils.toWei("2500000"));
-  await rewardToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
-  await rewardToken.transfer(
-    rewardController.address,
-    web3.utils.toWei(rewardInVaults.toString())
-  );
+  await hatToken.mint(router.address, web3.utils.toWei("2500000"));
+
+  // mint some rewardtokens to the rewardcontroller 
+  if (rewardInVaults > 0) {
+    await rewardToken.setMinter(
+      accounts[0],
+      web3.utils.toWei((rewardInVaults).toString())
+    );
+    await rewardToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
+    await rewardToken.transfer(
+      rewardController.address,
+      web3.utils.toWei(rewardInVaults.toString())
+   );
+  }
   vault = await HATVault.at((await hatVaultsRegistry.createVault({
     asset: stakingToken.address,
     owner: await hatVaultsRegistry.owner(),
