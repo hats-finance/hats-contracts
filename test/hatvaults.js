@@ -6443,17 +6443,17 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await hatToken.mint(newVault.address, web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     await advanceToNonSafetyPeriod();
-    var tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
+    await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("0.97087378640776699"));
-    tx = await rewardController.claimReward(newVault.address, staker, { from: staker });
+    await rewardController.claimReward(newVault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker)).toString(),
       web3.utils.toWei("1")
     );
     await newVault.methods["redeem(uint256,address,address)"](web3.utils.toWei("2"), staker2, staker2, { from: staker2 });
-    tx = await rewardController.claimReward(newVault.address, staker, { from: staker });
+    await rewardController.claimReward(newVault.address, staker, { from: staker });
     assert.equal(
       (await hatToken.balanceOf(staker2))
         .toString(),
