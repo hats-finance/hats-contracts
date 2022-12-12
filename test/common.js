@@ -119,11 +119,19 @@ const setup = async function(
     deployment.rewardController.address
   );
 
+  // mint some hat tokens to the router so they are available for swapping
+  await hatToken.setMinter(
+    accounts[0],
+    web3.utils.toWei((2500000 + options.rewardInVaults).toString())
+  );
+  await hatToken.mint(router.address, web3.utils.toWei("2500000"));
+
+
+  // mint some rewardtokens to the rewardcontroller 
   await rewardToken.setMinter(
     accounts[0],
     web3.utils.toWei((2500000 + options.rewardInVaults).toString())
   );
-  await rewardToken.mint(router.address, web3.utils.toWei("2500000"));
   if (options.rewardInVaults > 0) {
     await rewardToken.mint(accounts[0], web3.utils.toWei(options.rewardInVaults.toString()));
     await rewardToken.transfer(
