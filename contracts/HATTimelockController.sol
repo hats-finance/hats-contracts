@@ -37,9 +37,9 @@ contract HATTimelockController is TimelockController {
         _vault.setVaultDescription(_descriptionHash);
     }
 
-    function setAllocPoint(HATVault _vault, uint256 _allocPoint)
+    function setAllocPoint(HATVault _vault, IRewardController _rewardController, uint256 _allocPoint)
     external onlyRole(PROPOSER_ROLE) {
-        _vault.rewardController().setAllocPoint(address(_vault), _allocPoint);
+        _rewardController.setAllocPoint(address(_vault), _allocPoint);
     }
 
     function setCommittee(HATVault _vault, address _committee) external onlyRole(PROPOSER_ROLE) {

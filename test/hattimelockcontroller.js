@@ -95,18 +95,20 @@ const setup = async function(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  vault = await HATVault.at((await hatVaultsRegistry.createVault(
-    stakingToken.address,
-    await hatVaultsRegistry.owner(),
-    accounts[1],
-    rewardController.address,
-    maxBounty,
-    bountySplit,
-    "_descriptionHash",
-    86400,
-    10,
-    false
-  )).receipt.rawLogs[0].address);
+  vault = await HATVault.at((await hatVaultsRegistry.createVault({
+    asset: stakingToken.address,
+    owner: await hatVaultsRegistry.owner(),
+    committee: accounts[1],
+    name: "VAULT",
+    symbol: "VLT",
+    rewardController: rewardController.address,
+    maxBounty: maxBounty,
+    bountySplit: bountySplit,
+    descriptionHash: "_descriptionHash",
+    vestingDuration: 86400,
+    vestingPeriods: 10,
+    isPaused: false
+  })).receipt.rawLogs[0].address);
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
 
   await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
@@ -118,6 +120,7 @@ const setup = async function(
 
   await hatTimelockController.setAllocPoint(
     vault.address,
+    rewardController.address,
     allocPoint
   );
 
@@ -194,7 +197,7 @@ contract("HatTimelockController", (accounts) => {
     assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), false);
     await hatTimelockController.setVaultVisibility(vault.address, true);
     assert.equal(await hatVaultsRegistry.isVaultVisible(vault.address), true);
-    await hatTimelockController.setAllocPoint(vault.address, 200);
+    await hatTimelockController.setAllocPoint(vault.address, rewardController.address, 200);
 
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -205,7 +208,7 @@ contract("HatTimelockController", (accounts) => {
     assert.equal(await rewardToken.balanceOf(staker), 0);
     await hatTimelockController.setVaultVisibility(vault.address, true);
     await hatTimelockController.setVaultVisibility(vault.address, true);
-    await hatTimelockController.setAllocPoint(vault.address, 200);
+    await hatTimelockController.setAllocPoint(vault.address, rewardController.address, 200);
     let expectedReward = await calculateExpectedReward(staker);
     assert.equal(await stakingToken.balanceOf(staker), 0);
     await rewardController.claimReward(vault.address, staker, { from: staker });
@@ -258,7 +261,7 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
     await hatTimelockController.setDepositPause(vault.address, true);
-    await hatTimelockController.setAllocPoint(vault.address, 200);
+    await hatTimelockController.setAllocPoint(vault.address, rewardController.address, 200);
 
     var staker = accounts[4];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
@@ -444,21 +447,23 @@ contract("HatTimelockController", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
-      stakingToken2.address,
-      await hatVaultsRegistry.owner(),
-      accounts[3],
-      rewardController.address,
-      maxBounty,
-      bountySplit,
-      "_descriptionHash",
-      86400,
-      10,
-      false
-    )).receipt.rawLogs[0].address);
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[3],
+        name: "VAULT",
+        symbol: "VLT",
+        rewardController: rewardController.address,
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+    })).receipt.rawLogs[0].address);
 
     try {
-      await hatTimelockController.setAllocPoint(newVault.address, 100, {
+      await hatTimelockController.setAllocPoint(newVault.address, rewardController.address, 100, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -468,6 +473,7 @@ contract("HatTimelockController", (accounts) => {
 
     await hatTimelockController.setAllocPoint(
       newVault.address,
+      rewardController.address,
       100
     );
 

@@ -134,18 +134,20 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = options.rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  let vault = await HATVault.at((await hatVaultsRegistry.createVault(
-    stakingToken.address,
-    await hatVaultsRegistry.owner(),
-    accounts[1],
-    rewardController.address,
-    options.maxBounty,
-    options.bountySplit,
-    "_descriptionHash",
-    86400,
-    10,
-    false
-  )).logs[1].args._vault);
+  let vault = await HATVault.at((await hatVaultsRegistry.createVault({
+    asset: stakingToken.address,
+    owner: await hatVaultsRegistry.owner(),
+    committee: accounts[1],
+    name: "VAULT",
+    symbol: "VLT",
+    rewardController: rewardController.address,
+    maxBounty: options.maxBounty,
+    bountySplit: options.bountySplit,
+    descriptionHash: "_descriptionHash",
+    vestingDuration: 86400,
+    vestingPeriods: 10,
+    isPaused: false
+  })).logs[1].args._vault);
 
   if (options.challengePeriod) {
     await hatVaultsRegistry.setDefaultChallengePeriod(options.challengePeriod);

@@ -2,7 +2,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../interfaces/ISwapRouter.sol";
+import "./ISwapRouter.sol";
 
 
 contract UniSwapV3RouterMock {

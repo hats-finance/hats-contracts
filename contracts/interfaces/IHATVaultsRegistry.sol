@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.16;
 
-import "./IRewardController.sol";
 import "./IHATVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -264,34 +263,9 @@ interface IHATVaultsRegistry {
 
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
-     * @param _asset The vault's native token
-     * @param _owner The address of the vault's owner
-     * @param _committee The address of the vault's committee 
-     * @param _rewardController The reward controller for the vault
-     * @param _maxBounty The maximum percentage of the vault that can be paid
-     * out as a bounty. Must be between 0 and 100% (defined as 10000)
-     * @param _bountySplit The way to split the bounty between the hacker, 
-     * hacker vested, and committee.
-     *   Each entry is a number between 0 and 100%
-     *   Total splits should be equal to 100%
-     * @param _descriptionHash Hash of the vault description.
-     * @param _bountyVestingDuration The duration of the vesting period of
-     * the part of the bounty that is vested in vault's native token.
-     * @param _bountyVestingDuration The number of vesting periods
+     * @param _params The vault initialization parameters
      */
-    event VaultCreated(
-        address indexed _vault,
-        address indexed _asset,
-        address indexed _owner,
-        address _committee,
-        IRewardController _rewardController,
-        uint256 _maxBounty,
-        IHATVault.BountySplit _bountySplit,
-        string _descriptionHash,
-        uint256 _bountyVestingDuration,
-        uint256 _bountyVestingPeriods,
-        bool _isPaused
-    );
+    event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params);
     
     /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
      * the HATS tokens are sent to beneficiary through vesting contract
@@ -495,37 +469,10 @@ interface IHATVaultsRegistry {
      * @notice Create a new vault
      * NOTE: Vaults should not use tokens which do not guarantee that the 
      * amount specified is the amount transferred
-     * @param _asset The vault's native token
-     * @param _committee The address of the vault's committee 
-     * @param _rewardController The reward controller for the vault
-     * @param _maxBounty The maximum percentage of the vault that can be paid
-     * out as a bounty. Must be between 0 and `HUNDRED_PERCENT`
-     * @param _bountySplit The way to split the bounty between the hacker, 
-     * hacker vested, and committee.
-     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
-     *   Total splits should be equal to `HUNDRED_PERCENT`.
-     * @param _descriptionHash Hash of the vault description.
-     * @param _bountyVestingDuration Vesting duration for the part of the bounty
-     * that is paid vested in the vault's native token
-     * @param _bountyVestingPeriods Vesting periods for the part of the bounty
-     * that is paid vested in the vault's native token
-     * @param _isPaused Whether to initialize the vault with deposits disabled
+     * @param _params The vault initialization parameters
      * @return vault The address of the new vault
      */
-    function createVault(
-        IERC20 _asset,
-        address _owner,
-        address _committee,
-        IRewardController _rewardController,
-        uint16 _maxBounty,
-        IHATVault.BountySplit calldata _bountySplit,
-        string calldata _descriptionHash,
-        uint32 _bountyVestingDuration,
-        uint32 _bountyVestingPeriods,
-        bool _isPaused
-    ) 
-    external 
-    returns(address vault);
+    function createVault(IHATVault.VaultInitParams calldata _params) external returns(address vault);
 
     /**
      * @notice Called by governance to change the UI visibility of a vault

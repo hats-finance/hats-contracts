@@ -7,9 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./interfaces/IHATVault.sol";
 import "./interfaces/IRewardController.sol";
-
 
 
 contract RewardController is IRewardController, OwnableUpgradeable {
@@ -149,9 +147,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
         uint256 _sharesChange,
         bool _isDeposit
     ) internal {
-        if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
-            return;
-        }
         updateVault(_vault);
 
         uint256 _userShares = IERC20Upgradeable(_vault).balanceOf(_user);
@@ -256,9 +251,6 @@ contract RewardController is IRewardController, OwnableUpgradeable {
     function getPendingReward(address _vault, address _user) external view returns (uint256) {
         mapping(address => uint256) storage vaultUnclaimedReward = unclaimedReward[_vault];
 
-        if (IHATVault(_vault).rewardControllerRemoved(address(this))) {
-            return vaultUnclaimedReward[_user];
-        }
         VaultInfo memory _vaultInfo = vaultInfo[_vault];
         uint256 _rewardPerShare = _vaultInfo.rewardPerShare;
         uint256 _totalShares = IERC20Upgradeable(_vault).totalSupply();
