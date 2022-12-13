@@ -52,7 +52,7 @@ async function main(config) {
 
     const RewardController = await ethers.getContractFactory("RewardController");
     const rewardController = await upgrades.deployProxy(RewardController, [
-        rewardToken,
+        (network.name == "hardhat" ? rewardToken : hatToken),
         governance,
         startBlock,
         epochLength,
