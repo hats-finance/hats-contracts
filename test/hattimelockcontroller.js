@@ -60,11 +60,11 @@ const setup = async function(
     governance: accounts[0],
     hatToken: hatToken.address,
     tokenLockFactory: tokenLockFactory.address,
-    rewardController: {
+    rewardControllers: [{
       startBlock,
       epochLength: halvingAfterBlock,
       epochRewardPerBlock
-    },
+    }],
     hatVaultsRegistry: {
       bountyGovernanceHAT: hatBountySplit[0],
       bountyHackerHATVested: hatBountySplit[1]

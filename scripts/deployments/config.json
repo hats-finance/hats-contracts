@@ -5,7 +5,7 @@
         "executors": [
             "0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"
         ],
-        "rewardController": {
+        "rewardControllers": [{
             "startBlock": null,
             "epochLength": "195200",
             "epochRewardPerBlock": [
@@ -34,7 +34,7 @@
                 "72400000000000000000",
                 "63900000000000000000"
             ]
-        },
+        }],
         "hatVaultsRegistry": {
             "bountyGovernanceHAT": "1000",
             "bountyHackerHATVested": "500"
@@ -46,7 +46,7 @@
         "executors": [
             "0x0B7602011EC2B862Bc157fF08d27b1018aEb18d5"
         ],
-        "rewardController": {
+        "rewardControllers": [{
             "startBlock": null,
             "epochLength": "195200",
             "epochRewardPerBlock": [
@@ -75,14 +75,14 @@
                 "72400000000000000000",
                 "63900000000000000000"
             ]
-        },
+        }],
         "hatVaultsRegistry": {
             "bountyGovernanceHAT": "1000",
             "bountyHackerHATVested": "500"
         }
     },
     "hardhat": {
-        "rewardController": {
+        "rewardControllers": [{
             "startBlock": null,
             "epochLength": "195200",
             "epochRewardPerBlock": [
@@ -111,10 +111,21 @@
                 "72400000000000000000",
                 "63900000000000000000"
             ]
-        },
+        }],
         "hatVaultsRegistry": {
             "bountyGovernanceHAT": "1000",
             "bountyHackerHATVested": "500"
         }
+    },
+    "polygon": {
+        "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
+        "timelockDelay": 300,
+        "executors": [ ],
+        "rewardControllers": [],
+        "hatToken": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", 
+        "hatVaultsRegistry": {
+          "bountyGovernanceHAT": "0",
+          "bountyHackerHATVested": "0"
+      }
     }
 }

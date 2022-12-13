@@ -65,8 +65,8 @@ async function main() {
     hatTokenLock: config["hatTokenLock"],
     tokenLockFactory: config["tokenLockFactory"],
     hatVaultsRegistry: config["hatVaultsRegistry"],
-    rewardController: config["rewardController"],
-    rewardControllerImplementation: config["rewardControllerImplementation"],
+    rewardControllers: config["rewardControllers"],
+    rewardControllerImplementations: config["rewardControllerImplementations"],
     hatVaultImplementation: config["hatVaultImplementation"]
   };
   fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));

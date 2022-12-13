@@ -2833,11 +2833,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
@@ -6110,11 +6110,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
@@ -6161,11 +6161,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
