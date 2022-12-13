@@ -171,7 +171,6 @@ const setup = async function(
   if (options.setDefaultArbitrator) {
     arbitrator = accounts[2];
     await registry.setDefaultArbitrator(arbitrator);
-
   }
 
   return {

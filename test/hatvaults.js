@@ -2941,9 +2941,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
     assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
-    let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
-    for (let i = 0; i < eventEpochRewardPerBlock.length; i++) {
-      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+    for (let i = 0; i < epochRewardPerBlockRandom.length; i++) {
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
 
@@ -3042,16 +3040,13 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let tx = await rewardController.setEpochRewardPerBlock(epochRewardPerBlockRandom);
     assert.equal(tx.logs[0].event, "SetEpochRewardPerBlock");
     
-    // Should now be in the 2rd epoch
+    // Should now be in the 3rd epoch
 
-    let eventEpochRewardPerBlock = tx.logs[0].args._epochRewardPerBlock;
-    for (let i = 0; i < 2; i++) {
-      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+    for (let i = 0; i < 3; i++) {
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlock[i]);
     }
 
-    for (let i = 2; i < eventEpochRewardPerBlock.length; i++) {
-      eventEpochRewardPerBlock[i] = parseInt(eventEpochRewardPerBlock[i].toString());
+    for (let i = 3; i < epochRewardPerBlockRandom.length; i++) {
       assert.equal(tx.logs[0].args._epochRewardPerBlock[i], epochRewardPerBlockRandom[i]);
     }
 
@@ -3093,7 +3088,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
@@ -3110,16 +3105,16 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       ).toString(),
       new web3.utils.BN(epochRewardPerBlock[0])
         .add(new web3.utils.BN(epochRewardPerBlock[1]))
-        .add(new web3.utils.BN(epochRewardPerBlockRandom[2]))
+        .add(new web3.utils.BN(epochRewardPerBlock[2]))
         .add(new web3.utils.BN(epochRewardPerBlockRandom[3]))
         .mul(new web3.utils.BN(10))
         .toString()
     );
     var multiplier = new web3.utils.BN("0");
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlock[i]));
     }
-    for (let i = 2; i < 24; i++) {
+    for (let i = 3; i < 24; i++) {
       multiplier = multiplier.add(new web3.utils.BN(epochRewardPerBlockRandom[i]));
     }
     assert.equal(
