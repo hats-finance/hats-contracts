@@ -5610,6 +5610,86 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     }
   });
 
+  it("approve a claim with no bounty to swap for HATs", async () => {
+    await setUpGlobalVars(accounts);
+    var staker = accounts[4];
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: hatToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      name: "VAULT",
+      symbol: "VLT",
+      rewardController: rewardController.address,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
+
+    await newVault.setHATBountySplit(0, 0);
+
+    await hatVaultsRegistry.setDefaultChallengePeriod(60 * 60 * 24);
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
+    await hatToken.mint(staker, web3.utils.toWei("1"));
+    await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await utils.increaseTime(7 * 24 * 3600);
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      hatToken.address,
+      accounts[2]
+    );
+    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(hatToken.address));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    await assertFunctionRaisesException(
+      hatVaultsRegistry.swapAndSend(hatToken.address, [accounts[2]], 0, router.address, payload);
+      "AmountToSwapIsZero");
+    await advanceToSafetyPeriod();
+    let tx = await newVault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await newVault.approveClaim(claimId, 8000);
+
+    assert.equal(await hatToken.balanceOf(accounts[0]), 0);
+    amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      hatToken.address,
+      accounts[2]
+    );
+    amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(hatToken.address));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    assert.equal(amount, 0);
+    await assertFunctionRaisesException(
+      hatVaultsRegistry.swapAndSend(
+      hatToken.address,
+      [accounts[2]],
+      0,
+      router.address,
+      payload
+    ), "AmountToSwapIsZero");
+  });
+
+
   it("log claim", async () => {
     await setUpGlobalVars(accounts);
     let someHash = "0x00000000000000000000000000000000000001";
