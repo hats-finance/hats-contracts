@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
  * @notice A HATVault holds the funds for a specific project's bug bounties.
- * The HATVault can be deposited into in a permissionless maner using
+ * Anyone can permissionlessly deposit into the HATVault using
  * the vault’s native token. When a bug is submitted and approved, the bounty 
  * is paid out using the funds in the vault. Bounties are paid out as a
  * percentage of the vault. The percentage is set according to the severity of
