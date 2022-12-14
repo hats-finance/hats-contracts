@@ -47,7 +47,7 @@ function claimRewardTwice(contract RewardController target, address _vault) exte
 ### createVaults
 
 ```solidity
-function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint, contract IERC20[] _assets, address _committee, uint16 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash, uint32 _bountyVestingDuration, uint32 _bountyVestingPeriods) external nonpayable
+function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint, contract IERC20[] _assets, address _committee, uint16 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash) external nonpayable
 ```
 
 
@@ -66,8 +66,6 @@ function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardCon
 | _maxBounty | uint16 | undefined |
 | _bountySplit | IHATVault.BountySplit | undefined |
 | _descriptionHash | string | undefined |
-| _bountyVestingDuration | uint32 | undefined |
-| _bountyVestingPeriods | uint32 | undefined |
 
 ### deposit
 

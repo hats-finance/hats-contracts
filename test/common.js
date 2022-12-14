@@ -137,7 +137,7 @@ const setup = async function(
     committee: accounts[1],
     name: "VAULT",
     symbol: "VLT",
-    rewardController: rewardController.address,
+    rewardControllers: [rewardController.address],
     maxBounty: options.maxBounty,
     bountySplit: options.bountySplit,
     descriptionHash: "_descriptionHash",

@@ -2858,7 +2858,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
-  it("getRewardForBlocksRange - from below startblock will retrun 0 ", async () => {
+  it("getRewardForBlocksRange - from below startblock will return 0 ", async () => {
     await setUpGlobalVars(accounts, 1);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
@@ -5980,7 +5980,48 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       rewardControllerExpectedHatsBalance
     );
   });
-
+  it.only("createVault with no reward controller", async () => {
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
+    var staker = accounts[1];
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[0],
+      name: "VAULT",
+      symbol: "VLT",
+      rewardControllers: [],
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
+    await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
+    await rewardController.setAllocPoint(newVault.address, 200);
+    await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
+    await rewardController.setAllocPoint(newVault.address, 0);
+    await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken2.mint(staker, web3.utils.toWei("2"));
+    await newVault.committeeCheckIn({ from: accounts[0] });
+    await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(
+      Math.round(
+        web3.utils.fromWei(await hatToken.balanceOf(rewardController.address))
+      ),
+      rewardControllerExpectedHatsBalance
+    );
+    await rewardController.updateVault(newVault.address);
+    assert.equal(
+      Math.round(
+        web3.utils.fromWei(await hatToken.balanceOf(rewardController.address))
+      ),
+      rewardControllerExpectedHatsBalance
+    );
+  });
   it("creat vault x2 v2", async () => {
     await setUpGlobalVars(
       accounts,
@@ -6190,8 +6231,6 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      86400,
-      10
     );
     
     let newVault1 = await HATVault.at(await hatVaultsRegistry1.hatVaults(0));
