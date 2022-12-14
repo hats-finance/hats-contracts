@@ -638,7 +638,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].args._params.committee, accounts[3]);
     assert.equal(tx.logs[1].args._params.name, "VAULT");
     assert.equal(tx.logs[1].args._params.symbol, "VLT");
-    assert.equal(tx.logs[1].args._params.rewardControllers, [rewardController.address]);
+    assert.equal(tx.logs[1].args._params.rewardControllers[0], rewardController.address);
     assert.equal(tx.logs[1].args._params.maxBounty, maxBounty);
     assert.equal(tx.logs[1].args._params.bountySplit.hackerVested, "7000");
     assert.equal(tx.logs[1].args._params.bountySplit.hacker, "2500");
@@ -666,7 +666,7 @@ contract("HatVaults", (accounts) => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -5980,6 +5980,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       rewardControllerExpectedHatsBalance
     );
   });
+  
   it("createVault with no reward controller", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
@@ -5999,29 +6000,23 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isPaused: false
     })).logs[1].args._vault);
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
-    await rewardController.setAllocPoint(newVault.address, 200);
-    await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
-    await rewardController.setAllocPoint(newVault.address, 0);
     await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("2"));
     await newVault.committeeCheckIn({ from: accounts[0] });
-    await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    assert.equal(
-      Math.round(
-        web3.utils.fromWei(await hatToken.balanceOf(rewardController.address))
-      ),
-      rewardControllerExpectedHatsBalance
-    );
-    await rewardController.updateVault(newVault.address);
-    assert.equal(
-      Math.round(
-        web3.utils.fromWei(await hatToken.balanceOf(rewardController.address))
-      ),
-      rewardControllerExpectedHatsBalance
-    );
+    await newVault.deposit(web3.utils.toWei("2"), staker, { from: staker });
+    assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
+    await newVault.withdrawRequest({ from: staker });
+
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    var tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
+      from: staker,
+    });
+    assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
   });
+
   it("creat vault x2 v2", async () => {
     await setUpGlobalVars(
       accounts,
