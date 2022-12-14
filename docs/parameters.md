@@ -1,5 +1,5 @@
-
 ## Parameters
+
 | owner | parameter name | scope | default | limits | setter | comments |
 |---|---|---|---|---|---|---|
 | `registry.owner` | `isEmergencyPaused` | global | false | | `setEmergencyPaused` |
@@ -43,5 +43,4 @@
 | `rewardController.owner` | vault's `allocPoint` | vault | 0 | | `rewardController.setAllocPoint(_vault, _allocPoint)` |
 | `rewardController.owner` | `epochRewardPerBlock` | global | | | `rewardController.setEpochRewardPerBlock` |
 | `rewardController.owner` | `rewardController.owner` | global | | | `rewardController.transferOwnership`, `rewardController.renounceOwnership` |
-
 
