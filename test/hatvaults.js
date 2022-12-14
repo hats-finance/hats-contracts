@@ -5980,7 +5980,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       rewardControllerExpectedHatsBalance
     );
   });
-  it.only("createVault with no reward controller", async () => {
+  it("createVault with no reward controller", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
