@@ -638,7 +638,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].args._params.committee, accounts[3]);
     assert.equal(tx.logs[1].args._params.name, "VAULT");
     assert.equal(tx.logs[1].args._params.symbol, "VLT");
-    assert.equal(tx.logs[1].args._params.rewardController, rewardController.address);
+    assert.equal(tx.logs[1].args._params.rewardControllers, [rewardController.address]);
     assert.equal(tx.logs[1].args._params.maxBounty, maxBounty);
     assert.equal(tx.logs[1].args._params.bountySplit.hackerVested, "7000");
     assert.equal(tx.logs[1].args._params.bountySplit.hacker, "2500");
