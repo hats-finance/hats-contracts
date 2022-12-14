@@ -494,7 +494,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Withdraw previously deposited funds from the vault, without
-    * transferring the accumulated HAT reward.
+    * transferring the accumulated rewards.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -510,7 +510,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Redeem shares in the vault for the respective amount
-    * of underlying assets, without transferring the accumulated HAT reward.
+    * of underlying assets, without transferring the accumulated reward.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -579,7 +579,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Redeem shares in the vault for the respective amount
-    * of underlying assets, without transferring the accumulated HAT reward.
+    * of underlying assets, without transferring the accumulated reward.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
