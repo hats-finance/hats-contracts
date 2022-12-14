@@ -450,7 +450,7 @@ contract("HatTimelockController", (accounts) => {
         committee: accounts[3],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: maxBounty,
         bountySplit: bountySplit,
         descriptionHash: "_descriptionHash",
