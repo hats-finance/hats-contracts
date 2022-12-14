@@ -120,21 +120,21 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         validateHATSplit(_bountyGovernanceHAT, _bountyHackerHATVested);
         tokenLockFactory = _tokenLockFactory;
         generalParameters = IHATVaultsRegistry.GeneralParameters({
-            hatVestingDuration: 90 days,
+            hatVestingDuration: 1 days,
             hatVestingPeriods: 90,
-            withdrawPeriod: 11 hours,
-            safetyPeriod: 1 hours,
-            setMaxBountyDelay: 2 days,
-            withdrawRequestEnablePeriod: 7 days,
-            withdrawRequestPendingPeriod: 7 days,
+            withdrawPeriod: 30 minutes,
+            safetyPeriod: 5 minutes,
+            setMaxBountyDelay: 5 minutes,
+            withdrawRequestEnablePeriod: 5 minutes,
+            withdrawRequestPendingPeriod: 5 minutes,
             claimFee: 0
         });
 
         defaultBountyGovernanceHAT = _bountyGovernanceHAT;
         defaultBountyHackerHATVested = _bountyHackerHATVested;
         defaultArbitrator = _defaultArbitrator;
-        defaultChallengePeriod = 3 days;
-        defaultChallengeTimeOutPeriod = 5 weeks;
+        defaultChallengePeriod = 5 minutes;
+        defaultChallengeTimeOutPeriod = 2 days;
         defaultArbitratorCanChangeBounty = true;
         emit RegistryCreated(
             _hatVaultImplementation,
