@@ -6011,7 +6011,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
-    var tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
+    await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
