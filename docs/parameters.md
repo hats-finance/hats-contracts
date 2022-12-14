@@ -6,7 +6,7 @@
 | `registry.owner` | `defaultBountyGovernanceHAT` | global | | +defaultBountyHackerHatVested <= 20% | `registry.setDefaultHATBountySplit` |
 | `registry.owner` | `bountyGovernanceHAT` | vault | | +bountyHackerHatVested <= 20% | `vault.setHATBountySplit` |
 | `registry.owner` | `defaultBountyHackerHATVested` | global | | +defaultBountyGovernanceHAT <= 20% | `registry.setDefaultHATBountySplit` |
-| `registry.owner` | `bountyHackerHATVested` | vault | | +bountyGovernanceHAT<=20% | `vault.setHATBountySplit` |
+| `registry.owner` | `bountyHackerHATVested` | vault | | +bountyGovernanceHAT <= 20% | `vault.setHATBountySplit` |
 | `registry.owner` | `defaultArbitrator` | global | registry.owner | | `registry.setDefaultArbitrator` |
 | `registry.owner` | `arbitrator` | vault | | |  `vault.setArbitrator` |
 | `registry.owner` | `defaultChallengePeriod` | global | 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod` |
@@ -28,14 +28,14 @@
 | `registry.owner` | `rewardController` | vault | | | `vault.addRewardController` | noActiveClaim |
 | `registry.owner` |registry.`owner` | global | _hatGovernance | | `registry.transferOwnership`, `registry.renounceOwnership` |
 | `registry.owner` | `vaultDescription` | vault | | | `vault.setVaultDescription` | only an event |
-| `feeSetter` | `withdrawalFee` | vault | 0 | `<= 200` (<= 2%) | `vault.setWithdrawalFee` |
+| `feeSetter` | `withdrawalFee` | vault | 0 | <= 2% | `vault.setWithdrawalFee` |
 | `vault.owner` | `committee` | vault | | | `vault.setCommittee` | if committee has not checked in yet |
 | `vault.owner` | `vestingPeriods` | vault | | > 0 | `vault.setVestingParams` |
 | `vault.owner` | `vestingDuration` | vault | | <= 120 days, > `vestingPeriods` | `vault.setVestingParams` |
 | `vault.owner` | `bountySplit.hacker` | vault | | sum(bountySplit) = 100% | `vault.setBountySplit` | noActiveClaim noSafetyPeriod |
 | `vault.owner` | `bountySplit.hackerVested` | vault | | sum(bountySplit) = 100% | `vault.setBountySplit` | noActiveClaim noSafetyPeriod |
 | `vault.owner` | `bountySplit.committee` | vault | | sum(bountySplit) = 100%, max 10% | `vault.setBountySplit` | noActiveClaim noSafetyPeriod |
-| `vault.owner` | `maxBounty` | vault | | `<= 9000` (<= 90%) | `vault.setPendingMaxBounty`, `vault.setMaxBounty` | noActiveClaim |
+| `vault.owner` | `maxBounty` | vault | | <= 90% | `vault.setPendingMaxBounty`, `vault.setMaxBounty` | noActiveClaim |
 | `vault.owner` | `depositPause` | vault | | | `vault.setDepositPause` |
 | `vault.owner` | `owner` | vault | _hatGovernance | |  `vault.transferOwnership`, `vault.renounceOwnership` |
 | `vault.committee` | `committee` | vault | | | `vault.setCommittee` | after `committeeCheckIn` |
