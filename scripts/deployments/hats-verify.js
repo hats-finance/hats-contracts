@@ -42,14 +42,16 @@ async function main(config) {
 
   let arbitrator = addresses["arbitrator"];
   let hatVaultsRegistry = addresses["hatVaultsRegistry"];
-  let rewardControllerImplementation = addresses["rewardControllerImplementation"];
+  let rewardControllerImplementations = addresses["rewardControllerImplementations"];
   let hatVaultImplementation = addresses["hatVaultImplementation"];
 
   let bountyGovernanceHAT = config["hatVaultsRegistry"]["bountyGovernanceHAT"];
   let bountyHackerHATVested = config["hatVaultsRegistry"]["bountyHackerHATVested"];
 
   await verifyContract(arbitrator, []);
-  await verifyContract(rewardControllerImplementation, []);
+  for (const rewardControllerImplementation of rewardControllerImplementations ) {
+      await verifyContract(rewardControllerImplementation, []);
+  }
   await verifyContract(hatVaultImplementation, []);
   await verifyContract(hatVaultsRegistry, [
     hatVaultImplementation,

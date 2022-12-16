@@ -94,7 +94,7 @@ interface IHATVault is IERC4626Upgradeable {
     struct VaultInitParams {
         string name;
         string symbol;
-        IRewardController rewardController;
+        IRewardController[] rewardControllers;
         uint32 vestingDuration;
         uint32 vestingPeriods;
         uint16 maxBounty;

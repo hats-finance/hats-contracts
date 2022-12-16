@@ -2,7 +2,7 @@
 
 - [Submitting claims](claims.md)
 - [Deposits and withdrawals](deposits-and-withdrawals.md)
-- [Rewards (TBD)](rewards.md)
+- [Rewards](rewards.md)
 - [Payout](payout.md)
 
 # System setup

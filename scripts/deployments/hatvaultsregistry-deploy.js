@@ -37,31 +37,38 @@ async function main(config) {
         hatToken = "0x51a6Efc15c50EcE1DaAD1Ee4fbF8DEC76584c365";
     }
 
-    let startBlock = config["rewardController"]["startBlock"];
-    if (!startBlock) {
-        startBlock = await ethers.provider.getBlockNumber();
-    }
-    let epochLength = config["rewardController"]["epochLength"];
-    let epochRewardPerBlock = config["rewardController"]["epochRewardPerBlock"];
-
+    // add rewardcontrollers
     const RewardController = await ethers.getContractFactory("RewardController");
-    const rewardController = await upgrades.deployProxy(RewardController, [
-        hatToken,
-        governance,
-        startBlock,
-        epochLength,
-        epochRewardPerBlock
-    ]);
+    const rewardControllers = [];
+    const rewardControllerImplementations = [];
+    for (const rewardControllerConfig of config["rewardControllers"]) {
+        let startBlock = rewardControllerConfig["startBlock"];
+        if (!startBlock) {
+            startBlock = await ethers.provider.getBlockNumber();
+        }
+        let epochLength = rewardControllerConfig["epochLength"];
+        let epochRewardPerBlock = rewardControllerConfig["epochRewardPerBlock"];
 
-    await rewardController.deployed();
+        const rewardController = await upgrades.deployProxy(RewardController, [
+            hatToken,
+            governance, 
+            startBlock, 
+            epochLength, 
+            epochRewardPerBlock
+        ]);
 
-    const rewardControllerImplementation = RewardController.attach(
-        await getImplementationAddress(ethers.provider, rewardController.address)
-    );
+        await rewardController.deployed();
 
-    if (!silent) {
-        console.log("RewardController address: " + rewardController.address);
-        console.log("RewardControllerImplementation address: " + rewardControllerImplementation.address);
+        const rewardControllerImplementation = RewardController.attach(
+          await getImplementationAddress(ethers.provider, rewardController.address)
+        );
+
+        rewardControllers.push(rewardController);
+        rewardControllerImplementations.push(rewardControllerImplementation);
+        if (!silent) {
+            console.log("RewardController address: " + rewardController.address);
+            console.log("RewardControllerImplementation address: " + rewardControllerImplementation.address);
+        }
     }
 
     const HATVault = await ethers.getContractFactory("HATVault");
@@ -96,9 +103,14 @@ async function main(config) {
     if (!silent) {
         console.log("HATVaultsRegistry address:", hatVaultsRegistry.address);
     }
-
-    return { hatVaultsRegistry, rewardController, rewardControllerImplementation, hatVaultImplementation, arbitrator };
-}
+    return { 
+        hatVaultsRegistry, 
+        rewardControllers: rewardControllers,
+        rewardControllerImplementations: rewardControllerImplementations,
+        hatVaultImplementation, 
+        arbitrator 
+      }; 
+  }
 
 if (require.main === module) {
   main()

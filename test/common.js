@@ -98,11 +98,11 @@ const setup = async function(
     arbitrator: accounts[0],
     hatToken: hatToken.address,
     tokenLockFactory: tokenLockFactory.address,
-    rewardController: {
+    rewardControllers: [{
       startBlock: options.startBlock,
       epochLength: options.halvingAfterBlock,
       epochRewardPerBlock
-    },
+    }],
     hatVaultsRegistry: {
       bountyGovernanceHAT: options.hatBountySplit[0],
       bountyHackerHATVested: options.hatBountySplit[1]
@@ -113,7 +113,7 @@ const setup = async function(
   hatVaultImplementation = deployment.hatVaultImplementation;
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
-    deployment.rewardController.address
+    deployment.rewardControllers[0].address
   );
 
   await hatToken.setMinter(
@@ -137,7 +137,7 @@ const setup = async function(
     committee: accounts[1],
     name: "VAULT",
     symbol: "VLT",
-    rewardController: rewardController.address,
+    rewardControllers: [rewardController.address],
     maxBounty: options.maxBounty,
     bountySplit: options.bountySplit,
     descriptionHash: "_descriptionHash",
