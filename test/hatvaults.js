@@ -621,7 +621,7 @@ contract("HatVaults", (accounts) => {
       committee: accounts[3],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: maxBounty,
       bountySplit: bountySplit,
       descriptionHash: "_descriptionHash1",
@@ -640,7 +640,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[1].args._params.committee, accounts[3]);
     assert.equal(tx.logs[1].args._params.name, "VAULT");
     assert.equal(tx.logs[1].args._params.symbol, "VLT");
-    assert.equal(tx.logs[1].args._params.rewardController, rewardController.address);
+    assert.equal(tx.logs[1].args._params.rewardControllers[0], rewardController.address);
     assert.equal(tx.logs[1].args._params.maxBounty, maxBounty);
     assert.equal(tx.logs[1].args._params.bountySplit.hackerVested, "7000");
     assert.equal(tx.logs[1].args._params.bountySplit.hacker, "2500");
@@ -668,7 +668,7 @@ contract("HatVaults", (accounts) => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -707,7 +707,7 @@ contract("HatVaults", (accounts) => {
       committee: accounts[3],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: maxBounty,
       bountySplit: bountySplit,
       descriptionHash: "_descriptionHash",
@@ -1118,7 +1118,7 @@ contract("HatVaults", (accounts) => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -1221,7 +1221,7 @@ contract("HatVaults", (accounts) => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -2835,11 +2835,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
@@ -2849,7 +2849,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     assert.equal(
       await rewardController1.getVaultReward(
@@ -2860,7 +2860,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
-  it("getRewardForBlocksRange - from below startblock will retrun 0 ", async () => {
+  it("getRewardForBlocksRange - from below startblock will return 0 ", async () => {
     await setUpGlobalVars(accounts, 1);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
@@ -4571,7 +4571,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       descriptionHash: "_descriptionHash",
@@ -4689,7 +4689,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
       descriptionHash: "_descriptionHash",
@@ -5334,7 +5334,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
       descriptionHash: "_descriptionHash",
@@ -5945,7 +5945,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[0],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       descriptionHash: "_descriptionHash",
@@ -5977,6 +5977,42 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       rewardControllerExpectedHatsBalance
     );
   });
+  
+  it("createVault with no reward controller", async () => {
+    await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
+    var staker = accounts[1];
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken2.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[0],
+      name: "VAULT",
+      symbol: "VLT",
+      rewardControllers: [],
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
+    await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
+    await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+    await stakingToken2.mint(staker, web3.utils.toWei("2"));
+    await newVault.committeeCheckIn({ from: accounts[0] });
+    await newVault.deposit(web3.utils.toWei("2"), staker, { from: staker });
+    assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
+    await newVault.withdrawRequest({ from: staker });
+
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToNonSafetyPeriod();
+    await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
+      from: staker,
+    });
+    assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
+  });
 
   it("create vault x2 v2", async () => {
     await setUpGlobalVars(
@@ -6002,7 +6038,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -6022,7 +6058,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -6042,7 +6078,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         committee: accounts[1],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         descriptionHash: "_descriptionHash",
@@ -6060,7 +6096,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       descriptionHash: "_descriptionHash",
@@ -6107,11 +6143,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
@@ -6121,7 +6157,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
@@ -6132,7 +6168,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
       descriptionHash: "_descriptionHash",
@@ -6158,11 +6194,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: vaultsManager.address,
       hatToken: hatToken1.address,
       tokenLockFactory: tokenLockFactory1.address,
-      rewardController: {
+      rewardControllers: [{
         startBlock: 1,
         epochLength: 10,
         epochRewardPerBlock
-      },
+      }],
       hatVaultsRegistry: {
         bountyGovernanceHAT: 1000,
         bountyHackerHATVested: 500
@@ -6172,7 +6208,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let stakingToken3 = await ERC20Mock.new("Staking", "STK");
@@ -6187,8 +6223,6 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       8000,
       [7000, 2500, 500],
       "_descriptionHash",
-      86400,
-      10
     );
     
     let newVault1 = await HATVault.at(await hatVaultsRegistry1.hatVaults(0));
@@ -6295,7 +6329,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       descriptionHash: "_descriptionHash",
@@ -6390,7 +6424,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       committee: accounts[1],
       name: "VAULT",
       symbol: "VLT",
-      rewardController: rewardController.address,
+      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       descriptionHash: "_descriptionHash",

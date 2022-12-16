@@ -63,11 +63,11 @@ const setup = async function(
     hatToken: hatToken.address,
     rewardToken: rewardToken.address,
     tokenLockFactory: tokenLockFactory.address,
-    rewardController: {
+    rewardControllers: [{
       startBlock,
       epochLength: halvingAfterBlock,
       epochRewardPerBlock
-    },
+    }],
     hatVaultsRegistry: {
       bountyGovernanceHAT: hatBountySplit[0],
       bountyHackerHATVested: hatBountySplit[1]
@@ -77,7 +77,7 @@ const setup = async function(
   arbitratorContract = await HATGovernanceArbitrator.at(deployment.arbitrator);
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
-    deployment.rewardController.address
+    deployment.rewardControllers[0].address
   );
   hatTimelockController = await HATTimelockController.new(
     hatGovernanceDelay,
@@ -110,7 +110,7 @@ const setup = async function(
     committee: accounts[1],
     name: "VAULT",
     symbol: "VLT",
-    rewardController: rewardController.address,
+    rewardControllers: [rewardController.address],
     maxBounty: maxBounty,
     bountySplit: bountySplit,
     descriptionHash: "_descriptionHash",
@@ -462,7 +462,7 @@ contract("HatTimelockController", (accounts) => {
         committee: accounts[3],
         name: "VAULT",
         symbol: "VLT",
-        rewardController: rewardController.address,
+        rewardControllers: [rewardController.address],
         maxBounty: maxBounty,
         bountySplit: bountySplit,
         descriptionHash: "_descriptionHash",
