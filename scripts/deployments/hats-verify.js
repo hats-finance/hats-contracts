@@ -49,7 +49,7 @@ async function main(config) {
   let bountyHackerHATVested = config["hatVaultsRegistry"]["bountyHackerHATVested"];
 
   await verifyContract(arbitrator, []);
-  for (const rewardControllerImplementation of rewardControllerImplementations) {
+  for (const rewardControllerImplementation of rewardControllerImplementations ) {
       await verifyContract(rewardControllerImplementation, []);
   }
   await verifyContract(hatVaultImplementation, []);

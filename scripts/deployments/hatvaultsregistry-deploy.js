@@ -41,7 +41,7 @@ async function main(config) {
     const RewardController = await ethers.getContractFactory("RewardController");
     const rewardControllers = [];
     const rewardControllerImplementations = [];
-    for (const rewardControllerConfig of config.rewardControllers) {
+    for (const rewardControllerConfig of config["rewardControllers"]) {
         let startBlock = rewardControllerConfig["startBlock"];
         if (!startBlock) {
             startBlock = await ethers.provider.getBlockNumber();
@@ -107,8 +107,6 @@ async function main(config) {
         hatVaultsRegistry, 
         rewardControllers: rewardControllers,
         rewardControllerImplementations: rewardControllerImplementations,
-        rewardController: rewardControllers[0], // return this value to keep it backward compatible
-        rewardControllerImplementation: rewardControllerImplementations[0], //return this val for backwards compatilibity
         hatVaultImplementation, 
         arbitrator 
       }; 
