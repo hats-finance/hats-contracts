@@ -2847,7 +2847,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     assert.equal(
       await rewardController1.getVaultReward(
@@ -6017,7 +6017,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("1"));
   });
 
-  it("creat vault x2 v2", async () => {
+  it("create vault x2 v2", async () => {
     await setUpGlobalVars(
       accounts,
       (await web3.eth.getBlock("latest")).number,
@@ -6160,7 +6160,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
@@ -6211,7 +6211,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     hatVaultsRegistry1 = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
     rewardController1 = await RewardController.at(
-      deployment.rewardController.address
+      deployment.rewardControllers[0].address
     );
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let stakingToken3 = await ERC20Mock.new("Staking", "STK");

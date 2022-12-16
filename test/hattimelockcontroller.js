@@ -74,7 +74,7 @@ const setup = async function(
   arbitratorContract = await HATGovernanceArbitrator.at(deployment.arbitrator);
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
-    deployment.rewardController.address
+    deployment.rewardControllers[0].address
   );
   hatTimelockController = await HATTimelockController.new(
     hatGovernanceDelay,

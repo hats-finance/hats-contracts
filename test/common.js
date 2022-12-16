@@ -113,7 +113,7 @@ const setup = async function(
   hatVaultImplementation = deployment.hatVaultImplementation;
   hatVaultsRegistry = await HATVaultsRegistry.at(deployment.hatVaultsRegistry.address);
   rewardController = await RewardController.at(
-    deployment.rewardController.address
+    deployment.rewardControllers[0].address
   );
 
   await hatToken.setMinter(
