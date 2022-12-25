@@ -53,7 +53,7 @@ async function main(config) {
         governance = deployerAddress;
     }
 
-    if (governance != deployerAddress) {
+    if (governance !== deployerAddress) {
         await hatVaultsNFT.transferOwnership(governance);
         if (!silent) {    
             console.log("HATVaultsNFT ownership transffered to governance");

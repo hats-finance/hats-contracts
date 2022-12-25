@@ -20,7 +20,7 @@ function hashToken(hatVaults, pid, account, tier) {
       [hatVaults, pid, account, tier]
     ).slice(2),
     'hex'
-  )
+  );
 }
 
 async function now() {
@@ -44,7 +44,7 @@ async function verifyMultipleRedeems(
   for (const i in receipt.events.reverse()) {
     if (tiersRedeemed[j] <= i) {
       k = i;
-      j--
+      j--;
       if (j < 0) {
         break;
       }
@@ -90,7 +90,7 @@ describe('HATVaultsNFT', function () {
     this.hatVaultsV2 = await deploy("HATVaultsV2Mock");
     this.hatVaultsV1Data = await deploy("HATVaultsV1Data", this.hatVaultsV1.address);
     this.hatVaultsV2Data = await deploy("HATVaultsV2Data", this.hatVaultsV2.address);
-    this.tokens = {}
+    this.tokens = {};
     this.tokens[this.hatVaultsV1Data.address] = tokensHATVaults1;
     this.tokens[this.hatVaultsV2Data.address] = tokensHATVaults2;
     this.hatVaultsContracts = [this.hatVaultsV1Data.address, this.hatVaultsV2Data.address];
@@ -116,7 +116,7 @@ describe('HATVaultsNFT', function () {
       );
       this.tokenIds = {};
       for(const hatVaults of this.hatVaultsContracts) {
-        this.tokenIds[hatVaults] = {}
+        this.tokenIds[hatVaults] = {};
         for (const pool of Object.keys(this.tokens[hatVaults])) {
           this.registry.addVault(hatVaults, pool, "https://gateway.pinata.cloud/ipfs/id/");
           this.tokenIds[hatVaults][pool] = [
@@ -348,7 +348,7 @@ describe('HATVaultsNFT', function () {
     let newRoot;
     it('Cannot update tree before deadline', async function () {
       const newDeadline = (await now()) + (DAY * 2);
-      this.tokens2 = {}
+      this.tokens2 = {};
       this.tokens2[this.hatVaultsV1Data.address] = tokens2HATVaults1;
       this.tokens2[this.hatVaultsV2Data.address] = tokens2HATVaults2;
       this.hashes = [];
@@ -387,7 +387,7 @@ describe('HATVaultsNFT', function () {
           .withArgs(newMerkleTreeIPFSRef, newRoot, newDeadline);
 
       // Only add vaults of the v1 hat vaults
-      this.tokenIds[this.hatVaultsV1Data.address] = {}
+      this.tokenIds[this.hatVaultsV1Data.address] = {};
       for (const pool of Object.keys(this.tokens2[this.hatVaultsV1Data.address])) {
         this.registry.addVault(this.hatVaultsV1Data.address, pool, "https://gateway.pinata.cloud/ipfs/id/");
         this.tokenIds[this.hatVaultsV1Data.address][pool] = [
@@ -478,7 +478,7 @@ describe('HATVaultsNFT', function () {
       await expect(this.registry.redeemSingleFromTree(this.hatVaultsV2Data.address, 6, depositor, 3, proof))
         .to.be.revertedWith('Token does not exist');
 
-      this.tokenIds[this.hatVaultsV2Data.address] = {}
+      this.tokenIds[this.hatVaultsV2Data.address] = {};
       for (const pool of Object.keys(this.tokens2[this.hatVaultsV2Data.address])) {
         this.registry.addVault(this.hatVaultsV2Data.address, pool, "https://gateway.pinata.cloud/ipfs/id/");
         this.tokenIds[this.hatVaultsV2Data.address][pool] = [
