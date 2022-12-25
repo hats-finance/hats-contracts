@@ -41,7 +41,7 @@ async function main(config) {
     const RewardController = await ethers.getContractFactory("RewardController");
     const rewardControllers = [];
     const rewardControllerImplementations = [];
-    for (const rewardControllerConfig of config["rewardControllers"]) {
+    for (const rewardControllerConfig of config["rewardControllersConf"]) {
         let startBlock = rewardControllerConfig["startBlock"];
         if (!startBlock) {
             startBlock = await ethers.provider.getBlockNumber();
@@ -84,8 +84,8 @@ async function main(config) {
         tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
     }
 
-    let bountyGovernanceHAT = config["hatVaultsRegistry"]["bountyGovernanceHAT"];
-    let bountyHackerHATVested = config["hatVaultsRegistry"]["bountyHackerHATVested"];
+    let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
+    let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
 
     const HATVaultsRegistry = await ethers.getContractFactory("HATVaultsRegistry");
     const hatVaultsRegistry = await HATVaultsRegistry.deploy(
