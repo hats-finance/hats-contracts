@@ -643,6 +643,22 @@ See {IHATVaultsRegistry-setFeeSetter}.
 |---|---|---|
 | _feeSetter | address | undefined |
 
+### setHATVaultImplementation
+
+```solidity
+function setHATVaultImplementation(address _hatVaultImplementation) external nonpayable
+```
+
+See {IHATVaultsRegistry-setHATVaultImplementation}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation | address | undefined |
+
 ### setHatVestingParams
 
 ```solidity
@@ -1021,6 +1037,22 @@ Emitted when a new fee setter is set
 | Name | Type | Description |
 |---|---|---|
 | _feeSetter `indexed` | address | undefined |
+
+### SetHATVaultImplementation
+
+```solidity
+event SetHATVaultImplementation(address indexed _hatVaultImplementation)
+```
+
+Emitted when a new HATVault implementation is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation `indexed` | address | undefined |
 
 ### SetHatVestingParams
 

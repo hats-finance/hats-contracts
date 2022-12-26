@@ -298,6 +298,22 @@ Called by governance to set the fee setter role
 |---|---|---|
 | _feeSetter | address | Address of new fee setter |
 
+### setHATVaultImplementation
+
+```solidity
+function setHATVaultImplementation(address _hatVaultImplementation) external nonpayable
+```
+
+Called by governance to set a new HATVault implementation to be used by the registry for creating new vaults
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation | address | Is the system in an emergency pause |
+
 ### setHatVestingParams
 
 ```solidity
@@ -626,6 +642,22 @@ Emitted when a new fee setter is set
 | Name | Type | Description |
 |---|---|---|
 | _feeSetter `indexed` | address | The address of the new fee setter |
+
+### SetHATVaultImplementation
+
+```solidity
+event SetHATVaultImplementation(address indexed _hatVaultImplementation)
+```
+
+Emitted when a new HATVault implementation is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation `indexed` | address | The address of the new HATVault implementation |
 
 ### SetHatVestingParams
 

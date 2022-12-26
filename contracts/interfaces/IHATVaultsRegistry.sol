@@ -204,6 +204,12 @@ interface IHATVaultsRegistry {
     event LogClaim(address indexed _claimer, string _descriptionHash);
 
     /**
+     * @notice Emitted when a new HATVault implementation is set
+     * @param _hatVaultImplementation The address of the new HATVault implementation
+     */
+    event SetHATVaultImplementation(address indexed _hatVaultImplementation);
+
+    /**
      * @notice Emitted when a new fee setter is set
      * @param _feeSetter The address of the new fee setter
      */
@@ -318,6 +324,13 @@ interface IHATVaultsRegistry {
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
     event SetEmergencyPaused(bool _isEmergencyPaused);
+
+    /**
+     * @notice Called by governance to set a new HATVault implementation to be
+     * used by the registry for creating new vaults
+     * @param _hatVaultImplementation Is the system in an emergency pause
+     */
+    function setHATVaultImplementation(address _hatVaultImplementation) external;
 
     /**
      * @notice Called by governance to pause/unpause the system in case of an
