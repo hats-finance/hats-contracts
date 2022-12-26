@@ -207,7 +207,7 @@ interface IHATVaultsRegistry {
      * @notice Emitted when a new swap token is set
      * @param _swapToken The new swap token address
      */
-    event SetSwapToken(address _swapToken);
+    event SetSwapToken(address indexed _swapToken);
 
     /**
      * @notice Emitted when a new fee setter is set
