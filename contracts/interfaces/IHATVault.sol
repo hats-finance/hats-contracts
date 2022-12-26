@@ -34,8 +34,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  *
  * Bounties are payed out distributed between a few channels, and that 
  * distribution is set upon creation (the hacker gets part in direct transfer,
- * part in vested reward and part in vested HAT token, part gets rewarded to
- * the committee, part gets swapped to HAT token and burned and/or sent to Hats
+ * part in vested reward and part in vested swap token, part gets rewarded to
+ * the committee, part gets swapped to the swap token and sent to Hats
  * governance).
  *
  * NOTE: Vaults should not use tokens which do not guarantee that the amount
@@ -49,7 +49,7 @@ interface IHATVault is IERC4626Upgradeable {
     enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
 
     // How to divide the bounty - after deducting the part that is swapped to
-    // HAT tokens (and then sent to governance and vested to the hacker)
+    // swap tokens (and then sent to governance and vested to the hacker)
     // values are in percentages and should add up to 100% (defined as 10000)
     struct BountySplit {
         // the percentage of reward sent to the hacker via vesting contract
@@ -66,8 +66,8 @@ interface IHATVault is IERC4626Upgradeable {
         uint256 hacker;
         uint256 hackerVested;
         uint256 committee;
-        uint256 hackerHatVested;
-        uint256 governanceHat;
+        uint256 hackerSwapTokenVested;
+        uint256 governanceSwapToken;
     }
 
     /**
@@ -224,7 +224,7 @@ interface IHATVault is IERC4626Upgradeable {
     event AddRewardController(IRewardController indexed _newRewardController);
     event SetDepositPause(bool _depositPause);
     event SetVaultDescription(string _descriptionHash);
-    event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
+    event SetSwapTokenBountySplit(uint256 _bountyGovernanceSwapToken, uint256 _bountyHackerSwapTokenVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -279,7 +279,7 @@ interface IHATVault is IERC4626Upgradeable {
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and
     * pay out bounty to hacker and committee. Also transfer to the 
-    * HATVaultsRegistry the part of the bounty that will be swapped to HAT 
+    * HATVaultsRegistry the part of the bounty that will be swapped to swap 
     * tokens.
     * If the claim had been previously challenged, this is only callable by
     * the arbitrator. Otherwise, callable by anyone after challengePeriod had
@@ -383,16 +383,16 @@ interface IHATVault is IERC4626Upgradeable {
     function addRewardController(IRewardController _newRewardController) external;
 
     /**
-    * @notice Called by the registry's owner to set the vault HAT token bounty 
+    * @notice Called by the registry's owner to set the vault swap token bounty 
     * split upon an approval.
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
-    * @param _bountyGovernanceHAT The HAT bounty for governance
-    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+    * @param _bountyGovernanceSwapToken The swap token bounty for governance
+    * @param _bountyHackerSwapTokenVested The swap token bounty vested for the hacker
     */
-    function setHATBountySplit(
-        uint16 _bountyGovernanceHAT,
-        uint16 _bountyHackerHATVested
+    function setSwapTokenBountySplit(
+        uint16 _bountyGovernanceSwapToken,
+        uint16 _bountyHackerSwapTokenVested
     ) 
         external;
 
@@ -450,7 +450,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Withdraw previously deposited funds from the vault and claim
-    * the HAT reward that the user has earned.
+    * the rewards that the user has earned from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -466,7 +466,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Redeem shares in the vault for the respective amount
-    * of underlying assets and claim the HAT reward that the user has earned.
+    * of underlying assets and claim the rewards that the user has earned
+    * from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -494,7 +495,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Withdraw previously deposited funds from the vault, without
-    * transferring the accumulated HAT reward.
+    * transferring the accumulated rewards from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -510,7 +511,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Redeem shares in the vault for the respective amount
-    * of underlying assets, without transferring the accumulated HAT reward.
+    * of underlying assets, without transferring the accumulated rewards
+    * from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -562,7 +564,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Withdraw previously deposited funds from the vault, without
-    * transferring the accumulated HAT reward.
+    * transferring the accumulated rewards from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -579,7 +581,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     /** 
     * @notice Redeem shares in the vault for the respective amount
-    * of underlying assets, without transferring the accumulated HAT reward.
+    * of underlying assets, without transferring the accumulated rewards
+    * from the reward controllers.
     * Can only be performed if a withdraw request has been previously
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
@@ -599,20 +602,20 @@ interface IHATVault is IERC4626Upgradeable {
     /* --------------------------------- Getters -------------------------------------- */
 
     /** 
-    * @notice Returns the vault HAT bounty split part that goes to the governance
+    * @notice Returns the vault swap token bounty split part that goes to the governance
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split part that goes to the governance
+    * @return The vault's swap token bounty split part that goes to the governance
     */
-    function getBountyGovernanceHAT() external view returns(uint16);
+    function getBountyGovernanceSwapToken() external view returns(uint16);
     
     /** 
-    * @notice Returns the vault HAT bounty split part that is vested for the hacker
+    * @notice Returns the vault swap token bounty split part that is vested for the hacker
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split part that is vested for the hacker
+    * @return The vault's swap token bounty split part that is vested for the hacker
     */
-    function getBountyHackerHATVested() external view returns(uint16);
+    function getBountyHackerSwapTokenVested() external view returns(uint16);
 
     /** 
     * @notice Returns the address of the vault's arbitrator

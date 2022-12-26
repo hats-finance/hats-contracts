@@ -3,10 +3,10 @@
 | owner | parameter name | scope | default | limits | setter | comments |
 |---|---|---|---|---|---|---|
 | `registry.owner` | `isEmergencyPaused` | global | false | | `setEmergencyPaused` |
-| `registry.owner` | `defaultBountyGovernanceHAT` | global | | +defaultBountyHackerHatVested <= 20% | `registry.setDefaultHATBountySplit` |
-| `registry.owner` | `bountyGovernanceHAT` | vault | | +bountyHackerHatVested <= 20% | `vault.setHATBountySplit` |
-| `registry.owner` | `defaultBountyHackerHATVested` | global | | +defaultBountyGovernanceHAT <= 20% | `registry.setDefaultHATBountySplit` |
-| `registry.owner` | `bountyHackerHATVested` | vault | | +bountyGovernanceHAT <= 20% | `vault.setHATBountySplit` |
+| `registry.owner` | `defaultBountyGovernanceSwapToken` | global | | +defaultBountyHackerSwapTokenVested <= 20% | `registry.setDefaultSwapTokenBountySplit` |
+| `registry.owner` | `bountyGovernanceSwapToken` | vault | | +bountyHackerSwapTokenVested <= 20% | `vault.setSwapTokenBountySplit` |
+| `registry.owner` | `defaultBountyHackerSwapTokenVested` | global | | +defaultBountyGovernanceSwapToken <= 20% | `registry.setDefaultSwapTokenBountySplit` |
+| `registry.owner` | `bountyHackerSwapTokenVested` | vault | | +bountyGovernanceSwapToken <= 20% | `vault.setSwapTokenBountySplit` |
 | `registry.owner` | `defaultArbitrator` | global | registry.owner | | `registry.setDefaultArbitrator` |
 | `registry.owner` | `arbitrator` | vault | | |  `vault.setArbitrator` |
 | `registry.owner` | `defaultChallengePeriod` | global | 3 days | >= 1 days, <= 5 days |  `registry.setDefaultChallengePeriod` |
@@ -22,8 +22,8 @@
 | `registry.owner` | `claimFee` | global | 0 | - | `registry.setClaimFee` |
 | `registry.owner` | `withdrawPeriod` | global | 11 hours | >= 1 hours | `registry.setWithdrawSafetyPeriod` |
 | `registry.owner` | `safetyPeriod` | global | 1 hours | <= 6 hours | `registry.setWithdrawSafetyPeriod` |
-| `registry.owner` | `hatVestingDuration` | global | 90 days | < 180 days |  `registry.setHatVestingParams` |
-| `registry.owner` | `hatVestingPeriods` | global | 90 | > 0, <= hatVestingDuration |  `registry.setHatVestingParams` |
+| `registry.owner` | `swapTokenVestingDuration` | global | 90 days | < 180 days |  `registry.setSwapTokenVestingParams` |
+| `registry.owner` | `swapTokenVestingPeriods` | global | 90 | > 0, <= swapTokenVestingDuration |  `registry.setSwapTokenVestingParams` |
 | `registry.owner` | `setMaxBountyDelay` | global | 2 days | >= 2 days | `registry.setMaxBountyDelay` |
 | `registry.owner` | `rewardController` | vault | | | `vault.addRewardController` | noActiveClaim |
 | `registry.owner` |registry.`owner` | global | _hatGovernance | | `registry.transferOwnership`, `registry.renounceOwnership` |

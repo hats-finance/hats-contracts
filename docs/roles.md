@@ -93,7 +93,7 @@ See [parameters](./parameters.md) for the list of parameters managed by the owne
 
 # CENTRALIZATION RISKS
 
-Below is a list of known centralization risks. It lists possible attacks or failure modes that could happen if one of the roles in the HATs system is taken over by a hostile or very incompetent party. 
+Below is a list of known centralization risks. It lists possible attacks or failure modes that could happen if one of the roles in the Hats system is taken over by a hostile or very incompetent party. 
 
 
 

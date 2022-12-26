@@ -84,8 +84,8 @@ async function main(config) {
         tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
     }
 
-    let bountyGovernanceHAT = config["hatVaultsRegistry"]["bountyGovernanceHAT"];
-    let bountyHackerHATVested = config["hatVaultsRegistry"]["bountyHackerHATVested"];
+    let bountyGovernanceSwapToken = config["hatVaultsRegistry"]["bountyGovernanceSwapToken"];
+    let bountyHackerSwapTokenVested = config["hatVaultsRegistry"]["bountyHackerSwapTokenVested"];
 
     const HATVaultsRegistry = await ethers.getContractFactory("HATVaultsRegistry");
     const hatVaultsRegistry = await HATVaultsRegistry.deploy(
@@ -93,8 +93,8 @@ async function main(config) {
         governance,
         arbitrator,
         hatToken,
-        bountyGovernanceHAT,
-        bountyHackerHATVested,
+        bountyGovernanceSwapToken,
+        bountyHackerSwapTokenVested,
         tokenLockFactory,
     );
 

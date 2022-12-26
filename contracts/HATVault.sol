@@ -41,8 +41,8 @@ import "./HATVaultsRegistry.sol";
 *
 * Bounties are payed out distributed between a few channels, and that 
 * distribution is set upon creation (the hacker gets part in direct transfer,
-* part in vested reward and part in vested HAT token, part gets rewarded to
-* the committee, part gets swapped to HAT token and burned and/or sent to Hats
+* part in vested reward and part in vested the swap token, part gets rewarded to
+* the committee, and part gets swapped to the swap token and sent to Hats
 * governance).
 *
 * This project is open-source and can be found at:
@@ -61,8 +61,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         address committee;
         uint32 createdAt;
         uint32 challengedAt;
-        uint256 bountyGovernanceHAT;
-        uint256 bountyHackerHATVested;
+        uint256 bountyGovernanceSwapToken;
+        uint256 bountyHackerSwapTokenVested;
         address arbitrator;
         uint32 challengePeriod;
         uint32 challengeTimeOutPeriod;
@@ -113,10 +113,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // period ended, or 0 if last action was deposit or withdraw)
     mapping(address => uint256) public withdrawEnableStartTime;
 
-    // the percentage of the total bounty to be swapped to HATs and sent to governance (out of {HUNDRED_PERCENT})
-    uint16 internal bountyGovernanceHAT;
-    // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract (out of {HUNDRED_PERCENT})
-    uint16 internal bountyHackerHATVested;
+    // the percentage of the total bounty to be swapped to the swap token and sent to governance (out of {HUNDRED_PERCENT})
+    uint16 internal bountyGovernanceSwapToken;
+    // the percentage of the total bounty to be swapped to the swap token and sent to the hacker via vesting contract (out of {HUNDRED_PERCENT})
+    uint16 internal bountyHackerSwapTokenVested;
 
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address internal arbitrator;
@@ -190,8 +190,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         // Set vault to use default registry values where applicable
         arbitrator = NULL_ADDRESS;
-        bountyGovernanceHAT = NULL_UINT16;
-        bountyHackerHATVested = NULL_UINT16;
+        bountyGovernanceSwapToken = NULL_UINT16;
+        bountyHackerSwapTokenVested = NULL_UINT16;
         arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
@@ -222,8 +222,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // solhint-disable-next-line not-rely-on-time
             createdAt: uint32(block.timestamp),
             challengedAt: 0,
-            bountyGovernanceHAT: getBountyGovernanceHAT(),
-            bountyHackerHATVested: getBountyHackerHATVested(),
+            bountyGovernanceSwapToken: getBountyGovernanceSwapToken(),
+            bountyHackerSwapTokenVested: getBountyHackerSwapTokenVested(),
             arbitrator: getArbitrator(),
             challengePeriod: getChallengePeriod(),
             challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
@@ -289,8 +289,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         IHATVault.ClaimBounty memory claimBounty = _calcClaimBounty(
             _claim.bountyPercentage,
-            _claim.bountyGovernanceHAT,
-            _claim.bountyHackerHATVested
+            _claim.bountyGovernanceSwapToken,
+            _claim.bountyHackerSwapTokenVested
         );
 
         IERC20 _asset = IERC20(asset());
@@ -318,14 +318,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _asset.safeTransfer(_claim.committee, claimBounty.committee);
 
         // send to the registry the amount of tokens which should be swapped 
-        // to HAT so it could call swapAndSend in a separate tx.
+        // to the swap token so it could call swapAndSend in a separate tx.
         HATVaultsRegistry _registry = registry;
-        _asset.safeApprove(address(_registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
+        _asset.safeApprove(address(_registry), claimBounty.hackerSwapTokenVested + claimBounty.governanceSwapToken);
         _registry.addTokensToSwap(
             _asset,
             _claim.beneficiary,
-            claimBounty.hackerHatVested,
-            claimBounty.governanceHat
+            claimBounty.hackerSwapTokenVested,
+            claimBounty.governanceSwapToken
         );
 
         // make sure to reset approval
@@ -444,14 +444,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit AddRewardController(_rewardController);
     }
     
-    /** @notice See {IHATVault-setHATBountySplit}. */
-    function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external onlyRegistryOwner {
-        bountyGovernanceHAT = _bountyGovernanceHAT;
-        bountyHackerHATVested = _bountyHackerHATVested;
+    /** @notice See {IHATVault-setSwapTokenBountySplit}. */
+    function setSwapTokenBountySplit(uint16 _bountyGovernanceSwapToken, uint16 _bountyHackerSwapTokenVested) external onlyRegistryOwner {
+        bountyGovernanceSwapToken = _bountyGovernanceSwapToken;
+        bountyHackerSwapTokenVested = _bountyHackerSwapTokenVested;
 
-        registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
+        registry.validateSwapTokenSplit(getBountyGovernanceSwapToken(), getBountyHackerSwapTokenVested());
 
-        emit SetHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
+        emit SetSwapTokenBountySplit(_bountyGovernanceSwapToken, _bountyHackerSwapTokenVested);
     }
 
     /** @notice See {IHATVault-setArbitrator}. */
@@ -631,23 +631,23 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /* --------------------------------- Getters -------------------------------------- */
 
-    /** @notice See {IHATVault-getBountyGovernanceHAT}. */
-    function getBountyGovernanceHAT() public view returns(uint16) {
-        uint16 _bountyGovernanceHAT = bountyGovernanceHAT;
-        if (_bountyGovernanceHAT != NULL_UINT16) {
-            return _bountyGovernanceHAT;
+    /** @notice See {IHATVault-getBountyGovernanceSwapToken}. */
+    function getBountyGovernanceSwapToken() public view returns(uint16) {
+        uint16 _bountyGovernanceSwapToken = bountyGovernanceSwapToken;
+        if (_bountyGovernanceSwapToken != NULL_UINT16) {
+            return _bountyGovernanceSwapToken;
         } else {
-            return registry.defaultBountyGovernanceHAT();
+            return registry.defaultBountyGovernanceSwapToken();
         }
     }
 
-    /** @notice See {IHATVault-getBountyHackerHATVested}. */
-    function getBountyHackerHATVested() public view returns(uint16) {
-        uint16 _bountyHackerHATVested = bountyHackerHATVested;
-        if (_bountyHackerHATVested != NULL_UINT16) {
-            return _bountyHackerHATVested;
+    /** @notice See {IHATVault-getBountyHackerSwapTokenVested}. */
+    function getBountyHackerSwapTokenVested() public view returns(uint16) {
+        uint16 _bountyHackerSwapTokenVested = bountyHackerSwapTokenVested;
+        if (_bountyHackerSwapTokenVested != NULL_UINT16) {
+            return _bountyHackerSwapTokenVested;
         } else {
-            return registry.defaultBountyHackerHATVested();
+            return registry.defaultBountyHackerSwapTokenVested();
         }
     }
 
@@ -753,7 +753,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_from == _to) revert CannotTransferToSelf();
         // deposit/mint/transfer
         if (_to != address(0)) {
-            HATVaultsRegistry  _registry = registry;
+            HATVaultsRegistry _registry = registry;
             if (_registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             // because then we would need to reset their withdraw request
@@ -831,14 +831,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     * predefined bounty split and the given bounty percentage
     * @param _bountyPercentage The percentage of the vault's funds to be paid
     * out as bounty
-    * @param _bountyGovernanceHAT The bountyGovernanceHAT at the time the claim was submitted
-    * @param _bountyHackerHATVested The bountyHackerHATVested at the time the claim was submitted
+    * @param _bountyGovernanceSwapToken The bountyGovernanceSwapToken at the time the claim was submitted
+    * @param _bountyHackerSwapTokenVested The bountyHackerSwapTokenVested at the time the claim was submitted
     * @return claimBounty The bounty distribution for this specific claim
     */
     function _calcClaimBounty(
         uint256 _bountyPercentage,
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested
+        uint256 _bountyGovernanceSwapToken,
+        uint256 _bountyHackerSwapTokenVested
     ) internal view returns(IHATVault.ClaimBounty memory claimBounty) {
         uint256 _totalAssets = totalAssets();
         if (_totalAssets == 0) {
@@ -849,13 +849,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         uint256 _totalBountyAmount = _totalAssets * _bountyPercentage;
 
-        uint256 _governanceHatAmount = _totalBountyAmount.mulDiv(_bountyGovernanceHAT, HUNDRED_PERCENT_SQRD);
-        uint256 _hackerHatVestedAmount = _totalBountyAmount.mulDiv(_bountyHackerHATVested, HUNDRED_PERCENT_SQRD);
+        uint256 _governanceSwapTokenAmount = _totalBountyAmount.mulDiv(_bountyGovernanceSwapToken, HUNDRED_PERCENT_SQRD);
+        uint256 _hackerSwapTokenVestedAmount = _totalBountyAmount.mulDiv(_bountyHackerSwapTokenVested, HUNDRED_PERCENT_SQRD);
 
-        _totalBountyAmount -= (_governanceHatAmount + _hackerHatVestedAmount) * HUNDRED_PERCENT;
+        _totalBountyAmount -= (_governanceSwapTokenAmount + _hackerSwapTokenVestedAmount) * HUNDRED_PERCENT;
 
-        claimBounty.governanceHat = _governanceHatAmount;
-        claimBounty.hackerHatVested = _hackerHatVestedAmount;
+        claimBounty.governanceSwapToken = _governanceSwapTokenAmount;
+        claimBounty.hackerSwapTokenVested = _hackerSwapTokenVestedAmount;
 
         uint256 _hackerVestedAmount = _totalBountyAmount.mulDiv(bountySplit.hackerVested, HUNDRED_PERCENT_SQRD);
         uint256 _hackerAmount = _totalBountyAmount.mulDiv(bountySplit.hacker, HUNDRED_PERCENT_SQRD);

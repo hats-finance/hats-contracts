@@ -36,8 +36,8 @@
             ]
         }],
         "hatVaultsRegistry": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "bountyGovernanceSwapToken": "1000",
+            "bountyHackerSwapTokenVested": "500"
         }
     },
     "optimism_goerli": {
@@ -77,8 +77,8 @@
             ]
         }],
         "hatVaultsRegistry": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "bountyGovernanceSwapToken": "1000",
+            "bountyHackerSwapTokenVested": "500"
         }
     },
     "hardhat": {
@@ -113,8 +113,8 @@
             ]
         }],
         "hatVaultsRegistry": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "bountyGovernanceSwapToken": "1000",
+            "bountyHackerSwapTokenVested": "500"
         }
     },
     "polygon": {
@@ -124,8 +124,8 @@
         "rewardControllers": [],
         "hatToken": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", 
         "hatVaultsRegistry": {
-          "bountyGovernanceHAT": "0",
-          "bountyHackerHATVested": "0"
+          "bountyGovernanceSwapToken": "0",
+          "bountyHackerSwapTokenVested": "0"
       }
     }
 }

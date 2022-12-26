@@ -4,7 +4,7 @@
 
 > Interface for Hats.finance Vaults
 
-A HATVault holds the funds for a specific project&#39;s bug bounties. The HATVault can be deposited into in a permissionless maner using the vault’s native token. When a bug is submitted and approved, the bounty  is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault  has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and  recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any  time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an  active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that  distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested HAT token, part gets rewarded to the committee, part gets swapped to HAT token and burned and/or sent to Hats governance). NOTE: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
+A HATVault holds the funds for a specific project&#39;s bug bounties. The HATVault can be deposited into in a permissionless maner using the vault’s native token. When a bug is submitted and approved, the bounty  is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault  has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and  recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any  time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an  active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that  distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested swap token, part gets rewarded to the committee, part gets swapped to the swap token and sent to Hats governance). NOTE: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
 
 
 
@@ -78,7 +78,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 function approveClaim(bytes32 _claimId, uint16 _bountyPercentage) external nonpayable
 ```
 
-Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the  HATVaultsRegistry the part of the bounty that will be swapped to HAT  tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
+Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the  HATVaultsRegistry the part of the bounty that will be swapped to swap  tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
 
 
 
@@ -318,13 +318,13 @@ Returns the address of the vault&#39;s arbitrator If no specific value for this 
 |---|---|---|
 | _0 | address | The address of the vault&#39;s arbitrator |
 
-### getBountyGovernanceHAT
+### getBountyGovernanceSwapToken
 
 ```solidity
-function getBountyGovernanceHAT() external view returns (uint16)
+function getBountyGovernanceSwapToken() external view returns (uint16)
 ```
 
-Returns the vault HAT bounty split part that goes to the governance If no specific value for this vault has been set, the registry&#39;s default value will be returned.
+Returns the vault swap token bounty split part that goes to the governance If no specific value for this vault has been set, the registry&#39;s default value will be returned.
 
 
 
@@ -333,15 +333,15 @@ Returns the vault HAT bounty split part that goes to the governance If no specif
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that goes to the governance |
+| _0 | uint16 | The vault&#39;s swap token bounty split part that goes to the governance |
 
-### getBountyHackerHATVested
+### getBountyHackerSwapTokenVested
 
 ```solidity
-function getBountyHackerHATVested() external view returns (uint16)
+function getBountyHackerSwapTokenVested() external view returns (uint16)
 ```
 
-Returns the vault HAT bounty split part that is vested for the hacker If no specific value for this vault has been set, the registry&#39;s default value will be returned.
+Returns the vault swap token bounty split part that is vested for the hacker If no specific value for this vault has been set, the registry&#39;s default value will be returned.
 
 
 
@@ -350,7 +350,7 @@ Returns the vault HAT bounty split part that is vested for the hacker If no spec
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that is vested for the hacker |
+| _0 | uint16 | The vault&#39;s swap token bounty split part that is vested for the hacker |
 
 ### getChallengePeriod
 
@@ -694,7 +694,7 @@ Returns the amount of shares to be burned to give the user the exact amount of a
 function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated rewards from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection
 
 
 
@@ -719,7 +719,7 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 function redeem(uint256 shares, address receiver, address owner) external nonpayable returns (uint256)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated rewards from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-redeem}.*
 
@@ -743,7 +743,7 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 function redeemAndClaim(uint256 shares, address receiver, address owner) external nonpayable returns (uint256 assets)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets and claim the HAT reward that the user has earned. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Redeem shares in the vault for the respective amount of underlying assets and claim the rewards that the user has earned from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-redeem}.*
 
@@ -873,23 +873,6 @@ Called by the vault&#39;s owner to disable all deposits to the vault
 |---|---|---|
 | _depositPause | bool | Are deposits paused |
 
-### setHATBountySplit
-
-```solidity
-function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
-```
-
-Called by the registry&#39;s owner to set the vault HAT token bounty  split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT | uint16 | The HAT bounty for governance |
-| _bountyHackerHATVested | uint16 | The HAT bounty vested for the hacker |
-
 ### setMaxBounty
 
 ```solidity
@@ -916,6 +899,23 @@ Called by the vault&#39;s owner to set a pending request for the maximum percent
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty | uint16 | The maximum bounty percentage that can be paid out |
+
+### setSwapTokenBountySplit
+
+```solidity
+function setSwapTokenBountySplit(uint16 _bountyGovernanceSwapToken, uint16 _bountyHackerSwapTokenVested) external nonpayable
+```
+
+Called by the registry&#39;s owner to set the vault swap token bounty  split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _bountyGovernanceSwapToken | uint16 | The swap token bounty for governance |
+| _bountyHackerSwapTokenVested | uint16 | The swap token bounty vested for the hacker |
 
 ### setVaultDescription
 
@@ -1094,7 +1094,7 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
 function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256)
 ```
 
-Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection
+Withdraw previously deposited funds from the vault, without transferring the accumulated rewards from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection
 
 
 
@@ -1119,7 +1119,7 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 function withdraw(uint256 assets, address receiver, address owner) external nonpayable returns (uint256)
 ```
 
-Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Withdraw previously deposited funds from the vault, without transferring the accumulated rewards from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-withdraw}.*
 
@@ -1143,7 +1143,7 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 function withdrawAndClaim(uint256 assets, address receiver, address owner) external nonpayable returns (uint256 shares)
 ```
 
-Withdraw previously deposited funds from the vault and claim the HAT reward that the user has earned. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Withdraw previously deposited funds from the vault and claim the rewards that the user has earned from the reward controllers. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-withdraw}.*
 
@@ -1405,23 +1405,6 @@ event SetDepositPause(bool _depositPause)
 |---|---|---|
 | _depositPause  | bool | undefined |
 
-### SetHATBountySplit
-
-```solidity
-event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
-
 ### SetMaxBounty
 
 ```solidity
@@ -1453,6 +1436,23 @@ event SetPendingMaxBounty(uint256 _maxBounty)
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty  | uint256 | undefined |
+
+### SetSwapTokenBountySplit
+
+```solidity
+event SetSwapTokenBountySplit(uint256 _bountyGovernanceSwapToken, uint256 _bountyHackerSwapTokenVested)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _bountyGovernanceSwapToken  | uint256 | undefined |
+| _bountyHackerSwapTokenVested  | uint256 | undefined |
 
 ### SetVaultDescription
 

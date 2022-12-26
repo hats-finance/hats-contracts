@@ -104,8 +104,8 @@ const setup = async function(
       epochRewardPerBlock
     }],
     hatVaultsRegistry: {
-      bountyGovernanceHAT: options.hatBountySplit[0],
-      bountyHackerHATVested: options.hatBountySplit[1]
+      bountyGovernanceSwapToken: options.hatBountySplit[0],
+      bountyHackerSwapTokenVested: options.hatBountySplit[1]
     },
     silent: true
   });

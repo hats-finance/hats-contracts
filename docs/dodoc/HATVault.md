@@ -4,7 +4,7 @@
 
 > A Hats.finance vault which holds the funds for a specific project&#39;s bug bounties
 
-The HATVault can be deposited into in a permissionless maner using the vault’s native token. When a bug is submitted and approved, the bounty  is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault  has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and  recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an  active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that  distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested HAT token, part gets rewarded to the committee, part gets swapped to HAT token and burned and/or sent to Hats governance). This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
+The HATVault can be deposited into in a permissionless maner using the vault’s native token. When a bug is submitted and approved, the bounty  is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault  has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and  recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an  active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that  distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested the swap token, part gets rewarded to the committee, and part gets swapped to the swap token and sent to Hats governance). This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
 
 
 
@@ -183,7 +183,7 @@ function NULL_UINT32() external view returns (uint32)
 ### activeClaim
 
 ```solidity
-function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty)
+function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceSwapToken, uint256 bountyHackerSwapTokenVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty)
 ```
 
 
@@ -201,8 +201,8 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | committee | address | undefined |
 | createdAt | uint32 | undefined |
 | challengedAt | uint32 | undefined |
-| bountyGovernanceHAT | uint256 | undefined |
-| bountyHackerHATVested | uint256 | undefined |
+| bountyGovernanceSwapToken | uint256 | undefined |
+| bountyHackerSwapTokenVested | uint256 | undefined |
 | arbitrator | address | undefined |
 | challengePeriod | uint32 | undefined |
 | challengeTimeOutPeriod | uint32 | undefined |
@@ -626,13 +626,13 @@ See {IHATVault-getArbitratorCanChangeBounty}.
 |---|---|---|
 | _0 | bool | undefined |
 
-### getBountyGovernanceHAT
+### getBountyGovernanceSwapToken
 
 ```solidity
-function getBountyGovernanceHAT() external view returns (uint16)
+function getBountyGovernanceSwapToken() external view returns (uint16)
 ```
 
-See {IHATVault-getBountyGovernanceHAT}. 
+See {IHATVault-getBountyGovernanceSwapToken}. 
 
 
 
@@ -643,13 +643,13 @@ See {IHATVault-getBountyGovernanceHAT}.
 |---|---|---|
 | _0 | uint16 | undefined |
 
-### getBountyHackerHATVested
+### getBountyHackerSwapTokenVested
 
 ```solidity
-function getBountyHackerHATVested() external view returns (uint16)
+function getBountyHackerSwapTokenVested() external view returns (uint16)
 ```
 
-See {IHATVault-getBountyHackerHATVested}. 
+See {IHATVault-getBountyHackerSwapTokenVested}. 
 
 
 
@@ -1306,23 +1306,6 @@ See {IHATVault-setDepositPause}.
 |---|---|---|
 | _depositPause | bool | undefined |
 
-### setHATBountySplit
-
-```solidity
-function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
-```
-
-See {IHATVault-setHATBountySplit}. 
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT | uint16 | undefined |
-| _bountyHackerHATVested | uint16 | undefined |
-
 ### setMaxBounty
 
 ```solidity
@@ -1349,6 +1332,23 @@ See {IHATVault-setPendingMaxBounty}.
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty | uint16 | undefined |
+
+### setSwapTokenBountySplit
+
+```solidity
+function setSwapTokenBountySplit(uint16 _bountyGovernanceSwapToken, uint16 _bountyHackerSwapTokenVested) external nonpayable
+```
+
+See {IHATVault-setSwapTokenBountySplit}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _bountyGovernanceSwapToken | uint16 | undefined |
+| _bountyHackerSwapTokenVested | uint16 | undefined |
 
 ### setVaultDescription
 
@@ -1977,23 +1977,6 @@ event SetDepositPause(bool _depositPause)
 |---|---|---|
 | _depositPause  | bool | undefined |
 
-### SetHATBountySplit
-
-```solidity
-event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
-
 ### SetMaxBounty
 
 ```solidity
@@ -2025,6 +2008,23 @@ event SetPendingMaxBounty(uint256 _maxBounty)
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty  | uint256 | undefined |
+
+### SetSwapTokenBountySplit
+
+```solidity
+event SetSwapTokenBountySplit(uint256 _bountyGovernanceSwapToken, uint256 _bountyHackerSwapTokenVested)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _bountyGovernanceSwapToken  | uint256 | undefined |
+| _bountyHackerSwapTokenVested  | uint256 | undefined |
 
 ### SetVaultDescription
 

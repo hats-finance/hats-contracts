@@ -66,8 +66,8 @@ const setup = async function(
       epochRewardPerBlock
     }],
     hatVaultsRegistry: {
-      bountyGovernanceHAT: hatBountySplit[0],
-      bountyHackerHATVested: hatBountySplit[1]
+      bountyGovernanceSwapToken: hatBountySplit[0],
+      bountyHackerSwapTokenVested: hatBountySplit[1]
     },
     silent: true
   });
@@ -330,11 +330,11 @@ contract("HatTimelockController", (accounts) => {
       ["address", "uint24", "address"],
       [stakingToken.address, 0, hatToken.address]
     );
-    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+    let amountForHackersSwapTokenRewards = await hatVaultsRegistry.hackersSwapTokenReward(
       stakingToken.address,
       accounts[1]
     );
-    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    let amount = amountForHackersSwapTokenRewards.add(await hatVaultsRegistry.governanceSwapTokenReward(stakingToken.address));
     let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
     let payload = ISwapRouter.encodeFunctionData("exactInput", [
       [path, hatVaultsRegistry.address, 0, amount.toString(), 0],

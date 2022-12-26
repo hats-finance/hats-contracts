@@ -10,11 +10,11 @@ Once approved, bounties are payed out divided into 5 parts:
  
 ### HAT token:
 
-- `hackerHatVested` - The percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-- `governanceHat` - The percentage of the total bounty to be swapped to HATs and sent to governance
+- `hackerSwapTokenVested` - The percentage of the total bounty to be swapped to the swap token and sent to the hacker via vesting contract
+- `governanceSwapToken` - The percentage of the total bounty to be swapped to the swap token and sent to governance
  
  
-The part that is swapped to HAT tokens (`hackerHatVested`, `governanceHat`) is only settable by the registry owner and cannot exceed 20% of the total bounty.
+The part that is swapped to HAT tokens (`hackerSwapTokenVested`, `governanceSwapToken`) is only settable by the registry owner and cannot exceed 20% of the total bounty.
 
 The part that is paid out in the vault's native token (`hacker`, `hackerVested`, `committee`) is only settable by the vault owner and accounts for the rest of the bounty (after the swapped part is deducted).
 

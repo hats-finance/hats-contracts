@@ -35,10 +35,10 @@ interface IHATVaultsRegistry {
 
     // a struct with parameters for all vaults
     struct GeneralParameters {
-        // vesting duration for the part of the bounty given to the hacker in HAT tokens
-        uint32 hatVestingDuration;
-        // vesting periods for the part of the bounty given to the hacker in HAT tokens
-        uint32 hatVestingPeriods;
+        // vesting duration for the part of the bounty given to the hacker in swap tokens
+        uint32 swapTokenVestingDuration;
+        // vesting periods for the part of the bounty given to the hacker in swap tokens
+        uint32 swapTokenVestingPeriods;
         // withdraw enable period. safetyPeriod starts when finished.
         uint32 withdrawPeriod;
         // withdraw disable period - time for the committee to gather and decide on actions,
@@ -87,22 +87,22 @@ interface IHATVaultsRegistry {
     error WithdrawRequestEnabledPeriodTooLong();
 
     /**
-     * @notice Raised on {setHatVestingParams} if the vesting duration to be
+     * @notice Raised on {setSwapTokenVestingParams} if the vesting duration to be
      * set is longer than 180 days
      */
-    error HatVestingDurationTooLong();
+    error SwapTokenVestingDurationTooLong();
 
     /**
-     * @notice Raised on {setHatVestingParams} if the vesting periods to be
+     * @notice Raised on {setSwapTokenVestingParams} if the vesting periods to be
      * set is 0
      */
-    error HatVestingPeriodsCannotBeZero();
+    error SwapTokenVestingPeriodsCannotBeZero();
     
     /**
-     * @notice Raised on {setHatVestingParams} if the vesting duration is 
+     * @notice Raised on {setSwapTokenVestingParams} if the vesting duration is 
      * smaller than the vesting periods
      */
-    error HatVestingDurationSmallerThanPeriods();
+    error SwapTokenVestingDurationSmallerThanPeriods();
 
     /**
      * @notice Raised on {setMaxBountyDelay} if the max bounty to be set is
@@ -128,10 +128,10 @@ interface IHATVaultsRegistry {
     error AmountSwappedLessThanMinimum();
 
     /**
-     * @notice Raised on {setDefaultHATBountySplit} if the split to be set is
+     * @notice Raised on {setDefaultSwapTokenBountySplit} if the split to be set is
      * greater than 20% (defined as 2000)
      */
-    error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
+    error TotalSwapTokenSplitPercentageShouldBeUpToMaxSwapTokenSplit();
 
     /**
      * @notice Raised on {setDefaultChallengePeriod} if the challenge period
@@ -171,11 +171,11 @@ interface IHATVaultsRegistry {
     /**
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
-     * @param _HAT The HAT token address
+     * @param _swapToken The the swap token address
      * @param _tokenLockFactory The token lock factory address
      * @param _generalParameters The registry's general parameters
-     * @param _bountyGovernanceHAT The HAT bounty for governance
-     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+     * @param _bountyGovernanceSwapToken The swap token bounty for governance
+     * @param _bountyHackerSwapTokenVested The swap token bounty vested for the hacker
      * @param _hatGovernance The registry's governance
      * @param _defaultChallengePeriod The new default challenge period
      * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
@@ -183,11 +183,11 @@ interface IHATVaultsRegistry {
      */
     event RegistryCreated(
         address _hatVaultImplementation,
-        address _HAT,
+        address _swapToken,
         address _tokenLockFactory,
         GeneralParameters _generalParameters,
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested,
+        uint256 _bountyGovernanceSwapToken,
+        uint256 _bountyHackerSwapTokenVested,
         address _hatGovernance,
         address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
@@ -202,6 +202,12 @@ interface IHATVaultsRegistry {
      * describes the claim.
      */
     event LogClaim(address indexed _claimer, string _descriptionHash);
+
+    /**
+     * @notice Emitted when a new swap token is set
+     * @param _swapToken The new swap token address
+     */
+    event SetSwapToken(address _swapToken);
 
     /**
      * @notice Emitted when a new fee setter is set
@@ -241,11 +247,11 @@ interface IHATVaultsRegistry {
     );
 
     /**
-     * @notice Emitted when new HAT vesting parameters are set
+     * @notice Emitted when new swap token vesting parameters are set
      * @param _duration The duration of the vesting period
      * @param _periods The number of vesting periods
      */
-    event SetHatVestingParams(uint256 _duration, uint256 _periods);
+    event SetSwapTokenVestingParams(uint256 _duration, uint256 _periods);
 
     /**
      * @notice Emitted when a new timelock delay for setting the
@@ -267,12 +273,12 @@ interface IHATVaultsRegistry {
      */
     event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params);
     
-    /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
-     * the HATS tokens are sent to beneficiary through vesting contract
+    /** @notice Emitted when a swap of vault tokens to the swap token is done and
+     * the swap tokens are sent to beneficiary through vesting contract
      * @param _beneficiary Address of beneficiary
      * @param _amountSwapped Amount of vault's native tokens that was swapped
-     * @param _amountSent Amount of HAT tokens sent to beneficiary
-     * @param _tokenLock Address of the token lock contract that holds the HAT
+     * @param _amountSent Amount of the swap tokens sent to beneficiary
+     * @param _tokenLock Address of the token lock contract that holds the swap
      * tokens (address(0) if no token lock is used)
      */
     event SwapAndSend(
@@ -283,11 +289,11 @@ interface IHATVaultsRegistry {
     );
 
     /**
-     * @notice Emitted when a new default HAT bounty split is set
-     * @param _defaultBountyGovernanceHAT The new default HAT bounty part sent to governance
-     * @param _defaultBountyHackerHATVested The new default HAT bounty part vseted for the hacker
+     * @notice Emitted when a new default swap token bounty split is set
+     * @param _defaultBountyGovernanceSwapToken The new default swap token bounty part sent to governance
+     * @param _defaultBountyHackerSwapTokenVested The new default swap token bounty part vseted for the hacker
      */
-    event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested);
+    event SetDefaultSwapTokenBountySplit(uint256 _defaultBountyGovernanceSwapToken, uint256 _defaultBountyHackerSwapTokenVested);
 
     /**
      * @notice Emitted when a new default arbitrator is set
@@ -320,6 +326,12 @@ interface IHATVaultsRegistry {
     event SetEmergencyPaused(bool _isEmergencyPaused);
 
     /**
+     * @notice Called by governance to set a new swap token
+     * @param _swapToken the new swap token address
+     */
+    function setSwapToken(address _swapToken) external;
+
+    /**
      * @notice Called by governance to pause/unpause the system in case of an
      * emergency
      * @param _isEmergencyPaused Is the system in an emergency pause
@@ -339,25 +351,25 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Called by governance to set the default percentage of each claim bounty
-     * that will be swapped for hats and sent to the governance or vested for the hacker
-     * @param _defaultBountyGovernanceHAT The HAT bounty for governance
-     * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
+     * that will be swapped for swap tokens and sent to the governance or vested for the hacker
+     * @param _defaultBountyGovernanceSwapToken The swap token bounty for governance
+     * @param _defaultBountyHackerSwapTokenVested The swap token bounty vested for the hacker
      */
-    function setDefaultHATBountySplit(
-        uint16 _defaultBountyGovernanceHAT,
-        uint16 _defaultBountyHackerHATVested
+    function setDefaultSwapTokenBountySplit(
+        uint16 _defaultBountyGovernanceSwapToken,
+        uint16 _defaultBountyHackerSwapTokenVested
     ) 
         external;
 
     /** 
-     * @dev Check that a given hats bounty split is legal, meaning that:
-     *   Each entry is a number between 0 and less than `MAX_HAT_SPLIT`.
-     *   Total splits should be less than `MAX_HAT_SPLIT`.
+     * @dev Check that a given swap token bounty split is legal, meaning that:
+     *   Each entry is a number between 0 and less than `MAX_SWAP_TOKEN_SPLIT`.
+     *   Total splits should be less than `MAX_SWAP_TOKEN_SPLIT`.
      * function will revert in case the bounty split is not legal.
-     * @param _bountyGovernanceHAT The HAT bounty for governance
-     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+     * @param _bountyGovernanceSwapToken The swap token bounty for governance
+     * @param _bountyHackerSwapTokenVested The swap token bounty vested for the hacker
      */
-    function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested)
+    function validateSwapTokenSplit(uint16 _bountyGovernanceSwapToken, uint16 _bountyHackerSwapTokenVested)
          external
          pure;
 
@@ -456,7 +468,7 @@ interface IHATVaultsRegistry {
      * @param _periods The number of vesting periods. Must be more than 0 and 
      * less then the vesting duration.
      */
-    function setHatVestingParams(uint32 _duration, uint32 _periods) external;
+    function setSwapTokenVestingParams(uint32 _duration, uint32 _periods) external;
 
     /**
      * @notice Called by governance to set the timelock delay for setting the
@@ -484,29 +496,29 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Transfer the part of the bounty that is supposed to be swapped
-     * into HAT tokens from the HATVault to the registry, and keep track of
+     * into swap tokens from the HATVault to the registry, and keep track of
      * the amounts to be swapped and sent/burnt in a later transaction
      * @param _asset The vault's native token
      * @param _hacker The address of the beneficiary of the bounty
-     * @param _hackersHatReward The amount of the vault's native token to be
-     * swapped to HAT tokens and sent to the hacker via a vesting contract
-     * @param _governanceHatReward The amount of the vault's native token to
-     * be swapped to HAT tokens and sent to governance
+     * @param _hackersSwapTokenReward The amount of the vault's native token to be
+     * swapped to swap tokens and sent to the hacker via a vesting contract
+     * @param _governanceSwapTokenReward The amount of the vault's native token to
+     * be swapped to swap tokens and sent to governance
      */
     function addTokensToSwap(
         IERC20 _asset,
         address _hacker,
-        uint256 _hackersHatReward,
-        uint256 _governanceHatReward
+        uint256 _hackersSwapTokenReward,
+        uint256 _governanceSwapTokenReward
     ) external;
 
     /**
-     * @notice Called by governance to swap the given asset to HAT tokens and 
-     * distribute the HAT tokens: Send to governance their share and send to
+     * @notice Called by governance to swap the given asset to swap tokens and 
+     * distribute the swap tokens: Send to governance their share and send to
      * beneficiaries their share through a vesting contract.
-     * @param _asset The address of the token to be swapped to HAT tokens
+     * @param _asset The address of the token to be swapped to swap tokens
      * @param _beneficiaries Addresses of beneficiaries
-     * @param _amountOutMinimum Minimum amount of HAT tokens at swap
+     * @param _amountOutMinimum Minimum amount of swap tokens to recieve
      * @param _routingContract Routing contract to call for the swap
      * @param _routingPayload Payload to send to the _routingContract for the
      * swap

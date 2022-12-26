@@ -10,23 +10,6 @@ Hats.finance is a proactive bounty protocol for white hat hackers and security e
 
 ## Methods
 
-### HAT
-
-```solidity
-function HAT() external view returns (contract IERC20)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IERC20 | undefined |
-
 ### HUNDRED_PERCENT
 
 ```solidity
@@ -44,10 +27,10 @@ function HUNDRED_PERCENT() external view returns (uint16)
 |---|---|---|
 | _0 | uint16 | undefined |
 
-### MAX_HAT_SPLIT
+### MAX_SWAP_TOKEN_SPLIT
 
 ```solidity
-function MAX_HAT_SPLIT() external view returns (uint16)
+function MAX_SWAP_TOKEN_SPLIT() external view returns (uint16)
 ```
 
 
@@ -64,7 +47,7 @@ function MAX_HAT_SPLIT() external view returns (uint16)
 ### addTokensToSwap
 
 ```solidity
-function addTokensToSwap(contract IERC20 _asset, address _hacker, uint256 _hackersHatReward, uint256 _governanceHatReward) external nonpayable
+function addTokensToSwap(contract IERC20 _asset, address _hacker, uint256 _hackersSwapTokenReward, uint256 _governanceSwapTokenReward) external nonpayable
 ```
 
 See {IHATVaultsRegistry-addTokensToSwap}. 
@@ -77,8 +60,8 @@ See {IHATVaultsRegistry-addTokensToSwap}.
 |---|---|---|
 | _asset | contract IERC20 | undefined |
 | _hacker | address | undefined |
-| _hackersHatReward | uint256 | undefined |
-| _governanceHatReward | uint256 | undefined |
+| _hackersSwapTokenReward | uint256 | undefined |
+| _governanceSwapTokenReward | uint256 | undefined |
 
 ### createVault
 
@@ -136,10 +119,10 @@ function defaultArbitratorCanChangeBounty() external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
-### defaultBountyGovernanceHAT
+### defaultBountyGovernanceSwapToken
 
 ```solidity
-function defaultBountyGovernanceHAT() external view returns (uint16)
+function defaultBountyGovernanceSwapToken() external view returns (uint16)
 ```
 
 
@@ -153,10 +136,10 @@ function defaultBountyGovernanceHAT() external view returns (uint16)
 |---|---|---|
 | _0 | uint16 | undefined |
 
-### defaultBountyHackerHATVested
+### defaultBountyHackerSwapTokenVested
 
 ```solidity
-function defaultBountyHackerHATVested() external view returns (uint16)
+function defaultBountyHackerSwapTokenVested() external view returns (uint16)
 ```
 
 
@@ -224,7 +207,7 @@ function feeSetter() external view returns (address)
 ### generalParameters
 
 ```solidity
-function generalParameters() external view returns (uint32 hatVestingDuration, uint32 hatVestingPeriods, uint32 withdrawPeriod, uint32 safetyPeriod, uint32 withdrawRequestEnablePeriod, uint32 withdrawRequestPendingPeriod, uint32 setMaxBountyDelay, uint256 claimFee)
+function generalParameters() external view returns (uint32 swapTokenVestingDuration, uint32 swapTokenVestingPeriods, uint32 withdrawPeriod, uint32 safetyPeriod, uint32 withdrawRequestEnablePeriod, uint32 withdrawRequestPendingPeriod, uint32 setMaxBountyDelay, uint256 claimFee)
 ```
 
 
@@ -236,8 +219,8 @@ function generalParameters() external view returns (uint32 hatVestingDuration, u
 
 | Name | Type | Description |
 |---|---|---|
-| hatVestingDuration | uint32 | undefined |
-| hatVestingPeriods | uint32 | undefined |
+| swapTokenVestingDuration | uint32 | undefined |
+| swapTokenVestingPeriods | uint32 | undefined |
 | withdrawPeriod | uint32 | undefined |
 | safetyPeriod | uint32 | undefined |
 | withdrawRequestEnablePeriod | uint32 | undefined |
@@ -347,10 +330,10 @@ See {IHATVaultsRegistry-getWithdrawRequestPendingPeriod}.
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### governanceHatReward
+### governanceSwapTokenReward
 
 ```solidity
-function governanceHatReward(address) external view returns (uint256)
+function governanceSwapTokenReward(address) external view returns (uint256)
 ```
 
 
@@ -369,10 +352,10 @@ function governanceHatReward(address) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### hackersHatReward
+### hackersSwapTokenReward
 
 ```solidity
-function hackersHatReward(address, address) external view returns (uint256)
+function hackersSwapTokenReward(address, address) external view returns (uint256)
 ```
 
 
@@ -594,13 +577,13 @@ See {IHATVaultsRegistry-setDefaultChallengeTimeOutPeriod}.
 |---|---|---|
 | _defaultChallengeTimeOutPeriod | uint32 | undefined |
 
-### setDefaultHATBountySplit
+### setDefaultSwapTokenBountySplit
 
 ```solidity
-function setDefaultHATBountySplit(uint16 _defaultBountyGovernanceHAT, uint16 _defaultBountyHackerHATVested) external nonpayable
+function setDefaultSwapTokenBountySplit(uint16 _defaultBountyGovernanceSwapToken, uint16 _defaultBountyHackerSwapTokenVested) external nonpayable
 ```
 
-See {IHATVaultsRegistry-setDefaultHATBountySplit}. 
+See {IHATVaultsRegistry-setDefaultSwapTokenBountySplit}. 
 
 
 
@@ -608,8 +591,8 @@ See {IHATVaultsRegistry-setDefaultHATBountySplit}.
 
 | Name | Type | Description |
 |---|---|---|
-| _defaultBountyGovernanceHAT | uint16 | undefined |
-| _defaultBountyHackerHATVested | uint16 | undefined |
+| _defaultBountyGovernanceSwapToken | uint16 | undefined |
+| _defaultBountyHackerSwapTokenVested | uint16 | undefined |
 
 ### setEmergencyPaused
 
@@ -643,23 +626,6 @@ See {IHATVaultsRegistry-setFeeSetter}.
 |---|---|---|
 | _feeSetter | address | undefined |
 
-### setHatVestingParams
-
-```solidity
-function setHatVestingParams(uint32 _duration, uint32 _periods) external nonpayable
-```
-
-See {IHATVaultsRegistry-setHatVestingParams}. 
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _duration | uint32 | undefined |
-| _periods | uint32 | undefined |
-
 ### setMaxBountyDelay
 
 ```solidity
@@ -675,6 +641,39 @@ See {IHATVaultsRegistry-setMaxBountyDelay}.
 | Name | Type | Description |
 |---|---|---|
 | _delay | uint32 | undefined |
+
+### setSwapToken
+
+```solidity
+function setSwapToken(address _swapToken) external nonpayable
+```
+
+See {IHATVaultsRegistry-setSwapToken}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken | address | undefined |
+
+### setSwapTokenVestingParams
+
+```solidity
+function setSwapTokenVestingParams(uint32 _duration, uint32 _periods) external nonpayable
+```
+
+See {IHATVaultsRegistry-setSwapTokenVestingParams}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _duration | uint32 | undefined |
+| _periods | uint32 | undefined |
 
 ### setVaultVisibility
 
@@ -747,6 +746,23 @@ See {IHATVaultsRegistry-swapAndSend}.
 | _routingContract | address | undefined |
 | _routingPayload | bytes | undefined |
 
+### swapToken
+
+```solidity
+function swapToken() external view returns (contract IERC20)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IERC20 | undefined |
+
 ### tokenLockFactory
 
 ```solidity
@@ -812,13 +828,13 @@ See {IHATVaultsRegistry-validateChallengeTimeOutPeriod}.
 |---|---|---|
 | _challengeTimeOutPeriod | uint32 | undefined |
 
-### validateHATSplit
+### validateSwapTokenSplit
 
 ```solidity
-function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external pure
+function validateSwapTokenSplit(uint16 _bountyGovernanceSwapToken, uint16 _bountyHackerSwapTokenVested) external pure
 ```
 
-See {IHATVaultsRegistry-validateHATSplit}. 
+See {IHATVaultsRegistry-validateSwapTokenSplit}. 
 
 
 
@@ -826,8 +842,8 @@ See {IHATVaultsRegistry-validateHATSplit}.
 
 | Name | Type | Description |
 |---|---|---|
-| _bountyGovernanceHAT | uint16 | undefined |
-| _bountyHackerHATVested | uint16 | undefined |
+| _bountyGovernanceSwapToken | uint16 | undefined |
+| _bountyHackerSwapTokenVested | uint16 | undefined |
 
 
 
@@ -870,7 +886,7 @@ event OwnershipTransferred(address indexed previousOwner, address indexed newOwn
 ### RegistryCreated
 
 ```solidity
-event RegistryCreated(address _hatVaultImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod, bool _defaultArbitratorCanChangeBounty)
+event RegistryCreated(address _hatVaultImplementation, address _swapToken, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceSwapToken, uint256 _bountyHackerSwapTokenVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod, bool _defaultArbitratorCanChangeBounty)
 ```
 
 Emitted on deployment of the registry
@@ -882,11 +898,11 @@ Emitted on deployment of the registry
 | Name | Type | Description |
 |---|---|---|
 | _hatVaultImplementation  | address | undefined |
-| _HAT  | address | undefined |
+| _swapToken  | address | undefined |
 | _tokenLockFactory  | address | undefined |
 | _generalParameters  | IHATVaultsRegistry.GeneralParameters | undefined |
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
+| _bountyGovernanceSwapToken  | uint256 | undefined |
+| _bountyHackerSwapTokenVested  | uint256 | undefined |
 | _hatGovernance  | address | undefined |
 | _defaultArbitrator  | address | undefined |
 | _defaultChallengePeriod  | uint256 | undefined |
@@ -973,13 +989,13 @@ Emitted when a new default challenge timeout period is set
 |---|---|---|
 | _defaultChallengeTimeOutPeriod  | uint256 | undefined |
 
-### SetDefaultHATBountySplit
+### SetDefaultSwapTokenBountySplit
 
 ```solidity
-event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested)
+event SetDefaultSwapTokenBountySplit(uint256 _defaultBountyGovernanceSwapToken, uint256 _defaultBountyHackerSwapTokenVested)
 ```
 
-Emitted when a new default HAT bounty split is set
+Emitted when a new default swap token bounty split is set
 
 
 
@@ -987,8 +1003,8 @@ Emitted when a new default HAT bounty split is set
 
 | Name | Type | Description |
 |---|---|---|
-| _defaultBountyGovernanceHAT  | uint256 | undefined |
-| _defaultBountyHackerHATVested  | uint256 | undefined |
+| _defaultBountyGovernanceSwapToken  | uint256 | undefined |
+| _defaultBountyHackerSwapTokenVested  | uint256 | undefined |
 
 ### SetEmergencyPaused
 
@@ -1022,23 +1038,6 @@ Emitted when a new fee setter is set
 |---|---|---|
 | _feeSetter `indexed` | address | undefined |
 
-### SetHatVestingParams
-
-```solidity
-event SetHatVestingParams(uint256 _duration, uint256 _periods)
-```
-
-Emitted when new HAT vesting parameters are set
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _duration  | uint256 | undefined |
-| _periods  | uint256 | undefined |
-
 ### SetMaxBountyDelay
 
 ```solidity
@@ -1054,6 +1053,39 @@ Emitted when a new timelock delay for setting the max bounty is set
 | Name | Type | Description |
 |---|---|---|
 | _delay  | uint256 | undefined |
+
+### SetSwapToken
+
+```solidity
+event SetSwapToken(address _swapToken)
+```
+
+Emitted when a new swap token is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken  | address | undefined |
+
+### SetSwapTokenVestingParams
+
+```solidity
+event SetSwapTokenVestingParams(uint256 _duration, uint256 _periods)
+```
+
+Emitted when new swap token vesting parameters are set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _duration  | uint256 | undefined |
+| _periods  | uint256 | undefined |
 
 ### SetVaultVisibility
 
@@ -1112,7 +1144,7 @@ Emitted when new durations are set for withdraw period and safety period
 event SwapAndSend(address indexed _beneficiary, uint256 _amountSwapped, uint256 _amountSent, address indexed _tokenLock)
 ```
 
-Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens are sent to beneficiary through vesting contract
+Emitted when a swap of vault tokens to the swap token is done and the swap tokens are sent to beneficiary through vesting contract
 
 
 
@@ -1234,39 +1266,6 @@ Raised on {setMaxBountyDelay} if the max bounty to be set is shorter than 2 days
 
 
 
-### HatVestingDurationSmallerThanPeriods
-
-```solidity
-error HatVestingDurationSmallerThanPeriods()
-```
-
-Raised on {setHatVestingParams} if the vesting duration is  smaller than the vesting periods
-
-
-
-
-### HatVestingDurationTooLong
-
-```solidity
-error HatVestingDurationTooLong()
-```
-
-Raised on {setHatVestingParams} if the vesting duration to be set is longer than 180 days
-
-
-
-
-### HatVestingPeriodsCannotBeZero
-
-```solidity
-error HatVestingPeriodsCannotBeZero()
-```
-
-Raised on {setHatVestingParams} if the vesting periods to be set is 0
-
-
-
-
 ### NotEnoughFeePaid
 
 ```solidity
@@ -1300,13 +1299,46 @@ Raised on {swapAndSend} if the swap was not successful
 
 
 
-### TotalHatsSplitPercentageShouldBeUpToMaxHATSplit
+### SwapTokenVestingDurationSmallerThanPeriods
 
 ```solidity
-error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit()
+error SwapTokenVestingDurationSmallerThanPeriods()
 ```
 
-Raised on {setDefaultHATBountySplit} if the split to be set is greater than 20% (defined as 2000)
+Raised on {setSwapTokenVestingParams} if the vesting duration is  smaller than the vesting periods
+
+
+
+
+### SwapTokenVestingDurationTooLong
+
+```solidity
+error SwapTokenVestingDurationTooLong()
+```
+
+Raised on {setSwapTokenVestingParams} if the vesting duration to be set is longer than 180 days
+
+
+
+
+### SwapTokenVestingPeriodsCannotBeZero
+
+```solidity
+error SwapTokenVestingPeriodsCannotBeZero()
+```
+
+Raised on {setSwapTokenVestingParams} if the vesting periods to be set is 0
+
+
+
+
+### TotalSwapTokenSplitPercentageShouldBeUpToMaxSwapTokenSplit
+
+```solidity
+error TotalSwapTokenSplitPercentageShouldBeUpToMaxSwapTokenSplit()
+```
+
+Raised on {setDefaultSwapTokenBountySplit} if the split to be set is greater than 20% (defined as 2000)
 
 
 
