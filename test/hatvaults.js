@@ -2622,7 +2622,7 @@ contract("HatVaults", (accounts) => {
 
     let expectedReward = await calculateExpectedReward(staker);
 
-    tx = await vault.redeemAndClaim(web3.utils.toWei("1"), staker, staker, { from: staker });
+    tx = await vault.methods["redeemAndClaim(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, { from: staker });
 
     let logs = await rewardController.getPastEvents('ClaimReward', {
         fromBlock: tx.blockNumber,
@@ -2675,7 +2675,116 @@ contract("HatVaults", (accounts) => {
 
     expectedReward = await calculateExpectedReward(staker);
 
-    tx = await vault.withdrawAndClaim(web3.utils.toWei("1"), staker, staker, { from: staker });
+    tx = await vault.methods["withdrawAndClaim(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, { from: staker });
+
+    logs = await rewardController.getPastEvents('ClaimReward', {
+        fromBlock: tx.blockNumber,
+        toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "ClaimReward");
+    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._user.toString(), staker);
+    assert.equal(logs[0].args._amount.toString(), expectedReward.toString());
+  });
+
+  it("claim reward after partial withdraw (slippage protection)", async () => {
+    await setUpGlobalVars(
+      accounts,
+      (await web3.eth.getBlock("latest")).number,
+      8000,
+      [7000, 2500, 500],
+      [1000, 500],
+      10000
+    );
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("2"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("2"));
+    await vault.deposit(web3.utils.toWei("2"), staker, { from: staker });
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    await advanceToNonSafetyPeriod();
+    await vault.withdrawRequest({ from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+
+    try {
+      await vault.methods["redeemAndClaim(uint256,address,address,uint256)"](web3.utils.toWei("1"), staker, staker, web3.utils.toWei("1.01"), { from: staker });
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "RedeemSlippageProtection");
+    }
+
+    let expectedReward = await calculateExpectedReward(staker);
+
+    tx = await vault.methods["redeemAndClaim(uint256,address,address,uint256)"](web3.utils.toWei("1"), staker, staker, web3.utils.toWei("1"), { from: staker });
+
+    let logs = await rewardController.getPastEvents('ClaimReward', {
+        fromBlock: tx.blockNumber,
+        toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "ClaimReward");
+    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._user.toString(), staker);
+    assert.equal(logs[0].args._amount.toString(), expectedReward.toString());
+    
+    assert.equal(
+      (await hatToken.balanceOf(rewardController.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())).sub(expectedReward).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      expectedReward.toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await stakingToken.balanceOf(vault.address),
+      web3.utils.toWei("1")
+    );
+    rewardControllerExpectedHatsBalance = await hatToken.balanceOf(rewardController.address);
+    let originalReward = expectedReward;
+    expectedReward = await calculateExpectedReward(staker);
+
+    tx = await rewardController.claimReward(vault.address, staker, { from: staker });
+    assert.equal(tx.logs[2].event, "ClaimReward");
+    assert.equal(tx.logs[2].args._vault, vault.address);
+
+    assert.equal(
+      (await hatToken.balanceOf(rewardController.address)).toString(),
+      rewardControllerExpectedHatsBalance.sub(expectedReward).toString()
+    );
+    assert.equal(
+      (await hatToken.balanceOf(staker)).toString(),
+      originalReward.add(expectedReward).toString()
+    );
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await stakingToken.balanceOf(vault.address),
+      web3.utils.toWei("1")
+    );
+
+    await advanceToNonSafetyPeriod();
+    await vault.withdrawRequest({ from: staker });
+    await utils.increaseTime(7 * 24 * 3600);
+
+    try {
+      await vault.methods["withdrawAndClaim(uint256,address,address,uint256)"](web3.utils.toWei("1"), staker, staker, web3.utils.toWei("0.99"), { from: staker });
+      assert(false, "bad slippage protection");
+    } catch (ex) {
+      assertVMException(ex, "WithdrawSlippageProtection");
+    }
+
+    expectedReward = await calculateExpectedReward(staker);
+
+    tx = await vault.methods["withdrawAndClaim(uint256,address,address,uint256)"](web3.utils.toWei("1"), staker, staker, web3.utils.toWei("1"), { from: staker });
 
     logs = await rewardController.getPastEvents('ClaimReward', {
         fromBlock: tx.blockNumber,
