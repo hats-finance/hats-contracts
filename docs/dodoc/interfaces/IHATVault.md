@@ -247,7 +247,7 @@ function deposit(uint256 assets, address receiver, uint256 minShares) external n
 
 
 
-*Deposit funds to the vault. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify minimum shares to be minted for slippage protection*
+*Deposit funds to the vault. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify minimum shares to be minted for slippage protection.*
 
 #### Parameters
 
@@ -498,7 +498,7 @@ function mint(uint256 shares, address receiver, uint256 maxAssets) external nonp
 
 
 
-*Deposit funds to the vault based on the amount of shares to mint specified. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify maximum assets to be deposited for slippage protection*
+*Deposit funds to the vault based on the amount of shares to mint specified. Can only be called if the committee had checked in and deposits are not paused, and the registry is not in an emergency pause. Allows to specify maximum assets to be deposited for slippage protection.*
 
 #### Parameters
 
@@ -694,7 +694,7 @@ Returns the amount of shares to be burned to give the user the exact amount of a
 function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection.
 
 
 
@@ -736,6 +736,31 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
+
+### redeemAndClaim
+
+```solidity
+function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256 assets)
+```
+
+Redeem shares in the vault for the respective amount of underlying assets and claim the HAT reward that the user has earned. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection.
+
+*See {IERC4626-redeem}.*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | Amount of shares to redeem |
+| receiver | address | Address of receiver of the funds  |
+| owner | address | Address of owner of the funds |
+| minAssets | uint256 | Minimum amount of assets to receive for the shares |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | undefined |
 
 ### redeemAndClaim
 
@@ -1094,7 +1119,7 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
 function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256)
 ```
 
-Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection
+Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection.
 
 
 
@@ -1136,6 +1161,31 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
+
+### withdrawAndClaim
+
+```solidity
+function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256 shares)
+```
+
+Withdraw previously deposited funds from the vault and claim the HAT reward that the user has earned. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify maximum shares to be burnt for slippage protection.
+
+*See {IERC4626-withdraw}.*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | Amount of tokens to withdraw |
+| receiver | address | Address of receiver of the funds |
+| owner | address | Address of owner of the funds |
+| maxShares | uint256 | Maximum amount of shares to burn for the assets |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | undefined |
 
 ### withdrawAndClaim
 

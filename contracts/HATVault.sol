@@ -551,20 +551,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         return super.deposit(assets, receiver);
     }
 
-    /** @notice See {IHATVault-deposit}. */
-    function deposit(uint256 assets, address receiver, uint256 minShares) public virtual returns (uint256) {
-        uint256 shares = deposit(assets, receiver);
-        if (shares < minShares) revert DepositSlippageProtection();
-        return shares;
-    }
-
-    /** @notice See {IHATVault-mint}. */
-    function mint(uint256 shares, address receiver, uint256 maxAssets) public virtual returns (uint256) {
-        uint256 assets = mint(shares, receiver);
-        if (assets > maxAssets) revert MintSlippageProtection();
-        return assets;
-    }
-
     /** @notice See {IHATVault-withdraw}. */
     function withdraw(uint256 assets, address receiver, address owner, uint256 maxShares) public virtual returns (uint256) {
         uint256 shares = withdraw(assets, receiver, owner);
@@ -576,6 +562,38 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) public virtual returns (uint256) {
         uint256 assets = redeem(shares, receiver, owner);
         if (assets < minAssets) revert RedeemSlippageProtection();
+        return assets;
+    }
+
+    /** @notice See {IHATVault-withdrawAndClaim}. */
+    function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares) external returns (uint256 shares) {
+        shares = withdraw(assets, receiver, owner, maxShares);
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            rewardControllers[i].claimReward(address(this), owner);
+            unchecked { ++i; }
+        }
+    }
+
+    /** @notice See {IHATVault-redeemAndClaim}. */
+    function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets) external returns (uint256 assets) {
+        assets = redeem(shares, receiver, owner, minAssets);
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            rewardControllers[i].claimReward(address(this), owner);
+            unchecked { ++i; }
+        }
+    }
+
+    /** @notice See {IHATVault-deposit}. */
+    function deposit(uint256 assets, address receiver, uint256 minShares) external virtual returns (uint256) {
+        uint256 shares = deposit(assets, receiver);
+        if (shares < minShares) revert DepositSlippageProtection();
+        return shares;
+    }
+
+    /** @notice See {IHATVault-mint}. */
+    function mint(uint256 shares, address receiver, uint256 maxAssets) external virtual returns (uint256) {
+        uint256 assets = mint(shares, receiver);
+        if (assets > maxAssets) revert MintSlippageProtection();
         return assets;
     }
 
