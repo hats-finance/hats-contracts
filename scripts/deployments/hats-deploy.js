@@ -4,6 +4,7 @@ const { deployHATToken } = require("./hattoken-deploy.js");
 const { deployHATTimelockController } = require("./hattimelockcontroller-deploy.js");
 const { deployTokenLockFactory } = require("./tokenlockfactory-deploy.js");
 const { deployHATVaults } = require("./hatvaultsregistry-deploy.js");
+const { deployHATVaultsNFT } = require("./hatvaultsnft-deploy.js");
 const { hatsVerify } = require("./hats-verify.js");
 const fs = require("fs");
 const { network } = require("hardhat");
@@ -14,6 +15,10 @@ async function main() {
   const deployerAddress = await deployer.getAddress();
   console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
+
+  if (!config["governance"] && network.name === "hardhat") {
+    config["governance"] = deployerAddress;
+  }
 
   let hatTimelockController = config["hatTimelockController"];
   if (!hatTimelockController) {
@@ -58,6 +63,16 @@ async function main() {
   config["rewardControllerImplementation"] = rewardControllerImplementations.map((x) => x.address);
   config["hatVaultImplementation"] = hatVaultImplementation.address;
 
+  console.log("Deploying HATVaultsNFT");
+  let { hatVaultsV2Data, hatVaultsNFT, merkleTreeIPFSRef, root, deadline } = (await deployHATVaultsNFT(config));
+
+  config["hatVaultsV2Data"] = hatVaultsV2Data.address;
+  config["hatVaultsNFT"] = hatVaultsNFT.address;
+
+  config["hatVaultsNFTConf"]["merkleTreeIPFSRef"] = merkleTreeIPFSRef;
+  config["hatVaultsNFTConf"]["root"] = root;
+  config["hatVaultsNFTConf"]["deadline"] = deadline;
+
   ADDRESSES[network.name] = {
     governance: config["governance"],
     arbitrator: config["arbitrator"],
@@ -68,7 +83,9 @@ async function main() {
     hatVaultsRegistry: config["hatVaultsRegistry"],
     rewardControllers: config["rewardControllers"],
     rewardControllerImplementations: config["rewardControllerImplementations"] || [],
-    hatVaultImplementation: config["hatVaultImplementation"]
+    hatVaultImplementation: config["hatVaultImplementation"],
+    hatVaultsV2Data: config["hatVaultsV2Data"],
+    hatVaultsNFT: config["hatVaultsNFT"]
   };
   const outputFile = __dirname + '/addresses.json';
   fs.writeFileSync(outputFile, JSON.stringify(ADDRESSES, null, 2));
@@ -77,7 +94,7 @@ async function main() {
   console.log(ADDRESSES[network.name]);
   if (network.name !== "hardhat") {
     console.log("Verifying contracts");
-    await hatsVerify(ADDRESSES[network.name]).catch((error) => { 
+    await hatsVerify(ADDRESSES[network.name], config).catch((error) => { 
       console.error("verification failed");
       console.error(error);
     });

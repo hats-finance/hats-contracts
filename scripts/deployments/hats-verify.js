@@ -1,10 +1,12 @@
 const CONFIG = require("./config.json");
 const ADDRESSES = require("./addresses.json");
 
-async function main(config) {
-  let addresses = config;
+async function main(addresses, config) {
   if (!config) {
     config = CONFIG[network.name];
+  }
+
+  if (!addresses) {
     addresses = ADDRESSES[network.name];
   }
 
@@ -45,8 +47,8 @@ async function main(config) {
   let rewardControllerImplementations = addresses["rewardControllerImplementations"];
   let hatVaultImplementation = addresses["hatVaultImplementation"];
 
-  let bountyGovernanceHAT = config["hatVaultsRegistry"]["bountyGovernanceHAT"];
-  let bountyHackerHATVested = config["hatVaultsRegistry"]["bountyHackerHATVested"];
+  let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
+  let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
 
   await verifyContract(arbitrator, []);
   for (const rewardControllerImplementation of rewardControllerImplementations ) {
@@ -62,6 +64,16 @@ async function main(config) {
     bountyHackerHATVested,
     tokenLockFactory
   ]);
+
+  let hatVaultsV2Data = addresses["hatVaultsV2Data"];
+  await verifyContract(hatVaultsV2Data, [hatVaultsRegistry]);
+
+  let hatVaultsNFT = addresses["hatVaultsNFT"];
+  let merkleTreeIPFSRef = config["hatVaultsNFTConf"]["merkleTreeIPFSRef"];
+  let root = config["hatVaultsNFTConf"]["root"];
+  let deadline = config["hatVaultsNFTConf"]["deadline"];
+
+  await verifyContract(hatVaultsNFT, [merkleTreeIPFSRef, root, deadline]);
 }
 
 
