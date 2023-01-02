@@ -331,6 +331,22 @@ Called by governance to set the timelock delay for setting the max bounty (the t
 |---|---|---|
 | _delay | uint32 | The time period for the delay. Must be at least 2 days. |
 
+### setSwapToken
+
+```solidity
+function setSwapToken(address _swapToken) external nonpayable
+```
+
+Called by governance to set a new swap token
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken | address | the new swap token address |
+
 ### setVaultVisibility
 
 ```solidity
@@ -659,6 +675,22 @@ Emitted when a new timelock delay for setting the max bounty is set
 | Name | Type | Description |
 |---|---|---|
 | _delay  | uint256 | The time period for the delay |
+
+### SetSwapToken
+
+```solidity
+event SetSwapToken(address indexed _swapToken)
+```
+
+Emitted when a new swap token is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken `indexed` | address | The new swap token address |
 
 ### SetVaultVisibility
 

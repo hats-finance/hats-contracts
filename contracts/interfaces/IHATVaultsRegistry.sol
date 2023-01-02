@@ -320,11 +320,23 @@ interface IHATVaultsRegistry {
     event SetEmergencyPaused(bool _isEmergencyPaused);
 
     /**
+     * @notice Emitted when a new swap token is set
+     * @param _swapToken The new swap token address
+     */
+    event SetSwapToken(address indexed _swapToken);
+
+    /**
      * @notice Called by governance to pause/unpause the system in case of an
      * emergency
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
     function setEmergencyPaused(bool _isEmergencyPaused) external;
+
+    /**
+     * @notice Called by governance to set a new swap token
+     * @param _swapToken the new swap token address
+     */
+    function setSwapToken(address _swapToken) external;
 
     /**
      * @notice Emit an event that includes the given _descriptionHash

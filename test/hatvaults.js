@@ -4844,6 +4844,153 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
+  it("approve + swapAndSend change swap token", async () => {
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
+    var staker = accounts[4];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+
+    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2]],
+      0,
+      router.address,
+      payload
+    );
+    assert.equal(
+      await stakingToken.allowance(hatVaultsRegistry.address, router.address),
+      0
+    );
+    assert.equal(tx.logs[1].event, "SwapAndSend");
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal(
+      await vestingTokenLock.owner(),
+      "0x0000000000000000000000000000000000000000"
+    );
+    assert.equal(
+      (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
+      tx.logs[1].args._amountSent.toString()
+    );
+    var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
+      .mul(new web3.utils.BN(9))
+      .div(new web3.utils.BN(2))
+      .div(new web3.utils.BN(100));
+    assert.equal(
+      tx.logs[1].args._amountSent.toString(),
+      expectedHackerReward.toString()
+    );
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("0.8"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("0.8"));
+    await vault.deposit(web3.utils.toWei("0.8"), staker, { from: staker });
+
+    let stakingToken2 = await ERC20Mock.new("Staking2", "STK2");
+    await stakingToken2.mint(router.address, web3.utils.toWei("2500000"));
+
+    await advanceToSafetyPeriod();
+    tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+
+    try {
+      await hatVaultsRegistry.setSwapToken(stakingToken2.address, { from: accounts[1] });
+      assert(false, "only owner");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    await hatVaultsRegistry.setSwapToken(stakingToken2.address);
+
+    path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, stakingToken2.address]
+    );
+
+    amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      accounts[2]
+    );
+    amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [accounts[2]],
+      0,
+      router.address,
+      payload
+    );
+    assert.equal(
+      await stakingToken.allowance(hatVaultsRegistry.address, router.address),
+      0
+    );
+    assert.equal(tx.logs[1].event, "SwapAndSend");
+    vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+    assert.equal(
+      await vestingTokenLock.owner(),
+      "0x0000000000000000000000000000000000000000"
+    );
+    assert.equal(
+      (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
+      "0"
+    );
+    assert.equal(
+      (await stakingToken2.balanceOf(vestingTokenLock.address)).toString(),
+      tx.logs[1].args._amountSent.toString()
+    );
+    expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
+      .mul(new web3.utils.BN(9))
+      .div(new web3.utils.BN(2))
+      .div(new web3.utils.BN(100));
+    assert.equal(
+      tx.logs[1].args._amountSent.toString(),
+      expectedHackerReward.toString()
+    );
+  });
+
   it("swapAndSend with duplicate beneficiary", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
     var staker = accounts[4];
