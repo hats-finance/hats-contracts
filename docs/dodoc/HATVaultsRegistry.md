@@ -676,6 +676,22 @@ See {IHATVaultsRegistry-setMaxBountyDelay}.
 |---|---|---|
 | _delay | uint32 | undefined |
 
+### setSwapToken
+
+```solidity
+function setSwapToken(address _swapToken) external nonpayable
+```
+
+See {IHATVaultsRegistry-setSwapToken}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken | address | undefined |
+
 ### setVaultVisibility
 
 ```solidity
@@ -1054,6 +1070,22 @@ Emitted when a new timelock delay for setting the max bounty is set
 | Name | Type | Description |
 |---|---|---|
 | _delay  | uint256 | undefined |
+
+### SetSwapToken
+
+```solidity
+event SetSwapToken(address indexed _swapToken)
+```
+
+Emitted when a new swap token is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _swapToken `indexed` | address | undefined |
 
 ### SetVaultVisibility
 

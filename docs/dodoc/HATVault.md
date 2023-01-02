@@ -1123,6 +1123,31 @@ See {IHATVault-redeem}.
 ### redeemAndClaim
 
 ```solidity
+function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256 assets)
+```
+
+See {IHATVault-redeemAndClaim}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | undefined |
+| receiver | address | undefined |
+| owner | address | undefined |
+| minAssets | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | undefined |
+
+### redeemAndClaim
+
+```solidity
 function redeemAndClaim(uint256 shares, address receiver, address owner) external nonpayable returns (uint256 assets)
 ```
 
@@ -1636,6 +1661,31 @@ See {IHATVault-withdraw}.
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
+
+### withdrawAndClaim
+
+```solidity
+function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares) external nonpayable returns (uint256 shares)
+```
+
+See {IHATVault-withdrawAndClaim}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| assets | uint256 | undefined |
+| receiver | address | undefined |
+| owner | address | undefined |
+| maxShares | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| shares | uint256 | undefined |
 
 ### withdrawAndClaim
 

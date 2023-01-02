@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import "../HATVaultsRegistry.sol";
 import "../RewardController.sol";
-
 //this contract is used as an helper contract only for testing purpose
 
 contract VaultsManagerMock {
@@ -15,10 +14,11 @@ contract VaultsManagerMock {
                     address _committee,
                     uint16 _maxBounty,
                     HATVault.BountySplit memory _bountySplit,
-                    string memory _descriptionHash,
-                    uint32 _bountyVestingDuration,
-                    uint32 _bountyVestingPeriods) external {
+                    string memory _descriptionHash
+                    ) external {
 
+        IRewardController[] memory _rewardControllers = new IRewardController[](1);
+        _rewardControllers[0] = _rewardController;
         for (uint256 i=0; i < _assets.length; i++) {
             address vault = _hatVaults.createVault(IHATVault.VaultInitParams({
                                     asset: _assets[i],
@@ -26,12 +26,12 @@ contract VaultsManagerMock {
                                     committee: _committee,
                                     name: "VAULT",
                                     symbol: "VLT",
-                                    rewardController: _rewardController,
+                                    rewardControllers: _rewardControllers,
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
                                     descriptionHash: _descriptionHash,
-                                    vestingDuration: _bountyVestingDuration,
-                                    vestingPeriods: _bountyVestingPeriods,
+                                    vestingDuration: 86400,
+                                    vestingPeriods: 10,
                                     isPaused: false
                                 }));
             _rewardController.setAllocPoint(vault, _allocPoint);

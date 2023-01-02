@@ -94,7 +94,7 @@ interface IHATVault is IERC4626Upgradeable {
     struct VaultInitParams {
         string name;
         string symbol;
-        IRewardController rewardController;
+        IRewardController[] rewardControllers;
         uint32 vestingDuration;
         uint32 vestingPeriods;
         uint16 maxBounty;
@@ -538,7 +538,7 @@ interface IHATVault is IERC4626Upgradeable {
     /**
     * @dev Deposit funds to the vault. Can only be called if the committee had
     * checked in and deposits are not paused, and the registry is not in an emergency pause.
-    * Allows to specify minimum shares to be minted for slippage protection
+    * Allows to specify minimum shares to be minted for slippage protection.
     * @param receiver Reciever of the shares from the deposit
     * @param assets Amount of vault's native token to deposit
     * @param minShares Minimum amount of shares to minted for the assets
@@ -551,7 +551,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @dev Deposit funds to the vault based on the amount of shares to mint specified.
     * Can only be called if the committee had checked in and deposits are not paused,
     * and the registry is not in an emergency pause.
-    * Allows to specify maximum assets to be deposited for slippage protection
+    * Allows to specify maximum assets to be deposited for slippage protection.
     * @param receiver Reciever of the shares from the deposit
     * @param shares Amount of vault's shares to mint
     * @param maxAssets Maximum amount of assets to deposit for the shares
@@ -567,7 +567,7 @@ interface IHATVault is IERC4626Upgradeable {
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
     * safety periods or while there is an active claim for a bounty payout.
-    * Allows to specify maximum shares to be burnt for slippage protection
+    * Allows to specify maximum shares to be burnt for slippage protection.
     * @param assets Amount of tokens to withdraw
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds
@@ -584,7 +584,7 @@ interface IHATVault is IERC4626Upgradeable {
     * submitted, and the pending period had passed, and while the withdraw
     * enabled timeout had not passed. Withdrawals are not permitted during
     * safety periods or while there is an active claim for a bounty payout.
-    * Allows to specify minimum assets to be received for slippage protection
+    * Allows to specify minimum assets to be received for slippage protection.
     * @param shares Amount of shares to redeem
     * @param receiver Address of receiver of the funds 
     * @param owner Address of owner of the funds
@@ -593,6 +593,42 @@ interface IHATVault is IERC4626Upgradeable {
     function redeem(uint256 shares, address receiver, address owner, uint256 minAssets)
         external  
         returns (uint256);
+
+    /** 
+    * @notice Withdraw previously deposited funds from the vault and claim
+    * the HAT reward that the user has earned.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * Allows to specify maximum shares to be burnt for slippage protection.
+    * @param assets Amount of tokens to withdraw
+    * @param receiver Address of receiver of the funds
+    * @param owner Address of owner of the funds
+    * @param maxShares Maximum amount of shares to burn for the assets
+    * @dev See {IERC4626-withdraw}.
+    */
+    function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares)
+        external 
+        returns (uint256 shares);
+
+    /** 
+    * @notice Redeem shares in the vault for the respective amount
+    * of underlying assets and claim the HAT reward that the user has earned.
+    * Can only be performed if a withdraw request has been previously
+    * submitted, and the pending period had passed, and while the withdraw
+    * enabled timeout had not passed. Withdrawals are not permitted during
+    * safety periods or while there is an active claim for a bounty payout.
+    * Allows to specify minimum assets to be received for slippage protection.
+    * @param shares Amount of shares to redeem
+    * @param receiver Address of receiver of the funds 
+    * @param owner Address of owner of the funds
+    * @param minAssets Minimum amount of assets to receive for the shares
+    * @dev See {IERC4626-redeem}.
+    */
+    function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets)
+        external 
+        returns (uint256 assets);
 
     /* -------------------------------------------------------------------------------- */
 

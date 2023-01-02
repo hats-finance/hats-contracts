@@ -69,7 +69,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ITokenLockFactory public immutable tokenLockFactory;
 
     // the token into which a part of the the bounty will be swapped into
-    IERC20 public immutable HAT;
+    IERC20 public HAT;
     
     // feeSetter sets the withdrawal fee
     address public feeSetter;
@@ -149,6 +149,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             defaultChallengeTimeOutPeriod,
             defaultArbitratorCanChangeBounty
         );
+    }
+
+    /** @notice See {IHATVaultsRegistry-setSwapToken}. */
+    function setSwapToken(address _swapToken) external onlyOwner {
+        HAT = IERC20(_swapToken);
+        emit SetSwapToken(_swapToken);
     }
 
     /** @notice See {IHATVaultsRegistry-setEmergencyPaused}. */

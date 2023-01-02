@@ -4,8 +4,10 @@ const { deployHATToken } = require("./hattoken-deploy.js");
 const { deployHATTimelockController } = require("./hattimelockcontroller-deploy.js");
 const { deployTokenLockFactory } = require("./tokenlockfactory-deploy.js");
 const { deployHATVaults } = require("./hatvaultsregistry-deploy.js");
+const { deployHATVaultsNFT } = require("./hatvaultsnft-deploy.js");
 const { hatsVerify } = require("./hats-verify.js");
 const fs = require("fs");
+const { network } = require("hardhat");
 
 async function main() {
   const config = CONFIG[network.name];
@@ -13,6 +15,10 @@ async function main() {
   const deployerAddress = await deployer.getAddress();
   console.log("Deploying the contracts with the account:", deployerAddress);
   console.log("Account balance:", (await deployer.getBalance()).toString());
+
+  if (!config["governance"] && network.name === "hardhat") {
+    config["governance"] = deployerAddress;
+  }
 
   let hatTimelockController = config["hatTimelockController"];
   if (!hatTimelockController) {
@@ -24,7 +30,7 @@ async function main() {
 
   let hatToken = config["hatToken"];
   if (!hatToken) {
-    console.log("Deploying HAToken");
+    console.log("Deploying HATtoken");
     hatToken = (await deployHATToken(config)).address;
   }
 
@@ -45,17 +51,27 @@ async function main() {
   console.log("Deploying HATVaults");
   let {
     hatVaultsRegistry,
-    rewardController,
-    rewardControllerImplementation,
+    rewardControllers,
+    rewardControllerImplementations,
     hatVaultImplementation,
     arbitrator
   } = (await deployHATVaults(config));
 
   config["arbitrator"] = arbitrator;
   config["hatVaultsRegistry"] = hatVaultsRegistry.address;
-  config["rewardController"] = rewardController.address;
-  config["rewardControllerImplementation"] = rewardControllerImplementation.address;
+  config["rewardControllers"] = rewardControllers.map((x) => x.address);
+  config["rewardControllerImplementation"] = rewardControllerImplementations.map((x) => x.address);
   config["hatVaultImplementation"] = hatVaultImplementation.address;
+
+  console.log("Deploying HATVaultsNFT");
+  let { hatVaultsV2Data, hatVaultsNFT, merkleTreeIPFSRef, root, deadline } = (await deployHATVaultsNFT(config));
+
+  config["hatVaultsV2Data"] = hatVaultsV2Data.address;
+  config["hatVaultsNFT"] = hatVaultsNFT.address;
+
+  config["hatVaultsNFTConf"]["merkleTreeIPFSRef"] = merkleTreeIPFSRef;
+  config["hatVaultsNFTConf"]["root"] = root;
+  config["hatVaultsNFTConf"]["deadline"] = deadline;
 
   ADDRESSES[network.name] = {
     governance: config["governance"],
@@ -65,15 +81,23 @@ async function main() {
     hatTokenLock: config["hatTokenLock"],
     tokenLockFactory: config["tokenLockFactory"],
     hatVaultsRegistry: config["hatVaultsRegistry"],
-    rewardController: config["rewardController"],
-    rewardControllerImplementation: config["rewardControllerImplementation"],
-    hatVaultImplementation: config["hatVaultImplementation"]
+    rewardControllers: config["rewardControllers"],
+    rewardControllerImplementations: config["rewardControllerImplementations"] || [],
+    hatVaultImplementation: config["hatVaultImplementation"],
+    hatVaultsV2Data: config["hatVaultsV2Data"],
+    hatVaultsNFT: config["hatVaultsNFT"]
   };
-  fs.writeFileSync(__dirname + '/addresses.json', JSON.stringify(ADDRESSES, null, 2));
+  const outputFile = __dirname + '/addresses.json';
+  fs.writeFileSync(outputFile, JSON.stringify(ADDRESSES, null, 2));
 
+  console.log(`Output written to ${outputFile}`);
+  console.log(ADDRESSES[network.name]);
   if (network.name !== "hardhat") {
     console.log("Verifying contracts");
-    await hatsVerify(ADDRESSES[network.name]);
+    await hatsVerify(ADDRESSES[network.name], config).catch((error) => { 
+      console.error("verification failed");
+      console.error(error);
+    });
   }
 }
 
