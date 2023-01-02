@@ -101,7 +101,7 @@ In the [parameters](./parameters.md) document we list which parameters are contr
 
 |who|special power|mitigation|
 |-|-|-|
-!registry.owner|block submissions and deposits, mints and transfers by calling `setEmergencyPaused`|by design| 
+!registry.owner|block submissions and deposits, mints and transfers by calling `setEmergencyPaused`. This will not block emergency withdrawals |by design| 
 |registry.owner|block all or specific transfers (including deposit/withdraw) by setting the reward controller to an invalid or malicious address|users can call `emergencyWithdraw`|
 |registry.owner|can take disproportionate share of bounties by manipulating the part that is swapped to HATs and sent to governance |maximum value is limited to 20%, the setter subject to time lock, which mitigates the problem|
 |registry.owner|block logging of claims by setting a very high claimFee|no, but it is easy to find other communication channels, no crucial systems depend on that

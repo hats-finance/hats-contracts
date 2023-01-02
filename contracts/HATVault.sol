@@ -17,7 +17,7 @@ import "./HATVaultsRegistry.sol";
 /** @title A Hats.finance vault which holds the funds for a specific project's
 * bug bounties
 * @author Hats.finance
-* @notice The HATVault can be deposited into in a permissionless maner using
+* @notice The HATVault can be deposited into in a permissionless manner using
 * the vault’s native token. When a bug is submitted and approved, the bounty 
 * is paid out using the funds in the vault. Bounties are paid out as a
 * percentage of the vault. The percentage is set according to the severity of
