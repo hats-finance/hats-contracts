@@ -18,18 +18,18 @@ const func = async function (hre) {
         let epochLength = rewardControllerConfig["epochLength"];
         let epochRewardPerBlock = rewardControllerConfig["epochRewardPerBlock"];
 
-        console.log(await deploy('RewardController', {
-            from: deployer,
-            args: [
-                (await deployments.get('HATToken')).address,
-                (await deployments.get('HATTimelockController')).address, 
-                startBlock, 
-                epochLength, 
-                epochRewardPerBlock
-            ],
-            log: true,
-            proxy: "OptimizedTransparentProxy"
-        }));
+        // console.log(await deploy('RewardController', {
+        //     from: deployer,
+        //     args: [
+        //         (await deployments.get('HATToken')).address,
+        //         (await deployments.get('HATTimelockController')).address, 
+        //         startBlock, 
+        //         epochLength, 
+        //         epochRewardPerBlock
+        //     ],
+        //     log: true,
+        //     proxy: "OptimizedTransparentProxy"
+        // }));
 
         // const rewardController = await upgrades.deployProxy(RewardController, [
         //     hatToken,

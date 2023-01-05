@@ -694,7 +694,7 @@ Returns the amount of shares to be burned to give the user the exact amount of a
 function redeem(uint256 shares, address receiver, address owner, uint256 minAssets) external nonpayable returns (uint256)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection.
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Allows to specify minimum assets to be received for slippage protection.
 
 
 
@@ -719,7 +719,7 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 function redeem(uint256 shares, address receiver, address owner) external nonpayable returns (uint256)
 ```
 
-Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Redeem shares in the vault for the respective amount of underlying assets, without transferring the accumulated reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-redeem}.*
 
@@ -1144,7 +1144,7 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 function withdraw(uint256 assets, address receiver, address owner) external nonpayable returns (uint256)
 ```
 
-Withdraw previously deposited funds from the vault, without transferring the accumulated HAT reward. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
+Withdraw previously deposited funds from the vault, without transferring the accumulated rewards. Can only be performed if a withdraw request has been previously submitted, and the pending period had passed, and while the withdraw enabled timeout had not passed. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout.
 
 *See {IERC4626-withdraw}.*
 
