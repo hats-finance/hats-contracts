@@ -41,7 +41,7 @@ async function main(config) {
     }
 
     const HATVaultsNFT = await ethers.getContractFactory("HATVaultsNFT");
-    const hatVaultsNFT = await HATVaultsNFT.deploy("", root, deadline);
+    const hatVaultsNFT = await HATVaultsNFT.deploy(merkleTreeIPFSRef, root, deadline);
     await hatVaultsNFT.deployed();
 
     if (!silent) {    

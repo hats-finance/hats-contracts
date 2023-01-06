@@ -4,7 +4,7 @@ const { network } = require("hardhat");
 const func = async function (hre) {
     const config = CONFIG[network.name];
     const { deployments, getNamedAccounts } = hre;
-    const { deploy, execute } = deployments;
+    const { deploy } = deployments;
 
     const { deployer } = await getNamedAccounts();
 
