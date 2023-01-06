@@ -10,6 +10,10 @@ const func = async function (hre) {
 
     let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
     let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
+    let swapToken = config["hatVaultsRegistryConf"]["swapToken"];
+    if (!swapToken || swapToken === "HATToken") {
+        swapToken = (await deployments.get('HATToken')).address;  
+    }
 
     await deploy('HATVaultsRegistry', {
         from: deployer,
@@ -17,7 +21,7 @@ const func = async function (hre) {
             (await deployments.get('HATVault')).address,
             (await deployments.get('HATTimelockController')).address,
             (await deployments.get('HATGovernanceArbitrator')).address,
-            (await deployments.get('HATToken')).address, // TODO: Add swap token to config
+            swapToken,
             bountyGovernanceHAT,
             bountyHackerHATVested,
             (await deployments.get('TokenLockFactory')).address,

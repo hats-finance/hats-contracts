@@ -120,11 +120,13 @@
                 "82100000000000000000",
                 "72400000000000000000",
                 "63900000000000000000"
-            ]
+            ],
+            "rewardToken": "HATToken"
         }],
         "hatVaultsRegistryConf": {
             "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "bountyHackerHATVested": "500",
+            "swapToken": "HATToken"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
