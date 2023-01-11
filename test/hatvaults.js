@@ -3871,7 +3871,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.sender, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -3935,7 +3935,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.sender, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -3964,7 +3964,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     tx = await vault.methods["mint(uint256,address)"](web3.utils.toWei("1"), staker, { from: staker2 });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.sender, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -3999,7 +3999,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.sender, staker);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -4029,7 +4029,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     tx = await safeWithdraw(vault, web3.utils.toWei("1"), staker2, staker);
 
     assert.equal(tx.logs[3].event, "Withdraw");
-    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.sender, staker2);
     assert.equal(tx.logs[3].args.receiver, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
@@ -4065,7 +4065,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.sender, staker);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -4095,7 +4095,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     tx = await safeRedeem(vault, web3.utils.toWei("1"), staker2, staker);
 
     assert.equal(tx.logs[3].event, "Withdraw");
-    assert.equal(tx.logs[3].args.caller, staker2);
+    assert.equal(tx.logs[3].args.sender, staker2);
     assert.equal(tx.logs[3].args.receiver, staker2);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
@@ -4170,7 +4170,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.sender, staker);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
@@ -4307,7 +4307,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //stake
     let tx = await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(tx.logs[3].event, "Deposit");
-    assert.equal(tx.logs[3].args.caller, staker);
+    assert.equal(tx.logs[3].args.sender, staker);
     assert.equal(tx.logs[3].args.owner, staker);
     assert.equal(tx.logs[3].args.assets.toString(), web3.utils.toWei("1"));
     assert.equal(tx.logs[3].args.shares.toString(), web3.utils.toWei("1"));
