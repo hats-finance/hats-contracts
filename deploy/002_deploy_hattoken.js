@@ -1,3 +1,5 @@
+const { network } = require("hardhat");
+
 const func = async function (hre) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
@@ -12,3 +14,4 @@ const func = async function (hre) {
 };
 module.exports = func;
 func.tags = ['HATToken'];
+func.skip = () => network.name !== "hardhat";
