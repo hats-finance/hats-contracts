@@ -21,7 +21,7 @@ const func = async function (hre) {
         let epochRewardPerBlock = rewardControllerConfig["epochRewardPerBlock"];
         let rewardToken = rewardControllerConfig["rewardToken"];
         if (!rewardToken || rewardToken === "HATToken") {
-            rewardToken = (await deployments.get('HATToken')).address;  
+            rewardToken = (await deployments.get('HATToken')).address;
         }
 
         // TODO: This also deploys new implementation every time, need to find out how to only deploy a new proxy but not new implementation
