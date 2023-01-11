@@ -13,7 +13,7 @@ contract HATTimelockController is TimelockController {
         address[] memory _proposers,
         address[] memory _executors
     // solhint-disable-next-line no-empty-blocks
-    ) TimelockController(_minDelay, _proposers, _executors) {}
+    ) TimelockController(_minDelay, _proposers, _executors, address(0)) {}
     
     // The following functions are not subject to the timelock
 
