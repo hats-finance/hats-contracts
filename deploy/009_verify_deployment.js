@@ -183,7 +183,7 @@ const func = async function (hre) {
         (await read('HATVaultsRegistry', {}, 'defaultBountyHackerHATVested')).toString() === bountyHackerHATVested.toString(),
         "HATVaultsRegistry default bountyHackerHATVested is correct (" + bountyHackerHATVested + ")"
     );
-}
+};
 
 function verify(condition, msg) {
     console.log(condition ? '\x1b[32m%s\x1b[0m' : '\x1b[31m%s\x1b[0m', msg + ": " + condition);
