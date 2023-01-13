@@ -4,7 +4,7 @@ const { network } = require("hardhat");
 const func = async function (hre) {
     const config = CONFIG[network.name];
     const { deployments, getNamedAccounts } = hre;
-    const { deploy, execute } = deployments;
+    const { deploy, execute, read } = deployments;
 
     const { deployer } = await getNamedAccounts();
 
@@ -47,7 +47,7 @@ const func = async function (hre) {
         governance = deployer;
     }
 
-    if (governance !== deployer) {
+    if ((await read('HATVaultsNFT', {}, 'owner')) !== governance) {
         await execute('HATVaultsNFT', { from: deployer, log: true }, 'transferOwnership', governance);
     }
 };

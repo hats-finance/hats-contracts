@@ -5,7 +5,7 @@ const TIMELOCK_ADMIN_ROLE = "0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c
 const func = async function (hre) {
   const config = CONFIG[network.name];
   const { deployments, getNamedAccounts } = hre;
-  const { deploy, execute } = deployments;
+  const { deploy, execute, read } = deployments;
 
   const { deployer } = await getNamedAccounts();
   
@@ -35,7 +35,9 @@ const func = async function (hre) {
     log: true,
   });
 
-  await execute('HATTimelockController', { from: deployer, log: true }, 'renounceRole', TIMELOCK_ADMIN_ROLE, deployer);
+  if ((await read('HATTimelockController', {}, 'hasRole', TIMELOCK_ADMIN_ROLE, deployer))) {
+    await execute('HATTimelockController', { from: deployer, log: true }, 'renounceRole', TIMELOCK_ADMIN_ROLE, deployer);
+  }
 };
 module.exports = func;
 func.tags = ['HATTimelockController'];
