@@ -11,7 +11,7 @@ const func = async function (hre) {
         log: true,
     });
 
-    if ((await read('HATGovernanceArbitrator', {}, 'owner')) != (await deployments.get('HATTimelockController')).address) {
+    if ((await read('HATGovernanceArbitrator', {}, 'owner')) !== (await deployments.get('HATTimelockController')).address) {
         await execute('HATGovernanceArbitrator', { from: deployer, log: true }, 'transferOwnership', (await deployments.get('HATTimelockController')).address);
     }
 };
