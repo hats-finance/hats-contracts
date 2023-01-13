@@ -1,4 +1,4 @@
-const CONFIG = require("../config.json");
+const CONFIG = require("../config.js");
 const { network } = require("hardhat");
 const TIMELOCK_ADMIN_ROLE = "0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5";
 
@@ -14,15 +14,10 @@ const func = async function (hre) {
     governance = deployer;
   }
 
-  let hatGovernanceDelay;
-  if (config["timelockDelay"]) {
-    hatGovernanceDelay = config["timelockDelay"];
-  } else {
-    hatGovernanceDelay = network.name === "mainnet" ?  60 * 60 * 24 * 7 : 60 * 5; // 7 days for mainnet or 5 minutes for testnets
-  }
+  let hatGovernanceDelay = config["timelockDelay"];
 
   let executors = config["executors"];
-  if (!executors) {
+  if (!executors && network.name === "hardhat") {
     executors = [governance];
   }
 
