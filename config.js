@@ -122,5 +122,16 @@ module.exports = {
           "root": null,
           "deadline": null
       }
+    },
+    "sepolia": {
+      "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
+      "timelockDelay": 300,
+      "executors": [ ],
+      "rewardControllersConf": [],
+      "hatToken": "", 
+      "hatVaultsRegistryConf": {
+        "bountyGovernanceHAT": "0",
+        "bountyHackerHATVested": "0"
+      }
     }
 };

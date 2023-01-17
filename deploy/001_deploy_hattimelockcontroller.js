@@ -8,15 +8,16 @@ const func = async function (hre) {
   const { deploy, execute, read } = deployments;
 
   const { deployer } = await getNamedAccounts();
+  console.log("................", deployer);
   
   let governance = config["governance"];
   if (!governance && network.name === "hardhat") {
     governance = deployer;
   }
 
-  let hatGovernanceDelay = config["timelockDelay"];
+  let hatGovernanceDelay = config.timelockDelay;
 
-  let executors = config["executors"];
+  let executors = config.executors;
   if (!executors && network.name === "hardhat") {
     executors = [governance];
   }

@@ -8,7 +8,7 @@ require("hardhat-watcher");
 require("hardhat-gas-reporter");
 require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
-require("@primitivefi/hardhat-dodoc");
+// require("@primitivefi/hardhat-dodoc");
 
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -65,6 +65,12 @@ module.exports = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    sepolia: {
+      url: `https://rpc.sepolia.org`,
+      accounts: [process.env.SEPOLIA_PK],
       gasPrice: "auto",
       gas: "auto",
     },
