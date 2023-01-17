@@ -3,6 +3,7 @@ require("@nomiclabs/hardhat-truffle5");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-etherscan");
 require("hardhat-contract-sizer");
+require('hardhat-deploy');
 require("hardhat-watcher");
 require("hardhat-gas-reporter");
 require("@openzeppelin/hardhat-upgrades");
@@ -173,6 +174,9 @@ module.exports = {
       ],
     },
   },
+  namedAccounts: {
+    deployer: 0
+  },
   solidity: {
     version: "0.8.16",
     settings: {
@@ -212,5 +216,5 @@ module.exports = {
   },
   dodoc: {
     outputDir: 'docs/dodoc',
-  },
+  }
 };
