@@ -6,7 +6,7 @@
 
 
 
-*Implementation of the ERC4626 &quot;Tokenized Vault Standard&quot; as defined in https://eips.ethereum.org/EIPS/eip-4626[EIP-4626]. This extension allows the minting and burning of &quot;shares&quot; (represented using the ERC20 inheritance) in exchange for underlying &quot;assets&quot; through standardized {deposit}, {mint}, {redeem} and {burn} workflows. This contract extends the ERC20 standard. Any additional extensions included along it would affect the &quot;shares&quot; token represented by this contract and not the &quot;assets&quot; token which is an independent contract. CAUTION: Deposits and withdrawals may incur unexpected slippage. Users should verify that the amount received of shares or assets is as expected. EOAs should operate through a wrapper that performs these checks such as https://github.com/fei-protocol/ERC4626#erc4626router-and-base[ERC4626Router]. _Available since v4.7._*
+*Implementation of the ERC4626 &quot;Tokenized Vault Standard&quot; as defined in https://eips.ethereum.org/EIPS/eip-4626[EIP-4626]. This extension allows the minting and burning of &quot;shares&quot; (represented using the ERC20 inheritance) in exchange for underlying &quot;assets&quot; through standardized {deposit}, {mint}, {redeem} and {burn} workflows. This contract extends the ERC20 standard. Any additional extensions included along it would affect the &quot;shares&quot; token represented by this contract and not the &quot;assets&quot; token which is an independent contract. CAUTION: When the vault is empty or nearly empty, deposits are at high risk of being stolen through frontrunning with a &quot;donation&quot; to the vault that inflates the price of a share. This is variously known as a donation or inflation attack and is essentially a problem of slippage. Vault deployers can protect against this attack by making an initial deposit of a non-trivial amount of the asset, such that price manipulation becomes infeasible. Withdrawals may similarly be affected by slippage. Users can protect against this attack as well unexpected slippage in general by verifying the amount received is as expected, using a wrapper that performs these checks such as https://github.com/fei-protocol/ERC4626#erc4626router-and-base[ERC4626Router]. _Available since v4.7._*
 
 ## Methods
 
@@ -321,7 +321,7 @@ function mint(uint256 shares, address receiver) external nonpayable returns (uin
 
 
 
-*See {IERC4626-mint}. *
+*See {IERC4626-mint}. As opposed to {deposit}, minting is allowed even if the vault is in a state where the price of a share is zero. In this case, the shares will be minted without requiring any assets to be deposited.*
 
 #### Parameters
 

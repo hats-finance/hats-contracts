@@ -870,7 +870,7 @@ function mint(uint256 shares, address receiver) external nonpayable returns (uin
 
 
 
-*See {IERC4626-mint}. *
+*See {IERC4626-mint}. As opposed to {deposit}, minting is allowed even if the vault is in a state where the price of a share is zero. In this case, the shares will be minted without requiring any assets to be deposited.*
 
 #### Parameters
 
@@ -2384,6 +2384,17 @@ error DelayPeriodForSettingMaxBountyHadNotPassed()
 
 ```solidity
 error DepositSlippageProtection()
+```
+
+
+
+
+
+
+### DuplicatedRewardController
+
+```solidity
+error DuplicatedRewardController()
 ```
 
 

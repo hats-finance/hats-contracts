@@ -1819,6 +1819,17 @@ error DepositSlippageProtection()
 
 
 
+### DuplicatedRewardController
+
+```solidity
+error DuplicatedRewardController()
+```
+
+
+
+
+
+
 ### MaxBountyCannotBeMoreThanMaxBountyLimit
 
 ```solidity

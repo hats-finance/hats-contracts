@@ -192,6 +192,8 @@ interface IHATVault is IERC4626Upgradeable {
     error WithdrawSlippageProtection();
     // Redeem passed max slippage
     error RedeemSlippageProtection();
+    // Cannot add the same reward controller more than once
+    error DuplicatedRewardController();
 
 
     event SubmitClaim(
