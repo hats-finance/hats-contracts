@@ -1311,7 +1311,7 @@ event CommitteeCheckedIn()
 ### Deposit
 
 ```solidity
-event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares)
+event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares)
 ```
 
 
@@ -1322,7 +1322,7 @@ event Deposit(address indexed caller, address indexed owner, uint256 assets, uin
 
 | Name | Type | Description |
 |---|---|---|
-| caller `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 | owner `indexed` | address | undefined |
 | assets  | uint256 | undefined |
 | shares  | uint256 | undefined |
@@ -1594,7 +1594,7 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 ### Withdraw
 
 ```solidity
-event Withdraw(address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
+event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
 ```
 
 
@@ -1605,7 +1605,7 @@ event Withdraw(address indexed caller, address indexed receiver, address indexed
 
 | Name | Type | Description |
 |---|---|---|
-| caller `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 | receiver `indexed` | address | undefined |
 | owner `indexed` | address | undefined |
 | assets  | uint256 | undefined |

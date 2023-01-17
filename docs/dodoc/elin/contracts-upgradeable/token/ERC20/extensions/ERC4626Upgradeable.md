@@ -64,7 +64,7 @@ function asset() external view returns (address)
 
 
 
-*See {IERC4262-asset}. *
+*See {IERC4626-asset}. *
 
 
 #### Returns
@@ -103,7 +103,7 @@ function convertToAssets(uint256 shares) external view returns (uint256 assets)
 
 
 
-*See {IERC4262-convertToAssets}. *
+*See {IERC4626-convertToAssets}. *
 
 #### Parameters
 
@@ -125,7 +125,7 @@ function convertToShares(uint256 assets) external view returns (uint256 shares)
 
 
 
-*See {IERC4262-convertToShares}. *
+*See {IERC4626-convertToShares}. *
 
 #### Parameters
 
@@ -147,7 +147,7 @@ function decimals() external view returns (uint8)
 
 
 
-*Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the value {ERC20} uses, unless this function is overridden; NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.*
+*Decimals are read from the underlying asset in the constructor and cached. If this fails (e.g., the asset has not been created yet), the cached value is set to a default obtained by `super.decimals()` (which depends on inheritance but is most likely 18). Override this function in order to set a guaranteed hardcoded value. See {IERC20Metadata-decimals}.*
 
 
 #### Returns
@@ -187,7 +187,7 @@ function deposit(uint256 assets, address receiver) external nonpayable returns (
 
 
 
-*See {IERC4262-deposit}. *
+*See {IERC4626-deposit}. *
 
 #### Parameters
 
@@ -233,7 +233,7 @@ function maxDeposit(address) external view returns (uint256)
 
 
 
-*See {IERC4262-maxDeposit}. *
+*See {IERC4626-maxDeposit}. *
 
 #### Parameters
 
@@ -255,7 +255,7 @@ function maxMint(address) external view returns (uint256)
 
 
 
-*See {IERC4262-maxMint}. *
+*See {IERC4626-maxMint}. *
 
 #### Parameters
 
@@ -277,7 +277,7 @@ function maxRedeem(address owner) external view returns (uint256)
 
 
 
-*See {IERC4262-maxRedeem}. *
+*See {IERC4626-maxRedeem}. *
 
 #### Parameters
 
@@ -299,7 +299,7 @@ function maxWithdraw(address owner) external view returns (uint256)
 
 
 
-*See {IERC4262-maxWithdraw}. *
+*See {IERC4626-maxWithdraw}. *
 
 #### Parameters
 
@@ -321,7 +321,7 @@ function mint(uint256 shares, address receiver) external nonpayable returns (uin
 
 
 
-*See {IERC4262-mint}. *
+*See {IERC4626-mint}. *
 
 #### Parameters
 
@@ -361,7 +361,7 @@ function previewDeposit(uint256 assets) external view returns (uint256)
 
 
 
-*See {IERC4262-previewDeposit}. *
+*See {IERC4626-previewDeposit}. *
 
 #### Parameters
 
@@ -383,7 +383,7 @@ function previewMint(uint256 shares) external view returns (uint256)
 
 
 
-*See {IERC4262-previewMint}. *
+*See {IERC4626-previewMint}. *
 
 #### Parameters
 
@@ -405,7 +405,7 @@ function previewRedeem(uint256 shares) external view returns (uint256)
 
 
 
-*See {IERC4262-previewRedeem}. *
+*See {IERC4626-previewRedeem}. *
 
 #### Parameters
 
@@ -427,7 +427,7 @@ function previewWithdraw(uint256 assets) external view returns (uint256)
 
 
 
-*See {IERC4262-previewWithdraw}. *
+*See {IERC4626-previewWithdraw}. *
 
 #### Parameters
 
@@ -449,7 +449,7 @@ function redeem(uint256 shares, address receiver, address owner) external nonpay
 
 
 
-*See {IERC4262-redeem}. *
+*See {IERC4626-redeem}. *
 
 #### Parameters
 
@@ -490,7 +490,7 @@ function totalAssets() external view returns (uint256)
 
 
 
-*See {IERC4262-totalAssets}. *
+*See {IERC4626-totalAssets}. *
 
 
 #### Returns
@@ -571,7 +571,7 @@ function withdraw(uint256 assets, address receiver, address owner) external nonp
 
 
 
-*See {IERC4262-withdraw}. *
+*See {IERC4626-withdraw}. *
 
 #### Parameters
 
@@ -612,7 +612,7 @@ event Approval(address indexed owner, address indexed spender, uint256 value)
 ### Deposit
 
 ```solidity
-event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares)
+event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares)
 ```
 
 
@@ -623,7 +623,7 @@ event Deposit(address indexed caller, address indexed owner, uint256 assets, uin
 
 | Name | Type | Description |
 |---|---|---|
-| caller `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 | owner `indexed` | address | undefined |
 | assets  | uint256 | undefined |
 | shares  | uint256 | undefined |
@@ -665,7 +665,7 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 ### Withdraw
 
 ```solidity
-event Withdraw(address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
+event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
 ```
 
 
@@ -676,7 +676,7 @@ event Withdraw(address indexed caller, address indexed receiver, address indexed
 
 | Name | Type | Description |
 |---|---|---|
-| caller `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 | receiver `indexed` | address | undefined |
 | owner `indexed` | address | undefined |
 | assets  | uint256 | undefined |
