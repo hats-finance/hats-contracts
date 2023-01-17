@@ -1,5 +1,5 @@
-const CONFIG = require("../config.js");
 const { network } = require("hardhat");
+const CONFIG = require("../config.js");
 const config = CONFIG[network.name];
 
 const func = async function (hre) {

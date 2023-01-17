@@ -126,9 +126,9 @@ module.exports = {
     "sepolia": {
       "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
       "timelockDelay": 300,
-      "executors": [ ],
-      "rewardControllersConf": [],
-      "hatToken": "", 
+      "executors": [], // proposal executors - if this empty, governance will be an executor
+      "rewardControllersConf": [], // no reward controllers
+      "hatToken": "",  // deploy a fresh HATToken contract
       "hatVaultsRegistryConf": {
         "bountyGovernanceHAT": "0",
         "bountyHackerHATVested": "0"

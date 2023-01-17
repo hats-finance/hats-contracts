@@ -28,11 +28,15 @@ Audit reports are in the [audit](./audit) directory.
 
 Please report any security issues you find to contact@hats.finance
 
-## Check deployment
+## Deployment
 
-`npx hardhat run --network {rinkeby|mainnet} scripts/checks/check.js`
+Please refer to [deployment](./docs/deployment.md) for information about deploying. For a quick sanity check of the deployment, you can run:
+
+`npx hardhat deploy --network {rinkeby|mainnet} --tags verify`
 
 ## Contribute
+
+PRs are welcome - but you may want to coordinate with kufi@hats.finance to coordinate before spending a lot of time on our code
 
 ## License
 
