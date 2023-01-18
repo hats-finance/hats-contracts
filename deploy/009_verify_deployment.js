@@ -30,7 +30,7 @@ const func = async function (hre) {
     const CANCELLER_ROLE = await read('HATTimelockController', {}, 'CANCELLER_ROLE');
     const EXECUTOR_ROLE = await read('HATTimelockController', {}, 'EXECUTOR_ROLE');
 
-    // prin some general info before diagnosing
+    // print some general info before diagnosing
     console.log("************************************************");
     console.log("deployer: ", deployer);
     console.log("governance: ", governance);
