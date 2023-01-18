@@ -16,17 +16,18 @@ const func = async function (hre) {
         log: true,
     });
 
-    let merkleTreeIPFSRef = config["hatVaultsNFTConf"]["merkleTreeIPFSRef"];
+    const nftConfig = config.hatVaultsNFTConf || {};
+    let merkleTreeIPFSRef = nftConfig.merkleTreeIPFSRef;
     if (!merkleTreeIPFSRef) {
         merkleTreeIPFSRef = "";
     }
 
-    let root = config["hatVaultsNFTConf"]["root"];
+    let root = nftConfig.root;
     if (!root) {
         root = ethers.constants.HashZero;
     }
 
-    let deadline = config["hatVaultsNFTConf"]["deadline"];
+    let deadline = nftConfig.deadline;
     if (!deadline) {
         const now = (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
         deadline = now + (5 * 60);
@@ -52,4 +53,4 @@ const func = async function (hre) {
     }
 };
 module.exports = func;
-func.tags = ['HATVaultsRegistry'];
+func.tags = ['HATVaultsNFT'];

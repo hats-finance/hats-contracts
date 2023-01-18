@@ -68,6 +68,12 @@ module.exports = {
       gasPrice: "auto",
       gas: "auto",
     },
+    sepolia: {
+      url: `https://rpc.sepolia.org`,
+      accounts: [process.env.SEPOLIA_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
     hardhat: {
       allowUnlimitedContractSize: true,
       accounts: [

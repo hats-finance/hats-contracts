@@ -8,9 +8,9 @@ const func = async function (hre) {
 
     const { deployer } = await getNamedAccounts();
 
-    let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
-    let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
-    let swapToken = config["hatVaultsRegistryConf"]["swapToken"];
+    let bountyGovernanceHAT = config.hatVaultsRegistryConf.bountyGovernanceHAT;
+    let bountyHackerHATVested = config.hatVaultsRegistryConf.bountyHackerHATVested;
+    let swapToken = config.hatVaultsRegistryConf.swapToken;
     if (!swapToken || swapToken === "HATToken") {
         swapToken = (await deployments.get('HATToken')).address;  
     }

@@ -1,4 +1,6 @@
 const { network } = require("hardhat");
+const CONFIG = require("../config.js");
+const config = CONFIG[network.name];
 
 const func = async function (hre) {
   const { deployments, getNamedAccounts } = hre;
@@ -14,4 +16,4 @@ const func = async function (hre) {
 };
 module.exports = func;
 func.tags = ['HATToken'];
-func.skip = () => network.name !== "hardhat";
+func.skip = () => (config.hatToken);
