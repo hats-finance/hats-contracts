@@ -1,5 +1,6 @@
 const CONFIG = require("../config.js");
 const { network } = require("hardhat");
+let failures = 0;
 
 const func = async function (hre) {
     const config = CONFIG[network.name];
@@ -18,7 +19,7 @@ const func = async function (hre) {
     }
 
     let executors = config["executors"];
-    if (executors.length === 0) {
+    if (!executors || executors.length === 0) {
         executors = [governance];
     }
 
@@ -120,25 +121,25 @@ const func = async function (hre) {
     );
     // Roles granted should be the 4 + number of executors
     // (renounced deployer role, timelock admin of itself, governance proposer and canceller roles, and executor role to the executors)
+    const roleGrantEventsCount = 3 + executors.length;
     verify(
-      logs.length === 4 + executors.length,
-      "No unexpected roles were granted"
+      logs.length === roleGrantEventsCount,
+      `No unexpected roles were granted (expected ${roleGrantEventsCount}, got ${logs.length}`
     );
 
     // if unexpected roles were granted we print some extra info
-
-        if (logs.length > 4 + executors.length) {
-          console.log(`Expected ${4 + executors.length} roles, but ${logs.length} were found in the logs`);
-          const timelockAddress = (await deployments.get('HATTimelockController')).address;
+    if (logs.length > roleGrantEventsCount) {
+        console.log(`Expected ${roleGrantEventsCount} roles, but ${logs.length} were found in the logs`);
+        const timelockAddress = (await deployments.get('HATTimelockController')).address;
           
-          const EXPECTED_ROLES = {
-            [governance]: [PROPOSER_ROLE, CANCELLER_ROLE, EXECUTOR_ROLE],
+        const EXPECTED_ROLES = {
+            [governance]: [PROPOSER_ROLE, CANCELLER_ROLE],
             [timelockAddress]: TIMELOCK_ADMIN_ROLE,
-          };
-          for (executor of executors) {
+        };
+        for (executor of executors) {
             EXPECTED_ROLES[executor] = [EXECUTOR_ROLE];
-          }
-          for (log of logs) {
+        }
+        for (log of logs) {
             const role = log.args.role;
             const account = log.args.account;
             // roles that should be defined
@@ -146,9 +147,8 @@ const func = async function (hre) {
             if (!expectedRoles.includes(role)) {
               console.log(`** The account ${account} should not have role ${role}`);
             }
-          }
-    
         }
+    }
     
     // Verify HATToken
     if (network.name === "hardhat") {
@@ -222,10 +222,14 @@ const func = async function (hre) {
         (await read('HATVaultsRegistry', {}, 'defaultBountyHackerHATVested')).toString() === bountyHackerHATVested.toString(),
         "HATVaultsRegistry default bountyHackerHATVested is correct (" + bountyHackerHATVested + ")"
     );
+    if (failures > 0) {
+      throw Error(`${failures} checks failed!`);
+    }
 };
 
 function verify(condition, msg) {
     console.log(condition ? '\x1b[32m%s\x1b[0m' : '\x1b[31m%s\x1b[0m', msg + ": " + condition);
+    if (!condition) failures++;
 }
 
 func.tags = ['verify'];
