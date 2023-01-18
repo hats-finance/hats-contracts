@@ -124,12 +124,11 @@ const func = async function (hre) {
     const roleGrantEventsCount = 3 + executors.length;
     verify(
       logs.length === roleGrantEventsCount,
-      `No unexpected roles were granted (expected ${roleGrantEventsCount}, got ${logs.length}`
+      `No unexpected roles were granted (expected ${roleGrantEventsCount}, got ${logs.length})`
     );
 
     // if unexpected roles were granted we print some extra info
     if (logs.length > roleGrantEventsCount) {
-        console.log(`Expected ${roleGrantEventsCount} roles, but ${logs.length} were found in the logs`);
         const timelockAddress = (await deployments.get('HATTimelockController')).address;
           
         const EXPECTED_ROLES = {
