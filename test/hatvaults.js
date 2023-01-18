@@ -325,6 +325,13 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
+    try {
+      await vault.addRewardController(rewardController.address);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex, "DuplicatedRewardController");
+    }
+
     await advanceToSafetyPeriod();
     let tx = await vault.submitClaim(
       accounts[2],
