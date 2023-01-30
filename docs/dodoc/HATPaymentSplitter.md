@@ -358,17 +358,3 @@ event PaymentReleased(address to, uint256 amount)
 
 
 
-## Errors
-
-### Unauthorized
-
-```solidity
-error Unauthorized()
-```
-
-
-
-
-
-
-

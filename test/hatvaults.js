@@ -5175,13 +5175,6 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
     await hatToken.mint(vestingTokenLock.address, web3.utils.toWei("1"));
 
-    try {
-      await hatPaymentSplitter.withdrawSurplusFromTokenLock(vestingTokenLock.address, web3.utils.toWei("1"));
-      assert(false, "only shareholder");
-    } catch (ex) {
-      assertVMException(ex, "Unauthorized");
-    }
-
     await hatPaymentSplitter.withdrawSurplusFromTokenLock(vestingTokenLock.address, web3.utils.toWei("1"), { from: accounts[3] });
 
     assert.equal(
@@ -5192,26 +5185,12 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let accidentToken = await ERC20Mock.new("Accident", "ACT");
     await accidentToken.mint(vestingTokenLock.address, web3.utils.toWei("1"));
 
-    try {
-      await hatPaymentSplitter.sweepTokenFromTokenLock(vestingTokenLock.address, accidentToken.address);
-      assert(false, "only shareholder");
-    } catch (ex) {
-      assertVMException(ex, "Unauthorized");
-    }
-
     await hatPaymentSplitter.sweepTokenFromTokenLock(vestingTokenLock.address, accidentToken.address, { from: accounts[2] });
 
     assert.equal(
       (await accidentToken.balanceOf(hatPaymentSplitter.address)).toString(),
       web3.utils.toWei("1").toString()
     );
-
-    try {
-      await hatPaymentSplitter.releaseFromTokenLock(vestingTokenLock.address);
-      assert(false, "only shareholder");
-    } catch (ex) {
-      assertVMException(ex, "Unauthorized");
-    }
 
     await utils.increaseTime(60 * 60 * 60 * 24 * 90);
 

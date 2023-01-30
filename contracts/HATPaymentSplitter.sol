@@ -7,16 +7,6 @@ import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
 import "./tokenlock/ITokenLock.sol";
 
 contract HATPaymentSplitter is PaymentSplitter {
-    
-    // Only a shareholder can make the call
-    error Unauthorized();
-
-    modifier onlyShareholder() {
-        if (shares(msg.sender) == 0) {
-            revert Unauthorized();
-        }
-        _;
-    }
 
     // solhint-disable-next-line no-empty-blocks
     constructor (address[] memory payees, uint256[] memory shares_) payable PaymentSplitter(payees, shares_) {}
@@ -25,7 +15,7 @@ contract HATPaymentSplitter is PaymentSplitter {
      * @notice Releases tokens from a tokenlock contract
      * @param _tokenLock The tokenlock to release from
      */
-    function releaseFromTokenLock(ITokenLock _tokenLock) external onlyShareholder {
+    function releaseFromTokenLock(ITokenLock _tokenLock) external {
         _tokenLock.release();
     }
 
@@ -34,7 +24,7 @@ contract HATPaymentSplitter is PaymentSplitter {
      * @param _tokenLock The tokenlock to withdraw surplus from
      * @param _amount Amount of tokens to withdraw
      */
-    function withdrawSurplusFromTokenLock(ITokenLock _tokenLock, uint256 _amount) external onlyShareholder {
+    function withdrawSurplusFromTokenLock(ITokenLock _tokenLock, uint256 _amount) external {
         _tokenLock.withdrawSurplus(_amount);
     }
 
@@ -43,7 +33,7 @@ contract HATPaymentSplitter is PaymentSplitter {
      * @param _tokenLock The tokenlock to call sweepToken on
      * @param _token Address of token to sweep
      */
-    function sweepTokenFromTokenLock(ITokenLock _tokenLock, IERC20 _token) external onlyShareholder {
+    function sweepTokenFromTokenLock(ITokenLock _tokenLock, IERC20 _token) external {
         _tokenLock.sweepToken(_token);
     }
 
