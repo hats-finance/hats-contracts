@@ -39,6 +39,9 @@ module.exports = {
       goerli: process.env.ETHERSCAN_API_KEY,
       optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
       optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
+      polygon: process.env.POLYGON_ETHERSCAN_API_KEY,
+      arbitrum: process.env.ARBITRUM_ETHERSCAN_API_KEY,
+      bnb: process.env.BNB_ETHERSCAN_API_KEY
     }
   },
   gasReporter: {
@@ -50,6 +53,30 @@ module.exports = {
     excludeContracts: ["mocks/", "HATToken"]
   },
   networks: {
+    polygon: {
+      url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.POLYGON_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    optimism: {
+      url: `https://optimism-mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.OPTIMISM_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    arbitrum: {
+      url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.ARBITRUM_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    bnb: {
+      url: `https://capable-spring-hill.bsc.discover.quiknode.pro/${process.env.QUICKNODE_KEY}`,
+      accounts: [process.env.BNB_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.GOERLI_PK],
@@ -59,6 +86,12 @@ module.exports = {
     optimism_goerli: {
       url: `https://opt-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.OPTIMISM_GOERLI_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    arbitrum_goerli: {
+      url: `https://arbitrum-goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.ARBITRUM_PK],
       gasPrice: "auto",
       gas: "auto",
     },

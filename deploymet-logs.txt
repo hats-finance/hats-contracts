@@ -1,0 +1,447 @@
+-------------------- Polygon --------------------
+
+deploying "HATTimelockController" (tx: 0x03a606d481ee50f6a57efd18c7bfa4999d6627103543b6a7eaba0b246faf8fc6)...: deployed at 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41 with 2521550 gas
+deploying "HATTokenLock" (tx: 0x1a10ef9fa8ebe9be83b0b4daca6951e9201eab132c807013fb60d376b279075a)...: deployed at 0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257 with 1565756 gas
+deploying "TokenLockFactory" (tx: 0xaaf6045f77164f498866d2be3dbe0b3868059c5ae7b41eb19a21e0bee019ce86)...: deployed at 0x7690166442e81B473D6eb413e865AA6379490371 with 593021 gas
+deploying "HATGovernanceArbitrator" (tx: 0x4fc2f93288b25e4758290ef6239c78d4fe634b0a8450c6c0c77f9a3843f3bb12)...: deployed at 0x844522DfC17F1ff13f0Af683934a2eD3950D1B44 with 295134 gas
+executing HATGovernanceArbitrator.transferOwnership (tx: 0xbc766faf07ee3da332bc5032d509cf8fa51ed51443a670ed1709e54266c5db53) ...: performed with 28625 gas
+deploying "HATVault" (tx: 0xada777feae86d9af9c39af4cf7ceb30c2e46b1152d28d1f9d804d59836ff4eb2)...: deployed at 0x304A70840D8D43B288A6e4e4e718081BBcF160be with 5271647 gas
+deploying "HATVaultsRegistry" (tx: 0x36be6d9b98863130f00732a83a91f5e0b33e024388d25478cd43d8fb61f0795c)...: deployed at 0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48 with 2647504 gas
+deploying "HATVaultsV2Data" (tx: 0xed6021c705eafffd1dcb7c2f6b6ef0c4e232f10bdf35b4fc018957a4b4ca77d7)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 252829 gas
+deploying "HATVaultsNFT" (tx: 0x34285ab892b42982c3bc952da727e68ee045298325bf40db572111be8512464f)...: deployed at 0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4 with 2700829 gas
+deploying "HATVaultsNFT" (tx: 0xe81b33f85698ab72b6db847ad88dec5daf91503650deba4805fae0d7887925e7)...: deployed at 0x878Cab06E6f4a85D90E5f236d326a41Ef6f44F9f with 2700829 gas
+executing HATVaultsNFT.transferOwnership (tx: 0x8690f24fab7c56cbcdbe2befedd682b6c78718f9bfd668e06d3653292427cb1d) ...: performed with 28678 gas
+
+Verify the deployment:
+
+************************************************
+deployer:  0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f
+governance:  0xA5C6D757Ca69c92EeA05B22924d9774658e10c62
+executors:  [
+  '0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7',
+  '0xe24886AC31c25B544092542aD55aa484FbBF506B',
+  '0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8',
+  '0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31',
+  '0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94',
+  '0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416',
+  '0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8',
+  '0xA5C6D757Ca69c92EeA05B22924d9774658e10c62'
+]
+************************************************
+TIMELOCK_ADMIN_ROLE 0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5
+PROPOSER_ROLE 0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1
+CANCELLER_ROLE 0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783
+EXECUTOR_ROLE 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+************************************************
+HATTimelockController 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41
+************************************************
+Deployer doesn't have the timelock admin role: true
+Timelock controller itself has the timelock admin role: true
+Governance 0xA5C6D757Ca69c92EeA05B22924d9774658e10c62 has the proposer role: true
+Governance 0xA5C6D757Ca69c92EeA05B22924d9774658e10c62 has the canceller role: true
+Executor 0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7 has the execute role: true
+Executor 0xe24886AC31c25B544092542aD55aa484FbBF506B has the execute role: true
+Executor 0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8 has the execute role: true
+Executor 0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31 has the execute role: true
+Executor 0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94 has the execute role: true
+Executor 0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416 has the execute role: true
+Executor 0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8 has the execute role: true
+Executor 0xA5C6D757Ca69c92EeA05B22924d9774658e10c62 has the execute role: true
+Min delay is 604800 seconds: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the TIMELOCK_ADMIN_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the PROPOSER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the CANCELLER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
+TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
+No unexpected roles were granted (expected 11, got 11): true
+TokenLockFactory owner is the HATTimelockController: true
+TokenLockFactory masterCopy is the HATTokenLock: true
+Arbitrator owner is the HATTimelockController: true
+HATVaultsRegistry owner is the HATTimelockController: true
+HATVaultsRegistry default arbitrator is the Arbitrator: true
+HATVaultsRegistry HATVault implementation is correct: true
+HATVaultsRegistry TokenLockFactory is correct: true
+HATVaultsRegistry swap token is correct (0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174): true
+HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
+HATVaultsRegistry default bountyHackerHATVested is correct (0): true
+
+
+
+verifying HATGovernanceArbitrator (0x844522DfC17F1ff13f0Af683934a2eD3950D1B44) ...
+waiting for result...
+ => contract HATGovernanceArbitrator is now verified
+verifying HATTimelockController (0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41) ...
+waiting for result...
+ => contract HATTimelockController is now verified
+verifying HATTokenLock (0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257) ...
+waiting for result...
+ => contract HATTokenLock is now verified
+verifying HATVault (0x304A70840D8D43B288A6e4e4e718081BBcF160be) ...
+waiting for result...
+ => contract HATVault is now verified
+verifying HATVaultsNFT (0x878Cab06E6f4a85D90E5f236d326a41Ef6f44F9f) ...
+waiting for result...
+ => contract HATVaultsNFT is now verified
+verifying HATVaultsRegistry (0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48) ...
+waiting for result...
+ => contract HATVaultsRegistry is now verified
+verifying HATVaultsV2Data (0x07368F6a959Ef3096230a258dd0af692699c3a4c) ...
+waiting for result...
+ => contract HATVaultsV2Data is now verified
+verifying TokenLockFactory (0x7690166442e81B473D6eb413e865AA6379490371) ...
+waiting for result...
+ => contract TokenLockFactory is now verified
+
+-------------------------------------------------
+
+
+-------------------- Mainnet --------------------
+
+deploying "HATTimelockController" (tx: 0x1b485c1a9aa85cace3acc316dfb30eb35770cf5a386ac9094a4f9e2a9d6ac2d0)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 2521550 gas
+reusing "HATTokenLock" at 0xd978eb90eb1b11213e320f4e6e910eb98d8df1e4
+reusing "TokenLockFactory" at 0xe198cbb727758b9ad38a12e1ad475a843e5e730f
+deploying "HATGovernanceArbitrator" (tx: 0xf4b3657feeed9ef77233e63f2230a2ec16e1f9335957666e44c192d43693fe12)...: deployed at 0xcBe0b90bfe99f827B8BCB5C5Ac4b17107caEA814 with 295134 gas
+executing HATGovernanceArbitrator.transferOwnership (tx: 0x05da1a661bad1769dc063e1c8d3970f711c24b7071f122733dc65937edb19a77) ...: performed with 28625 gas
+deploying "HATVault" (tx: 0x74e99a57b3b4879d7ebd188543dcec2a37b962f06ec92e0aa6a61711ac817907)...: deployed at 0x028A7C6873dFA8357c9dcF9C9d76EF2abb66256E with 5271647 gas
+deploying "HATVaultsRegistry" (tx: 0x4648a9119a05b2f372cbfb332b880772a4826cb1b7435aa5f185ac212d9e4bb8)...: deployed at 0xC570c434ba30a2fa5C07E590833246E18aa6B0a3 with 2647504 gas
+reusing "HATVaultsV2Data" at 0xadd155731473a9501881234a865ff79668f1b6cf
+deploying "HATVaultsNFT" (tx: 0xc8d8c14407e0f807361f937ba3ce9d74d72d05ebf7597641511ce29fe4ad1f8a)...: deployed at 0x225A2A0Dea1357c808B4eb8BC423507dD4bbc401 with 2700829 gas
+executing HATVaultsNFT.transferOwnership (tx: 0x5b8b9a206ee7592d0e4f2335843ebd970c090ea9ea9c5430a10f6ac09bf206b8) ...: performed with 28678 gas
+
+Verify the deployment:
+
+************************************************
+deployer:  0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f
+governance:  0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef
+executors:  [
+  '0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7',
+  '0xe24886AC31c25B544092542aD55aa484FbBF506B',
+  '0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8',
+  '0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31',
+  '0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94',
+  '0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416',
+  '0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8',
+  '0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef'
+]
+************************************************
+TIMELOCK_ADMIN_ROLE 0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5
+PROPOSER_ROLE 0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1
+CANCELLER_ROLE 0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783
+EXECUTOR_ROLE 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+************************************************
+HATTimelockController 0x07368F6a959Ef3096230a258dd0af692699c3a4c
+************************************************
+Deployer doesn't have the timelock admin role: true
+Timelock controller itself has the timelock admin role: true
+Governance 0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef has the proposer role: true
+Governance 0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef has the canceller role: true
+Executor 0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7 has the execute role: true
+Executor 0xe24886AC31c25B544092542aD55aa484FbBF506B has the execute role: true
+Executor 0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8 has the execute role: true
+Executor 0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31 has the execute role: true
+Executor 0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94 has the execute role: true
+Executor 0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416 has the execute role: true
+Executor 0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8 has the execute role: true
+Executor 0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef has the execute role: true
+Min delay is 604800 seconds: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the TIMELOCK_ADMIN_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the PROPOSER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the CANCELLER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
+TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
+No unexpected roles were granted (expected 11, got 11): true
+TokenLockFactory owner is the HATTimelockController: true
+TokenLockFactory masterCopy is the HATTokenLock: false
+Arbitrator owner is the HATTimelockController: true
+HATVaultsRegistry owner is the HATTimelockController: true
+HATVaultsRegistry default arbitrator is the Arbitrator: true
+HATVaultsRegistry HATVault implementation is correct: true
+HATVaultsRegistry TokenLockFactory is correct: false
+HATVaultsRegistry swap token is correct (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48): true
+HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
+HATVaultsRegistry default bountyHackerHATVested is correct (0): true
+An unexpected error occurred:
+
+-------------------------------------------------
+
+-------------------- Optimism -------------------
+
+deploying "HATTimelockController" (tx: 0x3f2f47ac71775cc5bf00fa0eb07e1346acf66b3a5af7caf9fa54a8c820143ed9)...: deployed at 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41 with 2521550 gas
+deploying "HATTokenLock" (tx: 0xfd8383d8fbfb8731067c9ce93458ab73518705be795c06f952d609855945291f)...: deployed at 0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257 with 1565756 gas
+deploying "TokenLockFactory" (tx: 0x3a6e0b7edbe6f4bf487a22285db4ca5cdfaecb2b0e423072c814bcf0dd40db47)...: deployed at 0x7690166442e81B473D6eb413e865AA6379490371 with 593021 gas
+deploying "HATGovernanceArbitrator" (tx: 0xe8a8807f25ed778e45c61da3491a92b94f581e50204388594276b91048e187e8)...: deployed at 0x844522DfC17F1ff13f0Af683934a2eD3950D1B44 with 295134 gas
+executing HATGovernanceArbitrator.transferOwnership (tx: 0xafb1165309de0dc21963d6a854d0bdb69878c29b7978dbb9f52f9c2c9b378a3b) ...: performed with 28625 gas
+deploying "HATVault" (tx: 0xf6fb481352fad5652ab8c36e565a7859a96559408380089cded02de96b7d135d)...: deployed at 0x304A70840D8D43B288A6e4e4e718081BBcF160be with 5271647 gas
+deploying "HATVaultsRegistry" (tx: 0x2083fadd9dec47fc6744bd2bf6b8c27fe5bec22ba3d677b894d1e7ed13e7651a)...: deployed at 0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48 with 2647504 gas
+deploying "HATVaultsV2Data" (tx: 0xd8b7301ec475cacf6772897540d435f669ad0661520f897249ecd206c1efdf37)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 252829 gas
+deploying "HATVaultsNFT" (tx: 0x8465da9008f766e03de2ef34d4835520f13f5107c634a17edba8a07afe98db6e)...: deployed at 0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4 with 2700829 gas
+executing HATVaultsNFT.transferOwnership (tx: 0x6f4e611890f0e3fdc87f4ec5e163f5f0d36b98c9106692e8e239e7f001c16493) ...: performed with 28678 gas
+
+Verify the deployment:
+
+************************************************
+deployer:  0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f
+governance:  0x5A6910528b047d3371970dF764ba4046b7DfAd6a
+executors:  [
+  '0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7',
+  '0xe24886AC31c25B544092542aD55aa484FbBF506B',
+  '0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8',
+  '0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31',
+  '0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94',
+  '0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416',
+  '0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8',
+  '0x5A6910528b047d3371970dF764ba4046b7DfAd6a'
+]
+************************************************
+TIMELOCK_ADMIN_ROLE 0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5
+PROPOSER_ROLE 0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1
+CANCELLER_ROLE 0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783
+EXECUTOR_ROLE 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+************************************************
+HATTimelockController 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41
+************************************************
+Deployer doesn't have the timelock admin role: true
+Timelock controller itself has the timelock admin role: true
+Governance 0x5A6910528b047d3371970dF764ba4046b7DfAd6a has the proposer role: true
+Governance 0x5A6910528b047d3371970dF764ba4046b7DfAd6a has the canceller role: true
+Executor 0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7 has the execute role: true
+Executor 0xe24886AC31c25B544092542aD55aa484FbBF506B has the execute role: true
+Executor 0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8 has the execute role: true
+Executor 0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31 has the execute role: true
+Executor 0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94 has the execute role: true
+Executor 0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416 has the execute role: true
+Executor 0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8 has the execute role: true
+Executor 0x5A6910528b047d3371970dF764ba4046b7DfAd6a has the execute role: true
+Min delay is 604800 seconds: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the TIMELOCK_ADMIN_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the PROPOSER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the CANCELLER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
+TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
+No unexpected roles were granted (expected 11, got 11): true
+TokenLockFactory owner is the HATTimelockController: true
+TokenLockFactory masterCopy is the HATTokenLock: true
+Arbitrator owner is the HATTimelockController: true
+HATVaultsRegistry owner is the HATTimelockController: true
+HATVaultsRegistry default arbitrator is the Arbitrator: true
+HATVaultsRegistry HATVault implementation is correct: true
+HATVaultsRegistry TokenLockFactory is correct: true
+HATVaultsRegistry swap token is correct (0x7F5c764cBc14f9669B88837ca1490cCa17c31607): true
+HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
+HATVaultsRegistry default bountyHackerHATVested is correct (0): true
+
+
+verifying HATGovernanceArbitrator (0x844522DfC17F1ff13f0Af683934a2eD3950D1B44) ...
+waiting for result...
+ => contract HATGovernanceArbitrator is now verified
+verifying HATTimelockController (0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41) ...
+waiting for result...
+ => contract HATTimelockController is now verified
+verifying HATTokenLock (0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257) ...
+waiting for result...
+ => contract HATTokenLock is now verified
+verifying HATVault (0x304A70840D8D43B288A6e4e4e718081BBcF160be) ...
+waiting for result...
+ => contract HATVault is now verified
+verifying HATVaultsNFT (0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4) ...
+waiting for result...
+ => contract HATVaultsNFT is now verified
+verifying HATVaultsRegistry (0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48) ...
+waiting for result...
+ => contract HATVaultsRegistry is now verified
+verifying HATVaultsV2Data (0x07368F6a959Ef3096230a258dd0af692699c3a4c) ...
+waiting for result...
+ => contract HATVaultsV2Data is now verified
+verifying TokenLockFactory (0x7690166442e81B473D6eb413e865AA6379490371) ...
+waiting for result...
+ => contract TokenLockFactory is now verified
+
+-------------------------------------------------
+
+-------------------- Arbitrum -------------------
+
+deploying "HATTimelockController" (tx: 0x383fa0770239f753da697a183b355b06b58f6cf8d5b5ece8ca309c9660b49742)...: deployed at 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41 with 13752826 gas
+deploying "HATTokenLock" (tx: 0x0112294dbd9f3e1594d75d13d657501273222a21a2a2d3763bd6c2fde2f1f0e7)...: deployed at 0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257 with 8721845 gas
+deploying "TokenLockFactory" (tx: 0x4e4849dee9aa777fccd69ba79230df9bbbec0d3c8762712bf0d54ffde61dc5a1)...: deployed at 0x7690166442e81B473D6eb413e865AA6379490371 with 4012806 gas
+deploying "HATGovernanceArbitrator" (tx: 0x7fe18baf200798345d7e8a591bce2b38cf0991bce706e863140b36a20d372dec)...: deployed at 0x844522DfC17F1ff13f0Af683934a2eD3950D1B44 with 1865689 gas
+executing HATGovernanceArbitrator.transferOwnership (tx: 0xef53ce2b474251b719e195be4e1b8d735c064b60185552f37267a879115b9070) ...: performed with 278056 gas
+deploying "HATVault" (tx: 0x2603030ba9540034d136979c761c36eababcb87eb9b85b758489628460eaeb30)...: deployed at 0x304A70840D8D43B288A6e4e4e718081BBcF160be with 26837967 gas
+deploying "HATVaultsRegistry" (tx: 0x054802ed0a97e2e8ea8720ff95b542bc9a7aedca075ec5e6cf787d54a8f964de)...: deployed at 0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48 with 15616196 gas
+deploying "HATVaultsV2Data" (tx: 0x1af638253ea2b6203139a7cf78492de8895f25a4dc78b3c87d6b94d507bbc74b)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 1618678 gas
+deploying "HATVaultsNFT" (tx: 0x94656bbf967281de8318871c9470205bfd81ef4a9377b5b327603e4a40b12ca0)...: deployed at 0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4 with 15585230 gas
+executing HATVaultsNFT.transferOwnership (tx: 0x0302633c6137deb5c620e967a6e83bd0c6ae6656365587411aa83cfb2ff67132) ...: performed with 278109 gas
+
+Verify the deployment:
+
+************************************************
+deployer:  0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f
+governance:  0x022B95b4c02bbA85604506E6114485615b0aD09A
+executors:  [
+  '0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7',
+  '0xe24886AC31c25B544092542aD55aa484FbBF506B',
+  '0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8',
+  '0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31',
+  '0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94',
+  '0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416',
+  '0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8',
+  '0x022B95b4c02bbA85604506E6114485615b0aD09A'
+]
+************************************************
+TIMELOCK_ADMIN_ROLE 0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5
+PROPOSER_ROLE 0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1
+CANCELLER_ROLE 0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783
+EXECUTOR_ROLE 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+************************************************
+HATTimelockController 0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41
+************************************************
+Deployer doesn't have the timelock admin role: true
+Timelock controller itself has the timelock admin role: true
+Governance 0x022B95b4c02bbA85604506E6114485615b0aD09A has the proposer role: true
+Governance 0x022B95b4c02bbA85604506E6114485615b0aD09A has the canceller role: true
+Executor 0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7 has the execute role: true
+Executor 0xe24886AC31c25B544092542aD55aa484FbBF506B has the execute role: true
+Executor 0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8 has the execute role: true
+Executor 0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31 has the execute role: true
+Executor 0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94 has the execute role: true
+Executor 0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416 has the execute role: true
+Executor 0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8 has the execute role: true
+Executor 0x022B95b4c02bbA85604506E6114485615b0aD09A has the execute role: true
+Min delay is 604800 seconds: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the TIMELOCK_ADMIN_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the PROPOSER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the CANCELLER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
+TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
+No unexpected roles were granted (expected 11, got 11): true
+TokenLockFactory owner is the HATTimelockController: true
+TokenLockFactory masterCopy is the HATTokenLock: true
+Arbitrator owner is the HATTimelockController: true
+HATVaultsRegistry owner is the HATTimelockController: true
+HATVaultsRegistry default arbitrator is the Arbitrator: true
+HATVaultsRegistry HATVault implementation is correct: true
+HATVaultsRegistry TokenLockFactory is correct: true
+HATVaultsRegistry swap token is correct (0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8): true
+HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
+HATVaultsRegistry default bountyHackerHATVested is correct (0): true
+
+
+verifying HATGovernanceArbitrator (0x844522DfC17F1ff13f0Af683934a2eD3950D1B44) ...
+waiting for result...
+ => contract HATGovernanceArbitrator is now verified
+verifying HATTimelockController (0xfBaE12d35B3A01b802ACaAD10D08E5bcf05d6E41) ...
+waiting for result...
+ => contract HATTimelockController is now verified
+verifying HATTokenLock (0x5Ba641A1Fa1E6A7D033c9f6A8108d52B92b78257) ...
+waiting for result...
+ => contract HATTokenLock is now verified
+verifying HATVault (0x304A70840D8D43B288A6e4e4e718081BBcF160be) ...
+waiting for result...
+ => contract HATVault is now verified
+verifying HATVaultsNFT (0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4) ...
+waiting for result...
+ => contract HATVaultsNFT is now verified
+verifying HATVaultsRegistry (0xa80d0a371f4d37AFCc55188233BB4Ad463aF9E48) ...
+waiting for result...
+ => contract HATVaultsRegistry is now verified
+verifying HATVaultsV2Data (0x07368F6a959Ef3096230a258dd0af692699c3a4c) ...
+waiting for result...
+ => contract HATVaultsV2Data is now verified
+verifying TokenLockFactory (0x7690166442e81B473D6eb413e865AA6379490371) ...
+waiting for result...
+ => contract TokenLockFactory is now verified
+
+-------------------------------------------------
+
+----------------------- BNB ---------------------
+
+deploying "HATTimelockController" (tx: 0x2cf35d16fb4751c737f820bd744682f44fa5ff7428e582ca4d2926350c2ab34a)...: deployed at 0x7690166442e81B473D6eb413e865AA6379490371 with 2507650 gas
+deploying "HATTokenLock" (tx: 0xa11bbd0cb361392b1e54cc12be3a6611fe793292d68da73ffa8d3010a2f2bd10)...: deployed at 0x844522DfC17F1ff13f0Af683934a2eD3950D1B44 with 1561056 gas
+deploying "TokenLockFactory" (tx: 0x33768e696cc37d3a043ce4cb8aa44f19876de2d9bee60129480eb4b284c9d6db)...: deployed at 0x39983d251e6e6674d20CE097205D52C08d7DC6D1 with 592521 gas
+deploying "HATGovernanceArbitrator" (tx: 0xc19a783fe769401b3859e6add8cc74abf255e6cb52f23a810d0be0fe1581ee02)...: deployed at 0x304A70840D8D43B288A6e4e4e718081BBcF160be with 293834 gas
+executing HATGovernanceArbitrator.transferOwnership (tx: 0x2cdfd6041c574b920ce6a38048095768abd3da7926602aaf84dcb762a6412f20) ...: performed with 30125 gas
+deploying "HATVault" (tx: 0xd09a92f25e3699bb1cd6741e668c1fbfde83c36eba23b5b5ad2d1e8a94e874fc)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 5271647 gas
+deploying "HATVaultsRegistry" (tx: 0xdfe3d2a7ce1ffbc0bc79545c6f693d93bec04dc53a0d854f531ba57e7ceff539)...: deployed at 0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4 with 2658504 gas
+deploying "HATVaultsV2Data" (tx: 0x41a8738009c3838935e87689b6e23f71ee23ed5a78d24ea7485dd425ca65bbe7)...: deployed at 0xe198CBb727758b9Ad38a12E1ad475a843e5e730F with 251529 gas
+deploying "HATVaultsNFT" (tx: 0xb289552fef4d69ff0a40b1b70e30b115d88e20128c4637c5f54791e12bef7468)...: deployed at 0xcBe0b90bfe99f827B8BCB5C5Ac4b17107caEA814 with 2695429 gas
+executing HATVaultsNFT.transferOwnership (tx: 0x2b5b24b83b9e6b0c09c03c831518861ec397578f69c24ae23f9c4618772b5274) ...: performed with 30178 gas
+
+Verify the deployment:
+
+************************************************
+deployer:  0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f
+governance:  0xbFBC2Ab80bD0A12258db952739238e403Be01ece
+executors:  [
+  '0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7',
+  '0xe24886AC31c25B544092542aD55aa484FbBF506B',
+  '0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8',
+  '0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31',
+  '0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94',
+  '0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416',
+  '0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8',
+  '0xbFBC2Ab80bD0A12258db952739238e403Be01ece'
+]
+************************************************
+TIMELOCK_ADMIN_ROLE 0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5
+PROPOSER_ROLE 0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1
+CANCELLER_ROLE 0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783
+EXECUTOR_ROLE 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+************************************************
+HATTimelockController 0x7690166442e81B473D6eb413e865AA6379490371
+************************************************
+Deployer doesn't have the timelock admin role: true
+Timelock controller itself has the timelock admin role: true
+Governance 0xbFBC2Ab80bD0A12258db952739238e403Be01ece has the proposer role: true
+Governance 0xbFBC2Ab80bD0A12258db952739238e403Be01ece has the canceller role: true
+Executor 0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7 has the execute role: true
+Executor 0xe24886AC31c25B544092542aD55aa484FbBF506B has the execute role: true
+Executor 0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8 has the execute role: true
+Executor 0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31 has the execute role: true
+Executor 0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94 has the execute role: true
+Executor 0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416 has the execute role: true
+Executor 0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8 has the execute role: true
+Executor 0xbFBC2Ab80bD0A12258db952739238e403Be01ece has the execute role: true
+Min delay is 604800 seconds: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the TIMELOCK_ADMIN_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the PROPOSER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the CANCELLER_ROLE: true
+TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
+TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
+No unexpected roles were granted (expected 11, got 11): true
+TokenLockFactory owner is the HATTimelockController: true
+TokenLockFactory masterCopy is the HATTokenLock: true
+Arbitrator owner is the HATTimelockController: true
+HATVaultsRegistry owner is the HATTimelockController: true
+HATVaultsRegistry default arbitrator is the Arbitrator: true
+HATVaultsRegistry HATVault implementation is correct: true
+HATVaultsRegistry TokenLockFactory is correct: true
+HATVaultsRegistry swap token is correct (0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d): true
+HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
+HATVaultsRegistry default bountyHackerHATVested is correct (0): true
+
+
+verifying HATGovernanceArbitrator (0x304A70840D8D43B288A6e4e4e718081BBcF160be) ...
+waiting for result...
+ => contract HATGovernanceArbitrator is now verified
+verifying HATTimelockController (0x7690166442e81B473D6eb413e865AA6379490371) ...
+waiting for result...
+ => contract HATTimelockController is now verified
+verifying HATTokenLock (0x844522DfC17F1ff13f0Af683934a2eD3950D1B44) ...
+waiting for result...
+ => contract HATTokenLock is now verified
+verifying HATVault (0x07368F6a959Ef3096230a258dd0af692699c3a4c) ...
+waiting for result...
+ => contract HATVault is now verified
+verifying HATVaultsNFT (0xcBe0b90bfe99f827B8BCB5C5Ac4b17107caEA814) ...
+waiting for result...
+ => contract HATVaultsNFT is now verified
+verifying HATVaultsRegistry (0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4) ...
+waiting for result...
+ => contract HATVaultsRegistry is now verified
+verifying HATVaultsV2Data (0xe198CBb727758b9Ad38a12E1ad475a843e5e730F) ...
+waiting for result...
+ => contract HATVaultsV2Data is now verified
+verifying TokenLockFactory (0x39983d251e6e6674d20CE097205D52C08d7DC6D1) ...
+waiting for result...
+ => contract TokenLockFactory is now verified
+
+-------------------------------------------------

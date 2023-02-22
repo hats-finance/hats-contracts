@@ -23,6 +23,10 @@ const func = async function (hre) {
         executors = [governance];
     }
 
+    if (executors.indexOf(governance) === -1) {
+        executors.push(governance);
+    }
+
     let hatGovernanceDelay = config["timelockDelay"];
 
     const TIMELOCK_ADMIN_ROLE = await read('HATTimelockController', {}, 'TIMELOCK_ADMIN_ROLE');
@@ -208,7 +212,7 @@ const func = async function (hre) {
     );
 
     verify(
-        await read('HATVaultsRegistry', {}, 'HAT') === swapToken,
+        (await read('HATVaultsRegistry', {}, 'HAT')).toLowerCase() === swapToken.toLowerCase(),
         "HATVaultsRegistry swap token is correct (" + swapToken + ")"
     );
 
