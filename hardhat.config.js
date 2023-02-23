@@ -91,7 +91,7 @@ module.exports = {
     },
     arbitrum_goerli: {
       url: `https://arbitrum-goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [process.env.ARBITRUM_PK],
+      accounts: [process.env.ARBITRUM_GOERLI_PK],
       gasPrice: "auto",
       gas: "auto",
     },
