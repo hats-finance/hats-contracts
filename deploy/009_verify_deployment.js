@@ -168,7 +168,7 @@ const func = async function (hre) {
     );
 
     verify(
-        await read('TokenLockFactory', {}, 'masterCopy') === (await deployments.get('HATTokenLock')).address,
+        (await read('TokenLockFactory', {}, 'masterCopy')).toLowerCase() === (await deployments.get('HATTokenLock')).address.toLowerCase(),
         "TokenLockFactory masterCopy is the HATTokenLock"
     );
 
@@ -207,7 +207,7 @@ const func = async function (hre) {
     );
 
     verify(
-        await read('HATVaultsRegistry', {}, 'tokenLockFactory') === (await deployments.get('TokenLockFactory')).address,
+        (await read('HATVaultsRegistry', {}, 'tokenLockFactory')).toLowerCase() === (await deployments.get('TokenLockFactory')).address.toLowerCase(),
         "HATVaultsRegistry TokenLockFactory is correct"
     );
 

@@ -151,16 +151,15 @@ TIMELOCK_ADMIN_ROLE should be the admin role of the EXECUTOR_ROLE: true
 TIMELOCK_ADMIN_ROLE should NOT be the admin role of the deployer 0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f: true
 No unexpected roles were granted (expected 11, got 11): true
 TokenLockFactory owner is the HATTimelockController: true
-TokenLockFactory masterCopy is the HATTokenLock: false
+TokenLockFactory masterCopy is the HATTokenLock: true
 Arbitrator owner is the HATTimelockController: true
 HATVaultsRegistry owner is the HATTimelockController: true
 HATVaultsRegistry default arbitrator is the Arbitrator: true
 HATVaultsRegistry HATVault implementation is correct: true
-HATVaultsRegistry TokenLockFactory is correct: false
+HATVaultsRegistry TokenLockFactory is correct: true
 HATVaultsRegistry swap token is correct (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48): true
 HATVaultsRegistry default bountyGovernanceHAT is correct (1000): true
 HATVaultsRegistry default bountyHackerHATVested is correct (0): true
-An unexpected error occurred:
 
 -------------------------------------------------
 
