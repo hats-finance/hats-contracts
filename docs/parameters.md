@@ -1,8 +1,9 @@
 ## Parameters
 
-| owner | parameter name | scope | default | limits | setter | comments |
+ | parameter name | owner| scope | default | limits | setter | comments |
 |---|---|---|---|---|---|---|
- | `isEmergencyPaused` | `registry.owner`| global | false | | `setEmergencyPaused` |
+| `HAT` | `registry.owner` | global | - | `registry.setSwapToken` | the token for which bounties for HAts will be traded
+| `isEmergencyPaused` | `registry.owner`| global | false | | `setEmergencyPaused` |
 | `defaultBountyGovernanceHAT` | `registry.owner`| global | | +defaultBountyHackerHatVested <= 20% | `registry.setDefaultHATBountySplit` |
 | `bountyGovernanceHAT` | `registry.owner`| vault | | +bountyHackerHatVested <= 20% | `vault.setHATBountySplit` |
 | `defaultBountyHackerHATVested` | `registry.owner`| global | | +defaultBountyGovernanceHAT <= 20% | `registry.setDefaultHATBountySplit` |
