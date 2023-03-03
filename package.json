@@ -71,5 +71,8 @@
     "@openzeppelin/contracts": "4.8.1",
     "@openzeppelin/contracts-upgradeable": "4.8.1",
     "@primitivefi/hardhat-dodoc": "^0.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
