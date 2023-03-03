@@ -1,6 +1,6 @@
 {
   "name": "@hats.finance/hats-contracts",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "description": "White Hat Incentive",
   "files": [
     "contracts/",
