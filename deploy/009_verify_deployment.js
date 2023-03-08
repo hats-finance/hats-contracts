@@ -23,6 +23,10 @@ const func = async function (hre) {
         executors = [governance];
     }
 
+    if (executors.indexOf(governance) === -1) {
+        executors.push(governance);
+    }
+
     let hatGovernanceDelay = config["timelockDelay"];
 
     const TIMELOCK_ADMIN_ROLE = await read('HATTimelockController', {}, 'TIMELOCK_ADMIN_ROLE');
@@ -164,7 +168,7 @@ const func = async function (hre) {
     );
 
     verify(
-        await read('TokenLockFactory', {}, 'masterCopy') === (await deployments.get('HATTokenLock')).address,
+        (await read('TokenLockFactory', {}, 'masterCopy')).toLowerCase() === (await deployments.get('HATTokenLock')).address.toLowerCase(),
         "TokenLockFactory masterCopy is the HATTokenLock"
     );
 
@@ -203,12 +207,12 @@ const func = async function (hre) {
     );
 
     verify(
-        await read('HATVaultsRegistry', {}, 'tokenLockFactory') === (await deployments.get('TokenLockFactory')).address,
+        (await read('HATVaultsRegistry', {}, 'tokenLockFactory')).toLowerCase() === (await deployments.get('TokenLockFactory')).address.toLowerCase(),
         "HATVaultsRegistry TokenLockFactory is correct"
     );
 
     verify(
-        await read('HATVaultsRegistry', {}, 'HAT') === swapToken,
+        (await read('HATVaultsRegistry', {}, 'HAT')).toLowerCase() === swapToken.toLowerCase(),
         "HATVaultsRegistry swap token is correct (" + swapToken + ")"
     );
 
