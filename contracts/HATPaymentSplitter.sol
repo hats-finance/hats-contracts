@@ -12,7 +12,6 @@ contract HATPaymentSplitter is PaymentSplitterUpgradeable {
         _disableInitializers();
     }
 
-    // solhint-disable-next-line no-empty-blocks
     function initialize(address[] memory _payees, uint256[] memory _shares) external initializer {
         __PaymentSplitter_init(_payees, _shares);
     }
