@@ -3,13 +3,19 @@
 
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
+import "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 import "./tokenlock/ITokenLock.sol";
 
-contract HATPaymentSplitter is PaymentSplitter {
+contract HATPaymentSplitter is PaymentSplitterUpgradeable {
+
+    constructor () {
+        _disableInitializers();
+    }
 
     // solhint-disable-next-line no-empty-blocks
-    constructor (address[] memory payees, uint256[] memory shares_) payable PaymentSplitter(payees, shares_) {}
+    function initialize(address[] memory _payees, uint256[] memory _shares) external initializer {
+        __PaymentSplitter_init(_payees, _shares);
+    }
 
     /**
      * @notice Releases tokens from a tokenlock contract

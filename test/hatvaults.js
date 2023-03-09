@@ -2,6 +2,7 @@ const HATVault = artifacts.require("./HATVault.sol");
 const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const HATPaymentSplitter = artifacts.require("./HATPaymentSplitter.sol");
+const HATPaymentSplitterFactory = artifacts.require("./HATPaymentSplitterFactory.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
@@ -5118,13 +5119,19 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
 
-    let hatPaymentSplitter = await HATPaymentSplitter.new(
+    let hatPaymentSplitterImplementation = await HATPaymentSplitter.new();
+    let hatPaymentSplitterFactory = await HATPaymentSplitterFactory.new(hatPaymentSplitterImplementation.address);
+
+    let tx = await hatPaymentSplitterFactory.createHATPaymentSplitter(
       [accounts[2], accounts[3]],
       [5000, 5000]
     );
 
+    assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
+    let hatPaymentSplitter = await HATPaymentSplitter.at(tx.logs[0].args._hatPaymentSplitter);
+
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    tx = await vault.submitClaim(
       hatPaymentSplitter.address,
       8000,
       "description hash",

@@ -10,6 +10,23 @@
 
 ## Methods
 
+### initialize
+
+```solidity
+function initialize(address[] _payees, uint256[] _shares) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _payees | address[] | undefined |
+| _shares | uint256[] | undefined |
+
 ### payee
 
 ```solidity
@@ -57,7 +74,7 @@ function releasable(address account) external view returns (uint256)
 ### releasable
 
 ```solidity
-function releasable(contract IERC20 token, address account) external view returns (uint256)
+function releasable(contract IERC20Upgradeable token, address account) external view returns (uint256)
 ```
 
 
@@ -68,7 +85,7 @@ function releasable(contract IERC20 token, address account) external view return
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | undefined |
+| token | contract IERC20Upgradeable | undefined |
 | account | address | undefined |
 
 #### Returns
@@ -96,7 +113,7 @@ function release(address payable account) external nonpayable
 ### release
 
 ```solidity
-function release(contract IERC20 token, address account) external nonpayable
+function release(contract IERC20Upgradeable token, address account) external nonpayable
 ```
 
 
@@ -107,7 +124,7 @@ function release(contract IERC20 token, address account) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | undefined |
+| token | contract IERC20Upgradeable | undefined |
 | account | address | undefined |
 
 ### releaseFromTokenLock
@@ -129,7 +146,7 @@ Releases tokens from a tokenlock contract
 ### released
 
 ```solidity
-function released(contract IERC20 token, address account) external view returns (uint256)
+function released(contract IERC20Upgradeable token, address account) external view returns (uint256)
 ```
 
 
@@ -140,7 +157,7 @@ function released(contract IERC20 token, address account) external view returns 
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | undefined |
+| token | contract IERC20Upgradeable | undefined |
 | account | address | undefined |
 
 #### Returns
@@ -213,7 +230,7 @@ Sweeps out accidentally sent tokens from a tokenlock contract
 ### totalReleased
 
 ```solidity
-function totalReleased(contract IERC20 token) external view returns (uint256)
+function totalReleased(contract IERC20Upgradeable token) external view returns (uint256)
 ```
 
 
@@ -224,7 +241,7 @@ function totalReleased(contract IERC20 token) external view returns (uint256)
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | undefined |
+| token | contract IERC20Upgradeable | undefined |
 
 #### Returns
 
@@ -290,7 +307,7 @@ Withdraws surplus, unmanaged tokens from a tokenlock contract
 ### ERC20PaymentReleased
 
 ```solidity
-event ERC20PaymentReleased(contract IERC20 indexed token, address to, uint256 amount)
+event ERC20PaymentReleased(contract IERC20Upgradeable indexed token, address to, uint256 amount)
 ```
 
 
@@ -301,9 +318,25 @@ event ERC20PaymentReleased(contract IERC20 indexed token, address to, uint256 am
 
 | Name | Type | Description |
 |---|---|---|
-| token `indexed` | contract IERC20 | undefined |
+| token `indexed` | contract IERC20Upgradeable | undefined |
 | to  | address | undefined |
 | amount  | uint256 | undefined |
+
+### Initialized
+
+```solidity
+event Initialized(uint8 version)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| version  | uint8 | undefined |
 
 ### PayeeAdded
 
