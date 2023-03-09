@@ -5130,6 +5130,13 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
     let hatPaymentSplitter = await HATPaymentSplitter.at(tx.logs[0].args._hatPaymentSplitter);
 
+    try {
+      await hatPaymentSplitter.initialize([accounts[2], accounts[3]], [5000, 5000]);
+      assert(false, "already initialized");
+    } catch (ex) {
+      assertVMException(ex, "Initializable: contract is already initialized");
+    }
+
     await advanceToSafetyPeriod();
     tx = await vault.submitClaim(
       hatPaymentSplitter.address,
