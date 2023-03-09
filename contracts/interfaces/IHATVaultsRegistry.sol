@@ -326,6 +326,12 @@ interface IHATVaultsRegistry {
     event SetSwapToken(address indexed _swapToken);
 
     /**
+     * @notice Emitted when a new HATVault implementation is set
+     * @param _hatVaultImplementation The address of the new HATVault implementation
+     */
+    event SetHATVaultImplementation(address indexed _hatVaultImplementation);
+
+    /**
      * @notice Called by governance to pause/unpause the system in case of an
      * emergency
      * @param _isEmergencyPaused Is the system in an emergency pause
@@ -337,6 +343,13 @@ interface IHATVaultsRegistry {
      * @param _swapToken the new swap token address
      */
     function setSwapToken(address _swapToken) external;
+
+    /**
+     * @notice Called by governance to set a new HATVault implementation to be
+     * used by the registry for creating new vaults
+     * @param _hatVaultImplementation Is the system in an emergency pause
+     */
+    function setHATVaultImplementation(address _hatVaultImplementation) external;
 
     /**
      * @notice Emit an event that includes the given _descriptionHash
