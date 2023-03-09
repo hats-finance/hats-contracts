@@ -1051,6 +1051,78 @@ contract("HatVaults", (accounts) => {
     assert.equal((await vault.maxBounty()).toString(), "8000");
   });
 
+  it("max bounty can be 100%", async () => {
+    await setUpGlobalVars(accounts, 0, 10000, [9000, 0, 1000], [100, 800]);
+
+    // bountylevel can be 10000 without throwing an error
+    let tx = await vault.setPendingMaxBounty(10000);
+    assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
+    assert.equal(tx.logs[0].args._maxBounty, 10000);
+
+    var staker = accounts[1];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await advanceToSafetyPeriod();
+
+    try {
+      await vault.submitClaim(
+        accounts[2],
+        8000,
+        "description hash",
+        {
+          from: accounts[1],
+        }
+      );
+      assert(false, "cannot submit less than 100% when max bounty is 100%");
+    } catch (ex) {
+      assertVMException(ex, "PayoutMustBeHundredPercent");
+    }
+
+    tx = await vault.submitClaim(accounts[2], 10000, "description hash", {
+      from: accounts[1],
+    });
+
+    let claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
+
+    try {
+      await vault.approveClaim(claimId, 8000);
+      assert(false, "cannot approve less than 100% when max bounty is 100%");
+    } catch (ex) {
+      assertVMException(ex, "PayoutMustBeHundredPercent");
+    }
+
+    assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
+
+    tx = await vault.approveClaim(claimId, 10000);
+
+    assert.equal(tx.logs[0].event, "VaultDestroyed");
+
+    assert.equal(await stakingToken.balanceOf(vault.address), "0");
+
+    assert.equal(await vault.depositPause(), true);
+
+    try {
+      await vault.setDepositPause(false);
+      assert(false, "cannot unpause deposits after vault was destroyed");
+    } catch (ex) {
+      assertVMException(ex, "CannotUnpauseDestroyedVault");
+    }
+  });
+
   it("update default hatBountySplit", async () => {
     await setUpGlobalVars(accounts);
 
