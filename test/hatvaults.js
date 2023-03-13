@@ -5122,13 +5122,42 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let hatPaymentSplitterImplementation = await HATPaymentSplitter.new();
     let hatPaymentSplitterFactory = await HATPaymentSplitterFactory.new(hatPaymentSplitterImplementation.address);
 
+    let splitterAddress = await hatPaymentSplitterFactory.predictNextSplitterAddress(
+      accounts[0]
+    );
+
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "0");
+
+    let splitterAddress2 = await hatPaymentSplitterFactory.predictSplitterAddress(
+      1,
+      accounts[0]
+    );
+
     let tx = await hatPaymentSplitterFactory.createHATPaymentSplitter(
       [accounts[2], accounts[3]],
       [5000, 5000]
     );
 
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "1");
+
     assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
-    let hatPaymentSplitter = await HATPaymentSplitter.at(tx.logs[0].args._hatPaymentSplitter);
+    assert.equal(tx.logs[0].args._hatPaymentSplitter, splitterAddress);
+    let hatPaymentSplitter = await HATPaymentSplitter.at(splitterAddress);
+
+    tx = await hatPaymentSplitterFactory.createHATPaymentSplitter(
+      [accounts[2], accounts[3]],
+      [5000, 5000]
+    );
+
+    assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
+    assert.equal(tx.logs[0].args._hatPaymentSplitter, splitterAddress2);
+
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "2");
+
+    assert.equal(
+      await hatPaymentSplitterFactory.predictNextSplitterAddress(accounts[1]),
+      await hatPaymentSplitterFactory.predictSplitterAddress(0, accounts[1])
+    );
 
     try {
       await hatPaymentSplitter.initialize([accounts[2], accounts[3]], [5000, 5000]);
