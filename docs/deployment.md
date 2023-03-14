@@ -55,12 +55,13 @@ You can run separate steps of the deployment scipts using the `--tags` flag, fo
 npx hardhat deploy --network sepolia --tags HATVaultsNFT
 ```
 
-## Verifying the deploymnet
+## Verifying the deployment
+
 
 The following command will run a number of sanity checks on the deployment:
 
 ```
-npx hardhat deploy --network sepolia --tags verify
+npx hardhat --network sepolia etherscan-verify
 ```
 
 ## Deployment artefacts
