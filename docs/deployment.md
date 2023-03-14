@@ -2,7 +2,7 @@
 
 We'll run through an example on ethereums Sepolia test-net
 
-## Create a `.env` file
+## Create an `.env` file
 
 Create a `.env` file if it does not exist - you can copy `.env.example`, and add the private key you want to use for the deployment
 
@@ -57,13 +57,14 @@ npx hardhat deploy --network sepolia --tags HATVaultsNFT
 
 ## Verifying the deployment
 
+
 The following command will run a number of sanity checks on the deployment:
 
 ```
 npx hardhat --network sepolia etherscan-verify
 ```
 
-## Deploymnet artefacts
+## Deployment artefacts
 
 The deploy procedure will write some information about the deployment to the `deployments` directory. Consider committing this information to the git repository for future reference.
 

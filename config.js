@@ -1,15 +1,47 @@
 module.exports = {
     "goerli": {
-        "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
-        "timelockDelay": 300,
+        "governance": "0x640578ae752BA31d2Ad37112fc515b5238B0BdFF",
+        "timelockDelay": 604800,
         "executors": [
-            "0x2bc1fed4c65c9b1dc2baaff2f3198acc42c41778"
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
         ],
         "rewardControllersConf": [],
+        "hatToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
         "hatVaultsRegistryConf": {
             "swapToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
             "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "arbitrum_goerli": {
+        "governance": "0x640578ae752BA31d2Ad37112fc515b5238B0BdFF",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -107,31 +139,140 @@ module.exports = {
             "deadline": null
         }
     },
-    "polygon": {
+    "sepolia": {
         "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
         "timelockDelay": 300,
-        "executors": [ ],
-        "rewardControllersConf": [],
-        "hatToken": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", 
+        "executors": [], // proposal executors - if this empty, governance will be an executor
+        "rewardControllersConf": [], // no reward controllers
+        "hatToken": "",  // deploy a fresh HATToken contract
         "hatVaultsRegistryConf": {
-          "bountyGovernanceHAT": "0",
-          "bountyHackerHATVested": "0"
-      },
-      "hatVaultsNFTConf": {
-          "merkleTreeIPFSRef": "",
-          "root": null,
-          "deadline": null
-      }
+            "bountyGovernanceHAT": "0",
+            "bountyHackerHATVested": "0"
+        }
     },
-    "sepolia": {
-      "governance": "0xFc9F1d127f8047B0F41e9eAC2Adc2e5279C568B7",
-      "timelockDelay": 300,
-      "executors": [], // proposal executors - if this empty, governance will be an executor
-      "rewardControllersConf": [], // no reward controllers
-      "hatToken": "",  // deploy a fresh HATToken contract
-      "hatVaultsRegistryConf": {
-        "bountyGovernanceHAT": "0",
-        "bountyHackerHATVested": "0"
-      }
-    }
+    "polygon": {
+        "governance": "0xA5C6D757Ca69c92EeA05B22924d9774658e10c62",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "mainnet": {
+        "governance": "0xBA5Ddb6Af728F01E91D77D12073548D823f6D1ef",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "optimism": {
+        "governance": "0x5A6910528b047d3371970dF764ba4046b7DfAd6a",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "arbitrum": {
+        "governance": "0x022B95b4c02bbA85604506E6114485615b0aD09A",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "bnb": {
+        "governance": "0xbFBC2Ab80bD0A12258db952739238e403Be01ece",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
 };
