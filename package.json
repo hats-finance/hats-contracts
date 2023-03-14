@@ -1,6 +1,6 @@
 {
-  "name": "hats-contracts",
-  "version": "0.0.1",
+  "name": "@hats.finance/hats-contracts",
+  "version": "2.0.0",
   "description": "White Hat Incentive",
   "files": [
     "contracts/",
@@ -71,5 +71,8 @@
     "@openzeppelin/contracts": "4.8.1",
     "@openzeppelin/contracts-upgradeable": "4.8.1",
     "@primitivefi/hardhat-dodoc": "^0.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
