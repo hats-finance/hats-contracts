@@ -537,9 +537,9 @@ Gets surplus amount in the contract based on outstanding amount to release
 function sweepToken(contract IERC20 _token) external nonpayable
 ```
 
+Sweeps out accidentally sent tokens
 
 
-*sweeps out accidentally sent tokens*
 
 #### Parameters
 

@@ -5147,6 +5147,184 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
+  it("hatpaymentsplitter withdraw from tokenlock", async () => {
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
+    var staker = accounts[4];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(await hatToken.balanceOf(staker), 0);
+
+    let hatPaymentSplitterImplementation = await HATPaymentSplitter.new();
+    let hatPaymentSplitterFactory = await HATPaymentSplitterFactory.new(hatPaymentSplitterImplementation.address);
+
+    let splitterAddress = await hatPaymentSplitterFactory.predictNextSplitterAddress(
+      accounts[0]
+    );
+
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "0");
+
+    let splitterAddress2 = await hatPaymentSplitterFactory.predictSplitterAddress(
+      1,
+      accounts[0]
+    );
+
+    let tx = await hatPaymentSplitterFactory.createHATPaymentSplitter(
+      [accounts[2], accounts[3]],
+      [5000, 5000]
+    );
+
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "1");
+
+    assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
+    assert.equal(tx.logs[0].args._hatPaymentSplitter, splitterAddress);
+    let hatPaymentSplitter = await HATPaymentSplitter.at(splitterAddress);
+
+    tx = await hatPaymentSplitterFactory.createHATPaymentSplitter(
+      [accounts[2], accounts[3]],
+      [5000, 5000]
+    );
+
+    assert.equal(tx.logs[0].event, "HATPaymentSplitterCreated");
+    assert.equal(tx.logs[0].args._hatPaymentSplitter, splitterAddress2);
+
+    assert.equal((await hatPaymentSplitterFactory.nonce(accounts[0])).toString(), "2");
+
+    assert.equal(
+      await hatPaymentSplitterFactory.predictNextSplitterAddress(accounts[1]),
+      await hatPaymentSplitterFactory.predictSplitterAddress(0, accounts[1])
+    );
+
+    try {
+      await hatPaymentSplitter.initialize([accounts[2], accounts[3]], [5000, 5000]);
+      assert(false, "already initialized");
+    } catch (ex) {
+      assertVMException(ex, "Initializable: contract is already initialized");
+    }
+
+    await advanceToSafetyPeriod();
+    tx = await vault.submitClaim(
+      hatPaymentSplitter.address,
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    await vault.approveClaim(claimId, 8000);
+
+    let path = ethers.utils.solidityPack(
+      ["address", "uint24", "address", "uint24", "address"],
+      [stakingToken.address, 0, utils.NULL_ADDRESS, 0, hatToken.address]
+    );
+    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
+      stakingToken.address,
+      hatPaymentSplitter.address
+    );
+    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
+    let payload = ISwapRouter.encodeFunctionData("exactInput", [
+      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
+    ]);
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [hatPaymentSplitter.address],
+      0,
+      router.address,
+      payload
+    );
+
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+
+    assert.equal(
+      (await hatToken.balanceOf(vestingTokenLock.address)).toString(),
+      tx.logs[1].args._amountSent.toString()
+    );
+    var expectedHackerReward = new web3.utils.BN(web3.utils.toWei("0.8"))
+      .mul(new web3.utils.BN(9))
+      .div(new web3.utils.BN(2))
+      .div(new web3.utils.BN(100));
+    assert.equal(
+      tx.logs[1].args._amountSent.toString(),
+      expectedHackerReward.toString()
+    );
+
+    await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
+    await hatToken.mint(vestingTokenLock.address, web3.utils.toWei("1"));
+
+    await hatPaymentSplitter.withdrawSurplusFromTokenLock(vestingTokenLock.address, web3.utils.toWei("1"), { from: accounts[3] });
+
+    assert.equal(
+      (await hatToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).toString()
+    );
+
+    let accidentToken = await ERC20Mock.new("Accident", "ACT");
+    await accidentToken.mint(vestingTokenLock.address, web3.utils.toWei("1"));
+
+    await hatPaymentSplitter.sweepTokenFromTokenLock(vestingTokenLock.address, accidentToken.address, { from: accounts[2] });
+
+    assert.equal(
+      (await accidentToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      web3.utils.toWei("1").toString()
+    );
+
+    await utils.increaseTime(60 * 60 * 60 * 24 * 90);
+
+    await hatPaymentSplitter.releaseFromTokenLock(vestingTokenLock.address, { from: accounts[2] });
+
+    assert.equal(
+      (await hatToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).add(expectedHackerReward).toString()
+    );
+
+    await hatPaymentSplitter.release(hatToken.address, accounts[2]);
+    await hatPaymentSplitter.release(hatToken.address, accounts[3]);
+
+    assert.equal(
+      (await hatToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      "0"
+    );
+
+    assert.equal(
+      (await hatToken.balanceOf(accounts[2])).toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).add(expectedHackerReward).div(new web3.utils.BN(2)).toString()
+    );
+
+    assert.equal(
+      (await hatToken.balanceOf(accounts[3])).toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).add(expectedHackerReward).div(new web3.utils.BN(2)).toString()
+    );
+
+    assert.equal(
+      (await accidentToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      new web3.utils.BN(web3.utils.toWei("1")).toString()
+    );
+
+    await hatPaymentSplitter.release(accidentToken.address, accounts[2]);
+    await hatPaymentSplitter.release(accidentToken.address, accounts[3]);
+
+    assert.equal(
+      (await accidentToken.balanceOf(hatPaymentSplitter.address)).toString(),
+      "0"
+    );
+
+    assert.equal(
+      (await accidentToken.balanceOf(accounts[3])).toString(),
+      new web3.utils.BN(web3.utils.toWei("0.5")).toString()
+    );
+
+    assert.equal(
+      (await accidentToken.balanceOf(accounts[3])).toString(),
+      new web3.utils.BN(web3.utils.toWei("0.5")).toString()
+    );
+    
+  });
+
   it("swapAndSend with duplicate beneficiary", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
     var staker = accounts[4];
