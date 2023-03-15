@@ -219,6 +219,22 @@ function surplusAmount() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### sweepToken
+
+```solidity
+function sweepToken(contract IERC20 _token) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _token | contract IERC20 | undefined |
+
 ### totalOutstandingAmount
 
 ```solidity
