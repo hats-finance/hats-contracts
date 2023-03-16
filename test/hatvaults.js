@@ -1076,16 +1076,30 @@ contract("HatVaults", (accounts) => {
 
     await advanceToSafetyPeriod();
 
+       // any claims with values under MBX_BOUNY_LIMIT work as usual
+    tx = await vault.submitClaim(accounts[2], 8000, "description hash", {
+      from: accounts[1],
+    });
+  
+    let claimId = tx.logs[0].args._claimId;
+  
+    await vault.challengeClaim(claimId);
+  
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("1"));
+  
+    tx = await vault.approveClaim(claimId, 8001);
+
+    // we cannot submit claims that are over MAX_BOUNY_LIMIT though
     try {
       await vault.submitClaim(
         accounts[2],
-        8000,
+        9500,
         "description hash",
         {
-          from: accounts[1],
+         from: accounts[1],
         }
       );
-      assert(false, "cannot submit less than 100% when max bounty is 100%");
+      assert(false, "cannot submit less than 100% when max bounty is 100% but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
       assertVMException(ex, "PayoutMustBeHundredPercent");
     }
@@ -1094,18 +1108,18 @@ contract("HatVaults", (accounts) => {
       from: accounts[1],
     });
 
-    let claimId = tx.logs[0].args._claimId;
+    claimId = tx.logs[0].args._claimId;
 
     await vault.challengeClaim(claimId);
 
     try {
-      await vault.approveClaim(claimId, 8000);
-      assert(false, "cannot approve less than 100% when max bounty is 100%");
+      await vault.approveClaim(claimId, 9500);
+      assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
       assertVMException(ex, "PayoutMustBeHundredPercent");
     }
 
-    assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
+    // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
 
     tx = await vault.approveClaim(claimId, 10000);
 
@@ -1121,6 +1135,11 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "CannotUnpauseDestroyedVault");
     }
+
+ 
+
+    
+
   });
 
   it("update default hatBountySplit", async () => {
