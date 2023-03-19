@@ -107,6 +107,8 @@ deploying "HATVaultsRegistry" (tx: 0x4648a9119a05b2f372cbfb332b880772a4826cb1b74
 reusing "HATVaultsV2Data" at 0xadd155731473a9501881234a865ff79668f1b6cf
 deploying "HATVaultsNFT" (tx: 0xc8d8c14407e0f807361f937ba3ce9d74d72d05ebf7597641511ce29fe4ad1f8a)...: deployed at 0x225A2A0Dea1357c808B4eb8BC423507dD4bbc401 with 2700829 gas
 executing HATVaultsNFT.transferOwnership (tx: 0x5b8b9a206ee7592d0e4f2335843ebd970c090ea9ea9c5430a10f6ac09bf206b8) ...: performed with 28678 gas
+deploying "HATPaymentSplitter" (tx: 0x5c0648a24e7693a6b6d17a5429921e58aa598a0852ee8371e25e68386c45bd9e)...: deployed at 0xABB34AB93589b0d026a192b6aaCAF8149db05c99 with 1226532 gas
+deploying "HATPaymentSplitterFactory" (tx: 0x345625e77f97802f848203715667b6d3f22a5df71821db195527ea880273de78)...: deployed at 0x0aA1464dB005857Db8FC3E0470d306FB9E54b908 with 419750 gas
 
 Verify the deployment:
 
@@ -269,6 +271,8 @@ deploying "HATVaultsRegistry" (tx: 0x054802ed0a97e2e8ea8720ff95b542bc9a7aedca075
 deploying "HATVaultsV2Data" (tx: 0x1af638253ea2b6203139a7cf78492de8895f25a4dc78b3c87d6b94d507bbc74b)...: deployed at 0x07368F6a959Ef3096230a258dd0af692699c3a4c with 1618678 gas
 deploying "HATVaultsNFT" (tx: 0x94656bbf967281de8318871c9470205bfd81ef4a9377b5b327603e4a40b12ca0)...: deployed at 0xD978eb90eB1b11213e320f4e6e910eB98D8DF1E4 with 15585230 gas
 executing HATVaultsNFT.transferOwnership (tx: 0x0302633c6137deb5c620e967a6e83bd0c6ae6656365587411aa83cfb2ff67132) ...: performed with 278109 gas
+deploying "HATPaymentSplitter" (tx: 0xa0e205bac1f60b6ac95bc8a5426e6dd7efe03b2f2ab5f149c5996aa1ffd7795e)...: deployed at 0x878Cab06E6f4a85D90E5f236d326a41Ef6f44F9f with 6476355 gas
+deploying "HATPaymentSplitterFactory" (tx: 0x232971c9b96b1d0f090c5a1be24d71308490c56d899dd0037c53fecc3223a6aa)...: deployed at 0x028A7C6873dFA8357c9dcF9C9d76EF2abb66256E with 2665464 gas
 
 Verify the deployment:
 
