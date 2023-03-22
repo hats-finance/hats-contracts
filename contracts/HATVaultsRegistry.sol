@@ -54,7 +54,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     // the maximum percentage of the bounty that will be converted in HATs
     uint16 public constant MAX_HAT_SPLIT = 2000;
 
-    address public immutable hatVaultImplementation;
+    address public hatVaultImplementation;
     address[] public hatVaults;
     
     // vault address => is visible
@@ -149,6 +149,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             defaultChallengeTimeOutPeriod,
             defaultArbitratorCanChangeBounty
         );
+    }
+
+    /** @notice See {IHATVaultsRegistry-setHATVaultImplementation}. */
+    function setHATVaultImplementation(address _hatVaultImplementation) external onlyOwner {
+        hatVaultImplementation = _hatVaultImplementation;
+        emit SetHATVaultImplementation(_hatVaultImplementation);
     }
 
     /** @notice See {IHATVaultsRegistry-setSwapToken}. */

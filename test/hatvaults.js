@@ -3,6 +3,7 @@ const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const HATPaymentSplitter = artifacts.require("./HATPaymentSplitter.sol");
 const HATPaymentSplitterFactory = artifacts.require("./HATPaymentSplitterFactory.sol");
+const HATVaultV2Mock = artifacts.require("./HATVaultV2Mock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
@@ -289,6 +290,45 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._epochLength.toString(), "20");
     for (let i in epochRewardPerBlock) {
       assert.equal(logs[0].args._epochRewardPerBlock[i].toString(), epochRewardPerBlock[i].toString());
+    }
+  });
+
+  it("Set HATVault implementation", async () => {
+    await setUpGlobalVars(accounts);
+
+    let hatVaultV2Mock = await HATVaultV2Mock.new();
+
+    try {
+      await hatVaultsRegistry.setHATVaultImplementation(hatVaultV2Mock.address, { from: accounts[1] });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    await hatVaultsRegistry.setHATVaultImplementation(hatVaultV2Mock.address);
+
+    let newVault = await HATVaultV2Mock.at((await hatVaultsRegistry.createVault({
+      asset: stakingToken.address,
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      name: "VAULT",
+      symbol: "VLT",
+      rewardControllers: [rewardController.address],
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      descriptionHash: "_descriptionHash",
+      vestingDuration: 86400,
+      vestingPeriods: 10,
+      isPaused: false
+    })).logs[1].args._vault);
+
+    assert.equal((await newVault.getVersion()), "New version!");
+
+    try {
+      await vault.getVersion();
+      assert(false, "method doesn't exist for older vault");
+    } catch (ex) {
+      assert.equal(ex.message, "vault.getVersion is not a function");
     }
   });
 
