@@ -192,7 +192,8 @@ interface IHATVaultsRegistry {
         address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
         uint256 _defaultChallengeTimeOutPeriod,
-        bool _defaultArbitratorCanChangeBounty
+        bool _defaultArbitratorCanChangeBounty,
+        bool _defaultArbitratorCanChangeBeneficiary
     );
 
     /**
@@ -314,7 +315,13 @@ interface IHATVaultsRegistry {
      */
     event SetDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty);
 
-    /** @notice Emitted when the system is put into emergency pause/unpause
+    /**
+     * @notice Emitted when the default arbitrator can change bounty is set
+     * @param _defaultArbitratorCanChangeBeneficiary Whether the arbitrator can change bounty of claims
+     */
+    event SetDefaultArbitratorCanChangeBeneficiary(bool _defaultArbitratorCanChangeBeneficiary);
+
+     /** @notice Emitted when the system is put into emergency pause/unpause
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
     event SetEmergencyPaused(bool _isEmergencyPaused);

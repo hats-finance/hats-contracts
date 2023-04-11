@@ -75,7 +75,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 ### approveClaim
 
 ```solidity
-function approveClaim(bytes32 _claimId, uint16 _bountyPercentage) external nonpayable
+function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
 Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the  HATVaultsRegistry the part of the bounty that will be swapped to HAT  tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
@@ -88,6 +88,7 @@ Approve a claim for a bounty submitted by a committee, and pay out bounty to hac
 |---|---|---|
 | _claimId | bytes32 | The claim ID |
 | _bountyPercentage | uint16 | The percentage of the vault&#39;s balance that will be sent as a bounty. This value will be ignored if the caller is not the arbitrator. |
+| _beneficiary | address | where the bounty will be sent to. This value will be  ignored if the caller is not the arbitrator. |
 
 ### asset
 
@@ -802,6 +803,22 @@ Called by the registry&#39;s owner to set the vault arbitrator If the value pass
 |---|---|---|
 | _arbitrator | address | The address of vault&#39;s arbitrator |
 
+### setArbitratorCanChangeBeneficiary
+
+```solidity
+function setArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+```
+
+Called by the registry&#39;s owner to set whether the arbitrator can change a claim&#39;s beneficiary  If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | Whether the arbitrator can change a claim bounty percentage |
+
 ### setArbitratorCanChangeBounty
 
 ```solidity
@@ -1358,6 +1375,22 @@ event SetArbitrator(address indexed _arbitrator)
 | Name | Type | Description |
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
+
+### SetArbitratorCanChangeBeneficiary
+
+```solidity
+event SetArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### SetArbitratorCanChangeBounty
 

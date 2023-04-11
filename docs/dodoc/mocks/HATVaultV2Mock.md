@@ -183,7 +183,7 @@ function NULL_UINT32() external view returns (uint32)
 ### activeClaim
 
 ```solidity
-function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty)
+function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -207,6 +207,7 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | challengePeriod | uint32 | undefined |
 | challengeTimeOutPeriod | uint32 | undefined |
 | arbitratorCanChangeBounty | bool | undefined |
+| arbitratorCanChangeBeneficiary | bool | undefined |
 
 ### addRewardController
 
@@ -273,7 +274,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 ### approveClaim
 
 ```solidity
-function approveClaim(bytes32 _claimId, uint16 _bountyPercentage) external nonpayable
+function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
 See {IHATVault-approveClaim}. 
@@ -286,6 +287,7 @@ See {IHATVault-approveClaim}.
 |---|---|---|
 | _claimId | bytes32 | undefined |
 | _bountyPercentage | uint16 | undefined |
+| _beneficiary | address | undefined |
 
 ### asset
 
@@ -608,6 +610,23 @@ See {IHATVault-getArbitrator}.
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
+
+### getArbitratorCanChangeBeneficiary
+
+```solidity
+function getArbitratorCanChangeBeneficiary() external view returns (bool)
+```
+
+See {IHATVault-getArbitratorCanChangeBeneficiary}. 
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### getArbitratorCanChangeBounty
 
@@ -1251,6 +1270,22 @@ See {IHATVault-setArbitrator}.
 | Name | Type | Description |
 |---|---|---|
 | _arbitrator | address | undefined |
+
+### setArbitratorCanChangeBeneficiary
+
+```solidity
+function setArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+```
+
+See {IHATVault-setArbitratorCanChangeBeneficiary}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### setArbitratorCanChangeBounty
 
@@ -1947,6 +1982,22 @@ event SetArbitrator(address indexed _arbitrator)
 | Name | Type | Description |
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
+
+### SetArbitratorCanChangeBeneficiary
+
+```solidity
+event SetArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### SetArbitratorCanChangeBounty
 

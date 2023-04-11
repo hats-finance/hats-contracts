@@ -10,7 +10,7 @@ contract HATGovernanceArbitrator is Ownable {
 
     function approveClaim(HATVault _vault, bytes32 _claimId) external onlyOwner {
         _vault.challengeClaim(_claimId);
-        _vault.approveClaim(_claimId, 0);
+        _vault.approveClaim(_claimId, 0, address(0));
     }
 
     function dismissClaim(HATVault _vault, bytes32 _claimId) external onlyOwner {
