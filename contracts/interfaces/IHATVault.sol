@@ -194,8 +194,8 @@ interface IHATVault is IERC4626Upgradeable {
     error RedeemSlippageProtection();
     // Cannot add the same reward controller more than once
     error DuplicatedRewardController();
-    // Must pay 100% when max bounty is set to 100%
-    error PayoutMustBeHundredPercent();
+    // payout must either be 100%, or the maxbountylimit
+    error PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
     // Cannot unpasue deposits for a vault that was destroyed
     error CannotUnpauseDestroyedVault();
 
