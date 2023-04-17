@@ -1101,7 +1101,7 @@ contract("HatVaults", (accounts) => {
       );
       assert(false, "cannot submit less than 100% when max bounty is 100% but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
-      assertVMException(ex, "PayoutMustBeHundredPercent");
+      assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
     }
 
     tx = await vault.submitClaim(accounts[2], 10000, "description hash", {
@@ -1116,7 +1116,7 @@ contract("HatVaults", (accounts) => {
       await vault.approveClaim(claimId, 9500);
       assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
-      assertVMException(ex, "PayoutMustBeHundredPercent");
+      assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
     }
 
     // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
