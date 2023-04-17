@@ -282,7 +282,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 _claim.bountyPercentage = _bountyPercentage;
             }
 
-            if (_claim.arbitratorCanChangeBeneficiary && _bountyPercentage != 0) {
+            if (_claim.arbitratorCanChangeBeneficiary && _beneficiary != address(0)) {
                 _claim.beneficiary = _beneficiary;
             }
         } else {
