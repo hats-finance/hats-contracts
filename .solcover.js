@@ -4,7 +4,8 @@ module.exports = {
    grep: "@skip-on-coverage", // Find everything with this tag
    invert: true,               // Run the grep's inverse set.
    timeout: 100000,
- },
+  },
+  configureYulOptimizer: true,
   skipFiles: ['test/', 'mocks/'],
   providerOptions: {
     accounts: [
