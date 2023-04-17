@@ -214,8 +214,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT && _bountyPercentage != HUNDRED_PERCENT)
-            revert PayoutMustBeHundredPercent();
+
+        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
+            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
+
         claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
             claimId: claimId,
@@ -879,8 +881,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT)
-            revert PayoutMustBeHundredPercent();
+        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
+            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
 
         uint256 _totalBountyAmount = _totalAssets * _bountyPercentage;
 
