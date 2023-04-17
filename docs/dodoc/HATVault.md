@@ -2163,6 +2163,17 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 | to `indexed` | address | undefined |
 | value  | uint256 | undefined |
 
+### VaultDestroyed
+
+```solidity
+event VaultDestroyed()
+```
+
+
+
+
+
+
 ### Withdraw
 
 ```solidity
@@ -2274,6 +2285,17 @@ error CannotTransferToAnotherUserWithActiveWithdrawRequest()
 
 ```solidity
 error CannotTransferToSelf()
+```
+
+
+
+
+
+
+### CannotUnpauseDestroyedVault
+
+```solidity
+error CannotUnpauseDestroyedVault()
 ```
 
 
@@ -2538,6 +2560,17 @@ error OnlyFeeSetter()
 
 ```solidity
 error OnlyRegistryOwner()
+```
+
+
+
+
+
+
+### PayoutMustBeHundredPercent
+
+```solidity
+error PayoutMustBeHundredPercent()
 ```
 
 
