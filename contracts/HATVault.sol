@@ -524,19 +524,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawAndClaim}. */
     function withdrawAndClaim(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
         shares = withdraw(assets, receiver, owner);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
     function redeemAndClaim(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-emergencyWithdraw}. */
@@ -587,19 +581,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawAndClaim}. */
     function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares) external returns (uint256 shares) {
         shares = withdraw(assets, receiver, owner, maxShares);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
     function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner, minAssets);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-deposit}. */
@@ -789,6 +777,17 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _asset.safeTransfer(_receiver, _assets);
 
         emit Withdraw(_caller, _receiver, _owner, _assets, _shares);
+    }
+
+    /**
+    * @dev Claim rewards from the vault's reward controllers for the owner
+    * @param owner The owner of the rewards to claim for
+    */
+    function _claimRewards(address owner) internal {
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            rewardControllers[i].claimReward(address(this), owner);
+            unchecked { ++i; }
+        }
     }
 
     function _beforeTokenTransfer(
