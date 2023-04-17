@@ -949,7 +949,7 @@ Called by the vault&#39;s owner to set the vault&#39;s max bounty to the already
 function setPendingMaxBounty(uint16 _maxBounty) external nonpayable
 ```
 
-Called by the vault&#39;s owner to set a pending request for the maximum percentage of the vault that can be paid out as a bounty. Cannot be called if there is an active claim that has been submitted. Max bounty should be less than or equal to 90% (defined as 9000). The pending value can be set by the owner after the time delay (of  {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
+Called by the vault&#39;s owner to set a pending request for the maximum percentage of the vault that can be paid out as a bounty. Cannot be called if there is an active claim that has been submitted. Max bounty should be less than or equal to 90% (defined as 9000). It can also be set to 100%, but in this mode the vault will only allow payouts of the 100%, and the vault will become inactive forever afterwards. The pending value can be set by the owner after the time delay (of  {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
 
 
 
@@ -1624,6 +1624,17 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 | to `indexed` | address | undefined |
 | value  | uint256 | undefined |
 
+### VaultDestroyed
+
+```solidity
+event VaultDestroyed()
+```
+
+
+
+
+
+
 ### Withdraw
 
 ```solidity
@@ -1735,6 +1746,17 @@ error CannotTransferToAnotherUserWithActiveWithdrawRequest()
 
 ```solidity
 error CannotTransferToSelf()
+```
+
+
+
+
+
+
+### CannotUnpauseDestroyedVault
+
+```solidity
+error CannotUnpauseDestroyedVault()
 ```
 
 
@@ -1999,6 +2021,17 @@ error OnlyFeeSetter()
 
 ```solidity
 error OnlyRegistryOwner()
+```
+
+
+
+
+
+
+### PayoutMustBeHundredPercent
+
+```solidity
+error PayoutMustBeHundredPercent()
 ```
 
 

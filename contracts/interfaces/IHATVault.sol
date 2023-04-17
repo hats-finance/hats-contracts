@@ -140,7 +140,7 @@ interface IHATVault is IERC4626Upgradeable {
     error VestingPeriodsCannotBeZero();
     // Vesting duration smaller than periods
     error VestingDurationSmallerThanPeriods();
-    // Max bounty cannot be more than `MAX_BOUNTY_LIMIT`
+    // Max bounty cannot be more than `MAX_BOUNTY_LIMIT` (unless if it is 100%)
     error MaxBountyCannotBeMoreThanMaxBountyLimit();
     // Committee bounty split cannot be more than `MAX_COMMITTEE_BOUNTY`
     error CommitteeBountyCannotBeMoreThanMax();
@@ -196,6 +196,10 @@ interface IHATVault is IERC4626Upgradeable {
     error RedeemSlippageProtection();
     // Cannot add the same reward controller more than once
     error DuplicatedRewardController();
+    // Payout must either be 100%, or up to the MAX_BOUNTY_LIMIT
+    error PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
+    // Cannot unpasue deposits for a vault that was destroyed
+    error CannotUnpauseDestroyedVault();
 
 
     event SubmitClaim(
@@ -238,6 +242,7 @@ interface IHATVault is IERC4626Upgradeable {
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
     );
+    event VaultDestroyed();
 
     /**
     * @notice Initialize a vault instance
@@ -355,6 +360,8 @@ interface IHATVault is IERC4626Upgradeable {
     * maximum percentage of the vault that can be paid out as a bounty.
     * Cannot be called if there is an active claim that has been submitted.
     * Max bounty should be less than or equal to 90% (defined as 9000).
+    * It can also be set to 100%, but in this mode the vault will only allow
+    * payouts of the 100%, and the vault will become inactive forever afterwards.
     * The pending value can be set by the owner after the time delay (of 
     * {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
     * @param _maxBounty The maximum bounty percentage that can be paid out

@@ -131,6 +131,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     ArbitratorCanChangeBeneficiary internal arbitratorCanChangeBeneficiary;
 
     bool private _isEmergencyWithdraw;
+    bool private _vaultDestroyed;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -174,7 +175,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-initialize}. */
     function initialize(IHATVault.VaultInitParams calldata _params) external initializer {
-        if (_params.maxBounty > MAX_BOUNTY_LIMIT)
+        if (_params.maxBounty > MAX_BOUNTY_LIMIT && _params.maxBounty != HUNDRED_PERCENT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);
         __ERC20_init(string.concat("Hats Vault ", _params.name), string.concat("HAT", _params.symbol));
@@ -217,6 +218,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
+
+        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
+            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
+
         claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
             claimId: claimId,
@@ -292,6 +297,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 block.timestamp <= _claim.createdAt + _claim.challengePeriod
             ) 
                 revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
+        }
+
+        if (_claim.bountyPercentage == HUNDRED_PERCENT) {
+            depositPause = true;
+            _vaultDestroyed = true;
+            emit VaultDestroyed();
         }
 
         address tokenLock;
@@ -413,7 +424,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setPendingMaxBounty}. */
     function setPendingMaxBounty(uint16 _maxBounty) external onlyOwner noActiveClaim {
-        if (_maxBounty > MAX_BOUNTY_LIMIT)
+        if (_maxBounty > MAX_BOUNTY_LIMIT && _maxBounty != HUNDRED_PERCENT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
@@ -438,6 +449,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-setDepositPause}. */
     function setDepositPause(bool _depositPause) external onlyOwner {
+        if (_vaultDestroyed)
+            revert CannotUnpauseDestroyedVault();
         depositPause = _depositPause;
         emit SetDepositPause(_depositPause);
     }
@@ -892,6 +905,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
+        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
+            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
 
         uint256 _totalBountyAmount = _totalAssets * _bountyPercentage;
 
