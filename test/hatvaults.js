@@ -1129,7 +1129,7 @@ contract("HatVaults", (accounts) => {
   
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("1"));
   
-    tx = await vault.approveClaim(claimId, 8001);
+    tx = await vault.approveClaim(claimId, 8001, ZERO_ADDRESS);
 
     // we cannot submit claims that are over MAX_BOUNY_LIMIT though
     try {
