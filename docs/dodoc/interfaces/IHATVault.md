@@ -2028,10 +2028,10 @@ error OnlyRegistryOwner()
 
 
 
-### PayoutMustBeHundredPercent
+### PayoutMustBeUpToMaxBountyLimitOrHundredPercent
 
 ```solidity
-error PayoutMustBeHundredPercent()
+error PayoutMustBeUpToMaxBountyLimitOrHundredPercent()
 ```
 
 

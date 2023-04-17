@@ -1155,7 +1155,7 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
 
     try {
-      await vault.approveClaim(claimId, 9500);
+      await vault.approveClaim(claimId, 9500, ZERO_ADDRESS);
       assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
       assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
@@ -1163,7 +1163,7 @@ contract("HatVaults", (accounts) => {
 
     // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
 
-    tx = await vault.approveClaim(claimId, 10000);
+    tx = await vault.approveClaim(claimId, 10000, ZERO_ADDRESS);
 
     assert.equal(tx.logs[0].event, "VaultDestroyed");
 
@@ -1177,11 +1177,6 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "CannotUnpauseDestroyedVault");
     }
-
- 
-
-    
-
   });
 
   it("update default hatBountySplit", async () => {
