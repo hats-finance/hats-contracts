@@ -189,15 +189,8 @@ contract("Registry Arbitrator", (accounts) => {
     );
 
     await assertFunctionRaisesException(
-      vault.setArbitratorCanChangeBounty(
+      vault.setArbitratorCanChangeClaim(
         0,
-        { from: accounts[1] }
-      ),
-      "OnlyRegistryOwner"
-    );
-
-    await assertFunctionRaisesException(
-      vault.setArbitratorCanChangeBeneficiary(
         0,
         { from: accounts[1] }
       ),
@@ -231,13 +224,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 2);
 
-    tx = await vault.setArbitratorCanChangeBounty(1);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    tx = await vault.setArbitratorCanChangeClaim(1, 2);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeClaim");
     assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, 1);
-
-    tx = await vault.setArbitratorCanChangeBeneficiary(1);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBeneficiary");
-    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, 1);
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, 2);
 
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[2]);
@@ -252,7 +242,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await vault.getArbitratorCanChangeBounty(), true);
 
     assert.equal(await registry.defaultArbitratorCanChangeBeneficiary(), false);
-    assert.equal(await vault.getArbitratorCanChangeBeneficiary(), true);
+    assert.equal(await vault.getArbitratorCanChangeBeneficiary(), false);
 
     tx = await vault.setArbitrator(accounts[3]);
     assert.equal(tx.logs[0].event, "SetArbitrator");
@@ -266,13 +256,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 85);
 
-    tx = await vault.setArbitratorCanChangeBounty(0);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    tx = await vault.setArbitratorCanChangeClaim(0, 1);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeClaim");
     assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, false);
-
-    tx = await vault.setArbitratorCanChangeBeneficiary(0);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBeneficiary");
-    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, false);
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, true);
 
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[3]);
@@ -287,7 +274,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await vault.getArbitratorCanChangeBounty(), false);
 
     assert.equal(await registry.defaultArbitratorCanChangeBeneficiary(), false);
-    assert.equal(await vault.getArbitratorCanChangeBeneficiary(), false);
+    assert.equal(await vault.getArbitratorCanChangeBeneficiary(), true);
 
     tx = await vault.setArbitrator(await vault.NULL_ADDRESS());
     assert.equal(tx.logs[0].event, "SetArbitrator");
@@ -301,13 +288,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._challengeTimeOutPeriod.toString(), (await vault.NULL_UINT32()).toString());
 
-    tx = await vault.setArbitratorCanChangeBounty(2);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBounty");
+    tx = await vault.setArbitratorCanChangeClaim(2, 0);
+    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeClaim");
     assert.equal(tx.logs[0].args._arbitratorCanChangeBounty, 2);
-
-    tx = await vault.setArbitratorCanChangeBeneficiary(2);
-    assert.equal(tx.logs[0].event, "SetArbitratorCanChangeBeneficiary");
-    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, 2);
+    assert.equal(tx.logs[0].args._arbitratorCanChangeBeneficiary, 0);
 
     assert.equal(await registry.defaultArbitrator(), accounts[0]);
     assert.equal(await vault.getArbitrator(), accounts[0]);
@@ -476,14 +460,14 @@ contract("Registry Arbitrator", (accounts) => {
 
     await advanceToSafetyPeriod(registry);
 
-    await vault.setArbitratorCanChangeBounty(0);
+    await vault.setArbitratorCanChangeClaim(0, 2);
 
     let claimId = await submitClaim(vault, { accounts });
 
     await vault.challengeClaim(claimId, {from: accounts[3] });
 
     // this will only affect the next claim
-    await vault.setArbitratorCanChangeBounty(1);
+    await vault.setArbitratorCanChangeClaim(1, 2);
 
     let tx = await vault.approveClaim(claimId, 1234, ZERO_ADDRESS, {
       from: accounts[3],
@@ -524,14 +508,14 @@ contract("Registry Arbitrator", (accounts) => {
 
     await advanceToSafetyPeriod(registry);
 
-    await vault.setArbitratorCanChangeBeneficiary(0);
+    await vault.setArbitratorCanChangeClaim(2, 0);
 
     let claimId = await submitClaim(vault, { accounts });
 
     await vault.challengeClaim(claimId, {from: accounts[3] });
 
     // this will only affect the next claim
-    await vault.setArbitratorCanChangeBeneficiary(1);
+    await vault.setArbitratorCanChangeClaim(2, 1);
 
     let tx = await vault.approveClaim(claimId, 0, accounts[3], {
       from: accounts[3],

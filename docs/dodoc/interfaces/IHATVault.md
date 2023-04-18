@@ -803,29 +803,13 @@ Called by the registry&#39;s owner to set the vault arbitrator If the value pass
 |---|---|---|
 | _arbitrator | address | The address of vault&#39;s arbitrator |
 
-### setArbitratorCanChangeBeneficiary
+### setArbitratorCanChangeClaim
 
 ```solidity
-function setArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+function setArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
 ```
 
-Called by the registry&#39;s owner to set whether the arbitrator can change a claim&#39;s beneficiary  If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | Whether the arbitrator can change a claim bounty percentage |
-
-### setArbitratorCanChangeBounty
-
-```solidity
-function setArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external nonpayable
-```
-
-Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage and/ or beneficiary If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
 
 
 
@@ -834,6 +818,7 @@ Called by the registry&#39;s owner to set whether the arbitrator can change a cl
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty | enum IHATVault.ArbitratorCanChangeBounty | Whether the arbitrator can change a claim bounty percentage |
+| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | Whether the arbitrator can change a claim beneficiary |
 
 ### setBountySplit
 
@@ -1376,26 +1361,10 @@ event SetArbitrator(address indexed _arbitrator)
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
 
-### SetArbitratorCanChangeBeneficiary
+### SetArbitratorCanChangeClaim
 
 ```solidity
-event SetArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
-
-### SetArbitratorCanChangeBounty
-
-```solidity
-event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty)
+event SetArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -1407,6 +1376,7 @@ event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arb
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty  | enum IHATVault.ArbitratorCanChangeBounty | undefined |
+| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### SetBountySplit
 

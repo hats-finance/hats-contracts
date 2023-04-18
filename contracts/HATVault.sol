@@ -508,16 +508,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
-     /** @notice See {IHATVault-setArbitratorCanChangeBounty}. */
-    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external onlyRegistryOwner {
+     /** @notice See {IHATVault-setArbitratorCanChangeClaim}. */
+    function setArbitratorCanChangeClaim(
+        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
+        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    ) external onlyRegistryOwner {
         arbitratorCanChangeBounty = _arbitratorCanChangeBounty;
-        emit SetArbitratorCanChangeBounty(_arbitratorCanChangeBounty);
-    }
-
-    /** @notice See {IHATVault-setArbitratorCanChangeBeneficiary}. */
-    function setArbitratorCanChangeBeneficiary(ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external onlyRegistryOwner {
         arbitratorCanChangeBeneficiary = _arbitratorCanChangeBeneficiary;
-        emit SetArbitratorCanChangeBeneficiary(_arbitratorCanChangeBeneficiary);
+        emit SetArbitratorCanChangeClaim(_arbitratorCanChangeBounty, _arbitratorCanChangeBeneficiary);
     }
 
     /* -------------------------------------------------------------------------------- */

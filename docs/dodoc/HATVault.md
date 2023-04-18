@@ -1254,29 +1254,13 @@ See {IHATVault-setArbitrator}.
 |---|---|---|
 | _arbitrator | address | undefined |
 
-### setArbitratorCanChangeBeneficiary
+### setArbitratorCanChangeClaim
 
 ```solidity
-function setArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+function setArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
 ```
 
-See {IHATVault-setArbitratorCanChangeBeneficiary}. 
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
-
-### setArbitratorCanChangeBounty
-
-```solidity
-function setArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external nonpayable
-```
-
-See {IHATVault-setArbitratorCanChangeBounty}. 
+See {IHATVault-setArbitratorCanChangeClaim}. 
 
 
 
@@ -1285,6 +1269,7 @@ See {IHATVault-setArbitratorCanChangeBounty}.
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty | enum IHATVault.ArbitratorCanChangeBounty | undefined |
+| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### setBountySplit
 
@@ -1966,26 +1951,10 @@ event SetArbitrator(address indexed _arbitrator)
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
 
-### SetArbitratorCanChangeBeneficiary
+### SetArbitratorCanChangeClaim
 
 ```solidity
-event SetArbitratorCanChangeBeneficiary(enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
-
-### SetArbitratorCanChangeBounty
-
-```solidity
-event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty)
+event SetArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -1997,6 +1966,7 @@ event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arb
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty  | enum IHATVault.ArbitratorCanChangeBounty | undefined |
+| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### SetBountySplit
 

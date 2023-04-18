@@ -236,8 +236,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty);
-    event SetArbitratorCanChangeBeneficiary(ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary);
+    event SetArbitratorCanChangeClaim(ArbitratorCanChangeBounty _arbitratorCanChangeBounty, ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary);
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
@@ -440,23 +439,18 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Called by the registry's owner to set whether the arbitrator
-    * can change a claim bounty percentage
+    * can change a claim bounty percentage and/ or beneficiary
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
     * @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage
+    * @param _arbitratorCanChangeBeneficiary Whether the arbitrator can change a claim beneficiary
     */
-    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external;
+    function setArbitratorCanChangeClaim(
+        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
+        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    )
+        external;
 
-    /**
-    * @notice Called by the registry's owner to set whether the arbitrator
-    * can change a claim's beneficiary 
-    * If the value passed is the special "null" value the vault will use the
-    * registry's default value.
-    * @param _arbitratorCanChangeBeneficiary Whether the arbitrator can change a claim bounty percentage
-    */
-    function setArbitratorCanChangeBeneficiary(ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external;
-
- 
     /* -------------------------------------------------------------------------------- */
 
     /* ---------------------------------- Vault --------------------------------------- */
