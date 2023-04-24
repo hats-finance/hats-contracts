@@ -90,7 +90,9 @@ interface IHATVault is IERC4626Upgradeable {
     * @param asset The vault's native token
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
+    * @param arbitrator The address of the vault's arbitrator 
     * @param isPaused Whether to initialize the vault with deposits disabled
+    * @param descriptionHash The hash of the vault's description
     * @dev Needed to avoid a "stack too deep" error
     */
     struct VaultInitParams {
@@ -104,6 +106,7 @@ interface IHATVault is IERC4626Upgradeable {
         IERC20 asset;
         address owner;
         address committee;
+        address arbitrator;
         bool isPaused;
         string descriptionHash;
     }

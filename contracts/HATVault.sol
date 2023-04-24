@@ -191,9 +191,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         __ReentrancyGuard_init();
         _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
+        arbitrator = _params.arbitrator;
 
         // Set vault to use default registry values where applicable
-        arbitrator = NULL_ADDRESS;
         bountyGovernanceHAT = NULL_UINT16;
         bountyHackerHATVested = NULL_UINT16;
         arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
