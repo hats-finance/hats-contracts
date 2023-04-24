@@ -27,8 +27,6 @@ const {
   epochRewardPerBlock,
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
-} = require("./common.js");
-const {
   submitClaim,
   assertFunctionRaisesException,
 } = require("./common.js");
