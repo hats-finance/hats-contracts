@@ -72,6 +72,29 @@ interface IHATVault is IERC4626Upgradeable {
         uint256 governanceHat;
     }
 
+    struct Claim {
+        bytes32 claimId;
+        address beneficiary;
+        uint16 bountyPercentage;
+        // the address of the committee at the time of the submission, so that this committee will
+        // be paid their share of the bounty in case the committee changes before claim approval
+        address committee;
+        uint32 createdAt;
+        uint32 challengedAt;
+        uint256 bountyGovernanceHAT;
+        uint256 bountyHackerHATVested;
+        address arbitrator;
+        uint32 challengePeriod;
+        uint32 challengeTimeOutPeriod;
+        bool arbitratorCanChangeBounty;
+        bool arbitratorCanChangeBeneficiary;
+    }
+
+    struct PendingMaxBounty {
+        uint16 maxBounty;
+        uint32 timestamp;
+    }
+
     /**
     * @notice Initialization parameters for the vault
     * @param name The vault's name (concatenated as "Hats Vault " + name)
@@ -651,6 +674,32 @@ interface IHATVault is IERC4626Upgradeable {
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Getters -------------------------------------- */
+
+    /** 
+    * @notice Returns the max bounty that can be paid from the vault in percentages out of HUNDRED_PERCENT
+    * @return The max bounty
+    */
+    function maxBounty() external view returns(uint16);
+
+    /** 
+    * @notice Returns the current active claim
+    * @return The current active claim
+    */
+    function activeClaim() external view returns(
+        bytes32,
+        address,
+        uint16,
+        address,
+        uint32,
+        uint32,
+        uint256,
+        uint256,
+        address,
+        uint32,
+        uint32,
+        bool,
+        bool
+    );
 
     /** 
     * @notice Returns the vault HAT bounty split part that goes to the governance

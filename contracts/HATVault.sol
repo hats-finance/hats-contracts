@@ -52,29 +52,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     using SafeERC20 for IERC20;
     using MathUpgradeable for uint256;
 
-    struct Claim {
-        bytes32 claimId;
-        address beneficiary;
-        uint16 bountyPercentage;
-        // the address of the committee at the time of the submission, so that this committee will
-        // be paid their share of the bounty in case the committee changes before claim approval
-        address committee;
-        uint32 createdAt;
-        uint32 challengedAt;
-        uint256 bountyGovernanceHAT;
-        uint256 bountyHackerHATVested;
-        address arbitrator;
-        uint32 challengePeriod;
-        uint32 challengeTimeOutPeriod;
-        bool arbitratorCanChangeBounty;
-        bool arbitratorCanChangeBeneficiary;
-    }
-
-    struct PendingMaxBounty {
-        uint16 maxBounty;
-        uint32 timestamp;
-    }
-
     uint256 public constant MAX_UINT = type(uint256).max;
     uint16 public constant NULL_UINT16 = type(uint16).max;
     uint32 public constant NULL_UINT32 = type(uint32).max;
@@ -493,7 +470,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
 
         challengePeriod = _challengePeriod;
-        
+
         emit SetChallengePeriod(_challengePeriod);
     }
 
@@ -504,7 +481,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
 
         challengeTimeOutPeriod = _challengeTimeOutPeriod;
-        
+
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 

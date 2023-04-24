@@ -186,7 +186,7 @@ function NULL_UINT32() external view returns (uint32)
 function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
 ```
 
-
+Returns the current active claim
 
 
 
@@ -195,7 +195,7 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 
 | Name | Type | Description |
 |---|---|---|
-| claimId | bytes32 | undefined |
+| claimId | bytes32 | The current active claim |
 | beneficiary | address | undefined |
 | bountyPercentage | uint16 | undefined |
 | committee | address | undefined |
@@ -758,7 +758,7 @@ function initialize(IHATVault.VaultInitParams _params) external nonpayable
 function maxBounty() external view returns (uint16)
 ```
 
-
+Returns the max bounty that can be paid from the vault in percentages out of HUNDRED_PERCENT
 
 
 
@@ -767,7 +767,7 @@ function maxBounty() external view returns (uint16)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | undefined |
+| _0 | uint16 | The max bounty |
 
 ### maxDeposit
 
