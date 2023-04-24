@@ -1129,7 +1129,7 @@ contract("HatVaults", (accounts) => {
   
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("1"));
   
-    tx = await vault.approveClaim(claimId, 8001);
+    tx = await vault.approveClaim(claimId, 8001, ZERO_ADDRESS);
 
     // we cannot submit claims that are over MAX_BOUNY_LIMIT though
     try {
@@ -1155,7 +1155,7 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
 
     try {
-      await vault.approveClaim(claimId, 9500);
+      await vault.approveClaim(claimId, 9500, ZERO_ADDRESS);
       assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
       assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
@@ -1163,7 +1163,7 @@ contract("HatVaults", (accounts) => {
 
     // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
 
-    tx = await vault.approveClaim(claimId, 10000);
+    tx = await vault.approveClaim(claimId, 10000, ZERO_ADDRESS);
 
     assert.equal(tx.logs[0].event, "VaultDestroyed");
 
@@ -1177,11 +1177,6 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "CannotUnpauseDestroyedVault");
     }
-
- 
-
-    
-
   });
 
   it("update default hatBountySplit", async () => {
@@ -1720,7 +1715,7 @@ contract("HatVaults", (accounts) => {
     await utils.increaseTime(60 * 60 * 24);
 
     let claimId = tx.logs[0].args._claimId;
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     try {
       await safeRedeem(vault, 1, staker);
@@ -2191,7 +2186,7 @@ contract("HatVaults", (accounts) => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     await advanceToSafetyPeriod();
     result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
     assert.equal(result.assets.toString(), web3.utils.toWei("0.196")); 
@@ -3578,7 +3573,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
 
     try {
-      await vault.approveClaim(web3.utils.randomHex(32), 8000);
+      await vault.approveClaim(web3.utils.randomHex(32), 8000, ZERO_ADDRESS);
       assert(false, "there is no pending approval");
     } catch (ex) {
       assertVMException(ex, "NoActiveClaimExists");
@@ -3608,14 +3603,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await stakingToken.setReenterApproveClaim(true);
     try {
-      await vault.approveClaim(claimId, 8000);
+      await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
       assert(false, "fail on reentrancy attempt");
     } catch (ex) {
       assertVMException(ex, "ReentrancyGuard: reentrant call");
     }
     await stakingToken.setReenterApproveClaim(false);
 
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     assert.equal(
       await hatToken.balanceOf(rewardController.address),
@@ -3687,7 +3682,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
 
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     assert.equal(tx.logs[8].event, "ApproveClaim");
     assert.equal(tx.logs[8].args._claimId, claimId);
     let stakerAmount = await vault.balanceOf(staker);
@@ -3740,7 +3735,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     await safeRedeem(vault, await vault.balanceOf(staker), staker, staker);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await safeRedeem(vault, web3.utils.toWei("1"), staker2);
@@ -3796,7 +3791,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     assert.equal(tx.logs[8].event, "ApproveClaim");
     assert.equal(tx.logs[8].args._claimId, claimId);
 
@@ -3939,7 +3934,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     assert.equal(tx.logs[8].event, "ApproveClaim");
     assert.equal(tx.logs[8].args._claimId, claimId);
 
@@ -4524,7 +4519,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    await vault.approveClaim(claimId, 4000);
+    await vault.approveClaim(claimId, 4000, ZERO_ADDRESS);
     await advanceToSafetyPeriod();
     tx = await vault.submitClaim(accounts[2], 4000, "description hash", {
       from: accounts[1],
@@ -4532,7 +4527,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 4000);
+    await vault.approveClaim(claimId, 4000, ZERO_ADDRESS);
 
     await advanceToNonSafetyPeriod();
 
@@ -4667,7 +4662,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     await stakingToken.approveDisable(true);
     try {
@@ -4775,7 +4770,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     await stakingToken.approveDisable(true);
 
@@ -4882,7 +4877,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await newVault.approveClaim(claimId, 8000);
+    await newVault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     assert.equal(await hatToken.balanceOf(accounts[0]), 0);
     amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
@@ -5000,8 +4995,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await vault.challengeClaim(claimId1);
     await newVault.challengeClaim(claimId2);
 
-    await vault.approveClaim(claimId1, 8000);
-    await newVault.approveClaim(claimId2, 4000);
+    await vault.approveClaim(claimId1, 8000, ZERO_ADDRESS);
+    await newVault.approveClaim(claimId2, 4000, ZERO_ADDRESS);
     
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5115,7 +5110,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5181,7 +5176,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     try {
       await hatVaultsRegistry.setSwapToken(stakingToken2.address, { from: accounts[1] });
@@ -5309,7 +5304,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5444,7 +5439,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
       stakingToken.address,
@@ -5542,7 +5537,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5689,7 +5684,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5969,9 +5964,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId2 = tx.logs[0].args._claimId;
 
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId1, 8000);
+    await vault.approveClaim(claimId1, 8000, ZERO_ADDRESS);
     await utils.increaseTime(60 * 60 * 24 * 2);
-    await newVault.approveClaim(claimId2, 8000);
+    await newVault.approveClaim(claimId2, 8000, ZERO_ADDRESS);
  
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -6097,7 +6092,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -6166,7 +6161,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000);
+    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let payload = "0x00000000000000000000000000000000000001";
     try {
@@ -6279,7 +6274,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
     assert.equal(tx.logs[8].event, "ApproveClaim");
     assert.equal(tx.logs[8].args._claimId, claimId);
     var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
@@ -6380,7 +6375,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     assert.equal(tx.logs[6].event, "ApproveClaim");
     assert.equal(tx.logs[6].args._claimId, claimId);
@@ -7145,7 +7140,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await advanceToSafetyPeriod();
     const claimId = await submitClaim(vault, { accounts, bountyPercentage});
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, bountyPercentage);
+    await vault.approveClaim(claimId, bountyPercentage, ZERO_ADDRESS);
 
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), (HUNDRED_PERCENT - bountyPercentage) * MINIMAL_AMOUNT_OF_SHARES/HUNDRED_PERCENT);
 

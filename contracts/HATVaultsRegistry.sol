@@ -85,6 +85,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
 
     address public defaultArbitrator;
     bool public defaultArbitratorCanChangeBounty;
+    bool public defaultArbitratorCanChangeBeneficiary;
 
     bool public isEmergencyPaused;
     uint32 public defaultChallengePeriod;
@@ -136,6 +137,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultChallengePeriod = 3 days;
         defaultChallengeTimeOutPeriod = 5 weeks;
         defaultArbitratorCanChangeBounty = true;
+        defaultArbitratorCanChangeBeneficiary = false;
         emit RegistryCreated(
             _hatVaultImplementation,
             _HAT,
@@ -147,7 +149,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
             _defaultArbitrator,
             defaultChallengePeriod,
             defaultChallengeTimeOutPeriod,
-            defaultArbitratorCanChangeBounty
+            defaultArbitratorCanChangeBounty,
+            defaultArbitratorCanChangeBeneficiary
         );
     }
 
@@ -220,6 +223,12 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         emit SetDefaultArbitratorCanChangeBounty(_defaultArbitratorCanChangeBounty);
     }
    
+    /** @notice See {IHATVaultsRegistry-setDefaultArbitratorCanChangeBeneficiary}. */
+    function setDefaultArbitratorCanChangeBeneficiary(bool _defaultArbitratorCanChangeBeneficiary) external onlyOwner {
+        defaultArbitratorCanChangeBeneficiary = _defaultArbitratorCanChangeBeneficiary;
+        emit SetDefaultArbitratorCanChangeBeneficiary(_defaultArbitratorCanChangeBeneficiary);
+    }
+
     /** @notice See {IHATVaultsRegistry-setFeeSetter}. */
     function setFeeSetter(address _feeSetter) external onlyOwner {
         feeSetter = _feeSetter;

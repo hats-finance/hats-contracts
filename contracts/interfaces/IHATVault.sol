@@ -48,6 +48,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
 
+    enum ArbitratorCanChangeBeneficiary{ NO, YES, DEFAULT }
+
     // How to divide the bounty - after deducting the part that is swapped to
     // HAT tokens (and then sent to governance and vested to the hacker)
     // values are in percentages and should add up to 100% (defined as 10000)
@@ -234,7 +236,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty);
+    event SetArbitratorCanChangeClaim(ArbitratorCanChangeBounty _arbitratorCanChangeBounty, ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary);
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
@@ -295,8 +297,10 @@ interface IHATVault is IERC4626Upgradeable {
     * @param _bountyPercentage The percentage of the vault's balance that will
     * be sent as a bounty. This value will be ignored if the caller is not the
     * arbitrator.
+    * @param _beneficiary where the bounty will be sent to. This value will be 
+    * ignored if the caller is not the arbitrator.
     */
-    function approveClaim(bytes32 _claimId, uint16 _bountyPercentage)
+    function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary)
         external;
 
     /**
@@ -435,12 +439,17 @@ interface IHATVault is IERC4626Upgradeable {
 
     /**
     * @notice Called by the registry's owner to set whether the arbitrator
-    * can change a claim bounty percentage
+    * can change a claim bounty percentage and/ or beneficiary
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
     * @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage
+    * @param _arbitratorCanChangeBeneficiary Whether the arbitrator can change a claim beneficiary
     */
-    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external;
+    function setArbitratorCanChangeClaim(
+        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
+        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    )
+        external;
 
     /* -------------------------------------------------------------------------------- */
 

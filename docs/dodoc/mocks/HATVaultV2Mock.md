@@ -183,7 +183,7 @@ function NULL_UINT32() external view returns (uint32)
 ### activeClaim
 
 ```solidity
-function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty)
+function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -207,6 +207,7 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | challengePeriod | uint32 | undefined |
 | challengeTimeOutPeriod | uint32 | undefined |
 | arbitratorCanChangeBounty | bool | undefined |
+| arbitratorCanChangeBeneficiary | bool | undefined |
 
 ### addRewardController
 
@@ -273,7 +274,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 ### approveClaim
 
 ```solidity
-function approveClaim(bytes32 _claimId, uint16 _bountyPercentage) external nonpayable
+function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
 See {IHATVault-approveClaim}. 
@@ -286,6 +287,7 @@ See {IHATVault-approveClaim}.
 |---|---|---|
 | _claimId | bytes32 | undefined |
 | _bountyPercentage | uint16 | undefined |
+| _beneficiary | address | undefined |
 
 ### asset
 
@@ -608,6 +610,23 @@ See {IHATVault-getArbitrator}.
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
+
+### getArbitratorCanChangeBeneficiary
+
+```solidity
+function getArbitratorCanChangeBeneficiary() external view returns (bool)
+```
+
+See {IHATVault-getArbitratorCanChangeBeneficiary}. 
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### getArbitratorCanChangeBounty
 
@@ -1252,13 +1271,13 @@ See {IHATVault-setArbitrator}.
 |---|---|---|
 | _arbitrator | address | undefined |
 
-### setArbitratorCanChangeBounty
+### setArbitratorCanChangeClaim
 
 ```solidity
-function setArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external nonpayable
+function setArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
 ```
 
-See {IHATVault-setArbitratorCanChangeBounty}. 
+See {IHATVault-setArbitratorCanChangeClaim}. 
 
 
 
@@ -1267,6 +1286,7 @@ See {IHATVault-setArbitratorCanChangeBounty}.
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty | enum IHATVault.ArbitratorCanChangeBounty | undefined |
+| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### setBountySplit
 
@@ -1948,10 +1968,10 @@ event SetArbitrator(address indexed _arbitrator)
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
 
-### SetArbitratorCanChangeBounty
+### SetArbitratorCanChangeClaim
 
 ```solidity
-event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty)
+event SetArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -1963,6 +1983,7 @@ event SetArbitratorCanChangeBounty(enum IHATVault.ArbitratorCanChangeBounty _arb
 | Name | Type | Description |
 |---|---|---|
 | _arbitratorCanChangeBounty  | enum IHATVault.ArbitratorCanChangeBounty | undefined |
+| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
 
 ### SetBountySplit
 
@@ -2180,6 +2201,17 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 | to `indexed` | address | undefined |
 | value  | uint256 | undefined |
 
+### VaultDestroyed
+
+```solidity
+event VaultDestroyed()
+```
+
+
+
+
+
+
 ### Withdraw
 
 ```solidity
@@ -2291,6 +2323,17 @@ error CannotTransferToAnotherUserWithActiveWithdrawRequest()
 
 ```solidity
 error CannotTransferToSelf()
+```
+
+
+
+
+
+
+### CannotUnpauseDestroyedVault
+
+```solidity
+error CannotUnpauseDestroyedVault()
 ```
 
 
@@ -2555,6 +2598,17 @@ error OnlyFeeSetter()
 
 ```solidity
 error OnlyRegistryOwner()
+```
+
+
+
+
+
+
+### PayoutMustBeUpToMaxBountyLimitOrHundredPercent
+
+```solidity
+error PayoutMustBeUpToMaxBountyLimitOrHundredPercent()
 ```
 
 

@@ -67,6 +67,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint32 challengePeriod;
         uint32 challengeTimeOutPeriod;
         bool arbitratorCanChangeBounty;
+        bool arbitratorCanChangeBeneficiary;
     }
 
     struct PendingMaxBounty {
@@ -126,6 +127,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint32 internal challengeTimeOutPeriod;
     // whether the arbitrator can change bounty of claims
     ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
+    // whether the arbitrator can change the beneficiary of claims
+    ArbitratorCanChangeBeneficiary internal arbitratorCanChangeBeneficiary;
 
     bool private _isEmergencyWithdraw;
     bool private _vaultDestroyed;
@@ -194,6 +197,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         bountyGovernanceHAT = NULL_UINT16;
         bountyHackerHATVested = NULL_UINT16;
         arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
+        arbitratorCanChangeBeneficiary = ArbitratorCanChangeBeneficiary.DEFAULT;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
 
@@ -232,7 +236,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             arbitrator: getArbitrator(),
             challengePeriod: getChallengePeriod(),
             challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
-            arbitratorCanChangeBounty: getArbitratorCanChangeBounty()
+            arbitratorCanChangeBounty: getArbitratorCanChangeBounty(),
+            arbitratorCanChangeBeneficiary: getArbitratorCanChangeBeneficiary()
         });
 
         emit SubmitClaim(
@@ -259,7 +264,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-approveClaim}. */
-    function approveClaim(bytes32 _claimId, uint16 _bountyPercentage) external nonReentrant isActiveClaim(_claimId) {
+    function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonReentrant isActiveClaim(_claimId) {
         Claim memory _claim = activeClaim;
         delete activeClaim;
         
@@ -280,6 +285,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             // the arbitrator can update the bounty if needed
             if (_claim.arbitratorCanChangeBounty && _bountyPercentage != 0) {
                 _claim.bountyPercentage = _bountyPercentage;
+            }
+
+            if (_claim.arbitratorCanChangeBeneficiary && _beneficiary != address(0)) {
+                _claim.beneficiary = _beneficiary;
             }
         } else {
             // the claim can be approved by anyone if the challengePeriod passed without a challenge
@@ -499,10 +508,14 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
-    /** @notice See {IHATVault-setArbitratorCanChangeBounty}. */
-    function setArbitratorCanChangeBounty(ArbitratorCanChangeBounty _arbitratorCanChangeBounty) external onlyRegistryOwner {
+     /** @notice See {IHATVault-setArbitratorCanChangeClaim}. */
+    function setArbitratorCanChangeClaim(
+        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
+        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    ) external onlyRegistryOwner {
         arbitratorCanChangeBounty = _arbitratorCanChangeBounty;
-        emit SetArbitratorCanChangeBounty(_arbitratorCanChangeBounty);
+        arbitratorCanChangeBeneficiary = _arbitratorCanChangeBeneficiary;
+        emit SetArbitratorCanChangeClaim(_arbitratorCanChangeBounty, _arbitratorCanChangeBeneficiary);
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -522,19 +535,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawAndClaim}. */
     function withdrawAndClaim(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
         shares = withdraw(assets, receiver, owner);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
     function redeemAndClaim(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-emergencyWithdraw}. */
@@ -585,19 +592,13 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-withdrawAndClaim}. */
     function withdrawAndClaim(uint256 assets, address receiver, address owner, uint256 maxShares) external returns (uint256 shares) {
         shares = withdraw(assets, receiver, owner, maxShares);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-redeemAndClaim}. */
     function redeemAndClaim(uint256 shares, address receiver, address owner, uint256 minAssets) external returns (uint256 assets) {
         assets = redeem(shares, receiver, owner, minAssets);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            rewardControllers[i].claimReward(address(this), owner);
-            unchecked { ++i; }
-        }
+        _claimRewards(owner);
     }
 
     /** @notice See {IHATVault-deposit}. */
@@ -726,6 +727,16 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         }
     }
 
+    /** @notice See {IHATVault-getArbitratorCanChangeBeneficiary}. */
+    function getArbitratorCanChangeBeneficiary() public view returns(bool) {
+        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary = arbitratorCanChangeBeneficiary;
+        if (_arbitratorCanChangeBeneficiary != ArbitratorCanChangeBeneficiary.DEFAULT) {
+            return _arbitratorCanChangeBeneficiary == ArbitratorCanChangeBeneficiary.YES;
+        } else {
+            return registry.defaultArbitratorCanChangeBeneficiary();
+        }
+    }
+
     /* -------------------------------------------------------------------------------- */
 
     /* --------------------------------- Helpers -------------------------------------- */
@@ -777,6 +788,17 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _asset.safeTransfer(_receiver, _assets);
 
         emit Withdraw(_caller, _receiver, _owner, _assets, _shares);
+    }
+
+    /**
+    * @dev Claim rewards from the vault's reward controllers for the owner
+    * @param owner The owner of the rewards to claim for
+    */
+    function _claimRewards(address owner) internal {
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            rewardControllers[i].claimReward(address(this), owner);
+            unchecked { ++i; }
+        }
     }
 
     function _beforeTokenTransfer(
