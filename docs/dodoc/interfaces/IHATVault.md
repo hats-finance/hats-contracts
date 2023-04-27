@@ -10,6 +10,35 @@ A HATVault holds the funds for a specific project&#39;s bug bounties. Anyone can
 
 ## Methods
 
+### activeClaim
+
+```solidity
+function activeClaim() external view returns (bytes32, address, uint16, address, uint32, uint32, uint256, uint256, address, uint32, uint32, bool, bool)
+```
+
+Returns the current active claim
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | The current active claim |
+| _1 | address | undefined |
+| _2 | uint16 | undefined |
+| _3 | address | undefined |
+| _4 | uint32 | undefined |
+| _5 | uint32 | undefined |
+| _6 | uint256 | undefined |
+| _7 | uint256 | undefined |
+| _8 | address | undefined |
+| _9 | uint32 | undefined |
+| _10 | uint32 | undefined |
+| _11 | bool | undefined |
+| _12 | bool | undefined |
+
 ### addRewardController
 
 ```solidity
@@ -402,6 +431,23 @@ function initialize(IHATVault.VaultInitParams _params) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _params | IHATVault.VaultInitParams | undefined |
+
+### maxBounty
+
+```solidity
+function maxBounty() external view returns (uint16)
+```
+
+Returns the max bounty that can be paid from the vault in percentages out of HUNDRED_PERCENT
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | The max bounty |
 
 ### maxDeposit
 
