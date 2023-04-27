@@ -135,6 +135,7 @@ const setup = async function(
     asset: stakingToken.address,
     owner: await hatVaultsRegistry.owner(),
     committee: accounts[1],
+    arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
     name: "VAULT",
     symbol: "VLT",
     rewardControllers: [rewardController.address],
