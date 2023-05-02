@@ -11,7 +11,7 @@
 pragma solidity 0.8.16;
 
 import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract/contracts/IDisputeResolver.sol";
-import "./HATVault.sol";
+import "./interfaces/IHATVault.sol";
 import "./libraries/CappedMath.sol";
 
 /**
@@ -43,6 +43,7 @@ contract HATKlerosConnector is IDisputeResolver {
     struct Claim {
         Status status; // Claim's current status.
         uint16 bountyPercentage; // Bounty that the claimant demands.
+        address beneficiary; // Beneficiary address proposed by claimant.
         address challenger; // Address that challenged the claim.
         uint256 nbChallenges; // Number of times the claim was challenged, 2 max.
         uint256 openToChallengeAt; // Time when the claim is open to 2nd challenge.
@@ -80,9 +81,8 @@ contract HATKlerosConnector is IDisputeResolver {
 
 
     address public immutable governor; // Governor of this contract.
-    IArbitrator public immutable arbitrator; // The arbitrator contract (e.g. Kleros Court).
-    // TODO: add maxBounty() and activeClaim() to IHatVault interface.
-    HATVault public immutable vault; // Address of the Vault contract.
+    IArbitrator public immutable klerosArbitrator; // The kleros arbitrator contract (e.g. Kleros Court).
+    IHATVault public immutable vault; // Address of the Vault contract.
     uint256 public metaEvidenceUpdates; // Relevant index of the metaevidence.
     bytes public arbitratorExtraData; // Extra data for the arbitrator.
 
@@ -116,7 +116,7 @@ contract HATKlerosConnector is IDisputeResolver {
     modifier onlyGovernor {require(msg.sender == governor, "The caller must be the governor."); _;}
 
     /** @dev Constructor.
-     *  @param _arbitrator The arbitrator of the contract.
+     *  @param _klerosArbitrator The Kleros arbitrator of the contract.
      *  @param _arbitratorExtraData Extra data for the arbitrator.
      *  @param _vault Address of the Vault contract.
      *  @param _metaEvidenceClaimant Metaevidence for the disputes raised by claimant.
@@ -129,9 +129,9 @@ contract HATKlerosConnector is IDisputeResolver {
      *  @param _loserAppealPeriodMultiplier Multiplier for calculating the appeal period for the losing side.
      */
     constructor (
-        IArbitrator _arbitrator,
+        IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
-        HATVault _vault,
+        IHATVault _vault,
         string memory _metaEvidenceClaimant,
         string memory _metaEvidenceDepositor,
         string memory _metaEvidenceSubmit,
@@ -146,7 +146,7 @@ contract HATKlerosConnector is IDisputeResolver {
         emit MetaEvidence(2, _metaEvidenceSubmit);
         
         governor = msg.sender;
-        arbitrator = _arbitrator;
+        klerosArbitrator = _klerosArbitrator;
         arbitratorExtraData = _arbitratorExtraData;
         vault = _vault;
         // Sum of both challenge periods shouldn't exceed challenge period of the vault so the depositor will have time to challenge before the claim is approved in Vault.
@@ -230,17 +230,16 @@ contract HATKlerosConnector is IDisputeResolver {
         PendingClaim storage pendingClaim = pendingClaims.push();
         pendingClaim.challenger = msg.sender;
         pendingClaim.bountyPercentage = _bountyPercentage;
-        // TODO: it can be gas-consuming to store a string.
         pendingClaim.descriptionHash = _descriptionHash;
 
-        uint256 externalDisputeId = arbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
+        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
         if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
     
-        emit Dispute(arbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
-        emit Evidence(arbitrator, localDisputeId, msg.sender, _evidence);
+        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
+        emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
     }
 
     // ******************** //
@@ -250,10 +249,11 @@ contract HATKlerosConnector is IDisputeResolver {
     /** @dev Challenge the claim by the claimant to increase bounty.
      *  @param _claimId The Id of the claim in Vault contract.
      *  @param _bountyPercentage Bounty percentage the hacker thinks he is eligible to.
+     *  @param _beneficiary Address of beneficiary proposed by hacker.
      *  @param _evidence URI of the evidence to support the challenge.
      */
-    function challengeByClaimant(bytes32 _claimId, uint16 _bountyPercentage, string calldata _evidence) external payable {
-        (bytes32 claimId,, uint16 bountyPercentage,, uint256 createdAt,,,,,,,) = vault.activeClaim();
+    function challengeByClaimant(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, string calldata _evidence) external payable {
+        (bytes32 claimId, address beneficiary, uint16 bountyPercentage,, uint256 createdAt,,,,,,,,) = vault.activeClaim();
 
         Claim storage claim = claims[claimId];
         uint256 arbitrationCost = getArbitrationCost();
@@ -261,6 +261,7 @@ contract HATKlerosConnector is IDisputeResolver {
         require(claimId == _claimId, "Claim id does not match");
         require(claimId != bytes32(0), "No active claim");
         require(claim.status == Status.None, "Claim is already challenged or resolved");
+        require(msg.sender == beneficiary, "Only original beneficiary allowed to challenge");
         require(msg.value >= arbitrationCost, "Should pay the full deposit.");
 
         uint256 metaEvidenceId;
@@ -278,6 +279,7 @@ contract HATKlerosConnector is IDisputeResolver {
         claim.nbChallenges++;
         claim.challenger = msg.sender;
         claim.bountyPercentage = _bountyPercentage;
+        claim.beneficiary = _beneficiary;
 
         DisputeStruct storage dispute = disputes.push();
         dispute.claimId = claimId;
@@ -285,15 +287,15 @@ contract HATKlerosConnector is IDisputeResolver {
         // Preemptively create a new funding round for future appeals.
         dispute.rounds.push();
 
-        uint256 externalDisputeId = arbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
+        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
         if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
 
         emit ChallengedByClaimant(_claimId);
-        emit Dispute(arbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
-        emit Evidence(arbitrator, localDisputeId, msg.sender, _evidence);
+        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
+        emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
     }
 
     /** @dev Challenge the claim by depositor to dismiss it altogether.
@@ -301,7 +303,7 @@ contract HATKlerosConnector is IDisputeResolver {
      *  @param _evidence URI of the evidence to support the challenge.
      */
     function challengeByDepositor(bytes32 _claimId, string calldata _evidence) external payable {
-        (bytes32 claimId,,,, uint256 createdAt,,,,,,,) = vault.activeClaim();
+        (bytes32 claimId,,,, uint256 createdAt,,,,,,,,) = vault.activeClaim();
 
         Claim storage claim = claims[claimId];
         uint256 arbitrationCost = getArbitrationCost();
@@ -341,15 +343,15 @@ contract HATKlerosConnector is IDisputeResolver {
         // Preemptively create a new funding round for future appeals.
         dispute.rounds.push();
 
-        uint256 externalDisputeId = arbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
+        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
         if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
 
         emit ChallengedByDepositor(_claimId);
-        emit Dispute(arbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
-        emit Evidence(arbitrator, localDisputeId, msg.sender, _evidence);
+        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
+        emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
     }
 
     /** @dev Give a ruling for a dispute. Can only be called by the arbitrator.
@@ -363,7 +365,7 @@ contract HATKlerosConnector is IDisputeResolver {
 
         require(!dispute.resolved, "Already resolved");
         require(_ruling <= RULING_OPTIONS, "Invalid ruling option");
-        require(address(arbitrator) == msg.sender, "Only the arbitrator can execute");
+        require(address(klerosArbitrator) == msg.sender, "Only the arbitrator can execute");
         uint256 finalRuling = _ruling;
     
         // If one side paid its fees, the ruling is in its favor. Note that if the other side had also paid, an appeal would have been created.
@@ -386,7 +388,7 @@ contract HATKlerosConnector is IDisputeResolver {
             if (finalRuling == uint256(Decision.SideWithChallenger)) {
                 if (claim.status == Status.DisputedByClaimant) {
                     // Claimant won the dispute. Change the severity.
-                    vault.approveClaim(claimId, claim.bountyPercentage);
+                    vault.approveClaim(claimId, claim.bountyPercentage, claim.beneficiary);
                 } else {
                     // Depositor won. Dismiss the claim.
                     vault.dismissClaim(claimId);
@@ -399,9 +401,9 @@ contract HATKlerosConnector is IDisputeResolver {
                     claim.status = Status.None;
                     claim.openToChallengeAt = block.timestamp;
                 } else {
-                    // Depositor lost. Resolve the claim and report it to HATVault with default severity.
+                    // Depositor lost. Resolve the claim and report it to HATVault with default parameters.
                     claim.status = Status.Resolved;
-                    vault.approveClaim(claimId, 0);
+                    vault.approveClaim(claimId, 0, address(0));
                 }     
             }
         }       
@@ -419,9 +421,9 @@ contract HATKlerosConnector is IDisputeResolver {
         // Note if the claim wasn't challenged before it wouldn't have been registered by this contract and could've been approved directly in Vault.
         require(claim.nbChallenges == 1, "Claim does not exist");
         require(block.timestamp - claim.openToChallengeAt > depositorChallengePeriod, "Depositor still can challenge");
-        // Approve the claim while leaving the percentage unchanged.
+        // Approve the claim while leaving the percentage and beneficiary unchanged.
         claim.status = Status.Resolved;
-        vault.approveClaim(_claimId, 0);
+        vault.approveClaim(_claimId, 0, address(0));
     }
 
     /** @dev Submits a pending claim to Vault if arbitrator deemed it valid.
@@ -445,7 +447,7 @@ contract HATKlerosConnector is IDisputeResolver {
         // Note that by reading dispute's value we also check that it exists.
         require(!dispute.resolved, "Dispute already resolved");
 
-        emit Evidence(arbitrator, _localDisputeId, msg.sender, _evidenceURI);
+        emit Evidence(klerosArbitrator, _localDisputeId, msg.sender, _evidenceURI);
     }
 
     // ************************ //
@@ -463,12 +465,12 @@ contract HATKlerosConnector is IDisputeResolver {
         require(_side <= RULING_OPTIONS, "Side out of bounds");
 
         uint256 externalDisputeId = dispute.externalDisputeId;
-        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = arbitrator.appealPeriod(externalDisputeId);
+        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = klerosArbitrator.appealPeriod(externalDisputeId);
         require(block.timestamp >= appealPeriodStart && block.timestamp < appealPeriodEnd, "Appeal period is over.");
 
         uint256 multiplier;
         {
-            uint256 winner = arbitrator.currentRuling(externalDisputeId);
+            uint256 winner = klerosArbitrator.currentRuling(externalDisputeId);
             if (winner == _side) {
                 multiplier = winnerMultiplier;
             } else {
@@ -484,7 +486,7 @@ contract HATKlerosConnector is IDisputeResolver {
         uint256 lastRoundId = dispute.rounds.length - 1;
         Round storage round = dispute.rounds[lastRoundId];
         require(!round.hasPaid[_side], "Appeal fee is already paid.");
-        uint256 appealCost = arbitrator.appealCost(externalDisputeId, arbitratorExtraData);
+        uint256 appealCost = klerosArbitrator.appealCost(externalDisputeId, arbitratorExtraData);
         uint256 totalCost = appealCost.addCap((appealCost.mulCap(multiplier)) / MULTIPLIER_DIVISOR);
 
         // Take up to the amount necessary to fund the current round at the current costs.
@@ -507,7 +509,7 @@ contract HATKlerosConnector is IDisputeResolver {
             dispute.rounds.push();
 
             round.feeRewards = round.feeRewards.subCap(appealCost);
-            arbitrator.appeal{value: appealCost}(externalDisputeId, arbitratorExtraData);
+            klerosArbitrator.appeal{value: appealCost}(externalDisputeId, arbitratorExtraData);
         }
 
         if (msg.value.subCap(contribution) > 0) payable(msg.sender).send(msg.value.subCap(contribution)); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
@@ -583,7 +585,7 @@ contract HATKlerosConnector is IDisputeResolver {
      *  @return Arbitration cost.
      */   
     function getArbitrationCost() public view returns (uint256) {
-        return arbitrator.arbitrationCost(arbitratorExtraData);
+        return klerosArbitrator.arbitrationCost(arbitratorExtraData);
     }
 
     /** @dev Returns number of possible ruling options. Valid rulings are [0, return value].
