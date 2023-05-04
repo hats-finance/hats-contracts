@@ -157,7 +157,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _validateSplit(_params.bountySplit);
         __ERC20_init(string.concat("Hats Vault ", _params.name), string.concat("HAT", _params.symbol));
         __ERC4626_init(IERC20MetadataUpgradeable(address(_params.asset)));
-        rewardControllers = _params.rewardControllers;
+        for (uint256 i = 0; i < _params.rewardControllers.length;) { 
+            _addRewardController(_params.rewardControllers[i]);
+            unchecked { ++i; }
+        }
         _setVestingParams(_params.vestingDuration, _params.vestingPeriods);
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         maxBounty = _params.maxBounty;
@@ -439,12 +442,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-addRewardController}. */
     function addRewardController(IRewardController _rewardController) external onlyRegistryOwner noActiveClaim {
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
-            unchecked { ++i; }
-        }
-        rewardControllers.push(_rewardController);
-        emit AddRewardController(_rewardController);
+        _addRewardController(_rewardController);
     }
     
     /** @notice See {IHATVault-setHATBountySplit}. */
@@ -833,6 +831,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         vestingDuration = _duration;
         vestingPeriods = _periods;
         emit SetVestingParams(_duration, _periods);
+    }
+
+    function _addRewardController(IRewardController _rewardController) internal {
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
+            unchecked { ++i; }
+        }
+        rewardControllers.push(_rewardController);
+        emit AddRewardController(_rewardController);
     }
 
     /**
