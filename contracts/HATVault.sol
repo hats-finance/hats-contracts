@@ -67,6 +67,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     mapping(address => uint256) public withdrawEnableStartTime;
     IRewardController[] public rewardControllers;
     uint256 public withdrawalFee;
+    bool public vaultStarted;
     bool public depositPause;
     bool public withdrawPaused;
     bool private _isEmergencyWithdraw;
@@ -97,13 +98,19 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-approveClaim}. */
     function makePayout(uint256 _amount) external nonReentrant onlyClaimsManager {
-        IERC20(asset()).safeTransfer(address(claimsManager), _amount);
+        IERC20(asset()).safeTransfer(address(_msgSender()), _amount);
     }
 
     /** @notice See {IHATVault-setWithdrawPaused}. */
     function setWithdrawPaused(bool _withdrawPaused) external onlyClaimsManager {
         withdrawPaused = _withdrawPaused;
         emit SetWithdrawPaused(_withdrawPaused);
+    }
+
+    /** @notice See {IHATVault-destroyVault}. */
+    function startVault() external onlyClaimsManager {
+        vaultStarted = true;
+        emit VaultStarted();
     }
 
     /** @notice See {IHATVault-destroyVault}. */
@@ -303,8 +310,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         uint256 assets,
         uint256 shares
     ) internal override virtual nonReentrant {
-        if (!claimsManager.committeeCheckedIn())
-            revert CommitteeNotCheckedInYet();
+        if (!vaultStarted)
+            revert VaultNotStartedYet();
         if (receiver == caller && withdrawEnableStartTime[receiver] != 0 ) {
             // clear withdraw request if caller deposits in her own account
             withdrawEnableStartTime[receiver] = 0;

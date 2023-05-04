@@ -377,6 +377,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     /** @notice See {IHATClaimsManager-committeeCheckIn}. */
     function committeeCheckIn() external onlyCommittee {
         committeeCheckedIn = true;
+        vault.startVault();
         emit CommitteeCheckedIn();
     }
 

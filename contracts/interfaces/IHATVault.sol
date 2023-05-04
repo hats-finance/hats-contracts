@@ -67,8 +67,8 @@ interface IHATVault is IERC4626Upgradeable {
 
     // Only claims manager can make this call
     error OnlyClaimsManager();
-    // Committee not checked in yet
-    error CommitteeNotCheckedInYet();
+    // Vault not started yet
+    error VaultNotStartedYet();
     // First deposit must return at least MINIMAL_AMOUNT_OF_SHARES
     error AmountOfSharesMustBeMoreThanMinimalAmount();
     // Withdraw amount must be greater than zero
@@ -104,6 +104,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetWithdrawalFee(uint256 _newFee);
     event SetDepositPause(bool _depositPause);
     event SetWithdrawPaused(bool _withdrawPaused);
+    event VaultStarted();
     event VaultDestroyed();
     event WithdrawRequest(
         address indexed _beneficiary,
@@ -149,6 +150,12 @@ interface IHATVault is IERC4626Upgradeable {
     * @param _withdrawPaused Are withdraws paused
     */
     function setWithdrawPaused(bool _withdrawPaused) external;
+
+    /**
+    * @notice Start the vault, deposits are disabled until the vault is first started
+    */
+    function startVault() external;
+
 
     /**
     * @notice Permanently disables deposits to the vault
