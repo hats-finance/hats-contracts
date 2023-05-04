@@ -103,9 +103,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     // time after which a challenged claim is automatically dismissed
     uint32 internal challengeTimeOutPeriod;
     // whether the arbitrator can change bounty of claims
-    ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
+    bool public arbitratorCanChangeBounty;
     // whether the arbitrator can change the beneficiary of claims
-    ArbitratorCanChangeBeneficiary internal arbitratorCanChangeBeneficiary;
+    bool public arbitratorCanChangeBeneficiary;
+    // whether the arbitrator can submit claims
+    bool public arbitratorCanSubmitClaims;
 
     bool private _isEmergencyWithdraw;
     bool private _vaultDestroyed;
@@ -173,8 +175,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // Set vault to use default registry values where applicable
         bountyGovernanceHAT = NULL_UINT16;
         bountyHackerHATVested = NULL_UINT16;
-        arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
-        arbitratorCanChangeBeneficiary = ArbitratorCanChangeBeneficiary.DEFAULT;
+        arbitratorCanChangeBounty = _params.arbitratorCanChangeBounty;
+        arbitratorCanChangeBeneficiary = _params.arbitratorCanChangeBeneficiary;
+        arbitratorCanSubmitClaims = _params.arbitratorCanSubmitClaims;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
 
@@ -186,7 +189,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-submitClaim}. */
     function submitClaim(address _beneficiary, uint16 _bountyPercentage, string calldata _descriptionHash)
-        external onlyCommittee noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
+        external noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
+        address arbitratorAddress = getArbitrator();
+        if (!arbitratorCanSubmitClaims || arbitratorAddress != msg.sender)
+            if (committee != msg.sender) revert OnlyCommittee();
         HATVaultsRegistry _registry = registry;
         uint256 withdrawPeriod = _registry.getWithdrawPeriod();
         // require we are in safetyPeriod
@@ -210,11 +216,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             challengedAt: 0,
             bountyGovernanceHAT: getBountyGovernanceHAT(),
             bountyHackerHATVested: getBountyHackerHATVested(),
-            arbitrator: getArbitrator(),
+            arbitrator: arbitratorAddress,
             challengePeriod: getChallengePeriod(),
             challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
-            arbitratorCanChangeBounty: getArbitratorCanChangeBounty(),
-            arbitratorCanChangeBeneficiary: getArbitratorCanChangeBeneficiary()
+            arbitratorCanChangeBounty: arbitratorCanChangeBounty,
+            arbitratorCanChangeBeneficiary: arbitratorCanChangeBeneficiary
         });
 
         emit SubmitClaim(
@@ -485,14 +491,20 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
-     /** @notice See {IHATVault-setArbitratorCanChangeClaim}. */
-    function setArbitratorCanChangeClaim(
-        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
-        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+     /** @notice See {IHATVault-setArbitratorOptions}. */
+    function setArbitratorOptions(
+        bool _arbitratorCanChangeBounty,
+        bool _arbitratorCanChangeBeneficiary,
+        bool _arbitratorCanSubmitClaims
     ) external onlyRegistryOwner {
         arbitratorCanChangeBounty = _arbitratorCanChangeBounty;
         arbitratorCanChangeBeneficiary = _arbitratorCanChangeBeneficiary;
-        emit SetArbitratorCanChangeClaim(_arbitratorCanChangeBounty, _arbitratorCanChangeBeneficiary);
+        arbitratorCanSubmitClaims = _arbitratorCanSubmitClaims;
+        emit SetArbitratorOptions(
+            _arbitratorCanChangeBounty,
+            _arbitratorCanChangeBeneficiary,
+            _arbitratorCanSubmitClaims
+        );
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -691,26 +703,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             return _challengeTimeOutPeriod;
         } else {
             return registry.defaultChallengeTimeOutPeriod();
-        }
-    }
-
-    /** @notice See {IHATVault-getArbitratorCanChangeBounty}. */
-    function getArbitratorCanChangeBounty() public view returns(bool) {
-        ArbitratorCanChangeBounty _arbitratorCanChangeBounty = arbitratorCanChangeBounty;
-        if (_arbitratorCanChangeBounty != ArbitratorCanChangeBounty.DEFAULT) {
-            return _arbitratorCanChangeBounty == ArbitratorCanChangeBounty.YES;
-        } else {
-            return registry.defaultArbitratorCanChangeBounty();
-        }
-    }
-
-    /** @notice See {IHATVault-getArbitratorCanChangeBeneficiary}. */
-    function getArbitratorCanChangeBeneficiary() public view returns(bool) {
-        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary = arbitratorCanChangeBeneficiary;
-        if (_arbitratorCanChangeBeneficiary != ArbitratorCanChangeBeneficiary.DEFAULT) {
-            return _arbitratorCanChangeBeneficiary == ArbitratorCanChangeBeneficiary.YES;
-        } else {
-            return registry.defaultArbitratorCanChangeBeneficiary();
         }
     }
 
