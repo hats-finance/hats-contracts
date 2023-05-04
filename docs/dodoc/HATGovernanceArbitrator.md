@@ -13,7 +13,7 @@
 ### approveClaim
 
 ```solidity
-function approveClaim(contract HATVault _vault, bytes32 _claimId) external nonpayable
+function approveClaim(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -24,13 +24,13 @@ function approveClaim(contract HATVault _vault, bytes32 _claimId) external nonpa
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract HATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### dismissClaim
 
 ```solidity
-function dismissClaim(contract HATVault _vault, bytes32 _claimId) external nonpayable
+function dismissClaim(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -41,7 +41,7 @@ function dismissClaim(contract HATVault _vault, bytes32 _claimId) external nonpa
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract HATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### owner

@@ -47,7 +47,7 @@ function claimRewardTwice(contract RewardController target, address _vault) exte
 ### createVaults
 
 ```solidity
-function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint, contract IERC20[] _assets, address _committee, uint16 _maxBounty, IHATVault.BountySplit _bountySplit, string _descriptionHash) external nonpayable
+function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint, contract IERC20[] _assets, address _committee, uint16 _maxBounty, IHATClaimsManager.BountySplit _bountySplit, string _descriptionHash) external nonpayable
 ```
 
 
@@ -64,13 +64,13 @@ function createVaults(contract HATVaultsRegistry _hatVaults, contract IRewardCon
 | _assets | contract IERC20[] | undefined |
 | _committee | address | undefined |
 | _maxBounty | uint16 | undefined |
-| _bountySplit | IHATVault.BountySplit | undefined |
+| _bountySplit | IHATClaimsManager.BountySplit | undefined |
 | _descriptionHash | string | undefined |
 
 ### deposit
 
 ```solidity
-function deposit(contract HATVault _target, contract IERC20 _asset, uint256 _amount) external nonpayable
+function deposit(contract IHATVault _target, contract IERC20 _asset, uint256 _amount) external nonpayable
 ```
 
 
@@ -81,14 +81,14 @@ function deposit(contract HATVault _target, contract IERC20 _asset, uint256 _amo
 
 | Name | Type | Description |
 |---|---|---|
-| _target | contract HATVault | undefined |
+| _target | contract IHATVault | undefined |
 | _asset | contract IERC20 | undefined |
 | _amount | uint256 | undefined |
 
 ### depositTwice
 
 ```solidity
-function depositTwice(contract HATVault _target, contract IERC20 _asset, uint256 _amount) external nonpayable
+function depositTwice(contract IHATVault _target, contract IERC20 _asset, uint256 _amount) external nonpayable
 ```
 
 
@@ -99,14 +99,14 @@ function depositTwice(contract HATVault _target, contract IERC20 _asset, uint256
 
 | Name | Type | Description |
 |---|---|---|
-| _target | contract HATVault | undefined |
+| _target | contract IHATVault | undefined |
 | _asset | contract IERC20 | undefined |
 | _amount | uint256 | undefined |
 
 ### setVaultsAllocPoint
 
 ```solidity
-function setVaultsAllocPoint(contract HATVault[] _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint) external nonpayable
+function setVaultsAllocPoint(contract IHATVault[] _hatVaults, contract IRewardController _rewardController, uint256 _allocPoint) external nonpayable
 ```
 
 
@@ -117,7 +117,7 @@ function setVaultsAllocPoint(contract HATVault[] _hatVaults, contract IRewardCon
 
 | Name | Type | Description |
 |---|---|---|
-| _hatVaults | contract HATVault[] | undefined |
+| _hatVaults | contract IHATVault[] | undefined |
 | _rewardController | contract IRewardController | undefined |
 | _allocPoint | uint256 | undefined |
 

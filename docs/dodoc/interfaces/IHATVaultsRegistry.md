@@ -32,7 +32,7 @@ Transfer the part of the bounty that is supposed to be swapped into HAT tokens f
 ### createVault
 
 ```solidity
-function createVault(IHATVault.VaultInitParams _params) external nonpayable returns (address vault)
+function createVault(IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams) external nonpayable returns (address vault, address vaultClaimsManager)
 ```
 
 
@@ -43,13 +43,32 @@ function createVault(IHATVault.VaultInitParams _params) external nonpayable retu
 
 | Name | Type | Description |
 |---|---|---|
-| _params | IHATVault.VaultInitParams | undefined |
+| _vaultParams | IHATVault.VaultInitParams | undefined |
+| _claimsManagerParams | IHATClaimsManager.ClaimsManagerInitParams | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
 | vault | address | undefined |
+| vaultClaimsManager | address | undefined |
+
+### feeSetter
+
+```solidity
+function feeSetter() external view returns (address)
+```
+
+Get the fee setter address
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | The address of the fee setter |
 
 ### getNumberOfVaults
 
@@ -153,6 +172,23 @@ Returns the withdraw request pending period for all vaults - period of time that
 |---|---|---|
 | _0 | uint256 | Withdraw request pending period for all vaults |
 
+### isEmergencyPaused
+
+```solidity
+function isEmergencyPaused() external view returns (bool)
+```
+
+Get whether the system is in an emergency pause
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | Whether the system is in an emergency pause |
+
 ### logClaim
 
 ```solidity
@@ -168,6 +204,23 @@ Emit an event that includes the given _descriptionHash This can be used by the c
 | Name | Type | Description |
 |---|---|---|
 | _descriptionHash | string | - a hash of an IPFS encrypted file which  describes the claim. |
+
+### owner
+
+```solidity
+function owner() external view returns (address)
+```
+
+Get the owner address
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | The address of the owner |
 
 ### setClaimFee
 
@@ -298,22 +351,6 @@ Called by governance to set the fee setter role
 |---|---|---|
 | _feeSetter | address | Address of new fee setter |
 
-### setHATVaultImplementation
-
-```solidity
-function setHATVaultImplementation(address _hatVaultImplementation) external nonpayable
-```
-
-Called by governance to set a new HATVault implementation to be used by the registry for creating new vaults
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _hatVaultImplementation | address | Is the system in an emergency pause |
-
 ### setHatVestingParams
 
 ```solidity
@@ -362,6 +399,23 @@ Called by governance to set a new swap token
 | Name | Type | Description |
 |---|---|---|
 | _swapToken | address | the new swap token address |
+
+### setVaultImplementations
+
+```solidity
+function setVaultImplementations(address _hatVaultImplementation, address _hatClaimsManagerImplementation) external nonpayable
+```
+
+Called by governance to set a new HATVault and HATVault implementation to be used by the registry for creating new vaults
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation | address | The address of the HATVault implementation |
+| _hatClaimsManagerImplementation | address | The address of the HATClaimsManager implementation |
 
 ### setVaultVisibility
 
@@ -507,7 +561,7 @@ Emitted when a claim is logged
 ### RegistryCreated
 
 ```solidity
-event RegistryCreated(address _hatVaultImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod, bool _defaultArbitratorCanChangeBounty, bool _defaultArbitratorCanChangeBeneficiary)
+event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod, bool _defaultArbitratorCanChangeBounty, bool _defaultArbitratorCanChangeBeneficiary)
 ```
 
 Emitted on deployment of the registry
@@ -519,6 +573,7 @@ Emitted on deployment of the registry
 | Name | Type | Description |
 |---|---|---|
 | _hatVaultImplementation  | address | The HATVault implementation address |
+| _hatClaimsManagerImplementation  | address | The HATClaimsManager implementation address |
 | _HAT  | address | The HAT token address |
 | _tokenLockFactory  | address | The token lock factory address |
 | _generalParameters  | IHATVaultsRegistry.GeneralParameters | The registry&#39;s general parameters |
@@ -676,6 +731,22 @@ Emitted when a new fee setter is set
 |---|---|---|
 | _feeSetter `indexed` | address | The address of the new fee setter |
 
+### SetHATClaimsManagerImplementation
+
+```solidity
+event SetHATClaimsManagerImplementation(address indexed _hatClaimsManagerImplementation)
+```
+
+Emitted when a new HATClaimsManager implementation is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatClaimsManagerImplementation `indexed` | address | The address of the new HATClaimsManager implementation |
+
 ### SetHATVaultImplementation
 
 ```solidity
@@ -814,7 +885,7 @@ Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens ar
 ### VaultCreated
 
 ```solidity
-event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
+event VaultCreated(address indexed _vault, address indexed _claimsManager, IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams)
 ```
 
 
@@ -826,7 +897,9 @@ event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
 | Name | Type | Description |
 |---|---|---|
 | _vault `indexed` | address | The address of the vault to add to the registry |
-| _params  | IHATVault.VaultInitParams | The vault initialization parameters |
+| _claimsManager `indexed` | address | The address of the vault&#39;s claims manager |
+| _vaultParams  | IHATVault.VaultInitParams | The vault initialization parameters |
+| _claimsManagerParams  | IHATClaimsManager.ClaimsManagerInitParams | The vault&#39;s claims manager initialization parameters |
 
 
 
