@@ -8,7 +8,6 @@ import "./HATPaymentSplitter.sol";
 
 contract HATPaymentSplitterFactory {
     address public immutable implementation;
-    mapping(address => uint256) public nonce;
     event HATPaymentSplitterCreated(address indexed _hatPaymentSplitter);
 
     constructor (address _implementation) {
@@ -16,16 +15,12 @@ contract HATPaymentSplitterFactory {
     }
 
     function createHATPaymentSplitter(address[] memory _payees, uint256[] memory _shares) external returns (address result) {
-        result = Clones.cloneDeterministic(implementation, keccak256(abi.encodePacked(msg.sender, nonce[msg.sender]++)));
+        result = Clones.cloneDeterministic(implementation, keccak256(abi.encodePacked(_payees, _shares)));
         HATPaymentSplitter(payable(result)).initialize(_payees, _shares);
         emit HATPaymentSplitterCreated(result);
     }
 
-    function predictNextSplitterAddress(address _deployer) external view returns (address) {
-        return predictSplitterAddress(nonce[_deployer], _deployer);
-    }
-
-    function predictSplitterAddress(uint256 _nonce, address _deployer) public view returns (address) {
-        return Clones.predictDeterministicAddress(implementation, keccak256(abi.encodePacked(_deployer, _nonce)));
+    function predictSplitterAddress(address[] memory _payees, uint256[] memory _shares) public view returns (address) {
+        return Clones.predictDeterministicAddress(implementation, keccak256(abi.encodePacked(_payees, _shares)));
     }
 }

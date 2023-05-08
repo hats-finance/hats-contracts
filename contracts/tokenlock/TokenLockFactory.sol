@@ -19,6 +19,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
     // -- State --
 
     address public masterCopy;
+    mapping(address => uint256) public nonce;
 
     // -- Events --
 
@@ -45,7 +46,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
      * @param _governance Owner of the factory
      */
     constructor(address _masterCopy, address _governance) {
-        setMasterCopy(_masterCopy);
+        _setMasterCopy(_masterCopy);
         _transferOwnership(_governance);
     }
 
@@ -92,7 +93,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
             _canDelegate
         );
 
-        contractAddress = deployProxyPrivate(initializer,
+        contractAddress = _deployProxyPrivate(initializer,
         _beneficiary,
         _token,
         _managedAmount,
@@ -109,14 +110,18 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
      * @notice Sets the masterCopy bytecode to use to create clones of TokenLock contracts
      * @param _masterCopy Address of contract bytecode to factory clone
      */
-    function setMasterCopy(address _masterCopy) public override onlyOwner {
+    function setMasterCopy(address _masterCopy) external override onlyOwner {
+        _setMasterCopy(_masterCopy);
+    }
+
+    function _setMasterCopy(address _masterCopy) internal {
         require(_masterCopy != address(0), "MasterCopy cannot be zero");
         masterCopy = _masterCopy;
         emit MasterCopyUpdated(_masterCopy);
     }
 
-    //this private function is to handle stack too deep issue
-    function  deployProxyPrivate(
+    // This private function is to handle stack too deep issue
+    function _deployProxyPrivate(
         bytes memory _initializer,
         address _beneficiary,
         address _token,
@@ -130,7 +135,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
         bool _canDelegate
     ) private returns (address contractAddress) {
 
-        contractAddress = Clones.clone(masterCopy);
+        contractAddress = Clones.cloneDeterministic(masterCopy, keccak256(abi.encodePacked(msg.sender, nonce[msg.sender]++, _initializer)));
 
         Address.functionCall(contractAddress, _initializer);
 
