@@ -289,6 +289,57 @@ See {IHATVault-approveClaim}.
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
 
+### arbitratorCanChangeBeneficiary
+
+```solidity
+function arbitratorCanChangeBeneficiary() external view returns (bool)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
+### arbitratorCanChangeBounty
+
+```solidity
+function arbitratorCanChangeBounty() external view returns (bool)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
+### arbitratorCanSubmitClaims
+
+```solidity
+function arbitratorCanSubmitClaims() external view returns (bool)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
 ### asset
 
 ```solidity
@@ -610,40 +661,6 @@ See {IHATVault-getArbitrator}.
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
-
-### getArbitratorCanChangeBeneficiary
-
-```solidity
-function getArbitratorCanChangeBeneficiary() external view returns (bool)
-```
-
-See {IHATVault-getArbitratorCanChangeBeneficiary}. 
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bool | undefined |
-
-### getArbitratorCanChangeBounty
-
-```solidity
-function getArbitratorCanChangeBounty() external view returns (bool)
-```
-
-See {IHATVault-getArbitratorCanChangeBounty}. 
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bool | undefined |
 
 ### getBountyGovernanceHAT
 
@@ -1254,13 +1271,13 @@ See {IHATVault-setArbitrator}.
 |---|---|---|
 | _arbitrator | address | undefined |
 
-### setArbitratorCanChangeClaim
+### setArbitratorOptions
 
 ```solidity
-function setArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+function setArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims) external nonpayable
 ```
 
-See {IHATVault-setArbitratorCanChangeClaim}. 
+See {IHATVault-setArbitratorOptions}. 
 
 
 
@@ -1268,8 +1285,9 @@ See {IHATVault-setArbitratorCanChangeClaim}.
 
 | Name | Type | Description |
 |---|---|---|
-| _arbitratorCanChangeBounty | enum IHATVault.ArbitratorCanChangeBounty | undefined |
-| _arbitratorCanChangeBeneficiary | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
+| _arbitratorCanChangeBounty | bool | undefined |
+| _arbitratorCanChangeBeneficiary | bool | undefined |
+| _arbitratorCanSubmitClaims | bool | undefined |
 
 ### setBountySplit
 
@@ -1951,10 +1969,10 @@ event SetArbitrator(address indexed _arbitrator)
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
 
-### SetArbitratorCanChangeClaim
+### SetArbitratorOptions
 
 ```solidity
-event SetArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATVault.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
+event SetArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims)
 ```
 
 
@@ -1965,8 +1983,9 @@ event SetArbitratorCanChangeClaim(enum IHATVault.ArbitratorCanChangeBounty _arbi
 
 | Name | Type | Description |
 |---|---|---|
-| _arbitratorCanChangeBounty  | enum IHATVault.ArbitratorCanChangeBounty | undefined |
-| _arbitratorCanChangeBeneficiary  | enum IHATVault.ArbitratorCanChangeBeneficiary | undefined |
+| _arbitratorCanChangeBounty  | bool | undefined |
+| _arbitratorCanChangeBeneficiary  | bool | undefined |
+| _arbitratorCanSubmitClaims  | bool | undefined |
 
 ### SetBountySplit
 
