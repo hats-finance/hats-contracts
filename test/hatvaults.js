@@ -840,6 +840,40 @@ contract("HatVaults", (accounts) => {
     }
   });
 
+  it("cannot create vault with duplicated reward controller", async () => {
+    await setUpGlobalVars(accounts);
+
+    let maxBounty = 8000;
+    let bountySplit = [7000, 2500, 500];
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+
+    try {
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address, rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash1",
+        },
+        {
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[3],
+        arbitrator: accounts[2],
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        vestingDuration: 86400,
+        vestingPeriods: 10
+        }
+      );
+      assert(false, "cannot create vault with duplicated reward controller");
+    } catch (ex) {
+      assertVMException(ex, "DuplicatedRewardController");
+    }
+  });
+
   it("setCommittee", async () => {
     await setUpGlobalVars(accounts);
     assert.equal(await claimsManager.committee(), accounts[1]);

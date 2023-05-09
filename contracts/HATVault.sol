@@ -94,8 +94,10 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         __ERC4626_init(IERC20MetadataUpgradeable(address(_params.asset)));
         __ReentrancyGuard_init();
         _transferOwnership(_params.owner);
-        // TODO: Check if the lack of duplication check here can lead to extra rewards for vault
-        rewardControllers = _params.rewardControllers;
+        for (uint256 i = 0; i < _params.rewardControllers.length;) { 
+            _addRewardController(_params.rewardControllers[i]);
+            unchecked { ++i; }
+        }
         claimsManager = _claimsManager;
         depositPause = _params.isPaused;
         registry = IHATVaultsRegistry(_msgSender());
@@ -129,6 +131,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IHATVault-addRewardController}. */
     function addRewardController(IRewardController _rewardController) external onlyRegistryOwner {
+        _addRewardController(_rewardController);
         for (uint256 i = 0; i < rewardControllers.length;) { 
             if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
             unchecked { ++i; }
@@ -438,6 +441,15 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         // reset withdrawRequests[_user] to 0)
         // solhint-disable-next-line not-rely-on-time
             block.timestamp <= _withdrawEnableStartTime + _registry.getWithdrawRequestEnablePeriod());
+    }
+
+    function _addRewardController(IRewardController _rewardController) internal {
+        for (uint256 i = 0; i < rewardControllers.length;) { 
+            if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
+            unchecked { ++i; }
+        }
+        rewardControllers.push(_rewardController);
+        emit AddRewardController(_rewardController);
     }
 
     /* -------------------------------------------------------------------------------- */
