@@ -561,7 +561,7 @@ See {IHATClaimsManager-setArbitrator}.
 function setArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims) external nonpayable
 ```
 
-See {IHATVault-setArbitratorOptions}. 
+See {IHATClaimsManager-setArbitratorOptions}. 
 
 
 
