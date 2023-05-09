@@ -354,7 +354,7 @@ contract("HatVaults", (accounts) => {
     }
   });
 
-  it.only("Get active claim", async () => {
+  it("Get active claim", async () => {
     await setUpGlobalVars(accounts);
 
     var staker = accounts[1];
@@ -377,8 +377,51 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     let activeClaim = await claimsManager.getActiveClaim();
-    console.log(activeClaim)
+    assert.equal(activeClaim.claimId, claimId);
+    assert.equal(activeClaim.beneficiary, accounts[2]);
+    assert.equal(activeClaim.bountyPercentage, "8000");
+    assert.equal(activeClaim.committee, accounts[1]);
+    assert.equal(activeClaim.createdAt, (await web3.eth.getBlock(tx.receipt.blockNumber)).timestamp);
+    assert.equal(activeClaim.challengedAt, "0");
+    assert.equal(activeClaim.bountyGovernanceHAT, "1500");
+    assert.equal(activeClaim.bountyHackerHATVested, "500");
+    assert.equal(activeClaim.arbitrator, accounts[0]);
+    assert.equal(activeClaim.challengePeriod, "86400");
+    assert.equal(activeClaim.challengeTimeOutPeriod, "3024000");
+    assert.equal(activeClaim.arbitratorCanChangeBounty, true);
+    assert.equal(activeClaim.arbitratorCanChangeBeneficiary, false);
+  });
 
+  it("Only claims manager", async () => {
+    await setUpGlobalVars(accounts);
+
+    try {
+      await vault.makePayout(1);
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.setWithdrawPaused(false);
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.startVault();
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.destroyVault();
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
   });
 
   it("Add reward controller", async () => {
@@ -1208,6 +1251,14 @@ contract("HatVaults", (accounts) => {
   
     tx = await claimsManager.approveClaim(claimId, 8001, ZERO_ADDRESS);
 
+    let logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount, web3.utils.toWei("0.8001").toString());
+
     // we cannot submit claims that are over MAX_BOUNY_LIMIT though
     try {
       await claimsManager.submitClaim(
@@ -1242,7 +1293,15 @@ contract("HatVaults", (accounts) => {
 
     tx = await claimsManager.approveClaim(claimId, 10000, ZERO_ADDRESS);
 
-    let logs = await vault.getPastEvents('VaultDestroyed', {
+    logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount, web3.utils.toWei("0.1999").toString());
+
+    logs = await vault.getPastEvents('VaultDestroyed', {
       fromBlock: tx.blockNumber,
       toBlock: tx.blockNumber
     });
