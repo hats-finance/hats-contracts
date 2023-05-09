@@ -19,17 +19,9 @@ import "./HATVaultsRegistry.sol";
 * bug bounties
 * @author Hats.finance
 * @notice The HATVault can be deposited into in a permissionless manner using
-* the vault’s native token. When a bug is submitted and approved, the bounty 
-* is paid out using the funds in the vault. Bounties are paid out as a
-* percentage of the vault. The percentage is set according to the severity of
-* the bug. Vaults have regular safety periods (typically for an hour twice a
-* day) which are time for the committee to make decisions.
+* the vault’s native token.
 *
-* In addition to the roles defined in the HATVaultsRegistry, every HATVault 
-* has the roles:
-* Committee - The only address which can submit a claim for a bounty payout
-* and set the maximum bounty.
-* User - Anyone can deposit the vault's native token into the vault and 
+* Anyone can deposit the vault's native token into the vault and 
 * recieve shares for it. Shares represent the user's relative part in the
 * vault, and when a bounty is paid out, users lose part of their deposits
 * (based on percentage paid), but keep their share of the vault.
@@ -39,12 +31,6 @@ import "./HATVaultsRegistry.sol";
 * request, and the withdrawal will be made available after a pending period.
 * Withdrawals are not permitted during safety periods or while there is an 
 * active claim for a bounty payout.
-*
-* Bounties are payed out distributed between a few channels, and that 
-* distribution is set upon creation (the hacker gets part in direct transfer,
-* part in vested reward and part in vested HAT token, part gets rewarded to
-* the committee, part gets swapped to HAT token and burned and/or sent to Hats
-* governance).
 *
 * This project is open-source and can be found at:
 * https://github.com/hats-finance/hats-contracts

@@ -14,30 +14,14 @@ import "./interfaces/IHATClaimsManager.sol";
 import "./interfaces/IRewardController.sol";
 import "./HATVaultsRegistry.sol";
 
-/** @title A Hats.finance vault which holds the funds for a specific project's
-* bug bounties
+/** @title A Hats.finance claims manager which manages claims for a specific project's HATVault
 * @author Hats.finance
-* @notice The HATVault can be deposited into in a permissionless manner using
-* the vault’s native token. When a bug is submitted and approved, the bounty 
-* is paid out using the funds in the vault. Bounties are paid out as a
+* @notice The HATClaimsManager manages the bounty payouts from the HATVault of a project.
+* When a bug is submitted and approved, the bounty is paid out using the
+* funds in the project's HATVault. Bounties are paid out as a
 * percentage of the vault. The percentage is set according to the severity of
 * the bug. Vaults have regular safety periods (typically for an hour twice a
-* day) which are time for the committee to make decisions.
-*
-* In addition to the roles defined in the HATVaultsRegistry, every HATVault 
-* has the roles:
-* Committee - The only address which can submit a claim for a bounty payout
-* and set the maximum bounty.
-* User - Anyone can deposit the vault's native token into the vault and 
-* recieve shares for it. Shares represent the user's relative part in the
-* vault, and when a bounty is paid out, users lose part of their deposits
-* (based on percentage paid), but keep their share of the vault.
-* Users also receive rewards for their deposits, which can be claimed at any
-* time.
-* To withdraw previously deposited tokens, a user must first send a withdraw
-* request, and the withdrawal will be made available after a pending period.
-* Withdrawals are not permitted during safety periods or while there is an 
-* active claim for a bounty payout.
+* day) which are time for the committee to submit a new claim.
 *
 * Bounties are payed out distributed between a few channels, and that 
 * distribution is set upon creation (the hacker gets part in direct transfer,
@@ -448,7 +432,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
-    /** @notice See {IHATVault-setArbitratorOptions}. */
+    /** @notice See {IHATClaimsManager-setArbitratorOptions}. */
     function setArbitratorOptions(
         bool _arbitratorCanChangeBounty,
         bool _arbitratorCanChangeBeneficiary,
