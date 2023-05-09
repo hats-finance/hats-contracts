@@ -14,8 +14,9 @@
 | `challengePeriod` | `registry.owner`| vault | 3 days | >= 1 days, <= 5 days | `vault.setChallengePeriod` |
 | `defaultChallengeTimeOutPeriod` | `registry.owner`| global | 5 weeks | >= 2 days, <= 85 days |  `registry.setDefaultChallengeTimeOutPeriod` |
 | `challengeTimeOutPeriod` | `registry.owner`| vault | 5 weeks | >= 2 days, <= 85 days | `vault.setChallengeTimeOutPeriod` |
-| `defaultArbitratorCanChangeBounty` | `registry.owner`| global | true | | `registry.setDefaultArbitratorCanChangeBounty` |
-| `arbitratorCanChangeBounty` | `registry.owner`| vault | true | |  `vault.setArbitratorCanChangeBounty` |
+| `arbitratorCanChangeBounty` | `registry.owner`| vault | | |  `vault.setArbitratorOptions` |
+| `arbitratorCanChangeBeneficiary` | `registry.owner`| vault | | |  `vault.setArbitratorOptions` |
+| `arbitratorCanSubmitClaims` | `registry.owner`| vault | | |  `vault.setArbitratorOptions` |
 | `isVaultVisible` | `registry.owner`| vault | false | | `registry.setVaultVisibility(_vault, _visible)` |
 | `feeSetter` | `registry.owner`| global |zero address | | `registry.setFeeSetter` |
 | `withdrawRequestPendingPeriod` | `registry.owner`| global | 7 days | <= 90 days | `registry.setWithdrawRequestParams` |

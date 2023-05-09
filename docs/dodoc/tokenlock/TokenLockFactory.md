@@ -59,6 +59,28 @@ function masterCopy() external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
+### nonce
+
+```solidity
+function nonce(address) external view returns (uint256)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### owner
 
 ```solidity
