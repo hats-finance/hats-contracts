@@ -257,10 +257,10 @@ Called by the registry&#39;s owner to set the vault arbitrator If the value pass
 |---|---|---|
 | _arbitrator | address | The address of vault&#39;s arbitrator |
 
-### setArbitratorCanChangeClaim
+### setArbitratorOptions
 
 ```solidity
-function setArbitratorCanChangeClaim(enum IHATClaimsManager.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATClaimsManager.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary) external nonpayable
+function setArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims) external nonpayable
 ```
 
 Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage and/ or beneficiary If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
@@ -271,8 +271,9 @@ Called by the registry&#39;s owner to set whether the arbitrator can change a cl
 
 | Name | Type | Description |
 |---|---|---|
-| _arbitratorCanChangeBounty | enum IHATClaimsManager.ArbitratorCanChangeBounty | Whether the arbitrator can change a claim bounty percentage |
-| _arbitratorCanChangeBeneficiary | enum IHATClaimsManager.ArbitratorCanChangeBeneficiary | Whether the arbitrator can change a claim beneficiary |
+| _arbitratorCanChangeBounty | bool | Whether the arbitrator can change a claim bounty percentage |
+| _arbitratorCanChangeBeneficiary | bool | Whether the arbitrator can change a claim beneficiary |
+| _arbitratorCanSubmitClaims | bool | undefined |
 
 ### setBountySplit
 
@@ -507,10 +508,10 @@ event SetArbitrator(address indexed _arbitrator)
 |---|---|---|
 | _arbitrator `indexed` | address | undefined |
 
-### SetArbitratorCanChangeClaim
+### SetArbitratorOptions
 
 ```solidity
-event SetArbitratorCanChangeClaim(enum IHATClaimsManager.ArbitratorCanChangeBounty _arbitratorCanChangeBounty, enum IHATClaimsManager.ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary)
+event SetArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims)
 ```
 
 
@@ -521,8 +522,9 @@ event SetArbitratorCanChangeClaim(enum IHATClaimsManager.ArbitratorCanChangeBoun
 
 | Name | Type | Description |
 |---|---|---|
-| _arbitratorCanChangeBounty  | enum IHATClaimsManager.ArbitratorCanChangeBounty | undefined |
-| _arbitratorCanChangeBeneficiary  | enum IHATClaimsManager.ArbitratorCanChangeBeneficiary | undefined |
+| _arbitratorCanChangeBounty  | bool | undefined |
+| _arbitratorCanChangeBeneficiary  | bool | undefined |
+| _arbitratorCanSubmitClaims  | bool | undefined |
 
 ### SetBountySplit
 

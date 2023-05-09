@@ -254,22 +254,6 @@ Called by governance to set the default arbitrator.
 |---|---|---|
 | _defaultArbitrator | address | The default arbitrator address |
 
-### setDefaultArbitratorCanChangeBounty
-
-```solidity
-function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external nonpayable
-```
-
-Called by governance to set Whether the arbitrator can change bounty of claims.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _defaultArbitratorCanChangeBounty | bool | The default for whether the arbitrator can change bounty of claims |
-
 ### setDefaultChallengePeriod
 
 ```solidity
@@ -561,7 +545,7 @@ Emitted when a claim is logged
 ### RegistryCreated
 
 ```solidity
-event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod, bool _defaultArbitratorCanChangeBounty, bool _defaultArbitratorCanChangeBeneficiary)
+event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod)
 ```
 
 Emitted on deployment of the registry
@@ -583,8 +567,6 @@ Emitted on deployment of the registry
 | _defaultArbitrator  | address | undefined |
 | _defaultChallengePeriod  | uint256 | The new default challenge period |
 | _defaultChallengeTimeOutPeriod  | uint256 | The new default challenge timeout |
-| _defaultArbitratorCanChangeBounty  | bool | Whether the arbitrator can change bounty percentage of claims |
-| _defaultArbitratorCanChangeBeneficiary  | bool | undefined |
 
 ### SetClaimFee
 
@@ -617,38 +599,6 @@ Emitted when a new default arbitrator is set
 | Name | Type | Description |
 |---|---|---|
 | _defaultArbitrator `indexed` | address | The address of the new arbitrator |
-
-### SetDefaultArbitratorCanChangeBeneficiary
-
-```solidity
-event SetDefaultArbitratorCanChangeBeneficiary(bool _defaultArbitratorCanChangeBeneficiary)
-```
-
-Emitted when the default arbitrator can change bounty is set
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _defaultArbitratorCanChangeBeneficiary  | bool | Whether the arbitrator can change bounty of claims |
-
-### SetDefaultArbitratorCanChangeBounty
-
-```solidity
-event SetDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty)
-```
-
-Emitted when the default arbitrator can change bounty is set
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _defaultArbitratorCanChangeBounty  | bool | Whether the arbitrator can change bounty of claims |
 
 ### SetDefaultChallengePeriod
 

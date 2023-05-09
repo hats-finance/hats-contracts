@@ -126,6 +126,9 @@ interface IHATClaimsManager {
         address owner;
         address committee;
         address arbitrator;
+        bool arbitratorCanChangeBounty;
+        bool arbitratorCanChangeBeneficiary;
+        bool arbitratorCanSubmitClaims;
     }
 
     // Only committee
@@ -222,8 +225,8 @@ interface IHATClaimsManager {
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
-    event SetArbitratorCanChangeClaim(ArbitratorCanChangeBounty _arbitratorCanChangeBounty, ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary);
-    
+    event SetArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims);
+
     /**
     * @notice Initialize a claims manager instance
     * @param _vault The vault instance
@@ -401,9 +404,10 @@ interface IHATClaimsManager {
     * @param _arbitratorCanChangeBounty Whether the arbitrator can change a claim bounty percentage
     * @param _arbitratorCanChangeBeneficiary Whether the arbitrator can change a claim beneficiary
     */
-    function setArbitratorCanChangeClaim(
-        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
-        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    function setArbitratorOptions(
+        bool _arbitratorCanChangeBounty,
+        bool _arbitratorCanChangeBeneficiary,
+        bool _arbitratorCanSubmitClaims
     )
         external;
 

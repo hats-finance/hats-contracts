@@ -132,12 +132,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     /** @notice See {IHATVault-addRewardController}. */
     function addRewardController(IRewardController _rewardController) external onlyRegistryOwner {
         _addRewardController(_rewardController);
-        for (uint256 i = 0; i < rewardControllers.length;) { 
-            if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
-            unchecked { ++i; }
-        }
-        rewardControllers.push(_rewardController);
-        emit AddRewardController(_rewardController);
     }
 
     /** @notice See {IHATVault-setDepositPause}. */

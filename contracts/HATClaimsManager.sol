@@ -90,9 +90,11 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     // time after which a challenged claim is automatically dismissed
     uint32 internal challengeTimeOutPeriod;
     // whether the arbitrator can change bounty of claims
-    ArbitratorCanChangeBounty internal arbitratorCanChangeBounty;
+    bool public arbitratorCanChangeBounty;
     // whether the arbitrator can change the beneficiary of claims
-    ArbitratorCanChangeBeneficiary internal arbitratorCanChangeBeneficiary;
+    bool public arbitratorCanChangeBeneficiary;
+    // whether the arbitrator can submit claims
+    bool public arbitratorCanSubmitClaims;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -145,12 +147,13 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
         arbitrator = _params.arbitrator;
+        arbitratorCanChangeBounty = _params.arbitratorCanChangeBounty;
+        arbitratorCanChangeBeneficiary = _params.arbitratorCanChangeBeneficiary;
+        arbitratorCanSubmitClaims = _params.arbitratorCanSubmitClaims;
 
         // Set vault to use default registry values where applicable
         bountyGovernanceHAT = NULL_UINT16;
         bountyHackerHATVested = NULL_UINT16;
-        arbitratorCanChangeBounty = ArbitratorCanChangeBounty.DEFAULT;
-        arbitratorCanChangeBeneficiary = ArbitratorCanChangeBeneficiary.DEFAULT;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
     }
@@ -160,7 +163,10 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
     /** @notice See {IHATClaimsManager-submitClaim}. */
     function submitClaim(address _beneficiary, uint16 _bountyPercentage, string calldata _descriptionHash)
-        external onlyCommittee noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
+        external noActiveClaim notEmergencyPaused returns (bytes32 claimId) {
+        address arbitratorAddress = getArbitrator();
+        if (!arbitratorCanSubmitClaims || arbitratorAddress != msg.sender)
+            if (committee != msg.sender) revert OnlyCommittee();
         HATVaultsRegistry _registry = registry;
         uint256 withdrawPeriod = _registry.getWithdrawPeriod();
         // require we are in safetyPeriod
@@ -184,11 +190,11 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             challengedAt: 0,
             bountyGovernanceHAT: getBountyGovernanceHAT(),
             bountyHackerHATVested: getBountyHackerHATVested(),
-            arbitrator: getArbitrator(),
+            arbitrator: arbitratorAddress,
             challengePeriod: getChallengePeriod(),
             challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
-            arbitratorCanChangeBounty: getArbitratorCanChangeBounty(),
-            arbitratorCanChangeBeneficiary: getArbitratorCanChangeBeneficiary()
+            arbitratorCanChangeBounty: arbitratorCanChangeBounty,
+            arbitratorCanChangeBeneficiary: arbitratorCanChangeBeneficiary
         });
 
         vault.setWithdrawPaused(true);
@@ -442,14 +448,20 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         emit SetChallengeTimeOutPeriod(_challengeTimeOutPeriod);
     }
 
-     /** @notice See {IHATClaimsManager-setArbitratorCanChangeClaim}. */
-    function setArbitratorCanChangeClaim(
-        ArbitratorCanChangeBounty _arbitratorCanChangeBounty,
-        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary
+    /** @notice See {IHATVault-setArbitratorOptions}. */
+    function setArbitratorOptions(
+        bool _arbitratorCanChangeBounty,
+        bool _arbitratorCanChangeBeneficiary,
+        bool _arbitratorCanSubmitClaims
     ) external onlyRegistryOwner {
         arbitratorCanChangeBounty = _arbitratorCanChangeBounty;
         arbitratorCanChangeBeneficiary = _arbitratorCanChangeBeneficiary;
-        emit SetArbitratorCanChangeClaim(_arbitratorCanChangeBounty, _arbitratorCanChangeBeneficiary);
+        arbitratorCanSubmitClaims = _arbitratorCanSubmitClaims;
+        emit SetArbitratorOptions(
+            _arbitratorCanChangeBounty,
+            _arbitratorCanChangeBeneficiary,
+            _arbitratorCanSubmitClaims
+        );
     }
 
     /* -------------------------------------------------------------------------------- */
@@ -503,26 +515,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             return _challengeTimeOutPeriod;
         } else {
             return registry.defaultChallengeTimeOutPeriod();
-        }
-    }
-
-    /** @notice See {IHATClaimsManager-getArbitratorCanChangeBounty}. */
-    function getArbitratorCanChangeBounty() public view returns(bool) {
-        ArbitratorCanChangeBounty _arbitratorCanChangeBounty = arbitratorCanChangeBounty;
-        if (_arbitratorCanChangeBounty != ArbitratorCanChangeBounty.DEFAULT) {
-            return _arbitratorCanChangeBounty == ArbitratorCanChangeBounty.YES;
-        } else {
-            return registry.defaultArbitratorCanChangeBounty();
-        }
-    }
-
-    /** @notice See {IHATClaimsManager-getArbitratorCanChangeBeneficiary}. */
-    function getArbitratorCanChangeBeneficiary() public view returns(bool) {
-        ArbitratorCanChangeBeneficiary _arbitratorCanChangeBeneficiary = arbitratorCanChangeBeneficiary;
-        if (_arbitratorCanChangeBeneficiary != ArbitratorCanChangeBeneficiary.DEFAULT) {
-            return _arbitratorCanChangeBeneficiary == ArbitratorCanChangeBeneficiary.YES;
-        } else {
-            return registry.defaultArbitratorCanChangeBeneficiary();
         }
     }
 

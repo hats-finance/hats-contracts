@@ -181,7 +181,6 @@ interface IHATVaultsRegistry {
      * @param _hatGovernance The registry's governance
      * @param _defaultChallengePeriod The new default challenge period
      * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
-     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty percentage of claims
      */
     event RegistryCreated(
         address _hatVaultImplementation,
@@ -194,9 +193,7 @@ interface IHATVaultsRegistry {
         address _hatGovernance,
         address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
-        uint256 _defaultChallengeTimeOutPeriod,
-        bool _defaultArbitratorCanChangeBounty,
-        bool _defaultArbitratorCanChangeBeneficiary
+        uint256 _defaultChallengeTimeOutPeriod
     );
 
     /**
@@ -319,19 +316,7 @@ interface IHATVaultsRegistry {
      */
     event SetDefaultChallengeTimeOutPeriod(uint256 _defaultChallengeTimeOutPeriod);
 
-    /**
-     * @notice Emitted when the default arbitrator can change bounty is set
-     * @param _defaultArbitratorCanChangeBounty Whether the arbitrator can change bounty of claims
-     */
-    event SetDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty);
-
-    /**
-     * @notice Emitted when the default arbitrator can change bounty is set
-     * @param _defaultArbitratorCanChangeBeneficiary Whether the arbitrator can change bounty of claims
-     */
-    event SetDefaultArbitratorCanChangeBeneficiary(bool _defaultArbitratorCanChangeBeneficiary);
-
-     /** @notice Emitted when the system is put into emergency pause/unpause
+    /** @notice Emitted when the system is put into emergency pause/unpause
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
     event SetEmergencyPaused(bool _isEmergencyPaused);
@@ -431,12 +416,6 @@ interface IHATVaultsRegistry {
         uint32 _defaultChallengeTimeOutPeriod
     ) 
         external;
-
-    /**
-     * @notice Called by governance to set Whether the arbitrator can change bounty of claims.
-     * @param _defaultArbitratorCanChangeBounty The default for whether the arbitrator can change bounty of claims
-     */
-    function setDefaultArbitratorCanChangeBounty(bool _defaultArbitratorCanChangeBounty) external;
 
     /**
      * @notice Check that the given challenge period is legal, meaning that it
