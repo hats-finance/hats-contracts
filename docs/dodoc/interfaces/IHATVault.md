@@ -1135,6 +1135,22 @@ event VaultDestroyed()
 
 
 
+### VaultPayout
+
+```solidity
+event VaultPayout(uint256 _amount)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _amount  | uint256 | undefined |
+
 ### VaultStarted
 
 ```solidity

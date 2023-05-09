@@ -6985,7 +6985,6 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
 
     let vault1 = await HATVault.at(tx.logs[2].args._vault);
-    let claimsManager1 = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     await rewardController1.updateVault(vault1.address);
     await rewardController1.updateVault(vault1.address);
