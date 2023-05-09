@@ -107,6 +107,7 @@ interface IHATVault is IERC4626Upgradeable {
 
     event AddRewardController(IRewardController indexed _newRewardController);
     event SetWithdrawalFee(uint256 _newFee);
+    event VaultPayout(uint256 _amount);
     event SetDepositPause(bool _depositPause);
     event SetWithdrawPaused(bool _withdrawPaused);
     event VaultStarted();

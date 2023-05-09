@@ -103,8 +103,9 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-approveClaim}. */
-    function makePayout(uint256 _amount) external nonReentrant onlyClaimsManager {
+    function makePayout(uint256 _amount) external onlyClaimsManager {
         IERC20(asset()).safeTransfer(address(_msgSender()), _amount);
+        emit VaultPayout(_amount);
     }
 
     /** @notice See {IHATVault-setWithdrawPaused}. */
