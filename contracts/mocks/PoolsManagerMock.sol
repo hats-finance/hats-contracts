@@ -22,14 +22,15 @@ contract VaultsManagerMock {
         IRewardController[] memory _rewardControllers = new IRewardController[](1);
         _rewardControllers[0] = _rewardController;
         for (uint256 i=0; i < _assets.length; i++) {
-            (, address vault) = _hatVaults.createVault(
+            (address vault, ) = _hatVaults.createVault(
                                 IHATVault.VaultInitParams({
                                     asset: _assets[i],
                                     name: "VAULT",
                                     symbol: "VLT",
                                     rewardControllers: _rewardControllers,
                                     owner: _hatVaults.owner(),
-                                    isPaused: false
+                                    isPaused: false,
+                                    descriptionHash: _descriptionHash
                                 }),
                                 IHATClaimsManager.ClaimsManagerInitParams({
                                     owner: _hatVaults.owner(),
@@ -37,7 +38,6 @@ contract VaultsManagerMock {
                                     arbitrator: 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF,
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
-                                    descriptionHash: _descriptionHash,
                                     vestingDuration: 86400,
                                     vestingPeriods: 10
                                 }));

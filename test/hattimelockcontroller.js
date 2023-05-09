@@ -1,5 +1,6 @@
 const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATVault = artifacts.require("./HATVault.sol");
+const HATClaimsManager = artifacts.require("./HATClaimsManager.sol");
 const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
@@ -14,6 +15,7 @@ const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-de
 
 var hatVaultsRegistry;
 var vault;
+var claimsManager;
 var rewardController;
 var hatTimelockController;
 var hatToken;
@@ -90,26 +92,35 @@ const setup = async function(
     rewardController.address,
     web3.utils.toWei(rewardInVaults.toString())
   );
-  vault = await HATVault.at((await hatVaultsRegistry.createVault({
-    asset: stakingToken.address,
-    owner: await hatVaultsRegistry.owner(),
+
+  let tx = await hatVaultsRegistry.createVault(
+    {
+      asset: stakingToken.address,
+      name: "VAULT",
+      symbol: "VLT",
+      rewardControllers: [rewardController.address],
+      owner: hatTimelockController.address,
+      isPaused: false,
+      descriptionHash: "_descriptionHash",
+    },
+    {
+    owner: hatTimelockController.address,
     committee: accounts[1],
     arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
-    name: "VAULT",
-    symbol: "VLT",
-    rewardControllers: [rewardController.address],
     maxBounty: maxBounty,
     bountySplit: bountySplit,
-    descriptionHash: "_descriptionHash",
     vestingDuration: 86400,
-    vestingPeriods: 10,
-    isPaused: false
-  })).receipt.rawLogs[0].address);
+    vestingPeriods: 10
+    }
+  );
+
+  vault = await HATVault.at(tx.logs[2].args._vault);
+  claimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
   await advanceToNonSafetyPeriod(hatVaultsRegistry);
 
   await hatVaultsRegistry.setDefaultChallengePeriod(challengePeriod);
 
-  await vault.transferOwnership(hatTimelockController.address);
   await hatVaultsRegistry.transferOwnership(hatTimelockController.address);
   await rewardController.transferOwnership(hatTimelockController.address);
   await arbitratorContract.transferOwnership(hatTimelockController.address);
@@ -120,7 +131,7 @@ const setup = async function(
     allocPoint
   );
 
-  await vault.committeeCheckIn({ from: accounts[1] });
+  await claimsManager.committeeCheckIn({ from: accounts[1] });
 };
 
 contract("HatTimelockController", (accounts) => {
@@ -296,7 +307,7 @@ contract("HatTimelockController", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod(hatVaultsRegistry);
     const bountyPercentage = 300;
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       bountyPercentage,
       "description hash",
@@ -308,14 +319,14 @@ contract("HatTimelockController", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     try {
-      await arbitratorContract.approveClaim(vault.address, claimId);
+      await arbitratorContract.approveClaim(claimsManager.address, claimId);
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId, {
+      await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId, {
         from: accounts[3],
       });
       assert(false, "only gov");
@@ -323,7 +334,7 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
 
-    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId);
+    await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address"],
@@ -396,36 +407,36 @@ contract("HatTimelockController", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await rewardController.updateVault(vault.address);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await assertFunctionRaisesException(
-      vault.challengeClaim(claimId),
+      claimsManager.challengeClaim(claimId),
       "OnlyArbitratorOrRegistryOwner"
     );
 
-    await hatTimelockController.approveClaim(arbitratorContract.address, vault.address, claimId);
+    await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId);
   });
 
   it("challenge - dismiss claim", async () => {
     await setup(accounts);
     // set challenge period to 1000
     await advanceToSafetyPeriod(hatVaultsRegistry);
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
     // now that the claim is challenged, only arbitrator can accept or dismiss
     await assertFunctionRaisesException(
-      vault.dismissClaim(claimId),
+      claimsManager.dismissClaim(claimId),
       "OnlyCallableIfChallenged"
     );
 
     try {
-      await arbitratorContract.dismissClaim(vault.address, claimId);
+      await arbitratorContract.dismissClaim(claimsManager.address, claimId);
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
 
     try {
-      await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId, {
+      await hatTimelockController.dismissClaim(arbitratorContract.address, claimsManager.address, claimId, {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -433,7 +444,7 @@ contract("HatTimelockController", (accounts) => {
       assertVMException(ex);
     }
 
-    await hatTimelockController.dismissClaim(arbitratorContract.address, vault.address, claimId);
+    await hatTimelockController.dismissClaim(arbitratorContract.address, claimsManager.address, claimId);
   });
 
   it("setCommittee", async () => {
@@ -443,21 +454,29 @@ contract("HatTimelockController", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+    let tx = await hatVaultsRegistry.createVault(
+      {
         asset: stakingToken2.address,
-        owner: await hatVaultsRegistry.owner(),
-        committee: accounts[3],
-        arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
-        maxBounty: maxBounty,
-        bountySplit: bountySplit,
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
         descriptionHash: "_descriptionHash",
-        vestingDuration: 86400,
-        vestingPeriods: 10,
-        isPaused: false
-    })).receipt.rawLogs[0].address);
+      },
+      {
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[3],
+      arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
+      maxBounty: maxBounty,
+      bountySplit: bountySplit,
+      vestingDuration: 86400,
+      vestingPeriods: 10
+      }
+    );
+  
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     try {
       await hatTimelockController.setAllocPoint(newVault.address, rewardController.address, 100, {
@@ -474,10 +493,10 @@ contract("HatTimelockController", (accounts) => {
       100
     );
 
-    assert.equal(await newVault.committee(), accounts[3]);
+    assert.equal(await newClaimsManager.committee(), accounts[3]);
 
     try {
-      await hatTimelockController.setCommittee(newVault.address, accounts[1], {
+      await hatTimelockController.setCommittee(newClaimsManager.address, accounts[1], {
         from: accounts[1],
       });
       assert(false, "only governance");
@@ -486,27 +505,27 @@ contract("HatTimelockController", (accounts) => {
     }
 
     try {
-      await newVault.setCommittee(accounts[2]);
+      await newClaimsManager.setCommittee(accounts[2]);
       assert(false, "only governance");
     } catch (ex) {
       assertVMException(ex);
     }
 
-    await hatTimelockController.setCommittee(newVault.address, accounts[1]);
+    await hatTimelockController.setCommittee(newClaimsManager.address, accounts[1]);
 
-    assert.equal(await newVault.committee(), accounts[1]);
+    assert.equal(await newClaimsManager.committee(), accounts[1]);
 
-    let tx = await newVault.committeeCheckIn({ from: accounts[1] });
+    tx = await newClaimsManager.committeeCheckIn({ from: accounts[1] });
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
 
     try {
-      await hatTimelockController.setCommittee(newVault.address, accounts[2]);
+      await hatTimelockController.setCommittee(newClaimsManager.address, accounts[2]);
       assert(false, "committee already checked in");
     } catch (ex) {
       assertVMException(ex, "CommitteeAlreadyCheckedIn");
     }
-    await newVault.setCommittee(accounts[2], { from: accounts[1] });
-    await newVault.setCommittee(accounts[1], { from: accounts[2] });
+    await newClaimsManager.setCommittee(accounts[2], { from: accounts[1] });
+    await newClaimsManager.setCommittee(accounts[1], { from: accounts[2] });
   });
 
   it("setEmergencyPaused", async () => {

@@ -153,8 +153,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         arbitratorCanChangeBeneficiary = ArbitratorCanChangeBeneficiary.DEFAULT;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
-
-        emit SetVaultDescription(_params.descriptionHash);
     }
 
 
@@ -254,7 +252,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
                 revert UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
         }
 
-        vault.setWithdrawPaused(true);
+        vault.setWithdrawPaused(false);
 
         if (_claim.bountyPercentage == HUNDRED_PERCENT) {
             vault.destroyVault();
@@ -339,7 +337,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         } // else the claim is expired and should be dismissed
         delete activeClaim;
 
-        vault.setWithdrawPaused(true);
+        vault.setWithdrawPaused(false);
 
         emit DismissClaim(_claimId);
     }
@@ -405,12 +403,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         delete pendingMaxBounty;
         emit SetMaxBounty(_maxBounty);
     }
-
-    /** @notice See {IHATClaimsManager-setVaultDescription}. */
-    function setVaultDescription(string calldata _descriptionHash) external onlyRegistryOwner {
-        emit SetVaultDescription(_descriptionHash);
-    }
-
     
     /** @notice See {IHATClaimsManager-setHATBountySplit}. */
     function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external onlyRegistryOwner {

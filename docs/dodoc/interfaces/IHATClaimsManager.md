@@ -382,22 +382,6 @@ Called by the vault&#39;s owner to set a pending request for the maximum percent
 |---|---|---|
 | _maxBounty | uint16 | The maximum bounty percentage that can be paid out |
 
-### setVaultDescription
-
-```solidity
-function setVaultDescription(string _descriptionHash) external nonpayable
-```
-
-Called by the registry&#39;s owner to change the description of the vault in the Hats.finance UI
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _descriptionHash | string | the hash of the vault&#39;s description |
-
 ### setVestingParams
 
 ```solidity
@@ -652,22 +636,6 @@ event SetPendingMaxBounty(uint256 _maxBounty)
 | Name | Type | Description |
 |---|---|---|
 | _maxBounty  | uint256 | undefined |
-
-### SetVaultDescription
-
-```solidity
-event SetVaultDescription(string _descriptionHash)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _descriptionHash  | string | undefined |
 
 ### SetVestingParams
 

@@ -1,4 +1,5 @@
 const HATVault = artifacts.require("./HATVault.sol");
+const HATClaimsManager = artifacts.require("./HATClaimsManager.sol");
 const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
@@ -131,21 +132,29 @@ const setup = async function(
   hatVaultsExpectedHatsBalance = options.rewardInVaults;
 
   // setting challengeClaim period to 0 will make running tests a bit easier
-  let vault = await HATVault.at((await hatVaultsRegistry.createVault({
-    asset: stakingToken.address,
+  let tx = await hatVaultsRegistry.createVault(
+    {
+      asset: stakingToken.address,
+      name: "VAULT",
+      symbol: "VLT",
+      rewardControllers: [rewardController.address],
+      owner: await hatVaultsRegistry.owner(),
+      isPaused: false,
+      descriptionHash: "_descriptionHash",
+    },
+    {
     owner: await hatVaultsRegistry.owner(),
     committee: accounts[1],
     arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
-    name: "VAULT",
-    symbol: "VLT",
-    rewardControllers: [rewardController.address],
     maxBounty: options.maxBounty,
     bountySplit: options.bountySplit,
-    descriptionHash: "_descriptionHash",
     vestingDuration: 86400,
-    vestingPeriods: 10,
-    isPaused: false
-  })).logs[1].args._vault);
+    vestingPeriods: 10
+    }
+  );
+
+  let vault = await HATVault.at(tx.logs[2].args._vault);
+  let claimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
   if (options.challengePeriod) {
     await hatVaultsRegistry.setDefaultChallengePeriod(options.challengePeriod);
@@ -155,7 +164,7 @@ const setup = async function(
     vault.address,
     options.allocPoint
   );
-  await vault.committeeCheckIn({ from: committee });
+  await claimsManager.committeeCheckIn({ from: committee });
   const registry = hatVaultsRegistry;
   let arbitrator;
   if (options.setDefaultArbitrator) {
@@ -178,6 +187,7 @@ const setup = async function(
     someAccount: accounts[5], // an account without any special role
     stakingToken,
     vault,
+    claimsManager,
     rewardControllerExpectedHatsBalance: options.rewardInVaults
   };
 };
@@ -217,8 +227,8 @@ async function advanceToNonSafetyPeriod(hatVaultsRegistry) {
   }
 }
 
-async function submitClaim(vault, { accounts, bountyPercentage = 8000 }) {
-  const tx = await vault.submitClaim(
+async function submitClaim(claimsManager, { accounts, bountyPercentage = 8000 }) {
+  const tx = await claimsManager.submitClaim(
     accounts[2],
     bountyPercentage,
     "description hash",

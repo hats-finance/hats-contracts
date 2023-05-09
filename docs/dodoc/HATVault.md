@@ -182,10 +182,10 @@ function balanceOf(address account) external view returns (uint256)
 ### claimsManager
 
 ```solidity
-function claimsManager() external view returns (contract IHATClaimsManager)
+function claimsManager() external view returns (address)
 ```
 
-
+Returns the vault&#39;s registry
 
 
 
@@ -194,7 +194,7 @@ function claimsManager() external view returns (contract IHATClaimsManager)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract IHATClaimsManager | undefined |
+| _0 | address | The registry&#39;s address |
 
 ### convertToAssets
 
@@ -403,7 +403,7 @@ function increaseAllowance(address spender, uint256 addedValue) external nonpaya
 ### initialize
 
 ```solidity
-function initialize(contract IHATClaimsManager _claimsManager, IHATVault.VaultInitParams _params) external nonpayable
+function initialize(address _claimsManager, IHATVault.VaultInitParams _params) external nonpayable
 ```
 
 
@@ -414,7 +414,7 @@ function initialize(contract IHATClaimsManager _claimsManager, IHATVault.VaultIn
 
 | Name | Type | Description |
 |---|---|---|
-| _claimsManager | contract IHATClaimsManager | undefined |
+| _claimsManager | address | undefined |
 | _params | IHATVault.VaultInitParams | undefined |
 
 ### makePayout
@@ -840,7 +840,7 @@ See {IHATVault-redeemAndClaim}.
 function registry() external view returns (contract IHATVaultsRegistry)
 ```
 
-
+Returns the vault&#39;s registry
 
 
 
@@ -849,7 +849,7 @@ function registry() external view returns (contract IHATVaultsRegistry)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract IHATVaultsRegistry | undefined |
+| _0 | contract IHATVaultsRegistry | The registry&#39;s address |
 
 ### renounceOwnership
 
@@ -900,6 +900,22 @@ See {IHATVault-setDepositPause}.
 |---|---|---|
 | _depositPause | bool | undefined |
 
+### setVaultDescription
+
+```solidity
+function setVaultDescription(string _descriptionHash) external nonpayable
+```
+
+See {IHATVault-setVaultDescription}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _descriptionHash | string | undefined |
+
 ### setWithdrawPaused
 
 ```solidity
@@ -931,6 +947,17 @@ See {IHATVault-setWithdrawalFee}.
 | Name | Type | Description |
 |---|---|---|
 | _fee | uint256 | undefined |
+
+### startVault
+
+```solidity
+function startVault() external nonpayable
+```
+
+See {IHATVault-destroyVault}. 
+
+
+
 
 ### symbol
 
@@ -1045,6 +1072,23 @@ function transferOwnership(address newOwner) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | newOwner | address | undefined |
+
+### vaultStarted
+
+```solidity
+function vaultStarted() external view returns (bool)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### withdraw
 
@@ -1317,6 +1361,22 @@ event SetDepositPause(bool _depositPause)
 |---|---|---|
 | _depositPause  | bool | undefined |
 
+### SetVaultDescription
+
+```solidity
+event SetVaultDescription(string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _descriptionHash  | string | undefined |
+
 ### SetWithdrawPaused
 
 ```solidity
@@ -1371,6 +1431,17 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 
 ```solidity
 event VaultDestroyed()
+```
+
+
+
+
+
+
+### VaultStarted
+
+```solidity
+event VaultStarted()
 ```
 
 
@@ -1474,17 +1545,6 @@ error CannotUnpauseDestroyedVault()
 
 
 
-### CommitteeNotCheckedInYet
-
-```solidity
-error CommitteeNotCheckedInYet()
-```
-
-
-
-
-
-
 ### DepositSlippageProtection
 
 ```solidity
@@ -1540,6 +1600,17 @@ error OnlyFeeSetter()
 
 
 
+### OnlyRegistryOwner
+
+```solidity
+error OnlyRegistryOwner()
+```
+
+
+
+
+
+
 ### RedeemMoreThanMax
 
 ```solidity
@@ -1566,6 +1637,17 @@ error RedeemSlippageProtection()
 
 ```solidity
 error SystemInEmergencyPause()
+```
+
+
+
+
+
+
+### VaultNotStartedYet
+
+```solidity
+error VaultNotStartedYet()
 ```
 
 

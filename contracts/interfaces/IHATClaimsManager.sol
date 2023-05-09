@@ -116,7 +116,6 @@ interface IHATClaimsManager {
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
     * @param arbitrator The address of the vault's arbitrator 
-    * @param descriptionHash The hash of the vault's description
     * @dev Needed to avoid a "stack too deep" error
     */
     struct ClaimsManagerInitParams {
@@ -127,7 +126,6 @@ interface IHATClaimsManager {
         address owner;
         address committee;
         address arbitrator;
-        string descriptionHash;
     }
 
     // Only committee
@@ -220,7 +218,6 @@ interface IHATClaimsManager {
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty);
     event SetMaxBounty(uint256 _maxBounty);
-    event SetVaultDescription(string _descriptionHash);
     event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
@@ -353,14 +350,6 @@ interface IHATClaimsManager {
     * time delay since setting the pending max bounty had passed.
     */
     function setMaxBounty() external;
-
-    /**
-    * @notice Called by the registry's owner to change the description of the
-    * vault in the Hats.finance UI
-    * @param _descriptionHash the hash of the vault's description
-    */
-    // TODO: Consider moving description to the vault
-    function setVaultDescription(string calldata _descriptionHash) external;
 
     /**
     * @notice Called by the registry's owner to set the vault HAT token bounty 

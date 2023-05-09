@@ -303,8 +303,8 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         vault = Clones.clone(hatVaultImplementation);
         vaultClaimsManager = Clones.clone(hatClaimsManagerImplementation);
 
-        IHATVault(vault).initialize(IHATClaimsManager(vaultClaimsManager), _vaultParams);
-        IHATClaimsManager(vault).initialize(IHATVault(vault), _claimsManagerParams);
+        IHATVault(vault).initialize(vaultClaimsManager, _vaultParams);
+        IHATClaimsManager(vaultClaimsManager).initialize(IHATVault(vault), _claimsManagerParams);
 
         hatVaults.push(vault);
 

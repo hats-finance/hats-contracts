@@ -58,7 +58,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     uint256 public constant MAX_WITHDRAWAL_FEE = 2e2; // Max fee is 2%
     uint256 public constant MINIMAL_AMOUNT_OF_SHARES = 1e3; // to reduce rounding errors, the number of shares is either 0, or > than this number
 
-    IHATClaimsManager public claimsManager;
+    address public claimsManager;
     IHATVaultsRegistry public registry;
 
     // Time of when withdrawal period starts for every user that has an
@@ -74,7 +74,12 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     bool private _vaultDestroyed;
 
     modifier onlyClaimsManager() {
-        if (address(claimsManager) != _msgSender()) revert OnlyClaimsManager();
+        if (claimsManager != _msgSender()) revert OnlyClaimsManager();
+        _;
+    }
+
+    modifier onlyRegistryOwner() {
+        if (registry.owner() != _msgSender()) revert OnlyRegistryOwner();
         _;
     }
 
@@ -84,7 +89,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-initialize}. */
-    function initialize(IHATClaimsManager _claimsManager, IHATVault.VaultInitParams calldata _params) external initializer {
+    function initialize(address _claimsManager, IHATVault.VaultInitParams calldata _params) external initializer {
         __ERC20_init(string.concat("Hats Vault ", _params.name), string.concat("HAT", _params.symbol));
         __ERC4626_init(IERC20MetadataUpgradeable(address(_params.asset)));
         __ReentrancyGuard_init();
@@ -94,6 +99,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         claimsManager = _claimsManager;
         depositPause = _params.isPaused;
         registry = IHATVaultsRegistry(_msgSender());
+        emit SetVaultDescription(_params.descriptionHash);
     }
 
     /** @notice See {IHATVault-approveClaim}. */
@@ -121,7 +127,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     }
 
     /** @notice See {IHATVault-addRewardController}. */
-    function addRewardController(IRewardController _rewardController) external onlyOwner {
+    function addRewardController(IRewardController _rewardController) external onlyRegistryOwner {
         for (uint256 i = 0; i < rewardControllers.length;) { 
             if (_rewardController == rewardControllers[i]) revert DuplicatedRewardController();
             unchecked { ++i; }
@@ -136,6 +142,11 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             revert CannotUnpauseDestroyedVault();
         depositPause = _depositPause;
         emit SetDepositPause(_depositPause);
+    }
+
+    /** @notice See {IHATVault-setVaultDescription}. */
+    function setVaultDescription(string calldata _descriptionHash) external onlyRegistryOwner {
+        emit SetVaultDescription(_descriptionHash);
     }
 
     /** @notice See {IHATVault-setWithdrawalFee}. */
@@ -261,7 +272,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     /** @notice See {IERC4626Upgradeable-maxRedeem}. */
     function maxRedeem(address owner) public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        // TODO: Replace with pauseWithdrawals flag
         if (withdrawPaused || !_isWithdrawEnabledForUser(owner)) return 0;
         return balanceOf(owner);
     }

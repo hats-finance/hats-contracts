@@ -83,7 +83,7 @@ contract ERC20Mock is ERC20 {
         uint256 amount
     ) internal override {
         if (reenterApproveClaim) {
-            IHATClaimsManager(msg.sender).approveClaim("", 1000, address(0));
+            IHATClaimsManager(IHATVault(msg.sender).claimsManager()).approveClaim("", 1000, address(0));
         }
 
         if (reenterDeposit) {

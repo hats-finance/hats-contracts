@@ -98,7 +98,7 @@ function TIMELOCK_ADMIN_ROLE() external view returns (bytes32)
 ### approveClaim
 
 ```solidity
-function approveClaim(contract HATGovernanceArbitrator _arbitrator, contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
+function approveClaim(contract HATGovernanceArbitrator _arbitrator, contract IHATClaimsManager _claimsManager, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -110,7 +110,7 @@ function approveClaim(contract HATGovernanceArbitrator _arbitrator, contract IHA
 | Name | Type | Description |
 |---|---|---|
 | _arbitrator | contract HATGovernanceArbitrator | undefined |
-| _vault | contract IHATClaimsManager | undefined |
+| _claimsManager | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### cancel
@@ -132,7 +132,7 @@ function cancel(bytes32 id) external nonpayable
 ### dismissClaim
 
 ```solidity
-function dismissClaim(contract HATGovernanceArbitrator _arbitrator, contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
+function dismissClaim(contract HATGovernanceArbitrator _arbitrator, contract IHATClaimsManager _claimsManager, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -144,7 +144,7 @@ function dismissClaim(contract HATGovernanceArbitrator _arbitrator, contract IHA
 | Name | Type | Description |
 |---|---|---|
 | _arbitrator | contract HATGovernanceArbitrator | undefined |
-| _vault | contract IHATClaimsManager | undefined |
+| _claimsManager | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### execute
@@ -602,7 +602,7 @@ function setAllocPoint(contract IHATVault _vault, contract IRewardController _re
 ### setCommittee
 
 ```solidity
-function setCommittee(contract IHATClaimsManager _vault, address _committee) external nonpayable
+function setCommittee(contract IHATClaimsManager _claimsManager, address _committee) external nonpayable
 ```
 
 
@@ -613,7 +613,7 @@ function setCommittee(contract IHATClaimsManager _vault, address _committee) ext
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATClaimsManager | undefined |
+| _claimsManager | contract IHATClaimsManager | undefined |
 | _committee | address | undefined |
 
 ### setDepositPause
@@ -653,7 +653,7 @@ function setEmergencyPaused(contract HATVaultsRegistry _registry, bool _isEmerge
 ### setVaultDescription
 
 ```solidity
-function setVaultDescription(contract IHATClaimsManager _vault, string _descriptionHash) external nonpayable
+function setVaultDescription(contract IHATVault _vault, string _descriptionHash) external nonpayable
 ```
 
 
@@ -664,13 +664,13 @@ function setVaultDescription(contract IHATClaimsManager _vault, string _descript
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATClaimsManager | undefined |
+| _vault | contract IHATVault | undefined |
 | _descriptionHash | string | undefined |
 
 ### setVaultVisibility
 
 ```solidity
-function setVaultVisibility(contract IHATClaimsManager _vault, bool _visible) external nonpayable
+function setVaultVisibility(contract IHATVault _vault, bool _visible) external nonpayable
 ```
 
 
@@ -681,7 +681,7 @@ function setVaultVisibility(contract IHATClaimsManager _vault, bool _visible) ex
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATClaimsManager | undefined |
+| _vault | contract IHATVault | undefined |
 | _visible | bool | undefined |
 
 ### supportsInterface

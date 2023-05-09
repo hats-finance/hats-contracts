@@ -19,6 +19,7 @@ const func = async function (hre) {
         from: deployer,
         args: [
             (await deployments.get('HATVault')).address,
+            (await deployments.get('HATClaimsManager')).address,
             (await deployments.get('HATTimelockController')).address,
             (await deployments.get('HATGovernanceArbitrator')).address,
             swapToken,

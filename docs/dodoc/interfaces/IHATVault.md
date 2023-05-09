@@ -111,6 +111,23 @@ function balanceOf(address account) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### claimsManager
+
+```solidity
+function claimsManager() external view returns (address)
+```
+
+Returns the vault&#39;s registry
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | The registry&#39;s address |
+
 ### convertToAssets
 
 ```solidity
@@ -255,7 +272,7 @@ Redeem all of the user&#39;s shares in the vault for the respective amount of un
 ### initialize
 
 ```solidity
-function initialize(contract IHATClaimsManager _claimsManager, IHATVault.VaultInitParams _params) external nonpayable
+function initialize(address _claimsManager, IHATVault.VaultInitParams _params) external nonpayable
 ```
 
 
@@ -266,7 +283,7 @@ function initialize(contract IHATClaimsManager _claimsManager, IHATVault.VaultIn
 
 | Name | Type | Description |
 |---|---|---|
-| _claimsManager | contract IHATClaimsManager | undefined |
+| _claimsManager | address | undefined |
 | _params | IHATVault.VaultInitParams | undefined |
 
 ### makePayout
@@ -669,6 +686,23 @@ Redeem shares in the vault for the respective amount of underlying assets and cl
 |---|---|---|
 | assets | uint256 | undefined |
 
+### registry
+
+```solidity
+function registry() external view returns (contract IHATVaultsRegistry)
+```
+
+Returns the vault&#39;s registry
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IHATVaultsRegistry | The registry&#39;s address |
+
 ### setDepositPause
 
 ```solidity
@@ -684,6 +718,22 @@ Called by the vault&#39;s owner to disable all deposits to the vault
 | Name | Type | Description |
 |---|---|---|
 | _depositPause | bool | Are deposits paused |
+
+### setVaultDescription
+
+```solidity
+function setVaultDescription(string _descriptionHash) external nonpayable
+```
+
+Called by the registry&#39;s owner to change the description of the vault in the Hats.finance UI
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _descriptionHash | string | the hash of the vault&#39;s description |
 
 ### setWithdrawPaused
 
@@ -716,6 +766,17 @@ Called by the registry&#39;s fee setter to set the fee for  withdrawals from the
 | Name | Type | Description |
 |---|---|---|
 | _fee | uint256 | The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE` |
+
+### startVault
+
+```solidity
+function startVault() external nonpayable
+```
+
+Start the vault, deposits are disabled until the vault is first started
+
+
+
 
 ### symbol
 
@@ -997,6 +1058,22 @@ event SetDepositPause(bool _depositPause)
 |---|---|---|
 | _depositPause  | bool | undefined |
 
+### SetVaultDescription
+
+```solidity
+event SetVaultDescription(string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _descriptionHash  | string | undefined |
+
 ### SetWithdrawPaused
 
 ```solidity
@@ -1051,6 +1128,17 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 
 ```solidity
 event VaultDestroyed()
+```
+
+
+
+
+
+
+### VaultStarted
+
+```solidity
+event VaultStarted()
 ```
 
 
@@ -1154,17 +1242,6 @@ error CannotUnpauseDestroyedVault()
 
 
 
-### CommitteeNotCheckedInYet
-
-```solidity
-error CommitteeNotCheckedInYet()
-```
-
-
-
-
-
-
 ### DepositSlippageProtection
 
 ```solidity
@@ -1220,6 +1297,17 @@ error OnlyFeeSetter()
 
 
 
+### OnlyRegistryOwner
+
+```solidity
+error OnlyRegistryOwner()
+```
+
+
+
+
+
+
 ### RedeemMoreThanMax
 
 ```solidity
@@ -1246,6 +1334,17 @@ error RedeemSlippageProtection()
 
 ```solidity
 error SystemInEmergencyPause()
+```
+
+
+
+
+
+
+### VaultNotStartedYet
+
+```solidity
+error VaultNotStartedYet()
 ```
 
 

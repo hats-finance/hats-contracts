@@ -6,6 +6,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IRewardController.sol";
+import "./IHATVaultsRegistry.sol";
 import "./IHATClaimsManager.sol";
 
 /** @title Interface for Hats.finance Vaults
@@ -55,6 +56,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @param asset The vault's native token
     * @param owner The vault's owner
     * @param isPaused Whether to initialize the vault with deposits disabled
+    * @param descriptionHash The hash of the vault's description
     */
     struct VaultInitParams {
         string name;
@@ -63,10 +65,13 @@ interface IHATVault is IERC4626Upgradeable {
         IERC20 asset;
         address owner;
         bool isPaused;
+        string descriptionHash;
     }
 
     // Only claims manager can make this call
     error OnlyClaimsManager();
+    // Only registry owner
+    error OnlyRegistryOwner();
     // Vault not started yet
     error VaultNotStartedYet();
     // First deposit must return at least MINIMAL_AMOUNT_OF_SHARES
@@ -106,6 +111,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SetWithdrawPaused(bool _withdrawPaused);
     event VaultStarted();
     event VaultDestroyed();
+    event SetVaultDescription(string _descriptionHash);
     event WithdrawRequest(
         address indexed _beneficiary,
         uint256 _withdrawEnableTime
@@ -118,7 +124,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @dev See {IHATVault-VaultInitParams} for more details
     * @dev Called when the vault token is created in {IHATVaultsRegistry-createVault}
     */
-    function initialize(IHATClaimsManager _claimsManager, VaultInitParams calldata _params) external;
+    function initialize(address _claimsManager, VaultInitParams calldata _params) external;
 
     /**
     * @notice Adds a reward controller to the reward controllers list
@@ -161,6 +167,25 @@ interface IHATVault is IERC4626Upgradeable {
     * @notice Permanently disables deposits to the vault
     */
     function destroyVault() external;
+
+    /**
+    * @notice Called by the registry's owner to change the description of the
+    * vault in the Hats.finance UI
+    * @param _descriptionHash the hash of the vault's description
+    */
+    function setVaultDescription(string calldata _descriptionHash) external;
+
+    /** 
+    * @notice Returns the vault's registry
+    * @return The registry's address
+    */
+    function registry() external view returns(IHATVaultsRegistry);
+
+    /** 
+    * @notice Returns the vault's registry
+    * @return The registry's address
+    */
+    function claimsManager() external view returns(address);
 
     /**
     * @notice Submit a request to withdraw funds from the vault.
