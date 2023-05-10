@@ -396,7 +396,7 @@ function renounceOwnership() external nonpayable
 ### revocable
 
 ```solidity
-function revocable() external view returns (enum ITokenLock.Revocability)
+function revocable() external view returns (bool)
 ```
 
 
@@ -408,7 +408,7 @@ function revocable() external view returns (enum ITokenLock.Revocability)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | enum ITokenLock.Revocability | undefined |
+| _0 | bool | undefined |
 
 ### revoke
 

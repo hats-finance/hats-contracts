@@ -220,7 +220,7 @@ function endTime() external view returns (uint256)
 ### initialize
 
 ```solidity
-function initialize(address _tokenLockOwner, address _beneficiary, contract HATToken _token, uint256 _managedAmount, uint256 _startTime, uint256 _endTime, uint256 _periods, uint256 _releaseStartTime, uint256 _vestingCliffTime, enum ITokenLock.Revocability _revocable, bool _canDelegate) external nonpayable
+function initialize(address _tokenLockOwner, address _beneficiary, contract HATToken _token, uint256 _managedAmount, uint256 _startTime, uint256 _endTime, uint256 _periods, uint256 _releaseStartTime, uint256 _vestingCliffTime, bool _revocable, bool _canDelegate) external nonpayable
 ```
 
 
@@ -240,7 +240,7 @@ function initialize(address _tokenLockOwner, address _beneficiary, contract HATT
 | _periods | uint256 | undefined |
 | _releaseStartTime | uint256 | undefined |
 | _vestingCliffTime | uint256 | undefined |
-| _revocable | enum ITokenLock.Revocability | undefined |
+| _revocable | bool | undefined |
 | _canDelegate | bool | undefined |
 
 ### isAccepted
@@ -455,7 +455,7 @@ function renounceOwnership() external nonpayable
 ### revocable
 
 ```solidity
-function revocable() external view returns (enum ITokenLock.Revocability)
+function revocable() external view returns (bool)
 ```
 
 
@@ -467,7 +467,7 @@ function revocable() external view returns (enum ITokenLock.Revocability)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | enum ITokenLock.Revocability | undefined |
+| _0 | bool | undefined |
 
 ### revoke
 

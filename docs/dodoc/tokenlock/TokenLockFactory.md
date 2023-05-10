@@ -13,7 +13,7 @@
 ### createTokenLock
 
 ```solidity
-function createTokenLock(address _token, address _owner, address _beneficiary, uint256 _managedAmount, uint256 _startTime, uint256 _endTime, uint256 _periods, uint256 _releaseStartTime, uint256 _vestingCliffTime, enum ITokenLock.Revocability _revocable, bool _canDelegate) external nonpayable returns (address contractAddress)
+function createTokenLock(address _token, address _owner, address _beneficiary, uint256 _managedAmount, uint256 _startTime, uint256 _endTime, uint256 _periods, uint256 _releaseStartTime, uint256 _vestingCliffTime, bool _revocable, bool _canDelegate) external nonpayable returns (address contractAddress)
 ```
 
 Creates and fund a new token lock wallet using a minimum proxy
@@ -33,7 +33,7 @@ Creates and fund a new token lock wallet using a minimum proxy
 | _periods | uint256 | Number of periods between start time and end time |
 | _releaseStartTime | uint256 | Override time for when the releases start |
 | _vestingCliffTime | uint256 | undefined |
-| _revocable | enum ITokenLock.Revocability | Whether the contract is revocable |
+| _revocable | bool | Whether the contract is revocable |
 | _canDelegate | bool | Whether the contract should call delegate |
 
 #### Returns
@@ -181,7 +181,7 @@ event OwnershipTransferred(address indexed previousOwner, address indexed newOwn
 ### TokenLockCreated
 
 ```solidity
-event TokenLockCreated(address indexed contractAddress, bytes32 indexed initHash, address indexed beneficiary, address token, uint256 managedAmount, uint256 startTime, uint256 endTime, uint256 periods, uint256 releaseStartTime, uint256 vestingCliffTime, enum ITokenLock.Revocability revocable, bool canDelegate)
+event TokenLockCreated(address indexed contractAddress, bytes32 indexed initHash, address indexed beneficiary, address token, uint256 managedAmount, uint256 startTime, uint256 endTime, uint256 periods, uint256 releaseStartTime, uint256 vestingCliffTime, bool revocable, bool canDelegate)
 ```
 
 
@@ -202,7 +202,7 @@ event TokenLockCreated(address indexed contractAddress, bytes32 indexed initHash
 | periods  | uint256 | undefined |
 | releaseStartTime  | uint256 | undefined |
 | vestingCliffTime  | uint256 | undefined |
-| revocable  | enum ITokenLock.Revocability | undefined |
+| revocable  | bool | undefined |
 | canDelegate  | bool | undefined |
 
 
