@@ -161,7 +161,6 @@ abstract contract TokenLock is Ownable, ITokenLock {
      */
     function revoke() external override onlyOwner {
         require(revocable, "Contract is non-revocable");
-        require(isRevoked == false, "Already revoked");
 
         uint256 unvestedAmount = managedAmount - vestedAmount();
         require(unvestedAmount > 0, "No available unvested amount");
@@ -171,6 +170,8 @@ abstract contract TokenLock is Ownable, ITokenLock {
         token.safeTransfer(owner(), unvestedAmount);
 
         emit TokensRevoked(beneficiary, unvestedAmount);
+
+        selfdestruct(payable(msg.sender));
     }
 
     /**

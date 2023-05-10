@@ -28,6 +28,7 @@ contract VaultsManagerMock {
                                     arbitratorCanChangeBounty: false,
                                     arbitratorCanChangeBeneficiary: false,
                                     arbitratorCanSubmitClaims: false,
+                                    isTokenLockRevocable: false,
                                     name: "VAULT",
                                     symbol: "VLT",
                                     rewardControllers: _rewardControllers,

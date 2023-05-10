@@ -351,12 +351,7 @@ contract("TokenLock", (accounts) => {
     assert.equal(tx.logs[0].event, "TokensRevoked");
     assert.equal(tx.logs[0].args.beneficiary, accounts[1]);
     assert.equal(tx.logs[0].args.amount.toString(), web3.utils.toWei("1"));
-    try {
-      await tokenLock.revoke({ from: accounts[2] });
-      assert(false, "cannot revoke twice");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("cancel lock", async () => {
