@@ -78,6 +78,23 @@ function MINIMAL_AMOUNT_OF_SHARES() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### VERSION
+
+```solidity
+function VERSION() external view returns (string)
+```
+
+Returns the vault&#39;s version
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | undefined |
+
 ### addRewardController
 
 ```solidity

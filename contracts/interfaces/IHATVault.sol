@@ -175,6 +175,12 @@ interface IHATVault is IERC4626Upgradeable {
     * @param _descriptionHash the hash of the vault's description
     */
     function setVaultDescription(string calldata _descriptionHash) external;
+    
+    /** 
+    * @notice Returns the vault's version
+    * @return The vault's version
+    */
+    function VERSION() external view returns(string calldata);
 
     /** 
     * @notice Returns the vault's registry

@@ -480,4 +480,10 @@ interface IHATClaimsManager {
     * @return The vault's challenge timeout period
     */
     function getChallengeTimeOutPeriod() external view returns(uint32);
+
+    /** 
+    * @notice Returns the claims manager's version
+    * @return The claims manager's version
+    */
+    function VERSION() external view returns(string calldata);
 }

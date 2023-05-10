@@ -809,6 +809,8 @@ contract("HatVaults", (accounts) => {
 
     assert.equal(await newVault.name(), "Hats Vault VAULT");
     assert.equal(await newVault.symbol(), "HATVLT");
+    assert.equal(await newVault.VERSION(), "3.0");
+    assert.equal(await newClaimsManager.VERSION(), "3.0");
 
     try {
       await newVault.initialize(newClaimsManager.address, {

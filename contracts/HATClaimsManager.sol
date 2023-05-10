@@ -36,6 +36,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     using SafeERC20 for IERC20;
     using MathUpgradeable for uint256;
 
+    string public constant VERSION = "3.0";
     uint16 public constant NULL_UINT16 = type(uint16).max;
     uint32 public constant NULL_UINT32 = type(uint32).max;
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;

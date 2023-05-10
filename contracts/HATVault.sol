@@ -39,6 +39,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     using SafeERC20 for IERC20;
     using MathUpgradeable for uint256;
 
+    string public constant VERSION = "3.0";
     uint256 public constant MAX_UINT = type(uint256).max;
     uint256 public constant HUNDRED_PERCENT = 1e4;
     uint256 public constant MAX_WITHDRAWAL_FEE = 2e2; // Max fee is 2%
