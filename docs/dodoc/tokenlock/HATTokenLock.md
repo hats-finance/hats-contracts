@@ -759,3 +759,215 @@ event TokensWithdrawn(address indexed beneficiary, uint256 amount)
 
 
 
+## Errors
+
+### AlreadyInitialized
+
+```solidity
+error AlreadyInitialized()
+```
+
+
+
+
+
+
+### AmountCannotBeZero
+
+```solidity
+error AmountCannotBeZero()
+```
+
+
+
+
+
+
+### AmountRequestedBiggerThanSurplus
+
+```solidity
+error AmountRequestedBiggerThanSurplus()
+```
+
+
+
+
+
+
+### BeneficiaryCannotBeZero
+
+```solidity
+error BeneficiaryCannotBeZero()
+```
+
+
+
+
+
+
+### CannotCancelAfterLockIsAccepted
+
+```solidity
+error CannotCancelAfterLockIsAccepted()
+```
+
+
+
+
+
+
+### CannotSweepVestedToken
+
+```solidity
+error CannotSweepVestedToken()
+```
+
+
+
+
+
+
+### CliffTimeMustBeBeforeEndTime
+
+```solidity
+error CliffTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### DelegateDisabled
+
+```solidity
+error DelegateDisabled()
+```
+
+
+
+
+
+
+### LockIsNonRevocable
+
+```solidity
+error LockIsNonRevocable()
+```
+
+
+
+
+
+
+### ManagedAmountCannotBeZero
+
+```solidity
+error ManagedAmountCannotBeZero()
+```
+
+
+
+
+
+
+### NoAmountAvailableToRelease
+
+```solidity
+error NoAmountAvailableToRelease()
+```
+
+
+
+
+
+
+### NoAvailableUnvestedAmount
+
+```solidity
+error NoAvailableUnvestedAmount()
+```
+
+
+
+
+
+
+### OnlyBeneficiary
+
+```solidity
+error OnlyBeneficiary()
+```
+
+
+
+
+
+
+### OnlySweeper
+
+```solidity
+error OnlySweeper()
+```
+
+
+
+
+
+
+### PeriodsCannotBeBelowMinimum
+
+```solidity
+error PeriodsCannotBeBelowMinimum()
+```
+
+
+
+
+
+
+### ReleaseStartTimeMustBeBeforeEndTime
+
+```solidity
+error ReleaseStartTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### StartTimeCannotBeZero
+
+```solidity
+error StartTimeCannotBeZero()
+```
+
+
+
+
+
+
+### StartTimeMustBeBeforeEndTime
+
+```solidity
+error StartTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### TokenCannotBeZero
+
+```solidity
+error TokenCannotBeZero()
+```
+
+
+
+
+
+
+

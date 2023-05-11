@@ -207,3 +207,17 @@ event TokenLockCreated(address indexed contractAddress, bytes32 indexed initHash
 
 
 
+## Errors
+
+### MasterCopyCannotBeZero
+
+```solidity
+error MasterCopyCannotBeZero()
+```
+
+
+
+
+
+
+

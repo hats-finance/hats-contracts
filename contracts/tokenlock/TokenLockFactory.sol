@@ -16,6 +16,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * easier by distributing them the initial tokens to be managed.
  */
 contract TokenLockFactory is ITokenLockFactory, Ownable {
+    // -- Errors --
+
+    error MasterCopyCannotBeZero();
+
     // -- State --
 
     address public masterCopy;
@@ -115,7 +119,8 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
     }
 
     function _setMasterCopy(address _masterCopy) internal {
-        require(_masterCopy != address(0), "MasterCopy cannot be zero");
+        if (_masterCopy == address(0))
+            revert MasterCopyCannotBeZero();
         masterCopy = _masterCopy;
         emit MasterCopyUpdated(_masterCopy);
     }
