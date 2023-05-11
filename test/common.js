@@ -55,7 +55,8 @@ function assertVMException(error, expectedError = "") {
       error.message === expectedErrorMessage ||
         error.message === expectedReasonString ||
         // Needed for now because hardhat doesn't fully support the viaIR compiler setting
-        error.message === "Returned error: VM Exception while processing transaction: revert with unrecognized return data or custom error",
+        error.message === "Returned error: VM Exception while processing transaction: revert with unrecognized return data or custom error" ||
+        error.message === "Transaction reverted and Hardhat couldn't infer the reason.",
       "Expected error to be: " +
         expectedError +
         ", got this instead:" +
