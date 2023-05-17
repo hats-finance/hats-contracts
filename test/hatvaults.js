@@ -715,6 +715,7 @@ contract("HatVaults", (accounts) => {
     let vault = await HATVault.at(tx.logs[1].args._vault);
     assert.equal(await vault.name(), "Hats Vault VAULT");
     assert.equal(await vault.symbol(), "HATVLT");
+    assert.equal(await vault.VERSION(), "2.1");
 
     try {
       await vault.initialize({
