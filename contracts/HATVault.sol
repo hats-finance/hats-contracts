@@ -313,7 +313,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 vestingPeriods,
                 0, //no release start
                 0, //no cliff
-                false,
+                false, // not revocable
                 false
             );
             _asset.safeTransfer(tokenLock, claimBounty.hackerVested);
