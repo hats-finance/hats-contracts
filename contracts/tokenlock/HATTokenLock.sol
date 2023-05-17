@@ -6,6 +6,7 @@ import "../HATToken.sol";
 
 
 contract HATTokenLock is TokenLock {
+    error DelegateDisabled();
 
     bool public canDelegate;
 
@@ -20,7 +21,7 @@ contract HATTokenLock is TokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        Revocability _revocable,
+        bool _revocable,
         bool _canDelegate
     ) external {
         _initialize(
@@ -47,7 +48,9 @@ contract HATTokenLock is TokenLock {
         external
         onlyBeneficiary
     {
-        require(canDelegate, "delegate is disable");
+        if (!canDelegate) {
+            revert DelegateDisabled();
+        }
         HATToken(address(token)).delegate(_delegatee);
     }
 }

@@ -109,7 +109,11 @@ interface IHATVault is IERC4626Upgradeable {
     * @param asset The vault's native token
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
-    * @param arbitrator The address of the vault's arbitrator 
+    * @param arbitrator The address of the vault's arbitrator
+    * @param arbitratorCanChangeBounty Can the arbitrator change a claim's bounty
+    * @param arbitratorCanChangeBeneficiary Can the arbitrator change a claim's beneficiary
+    * @param arbitratorCanSubmitClaims Can the arbitrator submit a claim
+    * @param isTokenLockRevocable can the committee revoke the token lock
     * @param isPaused Whether to initialize the vault with deposits disabled
     * @param descriptionHash The hash of the vault's description
     * @dev Needed to avoid a "stack too deep" error
@@ -129,6 +133,7 @@ interface IHATVault is IERC4626Upgradeable {
         bool arbitratorCanChangeBounty;
         bool arbitratorCanChangeBeneficiary;
         bool arbitratorCanSubmitClaims;
+        bool isTokenLockRevocable;
         bool isPaused;
         string descriptionHash;
     }
@@ -763,4 +768,10 @@ interface IHATVault is IERC4626Upgradeable {
     * @return fee The amount of assets that will be paid as fee
     */
     function previewRedeemAndFee(uint256 shares) external view returns (uint256 assets, uint256 fee);
+
+    /** 
+    * @notice Returns the vault's version
+    * @return The vault's version
+    */
+    function VERSION() external view returns(string calldata);
 }

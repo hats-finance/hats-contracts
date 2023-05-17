@@ -70,7 +70,8 @@ const setUpGlobalVars = async function(
   allocPoint = 100,
   weth = false,
   rewardInVaults = 2500000,
-  challengePeriod = 60 * 60 * 24
+  challengePeriod = 60 * 60 * 24,
+  isTokenLockRevocable = false
 ) {
   if (startBlock === 0) {
     startBlock = (await web3.eth.getBlock("latest")).number;
@@ -86,7 +87,8 @@ const setUpGlobalVars = async function(
     weth,
     rewardInVaults,
     challengePeriod,
-    setDefaultArbitrator: false
+    setDefaultArbitrator: false,
+    isTokenLockRevocable
   });
 
   // copy global variables
@@ -313,7 +315,8 @@ contract("HatVaults", (accounts) => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -672,7 +675,8 @@ contract("HatVaults", (accounts) => {
       arbitrator: accounts[2],
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -715,6 +719,7 @@ contract("HatVaults", (accounts) => {
     let vault = await HATVault.at(tx.logs[1].args._vault);
     assert.equal(await vault.name(), "Hats Vault VAULT");
     assert.equal(await vault.symbol(), "HATVLT");
+    assert.equal(await vault.VERSION(), "2.1");
 
     try {
       await vault.initialize({
@@ -793,7 +798,8 @@ contract("HatVaults", (accounts) => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -1294,7 +1300,8 @@ contract("HatVaults", (accounts) => {
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitIssues: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
@@ -1401,7 +1408,8 @@ contract("HatVaults", (accounts) => {
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitIssues: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
@@ -4869,7 +4877,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -4991,7 +5000,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -5953,7 +5963,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -6295,6 +6306,109 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     }
   });
 
+  it("revoke vesting", async () => {
+    await setUpGlobalVars(
+      accounts,
+      0,
+      8000,
+      [7500, 2000, 500],
+      [1500, 500],
+      10,
+      0,
+      100,
+      false,
+      2500000,
+      60 * 60 * 24,
+      true
+    );
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[8].event, "ApproveClaim");
+    assert.equal(tx.logs[8].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
+
+    assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
+    var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
+    var expectedHackerBalance = depositValutBNAfterClaim
+      .mul(new web3.utils.BN(6000))
+      .div(new web3.utils.BN(10000));
+    assert.isTrue(
+      (await stakingToken.balanceOf(vestingTokenLock.address)).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      new web3.utils.BN(tx.logs[8].args._claimBounty.hackerVested).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
+    );
+    assert.equal(await vestingTokenLock.revocable(), true); //Enabled
+    assert.equal(await vestingTokenLock.owner(), accounts[1]);
+    assert.equal(await vestingTokenLock.canDelegate(), false);
+
+    let hackerPreviousBalance = await stakingToken.balanceOf(accounts[2]);
+
+    await utils.increaseTime(8640);
+    await vestingTokenLock.release({ from: accounts[2] });
+    assert.equal(
+        (await stakingToken.balanceOf(accounts[2])).sub(hackerPreviousBalance).toString(),
+        expectedHackerBalance.div(new web3.utils.BN(10)).toString()
+    );
+
+    const vestingTokenLockBalance = await stakingToken.balanceOf(vestingTokenLock.address);
+    const committeePreviousBalance = await stakingToken.balanceOf(accounts[1]);
+    hackerPreviousBalance = await stakingToken.balanceOf(accounts[2]);
+
+    try {
+      await vestingTokenLock.revoke();
+      assert(false, "only committee can revoke");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    await vestingTokenLock.revoke({ from: accounts[1] });
+
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[2])).toString(),
+      hackerPreviousBalance.toString()
+    );
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[1])).sub(committeePreviousBalance).toString(),
+      vestingTokenLockBalance.toString()
+    );
+    expect(await ethers.provider.getCode(vestingTokenLock.address)).to.equal("0x");
+  });
+
+
   it("vesting", async () => {
     await setUpGlobalVars(accounts);
     var staker = accounts[4];
@@ -6347,7 +6461,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.isTrue(
       expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
     );
-    assert.equal(await vestingTokenLock.revocable(), 2); //Disable
+    assert.equal(await vestingTokenLock.revocable(), false); //Disable
+    assert.equal(await vestingTokenLock.owner(), "0x0000000000000000000000000000000000000000");
     assert.equal(await vestingTokenLock.canDelegate(), false);
 
     //hacker get also rewards via none vesting
@@ -6568,7 +6683,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -6615,7 +6731,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [],
@@ -6669,7 +6786,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitIssues: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
@@ -6693,7 +6811,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitIssues: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
@@ -6717,7 +6836,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitIssues: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
@@ -6739,7 +6859,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -6815,7 +6936,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -6980,7 +7102,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],
@@ -7079,7 +7202,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitIssues: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       name: "VAULT",
       symbol: "VLT",
       rewardControllers: [rewardController.address],

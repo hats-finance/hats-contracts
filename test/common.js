@@ -82,6 +82,7 @@ const setup = async function(
     rewardInVaults : 2500000,
     challengePeriod: 60 * 60 * 24,
     setDefaultArbitrator: true,
+    isTokenLockRevocable: false
   };
   options = { ...defaultOptions, ...options};
   const committee = accounts[1];
@@ -141,7 +142,8 @@ const setup = async function(
     arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
     arbitratorCanChangeBounty: true,
     arbitratorCanChangeBeneficiary: false,
-    arbitratorCanSubmitIssues: false,
+    arbitratorCanSubmitClaims: false,
+    isTokenLockRevocable: options.isTokenLockRevocable,
     name: "VAULT",
     symbol: "VLT",
     rewardControllers: [rewardController.address],
