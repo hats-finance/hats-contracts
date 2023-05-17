@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "lint --fix": "eslint --fix .",
     "test": "hardhat test",
-    "coveralls": "hardhat coverage",
+    "coveralls": "hardhat --config hardhat.config.coverage.js coverage ",
     "gas-avg": "hardhat test && python3 gas-avg-check.py"
   },
   "devDependencies": {
