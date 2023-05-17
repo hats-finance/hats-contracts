@@ -768,4 +768,10 @@ interface IHATVault is IERC4626Upgradeable {
     * @return fee The amount of assets that will be paid as fee
     */
     function previewRedeemAndFee(uint256 shares) external view returns (uint256 assets, uint256 fee);
+
+    /** 
+    * @notice Returns the vault's version
+    * @return The vault's version
+    */
+    function VERSION() external view returns(string calldata);
 }

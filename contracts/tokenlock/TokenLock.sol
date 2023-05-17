@@ -77,7 +77,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
     // A cliff set a date to which a beneficiary needs to get to vest
     // all preceding periods
     uint256 public vestingCliffTime;
-    bool public revocable; // Whether to use vesting for locked funds
+    bool public revocable; // determines whether the owner can revoke all unvested tokens
 
     // State
 

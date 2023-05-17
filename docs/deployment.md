@@ -6,7 +6,7 @@ We'll run through an example on ethereums Sepolia test-net
 
 Create a `.env` file if it does not exist - you can copy `.env.example`, and add the private key you want to use for the deployment
 
-> The deploymnet scripts only support deploying with a private key - i.e. no hardware signers are supported
+> The deployment scripts only support deploying with a private key - i.e. no hardware signers are supported
 
 ## Let hardhat know about the network
 
