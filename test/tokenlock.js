@@ -3,6 +3,7 @@ const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const CloneFactoryMock = artifacts.require("./CloneFactoryMock.sol");
 const utils = require("./utils.js");
+const { assertVMException } = require("./common.js");
 
 var stakingToken;
 var tokenLockFactory;
@@ -45,16 +46,6 @@ const setup = async function(
   await stakingToken.mint(tokenLockAddress, web3.utils.toWei("1"));
 };
 
-function assertVMException(error) {
-  let condition =
-    error.message.search("VM Exception") > -1 ||
-    error.message.search("Transaction reverted") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a VM Exception, got this instead:" + error.message
-  );
-}
-
 contract("TokenLock", (accounts) => {
   it("initialize values", async () => {
     await setup(accounts);
@@ -79,7 +70,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with 0 beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "BeneficiaryCannotBeZero");
     }
 
     try {
@@ -98,7 +89,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with 0 token");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "TokenCannotBeZero");
     }
 
     try {
@@ -117,7 +108,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with 0 managed amount");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "ManagedAmountCannotBeZero");
     }
 
     try {
@@ -136,7 +127,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with 0 start time");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "StartTimeCannotBeZero");
     }
 
     try {
@@ -155,7 +146,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with end time < start time");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "StartTimeMustBeBeforeEndTime");
     }
 
     try {
@@ -174,7 +165,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with less than minimum periods");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "PeriodsCannotBeBelowMinimum");
     }
 
     try {
@@ -193,7 +184,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with release start time > end time");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "ReleaseStartTimeMustBeBeforeEndTime");
     }
 
     try {
@@ -212,7 +203,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize with vesting cliff time > end time");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "CliffTimeMustBeBeforeEndTime");
     }
 
     await newTokenLock.initialize(
@@ -253,7 +244,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize twice");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "AlreadyInitialized");
     }
   });
 
@@ -275,7 +266,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "cannot initialize twice");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "AlreadyInitialized");
     }
   });
 
@@ -285,7 +276,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revoke({ from: accounts[1] });
       assert(false, "only owner can call revoke");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
     var tx = await tokenLock.revoke();
     assert.equal(tx.logs[0].event, "TokensRevoked");
@@ -300,7 +291,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revoke();
       assert(false, "cannot revoke after full amount is redeemable");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "NoAvailableUnvestedAmount");
     }
   });
 
@@ -321,7 +312,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revoke();
       assert(false, "only owner can call revoke");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
   });
 
@@ -333,7 +324,7 @@ contract("TokenLock", (accounts) => {
       );
       assert(false, "owner cannot be 0");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: new owner is the zero address");
     }
     await tokenLock.transferOwnership(accounts[2]);
   });
@@ -345,18 +336,13 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revoke();
       assert(false, "only owner can call revoke");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
     var tx = await tokenLock.revoke({ from: accounts[2] });
     assert.equal(tx.logs[0].event, "TokensRevoked");
     assert.equal(tx.logs[0].args.beneficiary, accounts[1]);
     assert.equal(tx.logs[0].args.amount.toString(), web3.utils.toWei("1"));
-    try {
-      await tokenLock.revoke({ from: accounts[2] });
-      assert(false, "cannot revoke twice");
-    } catch (ex) {
-      assertVMException(ex);
-    }
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("cancel lock", async () => {
@@ -365,7 +351,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.cancelLock({ from: accounts[2] });
       assert(false, "only owner can call cancelLock");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
     var balanceBefore = await stakingToken.balanceOf(tokenLock.address);
     var tx = await tokenLock.cancelLock();
@@ -382,14 +368,14 @@ contract("TokenLock", (accounts) => {
       await tokenLock.acceptLock();
       assert(false, "only beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlyBeneficiary");
     }
     await tokenLock.acceptLock({ from: accounts[1] });
     try {
       await tokenLock.cancelLock();
       assert(false, "cannot cancel lock after accept by beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "CannotCancelAfterLockIsAccepted");
     }
   });
 
@@ -399,7 +385,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.changeBeneficiary(accounts[3]);
       assert(false, "only beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlyBeneficiary");
     }
     try {
       await tokenLock.changeBeneficiary(utils.NULL_ADDRESS, {
@@ -407,7 +393,7 @@ contract("TokenLock", (accounts) => {
       });
       assert(false, "cannot be zero address");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "BeneficiaryCannotBeZero");
     }
     await tokenLock.changeBeneficiary(accounts[3], { from: accounts[1] });
     assert.equal(await tokenLock.beneficiary(), accounts[3]);
@@ -420,7 +406,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.revoke();
       assert(false, "none revocable");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "LockIsNonRevocable");
     }
   });
 
@@ -455,7 +441,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.delegate(accounts[2], { from: accounts[1] });
       assert(false, "cannot delegate");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "DelegateDisabled");
     }
   });
 
@@ -466,7 +452,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.delegate(accounts[2]);
       assert(false, "only beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlyBeneficiary");
     }
     await tokenLock.delegate(accounts[2], { from: accounts[1] });
     assert.equal(await stakingToken.delegates(tokenLock.address), accounts[2]);
@@ -479,14 +465,14 @@ contract("TokenLock", (accounts) => {
       await tokenLockFactory.setMasterCopy(utils.NULL_ADDRESS);
       assert(false, "address cannot be zero");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "MasterCopyCannotBeZero");
     }
 
     try {
       await tokenLockFactory.setMasterCopy(accounts[1], { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "Ownable: caller is not the owner");
     }
 
     await tokenLockFactory.setMasterCopy(accounts[1]);
@@ -531,13 +517,13 @@ contract("TokenLock", (accounts) => {
       await tokenLock.withdrawSurplus(1);
       assert(false, "only beneficiary");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlyBeneficiary");
     }
     try {
       await tokenLock.withdrawSurplus(0, { from: accounts[1] });
       assert(false, "amount must be greater than 0");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "AmountCannotBeZero");
     }
     try {
       await tokenLock.withdrawSurplus(web3.utils.toWei("101"), {
@@ -545,7 +531,7 @@ contract("TokenLock", (accounts) => {
       });
       assert(false, "amount must be lower than or equal to available surplus");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "AmountRequestedBiggerThanSurplus");
     }
     assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("1"));
     await tokenLock.withdrawSurplus(web3.utils.toWei("100"), {
@@ -564,7 +550,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.sweepToken(stakingToken.address);
       assert(false, "cannot sweep vested token");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "CannotSweepVestedToken");
     }
     accidentToken = await ERC20Mock.new("Accident", "ACT");
     await accidentToken.mint(tokenLock.address, web3.utils.toWei("1"));
@@ -579,7 +565,7 @@ contract("TokenLock", (accounts) => {
       await tokenLock.sweepToken(accidentToken.address, { from: accounts[1] });
       assert(false, "only owner can sweep tokens (if exists)");
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlySweeper");
     }
     await tokenLock.sweepToken(accidentToken.address);
     assert.equal(await accidentToken.balanceOf(tokenLock.address), 0);
@@ -610,7 +596,7 @@ contract("TokenLock", (accounts) => {
         "only beneficiary can sweep tokens when owner does not exist"
       );
     } catch (ex) {
-      assertVMException(ex);
+      assertVMException(ex, "OnlySweeper");
     }
     await tokenLock.sweepToken(accidentToken.address, { from: accounts[1] });
 

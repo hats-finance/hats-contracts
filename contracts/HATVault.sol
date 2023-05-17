@@ -108,6 +108,8 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     bool public arbitratorCanChangeBeneficiary;
     // whether the arbitrator can submit claims
     bool public arbitratorCanSubmitClaims;
+    // Can the committee revoke the token lock
+    bool isTokenLockRevocable;
 
     bool private _isEmergencyWithdraw;
     bool private _vaultDestroyed;
@@ -174,6 +176,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         _transferOwnership(_params.owner);
         tokenLockFactory = _registry.tokenLockFactory();
         arbitrator = _params.arbitrator;
+        isTokenLockRevocable = _params.isTokenLockRevocable;
 
         // Set vault to use default registry values where applicable
         bountyGovernanceHAT = NULL_UINT16;
@@ -304,7 +307,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(_asset),
-                0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
+                isTokenLockRevocable ? committee : 0x0000000000000000000000000000000000000000, // owner
                 _claim.beneficiary,
                 claimBounty.hackerVested,
                 // solhint-disable-next-line not-rely-on-time
@@ -314,7 +317,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 vestingPeriods,
                 0, //no release start
                 0, //no cliff
-                false, // not revocable
+                isTokenLockRevocable,
                 false
             );
             _asset.safeTransfer(tokenLock, claimBounty.hackerVested);
