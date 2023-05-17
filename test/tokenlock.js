@@ -11,7 +11,7 @@ var tokenLockParent;
 
 const setup = async function(
   accounts,
-  revocable = 1,
+  revocable = true,
   delegate = false,
   startsIn = 0,
   endTime = 1000,
@@ -186,25 +186,6 @@ contract("TokenLock", (accounts) => {
         await tokenLock.startTime(),
         await tokenLock.endTime(),
         await tokenLock.periods(),
-        await tokenLock.releaseStartTime(),
-        await tokenLock.vestingCliffTime(),
-        0,
-        await tokenLock.canDelegate()
-      );
-      assert(false, "cannot initialize with revocability not set");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await newTokenLock.initialize(
-        await tokenLock.owner(),
-        await tokenLock.token(),
-        await tokenLock.token(),
-        10,
-        await tokenLock.startTime(),
-        await tokenLock.endTime(),
-        await tokenLock.periods(),
         await tokenLock.endTime(),
         await tokenLock.vestingCliffTime(),
         await tokenLock.revocable(),
@@ -324,7 +305,7 @@ contract("TokenLock", (accounts) => {
   });
 
   it("sinceStartTime", async () => {
-    await setup(accounts, 1, false, 100);
+    await setup(accounts, true, false, 100);
     assert.equal(await tokenLock.sinceStartTime(), 0);
     assert.equal(await tokenLock.availableAmount(), 0);
     //each period is 250 seconds
@@ -433,7 +414,7 @@ contract("TokenLock", (accounts) => {
   });
 
   it("none revocable", async () => {
-    await setup(accounts, 2);
+    await setup(accounts, false);
     assert.equal(await tokenLock.vestedAmount(), web3.utils.toWei("1"));
     try {
       await tokenLock.revoke();
@@ -468,7 +449,7 @@ contract("TokenLock", (accounts) => {
   });
 
   it("no delegate", async () => {
-    await setup(accounts, 2);
+    await setup(accounts, false);
     assert.equal(await tokenLock.canDelegate(), false);
     try {
       await tokenLock.delegate(accounts[2], { from: accounts[1] });
@@ -479,7 +460,7 @@ contract("TokenLock", (accounts) => {
   });
 
   it("delegate", async () => {
-    await setup(accounts, 2, true);
+    await setup(accounts, false, true);
     assert.equal(await tokenLock.canDelegate(), true);
     try {
       await tokenLock.delegate(accounts[2]);
@@ -513,16 +494,16 @@ contract("TokenLock", (accounts) => {
 
   it("test before release start time", async () => {
     let currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-    await setup(accounts, 1, false, 0, 1000, 1, 0, currentTimeStamp + 999);
+    await setup(accounts, true, false, 0, 1000, 1, 0, currentTimeStamp + 999);
     assert.equal(await tokenLock.releasableAmount(), 0);
-    await setup(accounts, 1, false, 0, 1000, 1, currentTimeStamp + 999, 0);
+    await setup(accounts, true, false, 0, 1000, 1, currentTimeStamp + 999, 0);
     assert.equal(await tokenLock.releasableAmount(), 0);
     await utils.increaseTime(1000);
     assert.equal(await tokenLock.releasableAmount(), web3.utils.toWei("1"));
   });
 
   it("test single period for 1000 seconds", async () => {
-    await setup(accounts, 1, false, 0, 1000, 1);
+    await setup(accounts, true, false, 0, 1000, 1);
     assert.equal(await tokenLock.releasableAmount(), 0);
     await utils.increaseTime(900);
     assert.equal(await tokenLock.releasableAmount(), 0);

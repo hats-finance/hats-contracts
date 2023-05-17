@@ -56,7 +56,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
     // A cliff set a date to which a beneficiary needs to get to vest
     // all preceding periods
     uint256 public vestingCliffTime;
-    Revocability public revocable; // Whether to use vesting for locked funds
+    bool public revocable; // determines whether the owner can revoke all unvested tokens
 
     // State
 
@@ -160,7 +160,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @dev Vesting schedule is always calculated based on managed tokens
      */
     function revoke() external override onlyOwner {
-        require(revocable == Revocability.Enabled, "Contract is non-revocable");
+        require(revocable, "Contract is non-revocable");
         require(isRevoked == false, "Already revoked");
 
         uint256 unvestedAmount = managedAmount - vestedAmount();
@@ -292,7 +292,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
      */
     function vestedAmount() public override view returns (uint256) {
         // If non-revocable it is fully vested
-        if (revocable == Revocability.Disabled) {
+        if (!revocable) {
             return managedAmount;
         }
 
@@ -319,7 +319,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
 
         // Vesting cliff is activated and it has not passed means nothing is vested yet
         // so funds cannot be released
-        if (revocable == Revocability.Enabled && vestingCliffTime > 0 && currentTime() < vestingCliffTime) {
+        if (revocable && vestingCliffTime > 0 && currentTime() < vestingCliffTime) {
             return 0;
         }
 
@@ -373,7 +373,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        Revocability _revocable
+        bool _revocable
     ) internal {
         require(!isInitialized, "Already initialized");
         require(_beneficiary != address(0), "Beneficiary cannot be zero");
@@ -382,7 +382,6 @@ abstract contract TokenLock is Ownable, ITokenLock {
         require(_startTime != 0, "Start time must be set");
         require(_startTime < _endTime, "Start time > end time");
         require(_periods >= MIN_PERIOD, "Periods cannot be below minimum");
-        require(_revocable != Revocability.NotSet, "Must set a revocability option");
         require(_releaseStartTime < _endTime, "Release start time must be before end time");
         require(_vestingCliffTime < _endTime, "Cliff time must be before end time");
 

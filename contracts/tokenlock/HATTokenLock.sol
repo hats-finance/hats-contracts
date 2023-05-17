@@ -20,7 +20,7 @@ contract HATTokenLock is TokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        Revocability _revocable,
+        bool _revocable,
         bool _canDelegate
     ) external {
         _initialize(

@@ -86,7 +86,6 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
     PendingMaxBounty public pendingMaxBounty;
 
-
     // Time of when withdrawal period starts for every user that has an
     // active withdraw request. (time when last withdraw request pending 
     // period ended, or 0 if last action was deposit or withdraw)
@@ -315,7 +314,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
                 vestingPeriods,
                 0, //no release start
                 0, //no cliff
-                ITokenLock.Revocability.Disabled,
+                false, // not revocable
                 false
             );
             _asset.safeTransfer(tokenLock, claimBounty.hackerVested);
