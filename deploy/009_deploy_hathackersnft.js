@@ -4,9 +4,14 @@ const func = async function (hre) {
 
     const { deployer } = await getNamedAccounts();
 
+    let governance = config["governance"];
+    if (!governance) {
+        governance = deployer;
+    }
+
     await deploy('HATHackersNFT', {
         from: deployer,
-        args: [],
+        args: [governance],
         log: true,
     });
 };

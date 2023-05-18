@@ -2,8 +2,14 @@ const HATHackersNFT = artifacts.require("./HATHackersNFT.sol");
 const { assertVMException } = require("./common.js");
 
 contract("HATHackersNFT", (accounts) => {
+
+  it("should transfer ownership on deployment", async () => {
+    const hackersNft = await HATHackersNFT.new(accounts[1]);
+    assert.equal(await hackersNft.owner(), accounts[1]);
+  });
+
   it("should add vault NFTs", async () => {
-    const hackersNft = await HATHackersNFT.new();
+    const hackersNft = await HATHackersNFT.new(accounts[0]);
     await hackersNft.createNFTs("uri", 3);
     let tokenId1 = await hackersNft.getTokenId("uri", 0);
     let tokenId2 = await hackersNft.getTokenId("uri", 1);
@@ -21,7 +27,7 @@ contract("HATHackersNFT", (accounts) => {
   });
 
   it("should mint an NFT", async () => {
-    const hackersNft = await HATHackersNFT.new();
+    const hackersNft = await HATHackersNFT.new(accounts[0]);
     await hackersNft.createNFTs("uri", 3);
     let tokenId1 = await hackersNft.getTokenId("uri", 0);
 
@@ -45,7 +51,7 @@ contract("HATHackersNFT", (accounts) => {
   });
 
   it("should mint multiple NFTs", async () => {
-    const hackersNft = await HATHackersNFT.new();
+    const hackersNft = await HATHackersNFT.new(accounts[0]);
     await hackersNft.createNFTs("uri", 3);
     let tokenId1 = await hackersNft.getTokenId("uri", 0);
     let tokenId2 = await hackersNft.getTokenId("uri", 1);
@@ -95,7 +101,7 @@ contract("HATHackersNFT", (accounts) => {
   });
 
   it("should stop minting of an NFT", async () => {
-    const hackersNft = await HATHackersNFT.new();
+    const hackersNft = await HATHackersNFT.new(accounts[0]);
     await hackersNft.createNFTs("uri", 3);
     let tokenId1 = await hackersNft.getTokenId("uri", 0);
 
@@ -130,7 +136,7 @@ contract("HATHackersNFT", (accounts) => {
   });
 
   it("should stop minting of multiple NFTs", async () => {
-    const hackersNft = await HATHackersNFT.new();
+    const hackersNft = await HATHackersNFT.new(accounts[0]);
     await hackersNft.createNFTs("uri", 3);
     let tokenId1 = await hackersNft.getTokenId("uri", 0);
     let tokenId2 = await hackersNft.getTokenId("uri", 1);

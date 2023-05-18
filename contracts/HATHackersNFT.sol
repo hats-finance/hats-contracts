@@ -18,8 +18,9 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
     mapping(uint256 => string) public uris;
     mapping(uint256 => bool) public mintingStopped;
 
-    // solhint-disable-next-line no-empty-blocks
-    constructor() ERC1155("") {}
+    constructor(address _hatsGovernance) ERC1155("") {
+        _transferOwnership(_hatsGovernance);
+    }
 
     function createNFTs(string calldata _ipfsHash, uint8 _tiersCount) external onlyOwner {
         for (uint8 i = 0; i < _tiersCount;) { 
