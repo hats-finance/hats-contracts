@@ -10,25 +10,6 @@
 
 ## Methods
 
-### addVault
-
-```solidity
-function addVault(address _vault, string _description, uint8 _tiersCount, string _uri) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _vault | address | undefined |
-| _description | string | undefined |
-| _tiersCount | uint8 | undefined |
-| _uri | string | undefined |
-
 ### balanceOf
 
 ```solidity
@@ -75,6 +56,23 @@ function balanceOfBatch(address[] accounts, uint256[] ids) external view returns
 |---|---|---|
 | _0 | uint256[] | undefined |
 
+### createNFTs
+
+```solidity
+function createNFTs(string _ipfsHash, uint8 _tiersCount) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _ipfsHash | string | undefined |
+| _tiersCount | uint8 | undefined |
+
 ### exists
 
 ```solidity
@@ -100,7 +98,7 @@ function exists(uint256 id) external view returns (bool)
 ### getTokenId
 
 ```solidity
-function getTokenId(address _vault, string _description, uint8 _tier) external pure returns (uint256)
+function getTokenId(string _ipfsHash, uint8 _tier) external pure returns (uint256)
 ```
 
 
@@ -111,8 +109,7 @@ function getTokenId(address _vault, string _description, uint8 _tier) external p
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | address | undefined |
-| _description | string | undefined |
+| _ipfsHash | string | undefined |
 | _tier | uint8 | undefined |
 
 #### Returns
@@ -179,6 +176,28 @@ function mintMultiple(address[] _recipients, uint256[] _tokenIds, uint256[] _amo
 | _recipients | address[] | undefined |
 | _tokenIds | uint256[] | undefined |
 | _amounts | uint256[] | undefined |
+
+### mintingStopped
+
+```solidity
+function mintingStopped(uint256) external view returns (bool)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### owner
 
@@ -264,6 +283,38 @@ function setApprovalForAll(address operator, bool approved) external nonpayable
 |---|---|---|
 | operator | address | undefined |
 | approved | bool | undefined |
+
+### stopMint
+
+```solidity
+function stopMint(uint256 _tokenId) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _tokenId | uint256 | undefined |
+
+### stopMintMultiple
+
+```solidity
+function stopMintMultiple(uint256[] _tokenIds) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _tokenIds | uint256[] | undefined |
 
 ### supportsInterface
 
@@ -391,6 +442,22 @@ event ApprovalForAll(address indexed account, address indexed operator, bool app
 | operator `indexed` | address | undefined |
 | approved  | bool | undefined |
 
+### MintingStopped
+
+```solidity
+event MintingStopped(uint256 indexed _tokenId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _tokenId `indexed` | uint256 | undefined |
+
 ### OwnershipTransferred
 
 ```solidity
@@ -473,6 +540,28 @@ event URI(string value, uint256 indexed id)
 
 ```solidity
 error MintArrayLengthMismatch()
+```
+
+
+
+
+
+
+### MintingAlreadyStopped
+
+```solidity
+error MintingAlreadyStopped()
+```
+
+
+
+
+
+
+### MintingOfTokenStopped
+
+```solidity
+error MintingOfTokenStopped()
 ```
 
 

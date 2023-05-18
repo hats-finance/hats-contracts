@@ -10,15 +10,20 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
 
     error MintArrayLengthMismatch();
     error TokenDoesNotExist();
+    error MintingAlreadyStopped();
+    error MintingOfTokenStopped();
+
+    event MintingStopped(uint256 indexed _tokenId);
 
     mapping(uint256 => string) public uris;
+    mapping(uint256 => bool) public mintingStopped;
 
     // solhint-disable-next-line no-empty-blocks
     constructor() ERC1155("") {}
 
-    function addVault(address _vault, string calldata _description, uint8 _tiersCount, string memory _uri) external onlyOwner {
+    function createNFTs(string calldata _ipfsHash, uint8 _tiersCount) external onlyOwner {
         for (uint8 i = 0; i < _tiersCount;) { 
-            uris[getTokenId(_vault, _description, i)] = string(abi.encodePacked(_uri, Strings.toString(i)));
+            uris[getTokenId(_ipfsHash, i)] = string(abi.encodePacked(_ipfsHash, Strings.toString(i)));
             unchecked { ++i; }
         }
     }
@@ -27,10 +32,22 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         if (bytes(uris[_tokenId]).length == 0) {
             revert TokenDoesNotExist();
         }
+
+        if (mintingStopped[_tokenId]) {
+            revert MintingOfTokenStopped();
+        }
         _mint(_recipient, _tokenId, _amount, "");
     }
-    
-    function mintMultiple(address[] calldata _recipients, uint256[] calldata _tokenIds, uint256[] calldata _amounts) public onlyOwner {
+
+    function stopMint(uint256 _tokenId) public onlyOwner {
+        if (mintingStopped[_tokenId]) {
+            revert MintingAlreadyStopped();
+        }
+        mintingStopped[_tokenId] = true;
+        emit MintingStopped(_tokenId);
+    }
+
+    function mintMultiple(address[] calldata _recipients, uint256[] calldata _tokenIds, uint256[] calldata _amounts) external onlyOwner {
         if (_tokenIds.length != _recipients.length || _tokenIds.length != _amounts.length) {
             revert MintArrayLengthMismatch();
         }
@@ -41,14 +58,20 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         }
     }
 
+    function stopMintMultiple(uint256[] calldata _tokenIds) external onlyOwner {
+        for (uint256 i = 0; i < _tokenIds.length;) { 
+            stopMint(_tokenIds[i]);
+            unchecked { ++i; }
+        }
+    }
+
     function getTokenId(
-        address _vault,
-        string calldata _description,
+        string calldata _ipfsHash,
         uint8 _tier
     ) public pure returns(uint256) {
-        return uint256(keccak256(abi.encodePacked(_vault, _description, _tier)));
+        return uint256(keccak256(abi.encodePacked(_ipfsHash, _tier)));
     }
-    
+
     function uri(uint256 _tokenId) public view override returns (string memory) {
         return uris[_tokenId];
     }

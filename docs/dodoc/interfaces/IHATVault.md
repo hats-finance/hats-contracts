@@ -10,6 +10,23 @@ A HATVault holds the funds for a specific project&#39;s bug bounties. Anyone can
 
 ## Methods
 
+### VERSION
+
+```solidity
+function VERSION() external view returns (string)
+```
+
+Returns the vault&#39;s version
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | The vault&#39;s version |
+
 ### activeClaim
 
 ```solidity
