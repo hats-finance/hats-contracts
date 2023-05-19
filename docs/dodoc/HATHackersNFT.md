@@ -59,7 +59,7 @@ function balanceOfBatch(address[] accounts, uint256[] ids) external view returns
 ### createNFTs
 
 ```solidity
-function createNFTs(string _ipfsHash, uint8 _tiersCount) external nonpayable
+function createNFTs(string[] _ipfsHashes) external nonpayable
 ```
 
 
@@ -70,8 +70,7 @@ function createNFTs(string _ipfsHash, uint8 _tiersCount) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
-| _ipfsHash | string | undefined |
-| _tiersCount | uint8 | undefined |
+| _ipfsHashes | string[] | undefined |
 
 ### exists
 
@@ -98,7 +97,7 @@ function exists(uint256 id) external view returns (bool)
 ### getTokenId
 
 ```solidity
-function getTokenId(string _ipfsHash, uint8 _tier) external pure returns (uint256)
+function getTokenId(string _ipfsHash) external pure returns (uint256)
 ```
 
 
@@ -110,7 +109,6 @@ function getTokenId(string _ipfsHash, uint8 _tier) external pure returns (uint25
 | Name | Type | Description |
 |---|---|---|
 | _ipfsHash | string | undefined |
-| _tier | uint8 | undefined |
 
 #### Returns
 

@@ -10,16 +10,16 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should add vault NFTs", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs("uri", 3);
-    let tokenId1 = await hackersNft.getTokenId("uri", 0);
-    let tokenId2 = await hackersNft.getTokenId("uri", 1);
-    let tokenId3 = await hackersNft.getTokenId("uri", 2);
+    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
+    let tokenId1 = await hackersNft.getTokenId("uri0");
+    let tokenId2 = await hackersNft.getTokenId("uri1");
+    let tokenId3 = await hackersNft.getTokenId("uri2");
     assert.equal(await hackersNft.uri(tokenId1), "uri0");
     assert.equal(await hackersNft.uri(tokenId2), "uri1");
     assert.equal(await hackersNft.uri(tokenId3), "uri2");
 
     try {
-      await hackersNft.createNFTs("uri", 3, { from: accounts[1] });
+      await hackersNft.createNFTs(["uri0", "uri1", "uri2"], { from: accounts[1] });
       throw "Only owner can add vault";
     } catch (error) {
       assertVMException(error, "Ownable: caller is not the owner");
@@ -28,8 +28,8 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should mint an NFT", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs("uri", 3);
-    let tokenId1 = await hackersNft.getTokenId("uri", 0);
+    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
+    let tokenId1 = await hackersNft.getTokenId("uri0");
 
     await hackersNft.mint(accounts[1], tokenId1, 1);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
@@ -52,9 +52,9 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should mint multiple NFTs", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs("uri", 3);
-    let tokenId1 = await hackersNft.getTokenId("uri", 0);
-    let tokenId2 = await hackersNft.getTokenId("uri", 1);
+    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
+    let tokenId1 = await hackersNft.getTokenId("uri0");
+    let tokenId2 = await hackersNft.getTokenId("uri1");
 
     await hackersNft.mintMultiple([accounts[1], accounts[1], accounts[2]], [tokenId1, tokenId2, tokenId2], [1, 2, 1]);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
@@ -102,8 +102,8 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should stop minting of an NFT", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs("uri", 3);
-    let tokenId1 = await hackersNft.getTokenId("uri", 0);
+    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
+    let tokenId1 = await hackersNft.getTokenId("uri0");
 
     await hackersNft.mint(accounts[1], tokenId1, 1);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
@@ -137,9 +137,9 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should stop minting of multiple NFTs", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs("uri", 3);
-    let tokenId1 = await hackersNft.getTokenId("uri", 0);
-    let tokenId2 = await hackersNft.getTokenId("uri", 1);
+    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
+    let tokenId1 = await hackersNft.getTokenId("uri0");
+    let tokenId2 = await hackersNft.getTokenId("uri1");
 
     try {
       await hackersNft.stopMintMultiple([tokenId1, tokenId2], { from: accounts[1] });

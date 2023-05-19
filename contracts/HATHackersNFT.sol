@@ -22,9 +22,9 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         _transferOwnership(_hatsGovernance);
     }
 
-    function createNFTs(string calldata _ipfsHash, uint8 _tiersCount) external onlyOwner {
-        for (uint8 i = 0; i < _tiersCount;) { 
-            uris[getTokenId(_ipfsHash, i)] = string(abi.encodePacked(_ipfsHash, Strings.toString(i)));
+    function createNFTs(string[] calldata _ipfsHashes) external onlyOwner {
+        for (uint8 i = 0; i < _ipfsHashes.length;) { 
+            uris[getTokenId(_ipfsHashes[i])] = _ipfsHashes[i];
             unchecked { ++i; }
         }
     }
@@ -66,11 +66,8 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         }
     }
 
-    function getTokenId(
-        string calldata _ipfsHash,
-        uint8 _tier
-    ) public pure returns(uint256) {
-        return uint256(keccak256(abi.encodePacked(_ipfsHash, _tier)));
+    function getTokenId(string calldata _ipfsHash) public pure returns(uint256) {
+        return uint256(keccak256(abi.encodePacked(_ipfsHash)));
     }
 
     function uri(uint256 _tokenId) public view override returns (string memory) {
