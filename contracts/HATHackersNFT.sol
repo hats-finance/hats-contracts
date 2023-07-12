@@ -22,22 +22,17 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         _transferOwnership(_hatsGovernance);
     }
 
-    function createNFTs(string[] calldata _ipfsHashes) external onlyOwner {
-        for (uint8 i = 0; i < _ipfsHashes.length;) { 
-            uris[getTokenId(_ipfsHashes[i])] = _ipfsHashes[i];
-            unchecked { ++i; }
-        }
-    }
+    function mint(address _recipient, string calldata _ipfsHash, uint256 _amount) public onlyOwner {
+        uint256 tokenId = getTokenId(_ipfsHash);
 
-    function mint(address _recipient, uint256 _tokenId, uint256 _amount) public onlyOwner {
-        if (bytes(uris[_tokenId]).length == 0) {
-            revert TokenDoesNotExist();
+        if (bytes(uris[tokenId]).length == 0) {
+            uris[tokenId] = _ipfsHash;
         }
 
-        if (mintingStopped[_tokenId]) {
+        if (mintingStopped[tokenId]) {
             revert MintingOfTokenStopped();
         }
-        _mint(_recipient, _tokenId, _amount, "");
+        _mint(_recipient, tokenId, _amount, "");
     }
 
     function stopMint(uint256 _tokenId) public onlyOwner {
@@ -48,13 +43,13 @@ contract HATHackersNFT is ERC1155Supply, Ownable {
         emit MintingStopped(_tokenId);
     }
 
-    function mintMultiple(address[] calldata _recipients, uint256[] calldata _tokenIds, uint256[] calldata _amounts) external onlyOwner {
-        if (_tokenIds.length != _recipients.length || _tokenIds.length != _amounts.length) {
+    function mintMultiple(address[] calldata _recipients, string[] calldata _ipfsHashes, uint256[] calldata _amounts) external onlyOwner {
+        if (_ipfsHashes.length != _recipients.length || _ipfsHashes.length != _amounts.length) {
             revert MintArrayLengthMismatch();
         }
 
-        for (uint256 i = 0; i < _tokenIds.length;) { 
-            mint(_recipients[i], _tokenIds[i], _amounts[i]);
+        for (uint256 i = 0; i < _ipfsHashes.length;) { 
+            mint(_recipients[i], _ipfsHashes[i], _amounts[i]);
             unchecked { ++i; }
         }
     }

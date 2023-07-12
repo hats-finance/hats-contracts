@@ -56,22 +56,6 @@ function balanceOfBatch(address[] accounts, uint256[] ids) external view returns
 |---|---|---|
 | _0 | uint256[] | undefined |
 
-### createNFTs
-
-```solidity
-function createNFTs(string[] _ipfsHashes) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _ipfsHashes | string[] | undefined |
-
 ### exists
 
 ```solidity
@@ -142,7 +126,7 @@ function isApprovedForAll(address account, address operator) external view retur
 ### mint
 
 ```solidity
-function mint(address _recipient, uint256 _tokenId, uint256 _amount) external nonpayable
+function mint(address _recipient, string _ipfsHash, uint256 _amount) external nonpayable
 ```
 
 
@@ -154,13 +138,13 @@ function mint(address _recipient, uint256 _tokenId, uint256 _amount) external no
 | Name | Type | Description |
 |---|---|---|
 | _recipient | address | undefined |
-| _tokenId | uint256 | undefined |
+| _ipfsHash | string | undefined |
 | _amount | uint256 | undefined |
 
 ### mintMultiple
 
 ```solidity
-function mintMultiple(address[] _recipients, uint256[] _tokenIds, uint256[] _amounts) external nonpayable
+function mintMultiple(address[] _recipients, string[] _ipfsHashes, uint256[] _amounts) external nonpayable
 ```
 
 
@@ -172,7 +156,7 @@ function mintMultiple(address[] _recipients, uint256[] _tokenIds, uint256[] _amo
 | Name | Type | Description |
 |---|---|---|
 | _recipients | address[] | undefined |
-| _tokenIds | uint256[] | undefined |
+| _ipfsHashes | string[] | undefined |
 | _amounts | uint256[] | undefined |
 
 ### mintingStopped

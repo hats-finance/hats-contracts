@@ -8,55 +8,33 @@ contract("HATHackersNFT", (accounts) => {
     assert.equal(await hackersNft.owner(), accounts[1]);
   });
 
-  it("should add vault NFTs", async () => {
-    const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
-    let tokenId1 = await hackersNft.getTokenId("uri0");
-    let tokenId2 = await hackersNft.getTokenId("uri1");
-    let tokenId3 = await hackersNft.getTokenId("uri2");
-    assert.equal(await hackersNft.uri(tokenId1), "uri0");
-    assert.equal(await hackersNft.uri(tokenId2), "uri1");
-    assert.equal(await hackersNft.uri(tokenId3), "uri2");
-
-    try {
-      await hackersNft.createNFTs(["uri0", "uri1", "uri2"], { from: accounts[1] });
-      throw "Only owner can add vault";
-    } catch (error) {
-      assertVMException(error, "Ownable: caller is not the owner");
-    }
-  });
-
   it("should mint an NFT", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
-    let tokenId1 = await hackersNft.getTokenId("uri0");
+    let tokenUri1 = "uri0";
+    let tokenId1 = await hackersNft.getTokenId(tokenUri1);
+    assert.equal(await hackersNft.uri(tokenId1), "");
 
-    await hackersNft.mint(accounts[1], tokenId1, 1);
+    await hackersNft.mint(accounts[1], tokenUri1, 1);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
     assert.equal(await hackersNft.totalSupply(tokenId1), 1);
+    assert.equal(await hackersNft.uri(tokenId1), tokenUri1);
 
     try {
-      await hackersNft.mint(accounts[1], tokenId1, 1, { from: accounts[1] });
+      await hackersNft.mint(accounts[1], tokenUri1, 1, { from: accounts[1] });
       throw "Only owner can mint";
     } catch (error) {
       assertVMException(error, "Ownable: caller is not the owner");
-    }
-
-    try {
-      await hackersNft.mint(accounts[1], 0, 1);
-      throw "Cannot mint non existing token";
-    } catch (error) {
-      assertVMException(error, "TokenDoesNotExist");
     }
   });
 
   it("should mint multiple NFTs", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
-    let tokenId1 = await hackersNft.getTokenId("uri0");
-    let tokenId2 = await hackersNft.getTokenId("uri1");
+    let tokenUri1 = "uri0";
+    let tokenUri2 = "uri1";
+    let tokenId1 = await hackersNft.getTokenId(tokenUri1);
+    let tokenId2 = await hackersNft.getTokenId(tokenUri2);
 
-    await hackersNft.mintMultiple([accounts[1], accounts[1], accounts[2]], [tokenId1, tokenId2, tokenId2], [1, 2, 1]);
+    await hackersNft.mintMultiple([accounts[1], accounts[1], accounts[2]], [tokenUri1, tokenUri2, tokenUri2], [1, 2, 1]);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
     assert.equal(await hackersNft.totalSupply(tokenId1), 1);
 
@@ -65,47 +43,40 @@ contract("HATHackersNFT", (accounts) => {
     assert.equal(await hackersNft.totalSupply(tokenId2), 3);
 
     try {
-      await hackersNft.mintMultiple([accounts[1], accounts[1], accounts[2]], [tokenId1, tokenId2, tokenId2], [1, 2, 1], { from: accounts[1] });
+      await hackersNft.mintMultiple([accounts[1], accounts[1], accounts[2]], [tokenUri1, tokenUri2, tokenUri2], [1, 2, 1], { from: accounts[1] });
       throw "Only owner can mint";
     } catch (error) {
       assertVMException(error, "Ownable: caller is not the owner");
     }
 
     try {
-      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenId1, tokenId2, tokenId2], [1, 2, 1]);
+      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenUri1, tokenUri2, tokenUri2], [1, 2, 1]);
       throw "Array lengths must match";
     } catch (error) {
       assertVMException(error, "MintArrayLengthMismatch");
     }
 
     try {
-      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenId1, tokenId2], [1, 2, 1]);
+      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenUri1, tokenUri2], [1, 2, 1]);
       throw "Array lengths must match";
     } catch (error) {
       assertVMException(error, "MintArrayLengthMismatch");
     }
 
     try {
-      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenId1, tokenId2, tokenId2], [1, 1]);
+      await hackersNft.mintMultiple([accounts[1], accounts[2]], [tokenUri1, tokenUri2, tokenUri2], [1, 1]);
       throw "Array lengths must match";
     } catch (error) {
       assertVMException(error, "MintArrayLengthMismatch");
-    }
-
-    try {
-      await hackersNft.mintMultiple([accounts[1], accounts[2]], [0, tokenId2], [1, 1]);
-      throw "Cannot mint non existing token";
-    } catch (error) {
-      assertVMException(error, "TokenDoesNotExist");
     }
   });
 
   it("should stop minting of an NFT", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
-    let tokenId1 = await hackersNft.getTokenId("uri0");
+    let tokenUri1 = "uri0";
+    let tokenId1 = await hackersNft.getTokenId(tokenUri1);
 
-    await hackersNft.mint(accounts[1], tokenId1, 1);
+    await hackersNft.mint(accounts[1], tokenUri1, 1);
     assert.equal(await hackersNft.balanceOf(accounts[1], tokenId1), 1);
     assert.equal(await hackersNft.totalSupply(tokenId1), 1);
 
@@ -121,7 +92,7 @@ contract("HATHackersNFT", (accounts) => {
     assert.equal(tx.logs[0].args._tokenId, tokenId1.toString());
 
     try {
-      await hackersNft.mint(accounts[1], tokenId1, 1);
+      await hackersNft.mint(accounts[1], tokenUri1, 1);
       throw "Cannot mint token after minting stopped";
     } catch (error) {
       assertVMException(error, "MintingOfTokenStopped");
@@ -137,9 +108,10 @@ contract("HATHackersNFT", (accounts) => {
 
   it("should stop minting of multiple NFTs", async () => {
     const hackersNft = await HATHackersNFT.new(accounts[0]);
-    await hackersNft.createNFTs(["uri0", "uri1", "uri2"]);
-    let tokenId1 = await hackersNft.getTokenId("uri0");
-    let tokenId2 = await hackersNft.getTokenId("uri1");
+    let tokenUri1 = "uri0";
+    let tokenUri2 = "uri1";
+    let tokenId1 = await hackersNft.getTokenId(tokenUri1);
+    let tokenId2 = await hackersNft.getTokenId(tokenUri2);
 
     try {
       await hackersNft.stopMintMultiple([tokenId1, tokenId2], { from: accounts[1] });
@@ -155,14 +127,14 @@ contract("HATHackersNFT", (accounts) => {
     assert.equal(tx.logs[1].args._tokenId, tokenId2.toString());
 
     try {
-      await hackersNft.mint(accounts[1], tokenId1, 1);
+      await hackersNft.mint(accounts[1], tokenUri1, 1);
       throw "Cannot mint token after minting stopped";
     } catch (error) {
       assertVMException(error, "MintingOfTokenStopped");
     }
 
     try {
-      await hackersNft.mint(accounts[1], tokenId2, 1);
+      await hackersNft.mint(accounts[1], tokenUri2, 1);
       throw "Cannot mint token after minting stopped";
     } catch (error) {
       assertVMException(error, "MintingOfTokenStopped");
