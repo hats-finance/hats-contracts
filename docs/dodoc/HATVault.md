@@ -186,7 +186,7 @@ function NULL_UINT32() external view returns (uint32)
 function VERSION() external view returns (string)
 ```
 
-
+Returns the vault&#39;s version
 
 
 
@@ -195,7 +195,7 @@ function VERSION() external view returns (string)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | string | undefined |
+| _0 | string | The vault&#39;s version |
 
 ### activeClaim
 
