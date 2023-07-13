@@ -9,9 +9,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IHATVault.sol";
 
 contract HATArbitrator {
-    error DisputeStartingAmountMustBeHigherThanMinAmount();
+    error bondsNeededToStartDisputeMustBeHigherThanMinAmount();
     error BondAmountSubmittedTooLow();
-    error ClaimDisputedDoesNotExist();
+    error ClaimDisputedIsNotCurrentlyActiveClaim();
     error CannotSubmitMoreEvidence();
     error ClaimIsNotDisputed();
     error OnlyExpertCommittee();
@@ -20,24 +20,26 @@ contract HATArbitrator {
     error ChallengePeriodDidNotPass();
     error ResolutionWasChallenged();
     error ChallengePeriodPassed();
+    error NoResolutionExistsForClaim();
 
     using SafeERC20 for IERC20;
 
     struct Resolution {
         address beneficiary;
-        uint16 bountyPercentages;
+        uint16 bountyPercentage;
+        uint256 resolvedAt;
     }
 
     IHATVault public vault;
     address public expertCommittee;
+    address public court;
     IERC20 public token;
-    uint256 public disputeStartingAmount;
+    uint256 public bondsNeededToStartDispute;
     uint256 public minBondAmount;
 
     mapping(address => mapping(bytes32 => uint256)) public disputersBonds;
     mapping(bytes32 => uint256) public totalBondsOnClaim;
     mapping(bytes32 => Resolution) public resolutions;
-    mapping(bytes32 => uint256) public resolvedAt;
     mapping(bytes32 => uint256) public resolutionChallengedAt;
 
     event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, bytes32 _ipfsHash, uint256 _bondAmount);
@@ -53,7 +55,7 @@ contract HATArbitrator {
         (bytes32 claimId,,,,,uint32 challengedAt,,,,,,,) = vault.activeClaim();
 
         if (claimId != _claimId) {
-            revert ClaimDisputedDoesNotExist();
+            revert ClaimDisputedIsNotCurrentlyActiveClaim();
         }
 
         if (challengedAt == 0) {
@@ -63,27 +65,28 @@ contract HATArbitrator {
     }
 
     modifier onlyUnresolvedDispute(bytes32 _claimId) {
-        if (resolvedAt[_claimId] != 0) {
+        if (resolutions[_claimId].resolvedAt != 0) {
             revert AlreadyResolved();
         }
         _;
     }
 
     modifier onlyResolvedDispute(bytes32 _claimId) {
-        if (resolvedAt[_claimId] == 0) {
+        if (resolutions[_claimId].resolvedAt == 0) {
             revert NoResolution();
         }
         _;
     }
 
-    constructor (IHATVault _vault, address _expertCommittee, IERC20 _token, uint256 _disputeStartingAmount, uint256 _minBondAmount) {
+    constructor (IHATVault _vault, address _expertCommittee, address _court, IERC20 _token, uint256 _bondsNeededToStartDispute, uint256 _minBondAmount) {
         vault = _vault;
         expertCommittee = _expertCommittee;
+        court = _court;
         token = _token;
-        disputeStartingAmount = _disputeStartingAmount;
+        bondsNeededToStartDispute = _bondsNeededToStartDispute;
         minBondAmount = _minBondAmount;
-        if (minBondAmount > disputeStartingAmount) {
-            revert DisputeStartingAmountMustBeHigherThanMinAmount();
+        if (minBondAmount > bondsNeededToStartDispute) {
+            revert bondsNeededToStartDisputeMustBeHigherThanMinAmount();
         }
     }
 
@@ -94,7 +97,7 @@ contract HATArbitrator {
 
         (bytes32 claimId,,,,,uint32 challengedAt,,,,,,,) = vault.activeClaim();
         if (claimId != _claimId) {
-            revert ClaimDisputedDoesNotExist();
+            revert ClaimDisputedIsNotCurrentlyActiveClaim();
         }
 
         disputersBonds[msg.sender][_claimId] += _bondAmount;
@@ -102,7 +105,7 @@ contract HATArbitrator {
 
         token.safeTransferFrom(msg.sender, address(this), _bondAmount);
 
-        if (totalBondsOnClaim[_claimId] >= disputeStartingAmount) {
+        if (totalBondsOnClaim[_claimId] >= bondsNeededToStartDispute) {
             if (challengedAt == 0) {
                 vault.challengeClaim(_claimId);
             } else {
@@ -117,14 +120,17 @@ contract HATArbitrator {
     }
 
     function dismissDispute(bytes32 _claimId) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
-        token.safeTransferFrom(msg.sender, address(this), totalBondsOnClaim[_claimId]);
+        token.safeTransfer(msg.sender, totalBondsOnClaim[_claimId]);
 
         vault.approveClaim(_claimId, 0, address(0));
     }
 
-    function acceptDispute(bytes32 _claimId, Resolution calldata _resolution) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
-        resolutions[_claimId] = _resolution;
-        resolvedAt[_claimId] = block.timestamp;
+    function acceptDispute(bytes32 _claimId,  uint16 _bountyPercentage, address _beneficiary) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
+        resolutions[_claimId] = Resolution({ 
+            bountyPercentage: _bountyPercentage,
+            beneficiary: _beneficiary,
+            resolvedAt: block.timestamp
+        });
     }
 
     function refundBond(bytes32 _claimId) external onlyResolvedDispute(_claimId) {
@@ -134,28 +140,34 @@ contract HATArbitrator {
         token.safeTransfer(msg.sender, disputerBond);
     }
 
-    function executeResolution(bytes32 _claimId) external {
+    function executeResolution(bytes32 _claimId) external onlyChallengedActiveClaim(_claimId) {
         // TODO: This might be too long if the challenge timeout period is too short
-        if (resolvedAt[_claimId] == 0 || block.timestamp < resolvedAt[_claimId] + 3 days) {
-            revert ChallengePeriodDidNotPass();
+        Resolution memory resolution = resolutions[_claimId];
+
+        if (resolution.resolvedAt == 0) {
+            revert NoResolutionExistsForClaim();
         }
 
         if (resolutionChallengedAt[_claimId] != 0) {
-            revert ResolutionWasChallenged();
+            if (msg.sender != court) {
+                revert ResolutionWasChallenged();
+            }
+        } else {
+            if (block.timestamp < resolution.resolvedAt + 3 days) {
+                revert ChallengePeriodDidNotPass();
+            }
         }
 
-        Resolution memory resolution = resolutions[_claimId];
-        vault.approveClaim(_claimId, resolution.bountyPercentages, resolution.beneficiary);
+        vault.approveClaim(_claimId, resolution.bountyPercentage, resolution.beneficiary);
     }
-    
 
-    function challengeResolution(bytes32 _claimId) external onlyResolvedDispute(_claimId) {
-        if (block.timestamp >= resolvedAt[_claimId] + 3 days) {
+    function challengeResolution(bytes32 _claimId) external onlyChallengedActiveClaim(_claimId) onlyResolvedDispute(_claimId) {
+        if (block.timestamp >= resolutions[_claimId].resolvedAt + 3 days) {
             revert ChallengePeriodPassed();
         }
 
         resolutionChallengedAt[_claimId] = block.timestamp;
 
-        // TODO: How is the funding handled here? Need to understand what the inteface for the decentralized dispute resolution contract should be
+        // TODO: Here the challnger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
     }
 }

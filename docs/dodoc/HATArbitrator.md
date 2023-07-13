@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(bytes32 _claimId, HATArbitrator.Resolution _resolution) external nonpayable
+function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
 
@@ -25,7 +25,25 @@ function acceptDispute(bytes32 _claimId, HATArbitrator.Resolution _resolution) e
 | Name | Type | Description |
 |---|---|---|
 | _claimId | bytes32 | undefined |
-| _resolution | HATArbitrator.Resolution | undefined |
+| _bountyPercentage | uint16 | undefined |
+| _beneficiary | address | undefined |
+
+### bondsNeededToStartDispute
+
+```solidity
+function bondsNeededToStartDispute() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### challengeResolution
 
@@ -42,6 +60,23 @@ function challengeResolution(bytes32 _claimId) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _claimId | bytes32 | undefined |
+
+### court
+
+```solidity
+function court() external view returns (address)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
 
 ### dismissDispute
 
@@ -76,23 +111,6 @@ function dispute(bytes32 _claimId, bytes32 _ipfsHash, uint256 _bondAmount) exter
 | _claimId | bytes32 | undefined |
 | _ipfsHash | bytes32 | undefined |
 | _bondAmount | uint256 | undefined |
-
-### disputeStartingAmount
-
-```solidity
-function disputeStartingAmount() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
 
 ### disputersBonds
 
@@ -208,7 +226,7 @@ function resolutionChallengedAt(bytes32) external view returns (uint256)
 ### resolutions
 
 ```solidity
-function resolutions(bytes32) external view returns (address beneficiary, uint16 bountyPercentages)
+function resolutions(bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
 ```
 
 
@@ -226,29 +244,8 @@ function resolutions(bytes32) external view returns (address beneficiary, uint16
 | Name | Type | Description |
 |---|---|---|
 | beneficiary | address | undefined |
-| bountyPercentages | uint16 | undefined |
-
-### resolvedAt
-
-```solidity
-function resolvedAt(bytes32) external view returns (uint256)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
+| bountyPercentage | uint16 | undefined |
+| resolvedAt | uint256 | undefined |
 
 ### token
 
@@ -388,10 +385,10 @@ error ChallengePeriodPassed()
 
 
 
-### ClaimDisputedDoesNotExist
+### ClaimDisputedIsNotCurrentlyActiveClaim
 
 ```solidity
-error ClaimDisputedDoesNotExist()
+error ClaimDisputedIsNotCurrentlyActiveClaim()
 ```
 
 
@@ -410,10 +407,10 @@ error ClaimIsNotDisputed()
 
 
 
-### DisputeStartingAmountMustBeHigherThanMinAmount
+### NoResolution
 
 ```solidity
-error DisputeStartingAmountMustBeHigherThanMinAmount()
+error NoResolution()
 ```
 
 
@@ -421,10 +418,10 @@ error DisputeStartingAmountMustBeHigherThanMinAmount()
 
 
 
-### NoResolution
+### NoResolutionExistsForClaim
 
 ```solidity
-error NoResolution()
+error NoResolutionExistsForClaim()
 ```
 
 
@@ -447,6 +444,17 @@ error OnlyExpertCommittee()
 
 ```solidity
 error ResolutionWasChallenged()
+```
+
+
+
+
+
+
+### bondsNeededToStartDisputeMustBeHigherThanMinAmount
+
+```solidity
+error bondsNeededToStartDisputeMustBeHigherThanMinAmount()
 ```
 
 
