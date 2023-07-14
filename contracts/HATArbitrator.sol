@@ -21,6 +21,7 @@ contract HATArbitrator {
     error ResolutionWasChallenged();
     error ChallengePeriodPassed();
     error NoResolutionExistsForClaim();
+    error CannotClaimBond();
 
     using SafeERC20 for IERC20;
 
@@ -38,6 +39,7 @@ contract HATArbitrator {
     uint256 public minBondAmount;
 
     mapping(address => mapping(bytes32 => uint256)) public disputersBonds;
+    mapping(address => mapping(bytes32 => bool)) public bondClaimable;
     mapping(bytes32 => uint256) public totalBondsOnClaim;
     mapping(bytes32 => Resolution) public resolutions;
     mapping(bytes32 => uint256) public resolutionChallengedAt;
@@ -125,16 +127,31 @@ contract HATArbitrator {
         vault.approveClaim(_claimId, 0, address(0));
     }
 
-    function acceptDispute(bytes32 _claimId,  uint16 _bountyPercentage, address _beneficiary) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
+    function acceptDispute(bytes32 _claimId,  uint16 _bountyPercentage, address _beneficiary, address[] calldata _disputersToRefund) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
         resolutions[_claimId] = Resolution({ 
             bountyPercentage: _bountyPercentage,
             beneficiary: _beneficiary,
             resolvedAt: block.timestamp
         });
+        _refundDisputers(_claimId, _disputersToRefund);
     }
 
-    function refundBond(bytes32 _claimId) external onlyResolvedDispute(_claimId) {
-        // TODO: For now all disputers get their money back if the dispute is accepted, later we might want to allow refunding only some disputers.
+    function refundDisputers(bytes32 _claimId, address[] calldata _disputersToRefund) external onlyExpertCommittee {
+        _refundDisputers(_claimId, _disputersToRefund);
+    }
+
+    function _refundDisputers(bytes32 _claimId, address[] calldata _disputersToRefund) internal {
+        for (uint256 i = 0; i < _disputersToRefund.length;) {
+            bondClaimable[msg.sender][_claimId] = true;
+            unchecked { ++i; }
+        }
+    }
+
+    function refundBond(bytes32 _claimId) external {
+        if (!bondClaimable[msg.sender][_claimId]) {
+            revert CannotClaimBond();
+        }
+        bondClaimable[msg.sender][_claimId] = false;
         uint256 disputerBond = disputersBonds[msg.sender][_claimId];
         disputersBonds[msg.sender][_claimId] = 0;
         token.safeTransfer(msg.sender, disputerBond);

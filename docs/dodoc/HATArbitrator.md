@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
+function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund) external nonpayable
 ```
 
 
@@ -27,6 +27,30 @@ function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _bene
 | _claimId | bytes32 | undefined |
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
+| _disputersToRefund | address[] | undefined |
+
+### bondClaimable
+
+```solidity
+function bondClaimable(address, bytes32) external view returns (bool)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+| _1 | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### bondsNeededToStartDispute
 
@@ -201,6 +225,23 @@ function refundBond(bytes32 _claimId) external nonpayable
 |---|---|---|
 | _claimId | bytes32 | undefined |
 
+### refundDisputers
+
+```solidity
+function refundDisputers(bytes32 _claimId, address[] _disputersToRefund) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId | bytes32 | undefined |
+| _disputersToRefund | address[] | undefined |
+
 ### resolutionChallengedAt
 
 ```solidity
@@ -345,6 +386,17 @@ error AlreadyResolved()
 
 ```solidity
 error BondAmountSubmittedTooLow()
+```
+
+
+
+
+
+
+### CannotClaimBond
+
+```solidity
+error CannotClaimBond()
 ```
 
 
