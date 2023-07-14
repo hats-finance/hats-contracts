@@ -157,7 +157,7 @@ contract HATArbitrator {
         token.safeTransfer(msg.sender, disputerBond);
     }
 
-    function executeResolution(bytes32 _claimId) external onlyChallengedActiveClaim(_claimId) {
+    function executeResolution(bytes32 _claimId) external {
         // TODO: This might be too long if the challenge timeout period is too short
         Resolution memory resolution = resolutions[_claimId];
 
@@ -176,6 +176,16 @@ contract HATArbitrator {
         }
 
         vault.approveClaim(_claimId, resolution.bountyPercentage, resolution.beneficiary);
+    }
+
+    function dismissResolution(bytes32 _claimId) external {
+        if (resolutionChallengedAt[_claimId] == 0) {
+            revert CannotDismissUnchallengedResolution();
+        }
+        if (msg.sender != court) {
+            revert ResolutionWasChallenged();
+        }
+        vault.dismissClaim(_claimId);
     }
 
     function challengeResolution(bytes32 _claimId) external onlyChallengedActiveClaim(_claimId) onlyResolvedDispute(_claimId) {
