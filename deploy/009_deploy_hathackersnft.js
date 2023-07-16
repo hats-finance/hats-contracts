@@ -1,4 +1,7 @@
+const CONFIG = require("../config.js");
+
 const func = async function (hre) {
+    const config = CONFIG[network.name];
     const { deployments, getNamedAccounts } = hre;
     const { deploy } = deployments;
 
