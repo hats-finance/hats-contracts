@@ -68,7 +68,7 @@
   "author": "contact@hats.finance",
   "license": "MIT",
   "dependencies": {
-    "@openzeppelin/contracts": "4.8.3",
+    "@openzeppelin/contracts": "4.9.2",
     "@openzeppelin/contracts-upgradeable": "4.8.3",
     "@primitivefi/hardhat-dodoc": "^0.2.3"
   },
