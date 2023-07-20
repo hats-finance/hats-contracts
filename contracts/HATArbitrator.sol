@@ -18,7 +18,7 @@ contract HATArbitrator {
     error AlreadyResolved();
     error NoResolution();
     error ChallengePeriodDidNotPass();
-    error ResolutionWasChallenged();
+    error CanOnlyBeCalledByCourt();
     error ChallengePeriodPassed();
     error NoResolutionExistsForClaim();
     error CannotClaimBond();
@@ -37,6 +37,7 @@ contract HATArbitrator {
     IERC20 public token;
     uint256 public bondsNeededToStartDispute;
     uint256 public minBondAmount;
+    uint256 public resolutionChallegPeriod;
 
     mapping(address => mapping(bytes32 => uint256)) public disputersBonds;
     mapping(address => mapping(bytes32 => bool)) public bondClaimable;
@@ -80,13 +81,14 @@ contract HATArbitrator {
         _;
     }
 
-    constructor (IHATVault _vault, address _expertCommittee, address _court, IERC20 _token, uint256 _bondsNeededToStartDispute, uint256 _minBondAmount) {
+    constructor (IHATVault _vault, address _expertCommittee, address _court, IERC20 _token, uint256 _bondsNeededToStartDispute, uint256 _minBondAmount, uint256 _resolutionChallegPeriod) {
         vault = _vault;
         expertCommittee = _expertCommittee;
         court = _court;
         token = _token;
         bondsNeededToStartDispute = _bondsNeededToStartDispute;
         minBondAmount = _minBondAmount;
+        resolutionChallegPeriod = _resolutionChallegPeriod;
         if (minBondAmount > bondsNeededToStartDispute) {
             revert bondsNeededToStartDisputeMustBeHigherThanMinAmount();
         }
@@ -167,10 +169,10 @@ contract HATArbitrator {
 
         if (resolutionChallengedAt[_claimId] != 0) {
             if (msg.sender != court) {
-                revert ResolutionWasChallenged();
+                revert CanOnlyBeCalledByCourt();
             }
         } else {
-            if (block.timestamp < resolution.resolvedAt + 3 days) {
+            if (block.timestamp < resolution.resolvedAt + resolutionChallegPeriod) {
                 revert ChallengePeriodDidNotPass();
             }
         }
@@ -183,13 +185,13 @@ contract HATArbitrator {
             revert CannotDismissUnchallengedResolution();
         }
         if (msg.sender != court) {
-            revert ResolutionWasChallenged();
+            revert CanOnlyBeCalledByCourt();
         }
         vault.dismissClaim(_claimId);
     }
 
     function challengeResolution(bytes32 _claimId) external onlyChallengedActiveClaim(_claimId) onlyResolvedDispute(_claimId) {
-        if (block.timestamp >= resolutions[_claimId].resolvedAt + 3 days) {
+        if (block.timestamp >= resolutions[_claimId].resolvedAt + resolutionChallegPeriod) {
             revert ChallengePeriodPassed();
         }
 
