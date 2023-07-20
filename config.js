@@ -338,9 +338,9 @@ module.exports = {
             "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
         ],
         "rewardControllersConf": [],
-        "hatToken": "NEED ADDRESS", // USDC
+        "hatToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "NEED ADDRESS", // USDC
+            "swapToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
             "bountyGovernanceHAT": "1000",
             "bountyHackerHATVested": "0"
         },

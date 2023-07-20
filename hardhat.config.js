@@ -114,6 +114,18 @@ module.exports = {
       gasPrice: "auto",
       gas: "auto",
     },
+    nautulis: {
+      url: `https://triton.api.nautchain.xyz`,
+      accounts: [process.env.NAUTULIS_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    meter: {
+      url: `https://rpc.meter.io/`,
+      accounts: [process.env.METER_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
     hardhat: {
       allowUnlimitedContractSize: true,
       accounts: [
