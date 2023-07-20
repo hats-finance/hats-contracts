@@ -124,6 +124,7 @@ contract HATArbitrator {
     }
 
     function dismissDispute(bytes32 _claimId) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyUnresolvedDispute(_claimId) {
+        resolutions[_claimId].resolvedAt = block.timestamp;
         token.safeTransfer(msg.sender, totalBondsOnClaim[_claimId]);
 
         vault.approveClaim(_claimId, 0, address(0));
@@ -138,7 +139,7 @@ contract HATArbitrator {
         _refundDisputers(_claimId, _disputersToRefund);
     }
 
-    function refundDisputers(bytes32 _claimId, address[] calldata _disputersToRefund) external onlyExpertCommittee {
+    function refundDisputers(bytes32 _claimId, address[] calldata _disputersToRefund) external onlyExpertCommittee onlyChallengedActiveClaim(_claimId) onlyResolvedDispute(_claimId) {
         _refundDisputers(_claimId, _disputersToRefund);
     }
 
@@ -151,9 +152,16 @@ contract HATArbitrator {
 
     function refundBond(bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_claimId]) {
-            revert CannotClaimBond();
+            (bytes32 claimId,,,,uint32 createdAt,,,,,challengePeriod,challengeTimeOutPeriod,,) = vault.activeClaim();
+            if ()
+
+            if (resolutions[_claimId].resolvedAt != 0 || (claimId == _claimId && block.timestamp < createdAt + challengePeriod + challengeTimeOutPeriod)) {
+                revert CannotClaimBond();
+            }
+        } else {
+            bondClaimable[msg.sender][_claimId] = false;
         }
-        bondClaimable[msg.sender][_claimId] = false;
+
         uint256 disputerBond = disputersBonds[msg.sender][_claimId];
         disputersBonds[msg.sender][_claimId] = 0;
         token.safeTransfer(msg.sender, disputerBond);
