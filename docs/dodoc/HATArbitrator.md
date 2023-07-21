@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund) external nonpayable
+function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, string _descriptionHash) external nonpayable
 ```
 
 
@@ -28,6 +28,7 @@ function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _bene
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
 | _disputersToRefund | address[] | undefined |
+| _descriptionHash | string | undefined |
 
 ### approveSubmitClaimRequest
 
@@ -124,7 +125,7 @@ function court() external view returns (address)
 ### dismissDispute
 
 ```solidity
-function dismissDispute(bytes32 _claimId) external nonpayable
+function dismissDispute(bytes32 _claimId, string _descriptionHash) external nonpayable
 ```
 
 
@@ -136,6 +137,7 @@ function dismissDispute(bytes32 _claimId) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _claimId | bytes32 | undefined |
+| _descriptionHash | string | undefined |
 
 ### dismissResolution
 
@@ -156,7 +158,7 @@ function dismissResolution(bytes32 _claimId) external nonpayable
 ### dismissSubmitClaimRequest
 
 ```solidity
-function dismissSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
+function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _descriptionHash) external nonpayable
 ```
 
 
@@ -168,11 +170,12 @@ function dismissSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _internalClaimId | bytes32 | undefined |
+| _descriptionHash | string | undefined |
 
 ### dispute
 
 ```solidity
-function dispute(bytes32 _claimId, bytes32 _ipfsHash, uint256 _bondAmount) external nonpayable
+function dispute(bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
 ```
 
 
@@ -184,8 +187,8 @@ function dispute(bytes32 _claimId, bytes32 _ipfsHash, uint256 _bondAmount) exter
 | Name | Type | Description |
 |---|---|---|
 | _claimId | bytes32 | undefined |
-| _ipfsHash | bytes32 | undefined |
 | _bondAmount | uint256 | undefined |
+| _descriptionHash | string | undefined |
 
 ### disputersBonds
 
@@ -388,6 +391,23 @@ function submitClaimRequest(string _descriptionHash) external nonpayable
 |---|---|---|
 | _descriptionHash | string | undefined |
 
+### submitClaimRequestReviewPeriod
+
+```solidity
+function submitClaimRequestReviewPeriod() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### submitClaimRequests
 
 ```solidity
@@ -473,10 +493,27 @@ function vault() external view returns (contract IHATVault)
 
 ## Events
 
+### BondRefundClaimed
+
+```solidity
+event BondRefundClaimed(bytes32 indexed _claimId, address _disputer)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+| _disputer  | address | undefined |
+
 ### ClaimDisputed
 
 ```solidity
-event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, bytes32 _ipfsHash, uint256 _bondAmount)
+event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, uint256 _bondAmount, string _descriptionHash)
 ```
 
 
@@ -489,8 +526,178 @@ event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, bytes32
 |---|---|---|
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer `indexed` | address | undefined |
-| _ipfsHash  | bytes32 | undefined |
 | _bondAmount  | uint256 | undefined |
+| _descriptionHash  | string | undefined |
+
+### DisputeAccepted
+
+```solidity
+event DisputeAccepted(bytes32 indexed _claimId, uint16 _bountyPercentage, address _beneficiary, string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+| _bountyPercentage  | uint16 | undefined |
+| _beneficiary  | address | undefined |
+| _descriptionHash  | string | undefined |
+
+### DisputeDismissed
+
+```solidity
+event DisputeDismissed(bytes32 indexed _claimId, string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+| _descriptionHash  | string | undefined |
+
+### DisputersRefunded
+
+```solidity
+event DisputersRefunded(bytes32 indexed _claimId, address[] _disputers)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+| _disputers  | address[] | undefined |
+
+### ResolutionChallenged
+
+```solidity
+event ResolutionChallenged(bytes32 indexed _claimId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+
+### ResolutionDismissed
+
+```solidity
+event ResolutionDismissed(bytes32 indexed _claimId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+
+### ResolutionExecuted
+
+```solidity
+event ResolutionExecuted(bytes32 indexed _claimId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId `indexed` | bytes32 | undefined |
+
+### SubmitClaimRequestApproved
+
+```solidity
+event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId `indexed` | bytes32 | undefined |
+| _claimId `indexed` | bytes32 | undefined |
+
+### SubmitClaimRequestCreated
+
+```solidity
+event SubmitClaimRequestCreated(bytes32 indexed _internalClaimId, address indexed _submitter, uint256 _bond, string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId `indexed` | bytes32 | undefined |
+| _submitter `indexed` | address | undefined |
+| _bond  | uint256 | undefined |
+| _descriptionHash  | string | undefined |
+
+### SubmitClaimRequestDismissed
+
+```solidity
+event SubmitClaimRequestDismissed(bytes32 indexed _internalClaimId, string _descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId `indexed` | bytes32 | undefined |
+| _descriptionHash  | string | undefined |
+
+### SubmitClaimRequestExpired
+
+```solidity
+event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId `indexed` | bytes32 | undefined |
 
 
 
