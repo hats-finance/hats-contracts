@@ -49,6 +49,7 @@ contract HATArbitrator {
     uint256 public bondsNeededToStartDispute;
     uint256 public minBondAmount;
     uint256 public resolutionChallegPeriod;
+    uint256 public submitClaimRequestReviewPeriod;
 
     mapping(address => mapping(bytes32 => uint256)) public disputersBonds;
     mapping(address => mapping(bytes32 => bool)) public bondClaimable;
@@ -60,6 +61,11 @@ contract HATArbitrator {
     uint256 internal nonce;
 
     event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, bytes32 _ipfsHash, uint256 _bondAmount);
+
+    event SubmitClaimRequestCreated(bytes32 indexed _internalClaimId, address indexed _submitter, uint256 _bond, string _descriptionHash);
+    event SubmitClaimRequestDismissed(bytes32 indexed _internalClaimId, string _descriptionHash);
+    event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId);
+    event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId);
 
     modifier onlyExpertCommittee() {
         if (msg.sender != expertCommittee) {
@@ -95,7 +101,16 @@ contract HATArbitrator {
         _;
     }
 
-    constructor (IHATVault _vault, address _expertCommittee, address _court, IERC20 _token, uint256 _bondsNeededToStartDispute, uint256 _minBondAmount, uint256 _resolutionChallegPeriod) {
+    constructor (
+        IHATVault _vault,
+        address _expertCommittee,
+        address _court,
+        IERC20 _token,
+        uint256 _bondsNeededToStartDispute,
+        uint256 _minBondAmount,
+        uint256 _resolutionChallegPeriod
+        uint256 _submitClaimRequestReviewPeriod,
+    ) {
         vault = _vault;
         expertCommittee = _expertCommittee;
         court = _court;
@@ -103,6 +118,7 @@ contract HATArbitrator {
         bondsNeededToStartDispute = _bondsNeededToStartDispute;
         minBondAmount = _minBondAmount;
         resolutionChallegPeriod = _resolutionChallegPeriod;
+        submitClaimRequestReviewPeriod = _submitClaimRequestReviewPeriod;
         if (minBondAmount > bondsNeededToStartDispute) {
             revert bondsNeededToStartDisputeMustBeHigherThanMinAmount();
         }
@@ -230,24 +246,28 @@ contract HATArbitrator {
             descriptionHash: _descriptionHash
         });
         token.safeTransferFrom(msg.sender, address(this), bondsNeededToStartDispute);
+
+        emit SubmitClaimRequestCreated(internalClaimId, msg.sender, bondsNeededToStartDispute, _descriptionHash)
     }
 
-    function dismissSubmitClaimRequest(bytes32 _internalClaimId) external onlyExpertCommittee {
+    function dismissSubmitClaimRequest(bytes32 _internalClaimId, string calldata _descriptionHash) external onlyExpertCommittee {
         SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[_internalClaimId];
 
-        if (block.timestamp > submitClaimRequest.submittedAt + 90 days) {
+        if (block.timestamp > submitClaimRequest.submittedAt + submitClaimRequestReviewPeriod) {
             revert ClaimReviewPeriodEnd();
         }
 
         delete submitClaimRequests[_internalClaimId];
 
         token.safeTransfer(msg.sender, submitClaimRequest.bond);
+
+        emit SubmitClaimRequestDismissed(_internalClaimId, _descriptionHash);
     }
 
     function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string calldata _descriptionHash) external onlyExpertCommittee {
         SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[_internalClaimId];
 
-        if (block.timestamp > submitClaimRequest.submittedAt + 90 days) {
+        if (block.timestamp > submitClaimRequest.submittedAt + submitClaimRequestReviewPeriod) {
             revert ClaimReviewPeriodEnd();
         }
 
@@ -257,6 +277,8 @@ contract HATArbitrator {
         vault.challengeClaim(claimId);
 
         token.safeTransfer(submitClaimRequest.submitter, submitClaimRequest.bond);
+
+        emit SubmitClaimRequestApproved(_internalClaimId, claimId);
     }
 
     function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external {
@@ -265,11 +287,13 @@ contract HATArbitrator {
             revert CallerIsNotSubmitter();
         }
 
-        if (block.timestamp <= submitClaimRequest.submittedAt + 90 days) {
+        if (block.timestamp <= submitClaimRequest.submittedAt + submitClaimRequestReviewPeriod) {
             revert ClaimReviewPeriodDidNotEnd();
         }
 
         delete submitClaimRequests[_internalClaimId];
         token.safeTransfer(msg.sender, bondsNeededToStartDispute);
+
+        emit SubmitClaimRequestExpired(_internalClaimId);
     }
 }
