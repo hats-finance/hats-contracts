@@ -22,6 +22,7 @@ contract HATArbitrator {
     error ChallengePeriodPassed();
     error NoResolutionExistsForClaim();
     error CannotClaimBond();
+    error CannotDismissUnchallengedResolution();
 
     using SafeERC20 for IERC20;
 
@@ -152,8 +153,7 @@ contract HATArbitrator {
 
     function refundBond(bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_claimId]) {
-            (bytes32 claimId,,,,uint32 createdAt,,,,,challengePeriod,challengeTimeOutPeriod,,) = vault.activeClaim();
-            if ()
+            (bytes32 claimId,,,,uint32 createdAt,,,,,uint32 challengePeriod,uint32 challengeTimeOutPeriod,,) = vault.activeClaim();
 
             if (resolutions[_claimId].resolvedAt != 0 || (claimId == _claimId && block.timestamp < createdAt + challengePeriod + challengeTimeOutPeriod)) {
                 revert CannotClaimBond();

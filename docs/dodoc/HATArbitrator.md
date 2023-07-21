@@ -29,6 +29,25 @@ function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _bene
 | _beneficiary | address | undefined |
 | _disputersToRefund | address[] | undefined |
 
+### approveSubmitClaimRequest
+
+```solidity
+function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId | bytes32 | undefined |
+| _beneficiary | address | undefined |
+| _bountyPercentage | uint16 | undefined |
+| _descriptionHash | string | undefined |
+
 ### bondClaimable
 
 ```solidity
@@ -117,6 +136,38 @@ function dismissDispute(bytes32 _claimId) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _claimId | bytes32 | undefined |
+
+### dismissResolution
+
+```solidity
+function dismissResolution(bytes32 _claimId) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _claimId | bytes32 | undefined |
+
+### dismissSubmitClaimRequest
+
+```solidity
+function dismissSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId | bytes32 | undefined |
 
 ### dispute
 
@@ -242,6 +293,39 @@ function refundDisputers(bytes32 _claimId, address[] _disputersToRefund) externa
 | _claimId | bytes32 | undefined |
 | _disputersToRefund | address[] | undefined |
 
+### refundExpiredSubmitClaimRequest
+
+```solidity
+function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _internalClaimId | bytes32 | undefined |
+
+### resolutionChallegPeriod
+
+```solidity
+function resolutionChallegPeriod() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### resolutionChallengedAt
 
 ```solidity
@@ -287,6 +371,47 @@ function resolutions(bytes32) external view returns (address beneficiary, uint16
 | beneficiary | address | undefined |
 | bountyPercentage | uint16 | undefined |
 | resolvedAt | uint256 | undefined |
+
+### submitClaimRequest
+
+```solidity
+function submitClaimRequest(string _descriptionHash) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _descriptionHash | string | undefined |
+
+### submitClaimRequests
+
+```solidity
+function submitClaimRequests(bytes32) external view returns (address submitter, uint256 bond, uint256 submittedAt, string descriptionHash)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| submitter | address | undefined |
+| bond | uint256 | undefined |
+| submittedAt | uint256 | undefined |
+| descriptionHash | string | undefined |
 
 ### token
 
@@ -393,10 +518,43 @@ error BondAmountSubmittedTooLow()
 
 
 
+### CallerIsNotSubmitter
+
+```solidity
+error CallerIsNotSubmitter()
+```
+
+
+
+
+
+
+### CanOnlyBeCalledByCourt
+
+```solidity
+error CanOnlyBeCalledByCourt()
+```
+
+
+
+
+
+
 ### CannotClaimBond
 
 ```solidity
 error CannotClaimBond()
+```
+
+
+
+
+
+
+### CannotDismissUnchallengedResolution
+
+```solidity
+error CannotDismissUnchallengedResolution()
 ```
 
 
@@ -459,6 +617,28 @@ error ClaimIsNotDisputed()
 
 
 
+### ClaimReviewPeriodDidNotEnd
+
+```solidity
+error ClaimReviewPeriodDidNotEnd()
+```
+
+
+
+
+
+
+### ClaimReviewPeriodEnd
+
+```solidity
+error ClaimReviewPeriodEnd()
+```
+
+
+
+
+
+
 ### NoResolution
 
 ```solidity
@@ -485,17 +665,6 @@ error NoResolutionExistsForClaim()
 
 ```solidity
 error OnlyExpertCommittee()
-```
-
-
-
-
-
-
-### ResolutionWasChallenged
-
-```solidity
-error ResolutionWasChallenged()
 ```
 
 
