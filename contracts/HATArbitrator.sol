@@ -23,6 +23,9 @@ contract HATArbitrator {
     error NoResolutionExistsForClaim();
     error CannotClaimBond();
     error CannotDismissUnchallengedResolution();
+    error CallerIsNotSubmitter();
+    error ClaimReviewPeriodEnd();
+    error ClaimReviewPeriodDidNotEnd();
 
     using SafeERC20 for IERC20;
 
@@ -30,6 +33,13 @@ contract HATArbitrator {
         address beneficiary;
         uint16 bountyPercentage;
         uint256 resolvedAt;
+    }
+
+    struct SubmitClaimRequest{
+        address submitter;
+        uint256 bond;
+        uint256 submittedAt;
+        string descriptionHash;
     }
 
     IHATVault public vault;
@@ -45,6 +55,9 @@ contract HATArbitrator {
     mapping(bytes32 => uint256) public totalBondsOnClaim;
     mapping(bytes32 => Resolution) public resolutions;
     mapping(bytes32 => uint256) public resolutionChallengedAt;
+    mapping(bytes32 => SubmitClaimRequest) public submitClaimRequests;
+
+    uint256 internal nonce;
 
     event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, bytes32 _ipfsHash, uint256 _bondAmount);
 
@@ -206,5 +219,57 @@ contract HATArbitrator {
         resolutionChallengedAt[_claimId] = block.timestamp;
 
         // TODO: Here the challnger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
+    }
+
+    function submitClaimRequest(string calldata _descriptionHash) external {
+        bytes32 internalClaimId = keccak256(abi.encodePacked(address(this), ++nonce));
+        submitClaimRequests[internalClaimId] = SubmitClaimRequest({
+            submitter: msg.sender,
+            bond: bondsNeededToStartDispute,
+            submittedAt: block.timestamp,
+            descriptionHash: _descriptionHash
+        });
+        token.safeTransferFrom(msg.sender, address(this), bondsNeededToStartDispute);
+    }
+
+    function dismissSubmitClaimRequest(bytes32 _internalClaimId) external onlyExpertCommittee {
+        SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[_internalClaimId];
+
+        if (block.timestamp > submitClaimRequest.submittedAt + 90 days) {
+            revert ClaimReviewPeriodEnd();
+        }
+
+        delete submitClaimRequests[_internalClaimId];
+
+        token.safeTransfer(msg.sender, submitClaimRequest.bond);
+    }
+
+    function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string calldata _descriptionHash) external onlyExpertCommittee {
+        SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[_internalClaimId];
+
+        if (block.timestamp > submitClaimRequest.submittedAt + 90 days) {
+            revert ClaimReviewPeriodEnd();
+        }
+
+        delete submitClaimRequests[_internalClaimId];
+
+        bytes32 claimId = vault.submitClaim(_beneficiary, _bountyPercentage, _descriptionHash);
+        vault.challengeClaim(claimId);
+
+        token.safeTransfer(submitClaimRequest.submitter, submitClaimRequest.bond);
+    }
+
+    function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external {
+        SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[_internalClaimId];
+        if (msg.sender != submitClaimRequest.submitter) {
+            revert CallerIsNotSubmitter();
+        }
+
+        if (block.timestamp <= submitClaimRequest.submittedAt + 90 days) {
+            revert ClaimReviewPeriodDidNotEnd();
+        }
+
+        delete submitClaimRequests[_internalClaimId];
+        token.safeTransfer(msg.sender, bondsNeededToStartDispute);
     }
 }
