@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, string _descriptionHash) external nonpayable
+function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, string _descriptionHash) external nonpayable
 ```
 
 
@@ -24,6 +24,7 @@ function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _bene
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
@@ -33,7 +34,7 @@ function acceptDispute(bytes32 _claimId, uint16 _bountyPercentage, address _bene
 ### approveSubmitClaimRequest
 
 ```solidity
-function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
+function approveSubmitClaimRequest(contract IHATVault _vault, bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
 ```
 
 
@@ -44,6 +45,7 @@ function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiar
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _internalClaimId | bytes32 | undefined |
 | _beneficiary | address | undefined |
 | _bountyPercentage | uint16 | undefined |
@@ -52,7 +54,7 @@ function approveSubmitClaimRequest(bytes32 _internalClaimId, address _beneficiar
 ### bondClaimable
 
 ```solidity
-function bondClaimable(address, bytes32) external view returns (bool)
+function bondClaimable(address, contract IHATVault, bytes32) external view returns (bool)
 ```
 
 
@@ -64,7 +66,8 @@ function bondClaimable(address, bytes32) external view returns (bool)
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
-| _1 | bytes32 | undefined |
+| _1 | contract IHATVault | undefined |
+| _2 | bytes32 | undefined |
 
 #### Returns
 
@@ -92,7 +95,7 @@ function bondsNeededToStartDispute() external view returns (uint256)
 ### challengeResolution
 
 ```solidity
-function challengeResolution(bytes32 _claimId) external nonpayable
+function challengeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -103,6 +106,7 @@ function challengeResolution(bytes32 _claimId) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 
 ### court
@@ -125,7 +129,7 @@ function court() external view returns (address)
 ### dismissDispute
 
 ```solidity
-function dismissDispute(bytes32 _claimId, string _descriptionHash) external nonpayable
+function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _descriptionHash) external nonpayable
 ```
 
 
@@ -136,13 +140,14 @@ function dismissDispute(bytes32 _claimId, string _descriptionHash) external nonp
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 | _descriptionHash | string | undefined |
 
 ### dismissResolution
 
 ```solidity
-function dismissResolution(bytes32 _claimId) external nonpayable
+function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -153,6 +158,7 @@ function dismissResolution(bytes32 _claimId) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 
 ### dismissSubmitClaimRequest
@@ -175,7 +181,7 @@ function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _description
 ### dispute
 
 ```solidity
-function dispute(bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
+function dispute(contract IHATVault _vault, bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
 ```
 
 
@@ -186,6 +192,7 @@ function dispute(bytes32 _claimId, uint256 _bondAmount, string _descriptionHash)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 | _bondAmount | uint256 | undefined |
 | _descriptionHash | string | undefined |
@@ -193,7 +200,7 @@ function dispute(bytes32 _claimId, uint256 _bondAmount, string _descriptionHash)
 ### disputersBonds
 
 ```solidity
-function disputersBonds(address, bytes32) external view returns (uint256)
+function disputersBonds(address, contract IHATVault, bytes32) external view returns (uint256)
 ```
 
 
@@ -205,7 +212,8 @@ function disputersBonds(address, bytes32) external view returns (uint256)
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
-| _1 | bytes32 | undefined |
+| _1 | contract IHATVault | undefined |
+| _2 | bytes32 | undefined |
 
 #### Returns
 
@@ -216,7 +224,7 @@ function disputersBonds(address, bytes32) external view returns (uint256)
 ### executeResolution
 
 ```solidity
-function executeResolution(bytes32 _claimId) external nonpayable
+function executeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -227,6 +235,7 @@ function executeResolution(bytes32 _claimId) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 
 ### expertCommittee
@@ -266,7 +275,7 @@ function minBondAmount() external view returns (uint256)
 ### refundBond
 
 ```solidity
-function refundBond(bytes32 _claimId) external nonpayable
+function refundBond(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -277,12 +286,13 @@ function refundBond(bytes32 _claimId) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 
 ### refundDisputers
 
 ```solidity
-function refundDisputers(bytes32 _claimId, address[] _disputersToRefund) external nonpayable
+function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToRefund) external nonpayable
 ```
 
 
@@ -293,6 +303,7 @@ function refundDisputers(bytes32 _claimId, address[] _disputersToRefund) externa
 
 | Name | Type | Description |
 |---|---|---|
+| _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
 | _disputersToRefund | address[] | undefined |
 
@@ -332,7 +343,7 @@ function resolutionChallegPeriod() external view returns (uint256)
 ### resolutionChallengedAt
 
 ```solidity
-function resolutionChallengedAt(bytes32) external view returns (uint256)
+function resolutionChallengedAt(contract IHATVault, bytes32) external view returns (uint256)
 ```
 
 
@@ -343,7 +354,8 @@ function resolutionChallengedAt(bytes32) external view returns (uint256)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | bytes32 | undefined |
+| _0 | contract IHATVault | undefined |
+| _1 | bytes32 | undefined |
 
 #### Returns
 
@@ -354,7 +366,7 @@ function resolutionChallengedAt(bytes32) external view returns (uint256)
 ### resolutions
 
 ```solidity
-function resolutions(bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
+function resolutions(contract IHATVault, bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
 ```
 
 
@@ -365,7 +377,8 @@ function resolutions(bytes32) external view returns (address beneficiary, uint16
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | bytes32 | undefined |
+| _0 | contract IHATVault | undefined |
+| _1 | bytes32 | undefined |
 
 #### Returns
 
@@ -453,7 +466,7 @@ function token() external view returns (contract IERC20)
 ### totalBondsOnClaim
 
 ```solidity
-function totalBondsOnClaim(bytes32) external view returns (uint256)
+function totalBondsOnClaim(contract IHATVault, bytes32) external view returns (uint256)
 ```
 
 
@@ -464,30 +477,14 @@ function totalBondsOnClaim(bytes32) external view returns (uint256)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | bytes32 | undefined |
+| _0 | contract IHATVault | undefined |
+| _1 | bytes32 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
-
-### vault
-
-```solidity
-function vault() external view returns (contract IHATVault)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IHATVault | undefined |
 
 
 
@@ -496,7 +493,7 @@ function vault() external view returns (contract IHATVault)
 ### BondRefundClaimed
 
 ```solidity
-event BondRefundClaimed(bytes32 indexed _claimId, address _disputer)
+event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address _disputer)
 ```
 
 
@@ -507,13 +504,14 @@ event BondRefundClaimed(bytes32 indexed _claimId, address _disputer)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer  | address | undefined |
 
 ### ClaimDisputed
 
 ```solidity
-event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, uint256 _bondAmount, string _descriptionHash)
+event ClaimDisputed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address indexed _disputer, uint256 _bondAmount, string _descriptionHash)
 ```
 
 
@@ -524,6 +522,7 @@ event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, uint256
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer `indexed` | address | undefined |
 | _bondAmount  | uint256 | undefined |
@@ -532,7 +531,7 @@ event ClaimDisputed(bytes32 indexed _claimId, address indexed _disputer, uint256
 ### DisputeAccepted
 
 ```solidity
-event DisputeAccepted(bytes32 indexed _claimId, uint16 _bountyPercentage, address _beneficiary, string _descriptionHash)
+event DisputeAccepted(contract IHATVault indexed _vault, bytes32 indexed _claimId, uint16 _bountyPercentage, address _beneficiary, string _descriptionHash)
 ```
 
 
@@ -543,6 +542,7 @@ event DisputeAccepted(bytes32 indexed _claimId, uint16 _bountyPercentage, addres
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _bountyPercentage  | uint16 | undefined |
 | _beneficiary  | address | undefined |
@@ -551,7 +551,7 @@ event DisputeAccepted(bytes32 indexed _claimId, uint16 _bountyPercentage, addres
 ### DisputeDismissed
 
 ```solidity
-event DisputeDismissed(bytes32 indexed _claimId, string _descriptionHash)
+event DisputeDismissed(contract IHATVault indexed _vault, bytes32 indexed _claimId, string _descriptionHash)
 ```
 
 
@@ -562,13 +562,14 @@ event DisputeDismissed(bytes32 indexed _claimId, string _descriptionHash)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _descriptionHash  | string | undefined |
 
 ### DisputersRefunded
 
 ```solidity
-event DisputersRefunded(bytes32 indexed _claimId, address[] _disputers)
+event DisputersRefunded(contract IHATVault indexed _vault, bytes32 indexed _claimId, address[] _disputers)
 ```
 
 
@@ -579,13 +580,14 @@ event DisputersRefunded(bytes32 indexed _claimId, address[] _disputers)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputers  | address[] | undefined |
 
 ### ResolutionChallenged
 
 ```solidity
-event ResolutionChallenged(bytes32 indexed _claimId)
+event ResolutionChallenged(contract IHATVault indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -596,12 +598,13 @@ event ResolutionChallenged(bytes32 indexed _claimId)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### ResolutionDismissed
 
 ```solidity
-event ResolutionDismissed(bytes32 indexed _claimId)
+event ResolutionDismissed(contract IHATVault indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -612,12 +615,13 @@ event ResolutionDismissed(bytes32 indexed _claimId)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### ResolutionExecuted
 
 ```solidity
-event ResolutionExecuted(bytes32 indexed _claimId)
+event ResolutionExecuted(contract IHATVault indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -628,12 +632,13 @@ event ResolutionExecuted(bytes32 indexed _claimId)
 
 | Name | Type | Description |
 |---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### SubmitClaimRequestApproved
 
 ```solidity
-event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId)
+event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId, contract IHATVault indexed _vault)
 ```
 
 
@@ -646,6 +651,7 @@ event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 index
 |---|---|---|
 | _internalClaimId `indexed` | bytes32 | undefined |
 | _claimId `indexed` | bytes32 | undefined |
+| _vault `indexed` | contract IHATVault | undefined |
 
 ### SubmitClaimRequestCreated
 
