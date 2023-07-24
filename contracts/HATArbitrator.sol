@@ -295,7 +295,14 @@ contract HATArbitrator {
         delete submitClaimRequests[_internalClaimId];
 
         bytes32 claimId = vault.submitClaim(_beneficiary, _bountyPercentage, _descriptionHash);
+        
         vault.challengeClaim(claimId);
+
+        resolutions[_claimId] = Resolution({ 
+            bountyPercentage: _bountyPercentage,
+            beneficiary: _beneficiary,
+            resolvedAt: block.timestamp
+        });
 
         token.safeTransfer(submitClaimRequest.submitter, submitClaimRequest.bond);
 
