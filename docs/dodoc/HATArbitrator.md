@@ -808,10 +808,10 @@ error ChallengePeriodPassed()
 
 
 
-### ClaimDisputedIsNotCurrentlyActiveClaim
+### ClaimIsNotCurrentlyActiveClaim
 
 ```solidity
-error ClaimDisputedIsNotCurrentlyActiveClaim()
+error ClaimIsNotCurrentlyActiveClaim()
 ```
 
 

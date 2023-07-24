@@ -8,10 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IHATVault.sol";
 
+/* solhint-disable not-rely-on-time */
 contract HATArbitrator {
     error bondsNeededToStartDisputeMustBeHigherThanMinAmount();
     error BondAmountSubmittedTooLow();
-    error ClaimDisputedIsNotCurrentlyActiveClaim();
+    error ClaimIsNotCurrentlyActiveClaim();
     error CannotSubmitMoreEvidence();
     error ClaimIsNotDisputed();
     error OnlyExpertCommittee();
@@ -84,7 +85,7 @@ contract HATArbitrator {
         (bytes32 claimId,,,,,uint32 challengedAt,,,,,,,) = _vault.activeClaim();
 
         if (claimId != _claimId) {
-            revert ClaimDisputedIsNotCurrentlyActiveClaim();
+            revert ClaimIsNotCurrentlyActiveClaim();
         }
 
         if (challengedAt == 0) {
@@ -135,7 +136,7 @@ contract HATArbitrator {
 
         (bytes32 claimId,,,,,uint32 challengedAt,,,,,,,) = _vault.activeClaim();
         if (claimId != _claimId) {
-            revert ClaimDisputedIsNotCurrentlyActiveClaim();
+            revert ClaimIsNotCurrentlyActiveClaim();
         }
 
         disputersBonds[msg.sender][_vault][_claimId] += _bondAmount;
@@ -183,7 +184,7 @@ contract HATArbitrator {
 
     function _refundDisputers(IHATVault _vault, bytes32 _claimId, address[] calldata _disputersToRefund) internal {
         for (uint256 i = 0; i < _disputersToRefund.length;) {
-            bondClaimable[msg.sender][_vault][_claimId] = true;
+            bondClaimable[_disputersToRefund[i]][_vault][_claimId] = true;
             unchecked { ++i; }
         }
 
