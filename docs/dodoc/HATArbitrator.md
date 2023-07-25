@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, string _descriptionHash) external nonpayable
+function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, address[] _disputersToConfiscate, string _descriptionHash) external nonpayable
 ```
 
 
@@ -29,6 +29,7 @@ function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _boun
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
 | _disputersToRefund | address[] | undefined |
+| _disputersToConfiscate | address[] | undefined |
 | _descriptionHash | string | undefined |
 
 ### approveSubmitClaimRequest
@@ -108,6 +109,24 @@ function challengeResolution(contract IHATVault _vault, bytes32 _claimId) extern
 |---|---|---|
 | _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
+
+### confiscateDisputers
+
+```solidity
+function confiscateDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToConfiscate) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _vault | contract IHATVault | undefined |
+| _claimId | bytes32 | undefined |
+| _disputersToConfiscate | address[] | undefined |
 
 ### court
 
@@ -493,7 +512,7 @@ function totalBondsOnClaim(contract IHATVault, bytes32) external view returns (u
 ### BondRefundClaimed
 
 ```solidity
-event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address _disputer)
+event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address _disputer, uint256 _amountClaimed)
 ```
 
 
@@ -507,6 +526,7 @@ event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _clai
 | _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer  | address | undefined |
+| _amountClaimed  | uint256 | undefined |
 
 ### ClaimDisputed
 
@@ -565,6 +585,24 @@ event DisputeDismissed(contract IHATVault indexed _vault, bytes32 indexed _claim
 | _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _descriptionHash  | string | undefined |
+
+### DisputersConfiscated
+
+```solidity
+event DisputersConfiscated(contract IHATVault indexed _vault, bytes32 indexed _claimId, address[] _disputers)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _vault `indexed` | contract IHATVault | undefined |
+| _claimId `indexed` | bytes32 | undefined |
+| _disputers  | address[] | undefined |
 
 ### DisputersRefunded
 
@@ -801,6 +839,17 @@ error ChallengePeriodDidNotPass()
 
 ```solidity
 error ChallengePeriodPassed()
+```
+
+
+
+
+
+
+### ClaimExpired
+
+```solidity
+error ClaimExpired()
 ```
 
 
