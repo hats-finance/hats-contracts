@@ -225,7 +225,7 @@ contract HATArbitrator {
     function _confiscateDisputers(IHATVault _vault, bytes32 _claimId, address[] calldata _disputersToConfiscate) internal {
         uint256 totalBondsToConfiscate;
         for (uint256 i = 0; i < _disputersToConfiscate.length;) {
-            totalBondsToConfiscate += disputersBonds[msg.sender][_vault][_claimId];
+            totalBondsToConfiscate += disputersBonds[_disputersToConfiscate[i]][_vault][_claimId];
             disputersBonds[_disputersToConfiscate[i]][_vault][_claimId] = 0;
             unchecked { ++i; }
         }
