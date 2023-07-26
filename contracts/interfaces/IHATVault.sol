@@ -235,6 +235,7 @@ interface IHATVault is IERC4626Upgradeable {
     event SubmitClaim(
         bytes32 indexed _claimId,
         address indexed _committee,
+        address indexed _submitter,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         string _descriptionHash
@@ -243,6 +244,7 @@ interface IHATVault is IERC4626Upgradeable {
     event ApproveClaim(
         bytes32 indexed _claimId,
         address indexed _committee,
+        address indexed _approver,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
