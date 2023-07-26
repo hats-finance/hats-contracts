@@ -5,10 +5,8 @@ const { contract } = require("hardhat");
 const {
   setup,
   advanceToSafetyPeriod,
-  advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
-  ZERO_ADDRESS,
 } = require("./common.js");
 const { assert } = require("chai");
 
@@ -395,6 +393,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), false);
     assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
     assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("0"));
     assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("0"));
     assert.equal(await hatArbitrator.disputersBonds(accounts[2], vault.address, claimId), web3.utils.toWei("0"));
 
