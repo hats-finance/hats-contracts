@@ -723,16 +723,20 @@ contract("HatVaults", (accounts) => {
 
     try {
       await vault.initialize({
-        asset: stakingToken.address,
+        asset: stakingToken2.address,
         owner: await hatVaultsRegistry.owner(),
-        committee: accounts[1],
+        committee: accounts[3],
         arbitrator: accounts[2],
+        arbitratorCanChangeBounty: true,
+        arbitratorCanChangeBeneficiary: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
-        maxBounty: 8000,
-        bountySplit: [7000, 2500, 500],
-        descriptionHash: "_descriptionHash",
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        descriptionHash: "_descriptionHash1",
         vestingDuration: 86400,
         vestingPeriods: 10,
         isPaused: false
@@ -3653,6 +3657,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
  
     assert.equal(tx.logs[0].event, "SubmitClaim");
     assert.equal(tx.logs[0].args._committee, accounts[1]);
+    assert.equal(tx.logs[0].args._submitter, accounts[1]);
     assert.equal(tx.logs[0].args._beneficiary, accounts[2]);
     assert.equal(tx.logs[0].args._bountyPercentage, 8000);
     assert.equal(tx.logs[0].args._descriptionHash, "description hash");
