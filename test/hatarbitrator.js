@@ -709,4 +709,84 @@ contract("Registry Arbitrator", (accounts) => {
       "ClaimExpired"
     );
   });
+
+  it("Dismiss resolution", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await advanceToSafetyPeriod(registry);
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await token.mint(accounts[1], web3.utils.toWei("500"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      "ClaimIsNotDisputed"
+    );
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, web3.utils.randomHex(32), { from: accounts[9] }),
+      "ClaimIsNotCurrentlyActiveClaim"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      "NoResolution"
+    );
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      "CannotDismissUnchallengedResolution"
+    );
+
+    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
+      "CanOnlyBeCalledByCourt"
+    );
+
+    tx = await hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] });
+
+    assert.equal(tx.logs[0].event, "ResolutionDismissed");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    logs = await vault.getPastEvents('DismissClaim', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "DismissClaim");
+    assert.equal(logs[0].args._claimId, claimId);
+
+    claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+
+    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+
+    await makeClaimExpire(vault);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
+      "ClaimExpired"
+    );
+  });
 });

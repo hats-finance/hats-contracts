@@ -272,7 +272,7 @@ contract HATArbitrator {
         emit ResolutionExecuted(_vault, _claimId);
     }
 
-    function dismissResolution(IHATVault _vault, bytes32 _claimId) external {
+    function dismissResolution(IHATVault _vault, bytes32 _claimId) external onlyChallengedActiveClaim(_vault, _claimId) onlyResolvedDispute(_vault, _claimId) {
         if (resolutionChallengedAt[_vault][_claimId] == 0) {
             revert CannotDismissUnchallengedResolution();
         }
