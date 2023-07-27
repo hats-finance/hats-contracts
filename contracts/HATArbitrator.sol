@@ -21,13 +21,13 @@ contract HATArbitrator {
     error ChallengePeriodDidNotPass();
     error CanOnlyBeCalledByCourt();
     error ChallengePeriodPassed();
-    error NoResolutionExistsForClaim();
     error CannotClaimBond();
     error CannotDismissUnchallengedResolution();
     error CallerIsNotSubmitter();
     error ClaimReviewPeriodEnd();
     error ClaimReviewPeriodDidNotEnd();
     error ClaimExpired();
+    error AlreadyChallenged();
 
     using SafeERC20 for IERC20;
 
@@ -253,13 +253,9 @@ contract HATArbitrator {
         emit BondRefundClaimed(_vault, _claimId, msg.sender, disputerBond);
     }
 
-    function executeResolution(IHATVault _vault, bytes32 _claimId) external {
+    function executeResolution(IHATVault _vault, bytes32 _claimId) external onlyChallengedActiveClaim(_vault, _claimId) onlyResolvedDispute(_vault, _claimId) {
         // TODO: This might be too long if the challenge timeout period is too short
         Resolution memory resolution = resolutions[_vault][_claimId];
-
-        if (resolution.resolvedAt == 0) {
-            revert NoResolutionExistsForClaim();
-        }
 
         if (resolutionChallengedAt[_vault][_claimId] != 0) {
             if (msg.sender != court) {
@@ -295,9 +291,15 @@ contract HATArbitrator {
             revert ChallengePeriodPassed();
         }
 
+        if (resolutionChallengedAt[_vault][_claimId] != 0) {
+            revert AlreadyChallenged();
+        }
+
         resolutionChallengedAt[_vault][_claimId] = block.timestamp;
 
         emit ResolutionChallenged(_vault, _claimId);
+
+        // TODO: Should resolution be possible to challenge by multiple challengers?
 
         // TODO: Here the challnger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
     }

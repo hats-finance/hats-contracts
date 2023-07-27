@@ -16,7 +16,7 @@ contract("Registry Arbitrator", (accounts) => {
   let token;
   let expertCommittee = accounts[8];
 
-  async function setupHATArbitrator(registry) {
+  async function setupHATArbitrator(registry, vault) {
     token = await ERC20Mock.new("Staking", "STK");
     hatArbitrator = await HATArbitrator.new(
       expertCommittee,
@@ -29,6 +29,7 @@ contract("Registry Arbitrator", (accounts) => {
     );
     
     await registry.setDefaultArbitrator(hatArbitrator.address);
+    await vault.setArbitratorOptions(true, true, true);
   }
 
   async function makeClaimExpire(vault) {
@@ -39,7 +40,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Dispute claim", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -115,7 +116,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Dismiss dispute", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -184,7 +185,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Accept dispute", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -258,7 +259,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Refund disputers", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -329,7 +330,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Confiscate disputers", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -410,7 +411,7 @@ contract("Registry Arbitrator", (accounts) => {
   it("Refund bond", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry);
+    await setupHATArbitrator(registry, vault);
 
     await advanceToSafetyPeriod(registry);
 
@@ -525,5 +526,187 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await hatArbitrator.disputersBonds(accounts[3], vault.address, claimId), web3.utils.toWei("0"));
     assert.equal(await hatArbitrator.bondClaimable(accounts[3], vault.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[3]), web3.utils.toWei("200"));
+  });
+
+  it("Challenge resolution", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await advanceToSafetyPeriod(registry);
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await token.mint(accounts[1], web3.utils.toWei("500"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      "ClaimIsNotDisputed"
+    );
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, web3.utils.randomHex(32), { from: expertCommittee }),
+      "ClaimIsNotCurrentlyActiveClaim"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      "NoResolution"
+    );
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+    
+    let tx = await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+
+    assert.equal(tx.logs[0].event, "ResolutionChallenged");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      "AlreadyChallenged"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      "AlreadyChallenged"
+    );
+
+    await utils.increaseTime(60 * 60 * 24 * 7);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      "ChallengePeriodPassed"
+    );
+
+    await makeClaimExpire(vault);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] }),
+      "ClaimExpired"
+    );
+  });
+
+  it("Execute resolution", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await advanceToSafetyPeriod(registry);
+
+    let claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await token.mint(accounts[1], web3.utils.toWei("500"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "ClaimIsNotDisputed"
+    );
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, web3.utils.randomHex(32), { from: accounts[0] }),
+      "ClaimIsNotCurrentlyActiveClaim"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "NoResolution"
+    );
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "ChallengePeriodDidNotPass"
+    );
+
+    await utils.increaseTime(60 * 60 * 24 * 7);
+
+    let tx = await hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] });
+
+    assert.equal(tx.logs[0].event, "ResolutionExecuted");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    let logs = await vault.getPastEvents('ApproveClaim', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "ApproveClaim");
+    assert.equal(logs[0].args._claimId, claimId);
+    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._bountyPercentage, 5000);
+    assert.equal(logs[0].args._beneficiary, accounts[4]);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "ClaimIsNotCurrentlyActiveClaim"
+    );
+
+    claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+
+    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "CanOnlyBeCalledByCourt"
+    );
+
+    tx = await hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[9] });
+
+    assert.equal(tx.logs[0].event, "ResolutionExecuted");
+    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._claimId, claimId);
+
+    logs = await vault.getPastEvents('ApproveClaim', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "ApproveClaim");
+    assert.equal(logs[0].args._claimId, claimId);
+    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._bountyPercentage, 4000);
+    assert.equal(logs[0].args._beneficiary, accounts[5]);
+
+    claimId = await submitClaim(vault, { accounts });
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+
+    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+
+    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+
+    await makeClaimExpire(vault);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      "ClaimExpired"
+    );
   });
 });

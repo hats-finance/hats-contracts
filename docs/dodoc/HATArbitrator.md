@@ -747,6 +747,17 @@ event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId)
 
 ## Errors
 
+### AlreadyChallenged
+
+```solidity
+error AlreadyChallenged()
+```
+
+
+
+
+
+
 ### AlreadyResolved
 
 ```solidity
@@ -905,17 +916,6 @@ error ClaimReviewPeriodEnd()
 
 ```solidity
 error NoResolution()
-```
-
-
-
-
-
-
-### NoResolutionExistsForClaim
-
-```solidity
-error NoResolutionExistsForClaim()
 ```
 
 
