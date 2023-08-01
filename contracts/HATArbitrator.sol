@@ -23,7 +23,6 @@ contract HATArbitrator {
     error ChallengePeriodPassed();
     error CannotClaimBond();
     error CannotDismissUnchallengedResolution();
-    error CallerIsNotSubmitter();
     error ClaimReviewPeriodEnd();
     error ClaimReviewPeriodDidNotEnd();
     error ClaimExpired();
@@ -658,9 +657,6 @@ contract HATArbitrator {
         SubmitClaimRequest memory submitClaimRequest = submitClaimRequests[
             _internalClaimId
         ];
-        if (msg.sender != submitClaimRequest.submitter) {
-            revert CallerIsNotSubmitter();
-        }
 
         if (
             block.timestamp <=
@@ -670,7 +666,7 @@ contract HATArbitrator {
         }
 
         delete submitClaimRequests[_internalClaimId];
-        token.safeTransfer(msg.sender, bondsNeededToStartDispute);
+        token.safeTransfer(submitClaimRequest.submitter, bondsNeededToStartDispute);
 
         emit SubmitClaimRequestExpired(_internalClaimId);
     }
