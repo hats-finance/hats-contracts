@@ -1,12 +1,13 @@
 const utils = require("./utils.js");
 const HATArbitrator = artifacts.require("./HATArbitrator.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
-const { contract } = require("hardhat");
+const { contract, web3 } = require("hardhat");
 const {
   setup,
   advanceToSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
+  ZERO_ADDRESS,
 } = require("./common.js");
 const { assert } = require("chai");
 
@@ -435,11 +436,11 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundBond(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.reclaimBond(vault.address, claimId, { from: expertCommittee }),
       "CannotClaimBond"
     );
 
-    let tx = await hatArbitrator.refundBond(vault.address, claimId, { from: accounts[0] });
+    let tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[0] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
     assert.equal(tx.logs[0].args._vault, vault.address);
@@ -452,7 +453,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("200"));
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundBond(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[0] }),
       "CannotClaimBond"
     );
 
@@ -462,7 +463,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
     assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), true);
 
-    tx = await hatArbitrator.refundBond(vault.address, claimId, { from: accounts[2] });
+    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[2] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
     assert.equal(tx.logs[0].args._vault, vault.address);
@@ -475,13 +476,13 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await token.balanceOf(accounts[2]), web3.utils.toWei("500"));
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundBond(vault.address, claimId, { from: accounts[1] }),
+      hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[1] }),
       "CannotClaimBond"
     );
 
     await makeClaimExpire(vault);
     
-    tx = await hatArbitrator.refundBond(vault.address, claimId, { from: accounts[1] });
+    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[1] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
     assert.equal(tx.logs[0].args._vault, vault.address);
@@ -503,7 +504,7 @@ contract("Registry Arbitrator", (accounts) => {
 
     await makeClaimExpire(vault);
 
-    tx = await hatArbitrator.refundBond(vault.address, claimId, { from: accounts[3] });
+    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[3] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
     assert.equal(tx.logs[0].args._vault, vault.address);
@@ -515,7 +516,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await hatArbitrator.bondClaimable(accounts[3], vault.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[3]), web3.utils.toWei("200"));
 
-    tx = await hatArbitrator.refundBond(vault.address, claimId, { from: accounts[3] });
+    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[3] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
     assert.equal(tx.logs[0].args._vault, vault.address);
@@ -788,5 +789,234 @@ contract("Registry Arbitrator", (accounts) => {
       hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
       "ClaimExpired"
     );
+  });
+
+  it("Submit claim request", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    let tx = await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+    let submitClaimRequestTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+
+    let internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 1, type: 'uint256' }
+    ));
+
+    assert.equal(tx.logs[0].event, "SubmitClaimRequestCreated");
+    assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
+    assert.equal(tx.logs[0].args._submitter, accounts[0]);
+    assert.equal(tx.logs[0].args._bond, web3.utils.toWei("1000"));
+    assert.equal(tx.logs[0].args._descriptionHash, "desc");
+
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submitter, accounts[0]);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).bond, web3.utils.toWei("1000"));
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submittedAt, submitClaimRequestTimestamp);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).descriptionHash, "desc");
+
+    assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("0"));
+    assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("1000"));
+  });
+
+  it("Dismiss submit claim request", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+
+    let internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 1, type: 'uint256' }
+    ));
+
+    let wrongInternalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 0, type: 'uint256' }
+    ));
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissSubmitClaimRequest(internalClaimId, "desc2", { from: accounts[0] }),
+      "OnlyExpertCommittee"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissSubmitClaimRequest(wrongInternalClaimId, "desc2", { from: expertCommittee }),
+      "ClaimReviewPeriodEnd"
+    );
+
+    let tx = await hatArbitrator.dismissSubmitClaimRequest(internalClaimId, "desc2", { from: expertCommittee })
+
+    assert.equal(tx.logs[0].event, "SubmitClaimRequestDismissed");
+    assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
+    assert.equal(tx.logs[0].args._descriptionHash, "desc2");
+
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submitter, ZERO_ADDRESS);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).bond, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submittedAt, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).descriptionHash, "");
+
+    assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("0"));
+    assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
+    assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("1000"));
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+
+    internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 2, type: 'uint256' }
+    ));
+
+    await utils.increaseTime(60 * 60 * 24 * 90);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.dismissSubmitClaimRequest(internalClaimId, "desc2", { from: expertCommittee }),
+      "ClaimReviewPeriodEnd"
+    );
+  });
+
+  it("Approve submit claim request", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+
+    let internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 1, type: 'uint256' }
+    ));
+
+    let wrongInternalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 0, type: 'uint256' }
+    ));
+
+    await advanceToSafetyPeriod(registry);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: accounts[0] }),
+      "OnlyExpertCommittee"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.approveSubmitClaimRequest(vault.address, wrongInternalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
+      "ClaimReviewPeriodEnd"
+    );
+
+    let tx = await hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee });
+    let approveSubmitClaimRequestTimestamp = (await web3.eth.getBlock("latest")).timestamp;
+
+    let claimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: vault.address, type: 'address' },
+      { value: 1, type: 'uint256' }
+    ));
+
+    assert.equal(tx.logs[0].event, "SubmitClaimRequestApproved");
+    assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
+    assert.equal(tx.logs[0].args._claimId, claimId);
+    assert.equal(tx.logs[0].args._vault, vault.address);
+
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submitter, ZERO_ADDRESS);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).bond, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submittedAt, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).descriptionHash, "");
+
+    assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("1000"));
+    assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
+    assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("0"));
+
+    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).bountyPercentage.toString(), "5000");
+    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).beneficiary, accounts[2]);
+    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).resolvedAt, approveSubmitClaimRequestTimestamp);
+
+    assert.equal((await vault.activeClaim()).claimId, claimId);
+    assert.equal((await vault.activeClaim()).challengedAt, approveSubmitClaimRequestTimestamp);
+
+    let logs = await vault.getPastEvents('SubmitClaim', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "SubmitClaim");
+    assert.equal(logs[0].args._claimId, claimId);
+    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._bountyPercentage, 5000);
+    assert.equal(logs[0].args._beneficiary, accounts[2]);
+    assert.equal(logs[0].args._descriptionHash, "desc2");
+
+    logs = await vault.getPastEvents('ChallengeClaim', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "ChallengeClaim");
+    assert.equal(logs[0].args._claimId, claimId);
+
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+
+    internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 2, type: 'uint256' }
+    ));
+
+    await utils.increaseTime(60 * 60 * 24 * 90);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
+      "ClaimReviewPeriodEnd"
+    );
+  });
+
+  it("Refund submit claim request", async () => {
+    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+
+    await setupHATArbitrator(registry, vault);
+
+    await token.mint(accounts[0], web3.utils.toWei("1000"));
+    await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
+
+    await hatArbitrator.submitClaimRequest("desc", { from: accounts[0] });
+
+    let internalClaimId = web3.utils.keccak256(web3.utils.encodePacked(
+      { value: hatArbitrator.address, type: 'address' },
+      { value: 1, type: 'uint256' }
+    ));
+
+    await assertFunctionRaisesException(
+      hatArbitrator.refundExpiredSubmitClaimRequest(internalClaimId, { from: accounts[1] }),
+      "ClaimReviewPeriodDidNotEnd"
+    );
+
+    await utils.increaseTime(60 * 60 * 24 * 90);
+
+    let tx = await hatArbitrator.refundExpiredSubmitClaimRequest(internalClaimId, { from: accounts[1] })
+
+    assert.equal(tx.logs[0].event, "SubmitClaimRequestExpired");
+    assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
+
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submitter, ZERO_ADDRESS);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).bond, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submittedAt, 0);
+    assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).descriptionHash, "");
+
+    assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("1000"));
+    assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
+    assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("0"));
   });
 });

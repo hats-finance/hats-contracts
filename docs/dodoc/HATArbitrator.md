@@ -16,7 +16,7 @@
 function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, address[] _disputersToConfiscate, string _descriptionHash) external nonpayable
 ```
 
-
+Acccept the dispute - i.e. rule in favor of the disputers and against the original claim from the committee Can only be called by the Expert Committee The expert committee can include a payment for their service in the payout process
 
 
 
@@ -24,13 +24,13 @@ function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _boun
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _bountyPercentage | uint16 | undefined |
-| _beneficiary | address | undefined |
-| _disputersToRefund | address[] | undefined |
-| _disputersToConfiscate | address[] | undefined |
-| _descriptionHash | string | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
+| _beneficiary | address | the (new) benficiary of the claim |
+| _disputersToRefund | address[] | array of addresses of disputers that will get their bond back |
+| _disputersToConfiscate | address[] | array of addresses of disputers that will lose their bond |
+| _descriptionHash | string | a motivation of the ruling |
 
 ### approveSubmitClaimRequest
 
@@ -38,7 +38,7 @@ function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _boun
 function approveSubmitClaimRequest(contract IHATVault _vault, bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
 ```
 
-
+Submit a new claim on the basis of a submitClaimRequest only calleable by the expert committee the claim must be submitted within the submitClaimRequestReviewPeriod
 
 
 
@@ -46,11 +46,11 @@ function approveSubmitClaimRequest(contract IHATVault _vault, bytes32 _internalC
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _internalClaimId | bytes32 | undefined |
-| _beneficiary | address | undefined |
-| _bountyPercentage | uint16 | undefined |
-| _descriptionHash | string | undefined |
+| _vault | contract IHATVault | the vault where the claim was created |
+| _internalClaimId | bytes32 | the id of the claim to approve |
+| _beneficiary | address | the (new) benficiary of the claim |
+| _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
+| _descriptionHash | string | a motivation for the claim |
 
 ### bondClaimable
 
@@ -99,7 +99,7 @@ function bondsNeededToStartDispute() external view returns (uint256)
 function challengeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-
+Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
 
 
 
@@ -107,8 +107,8 @@ function challengeResolution(contract IHATVault _vault, bytes32 _claimId) extern
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### confiscateDisputers
 
@@ -116,7 +116,7 @@ function challengeResolution(contract IHATVault _vault, bytes32 _claimId) extern
 function confiscateDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToConfiscate) external nonpayable
 ```
 
-
+Forfeit the bonds of the given list of disputers. Their bonds will be sent to the expert committee
 
 
 
@@ -124,9 +124,9 @@ function confiscateDisputers(contract IHATVault _vault, bytes32 _claimId, addres
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _disputersToConfiscate | address[] | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _disputersToConfiscate | address[] | a list of addresses of disputers whose bond will be forfeited |
 
 ### court
 
@@ -151,7 +151,7 @@ function court() external view returns (address)
 function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _descriptionHash) external nonpayable
 ```
 
-
+Dismiss the dispute - i.e. approve the original claim from the committee Can only be called by the expert commmittee. The expert committee will receive the bonds of the disputers as a payment for their service
 
 
 
@@ -159,9 +159,9 @@ function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _des
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _descriptionHash | string | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _descriptionHash | string | an (ipfs) hash representing the motiviations of the dismissal |
 
 ### dismissResolution
 
@@ -169,7 +169,7 @@ function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _des
 function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-
+Dismiss a resolution from the expert committee can only be called by the court
 
 
 
@@ -177,8 +177,8 @@ function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### dismissSubmitClaimRequest
 
@@ -186,7 +186,7 @@ function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external
 function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _descriptionHash) external nonpayable
 ```
 
-
+Dismiss a request to create a claim. Can only be called by the expert committee
 
 
 
@@ -194,8 +194,8 @@ function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _description
 
 | Name | Type | Description |
 |---|---|---|
-| _internalClaimId | bytes32 | undefined |
-| _descriptionHash | string | undefined |
+| _internalClaimId | bytes32 | the id of the claim to dismiss |
+| _descriptionHash | string | a motivation for the dismissal |
 
 ### dispute
 
@@ -203,7 +203,7 @@ function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _description
 function dispute(contract IHATVault _vault, bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
 ```
 
-
+Dispute the commitee&#39;s claim Can be called by anyone
 
 
 
@@ -211,9 +211,9 @@ function dispute(contract IHATVault _vault, bytes32 _claimId, uint256 _bondAmoun
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _bondAmount | uint256 | undefined |
+| _vault | contract IHATVault | the vault that the claim was created |
+| _claimId | bytes32 | the id of the claim |
+| _bondAmount | uint256 | Amount of tokens that the disputer will put up as a bond. This must be at least minBondAmount. The dispute is accepted if the total amount of bonds exceeds bondsNeededToStartDispute |
 | _descriptionHash | string | undefined |
 
 ### disputersBonds
@@ -246,7 +246,7 @@ function disputersBonds(address, contract IHATVault, bytes32) external view retu
 function executeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-
+execute a resolution from the expert committee if the resolution was challenged, this can only be called by the court if the resolution was not challenged durring the resolutionChallengePeriod, this can be called by anyone
 
 
 
@@ -254,8 +254,8 @@ function executeResolution(contract IHATVault _vault, bytes32 _claimId) external
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### expertCommittee
 
@@ -291,13 +291,13 @@ function minBondAmount() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### refundBond
+### reclaimBond
 
 ```solidity
-function refundBond(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function reclaimBond(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-
+reclaim a bond that msg.sender has put up for a given claim
 
 
 
@@ -305,8 +305,8 @@ function refundBond(contract IHATVault _vault, bytes32 _claimId) external nonpay
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### refundDisputers
 
@@ -314,7 +314,7 @@ function refundBond(contract IHATVault _vault, bytes32 _claimId) external nonpay
 function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToRefund) external nonpayable
 ```
 
-
+release the bonds of the disputers, so that they can claim them back
 
 
 
@@ -322,9 +322,9 @@ function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] 
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _disputersToRefund | address[] | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _disputersToRefund | address[] | array of addresses |
 
 ### refundExpiredSubmitClaimRequest
 
@@ -332,7 +332,7 @@ function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] 
 function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
 ```
 
-
+Refund the bond of the claimRequest by the sumbitter of the claim
 
 
 
@@ -340,12 +340,12 @@ function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external nonp
 
 | Name | Type | Description |
 |---|---|---|
-| _internalClaimId | bytes32 | undefined |
+| _internalClaimId | bytes32 | the claim of which the bond will be refunded |
 
-### resolutionChallegPeriod
+### resolutionChallengePeriod
 
 ```solidity
-function resolutionChallegPeriod() external view returns (uint256)
+function resolutionChallengePeriod() external view returns (uint256)
 ```
 
 
@@ -413,7 +413,7 @@ function resolutions(contract IHATVault, bytes32) external view returns (address
 function submitClaimRequest(string _descriptionHash) external nonpayable
 ```
 
-
+Submit a request for the expert committee to consider a claim A security researcher can use this if his claim is ignored by the committee The requester must provide a bond, which they will lose if the claim is considered invalid by the committee
 
 
 
@@ -421,7 +421,7 @@ function submitClaimRequest(string _descriptionHash) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
-| _descriptionHash | string | undefined |
+| _descriptionHash | string | a hash of a description of the claim |
 
 ### submitClaimRequestReviewPeriod
 
@@ -773,17 +773,6 @@ error AlreadyResolved()
 
 ```solidity
 error BondAmountSubmittedTooLow()
-```
-
-
-
-
-
-
-### CallerIsNotSubmitter
-
-```solidity
-error CallerIsNotSubmitter()
 ```
 
 
