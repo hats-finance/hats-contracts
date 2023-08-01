@@ -852,7 +852,7 @@ contract("Registry Arbitrator", (accounts) => {
       "ClaimReviewPeriodEnd"
     );
 
-    let tx = await hatArbitrator.dismissSubmitClaimRequest(internalClaimId, "desc2", { from: expertCommittee })
+    let tx = await hatArbitrator.dismissSubmitClaimRequest(internalClaimId, "desc2", { from: expertCommittee });
 
     assert.equal(tx.logs[0].event, "SubmitClaimRequestDismissed");
     assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
@@ -1005,7 +1005,7 @@ contract("Registry Arbitrator", (accounts) => {
 
     await utils.increaseTime(60 * 60 * 24 * 90);
 
-    let tx = await hatArbitrator.refundExpiredSubmitClaimRequest(internalClaimId, { from: accounts[1] })
+    let tx = await hatArbitrator.refundExpiredSubmitClaimRequest(internalClaimId, { from: accounts[1] });
 
     assert.equal(tx.logs[0].event, "SubmitClaimRequestExpired");
     assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
