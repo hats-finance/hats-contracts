@@ -4,7 +4,7 @@
 
 > Interface for Hats.finance Vaults
 
-A HATVault holds the funds for a specific project&#39;s bug bounties. Anyone can permissionlessly deposit into the HATVault using the vault’s native token. When a bug is submitted and approved, the bounty  is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault  has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and  recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any  time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an  active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that  distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested HAT token, part gets rewarded to the committee, part gets swapped to HAT token and burned and/or sent to Hats governance). NOTE: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
+A HATVault holds the funds for a specific project&#39;s bug bounties. Anyone can permissionlessly deposit into the HATVault using the vault’s native token. When a bug is submitted and approved, the bounty is paid out using the funds in the vault. Bounties are paid out as a percentage of the vault. The percentage is set according to the severity of the bug. Vaults have regular safety periods (typically for an hour twice a day) which are time for the committee to make decisions. In addition to the roles defined in the HATVaultsRegistry, every HATVault has the roles: Committee - The only address which can submit a claim for a bounty payout and set the maximum bounty. User - Anyone can deposit the vault&#39;s native token into the vault and recieve shares for it. Shares represent the user&#39;s relative part in the vault, and when a bounty is paid out, users lose part of their deposits (based on percentage paid), but keep their share of the vault. Users also receive rewards for their deposits, which can be claimed at any  time. To withdraw previously deposited tokens, a user must first send a withdraw request, and the withdrawal will be made available after a pending period. Withdrawals are not permitted during safety periods or while there is an active claim for a bounty payout. Bounties are payed out distributed between a few channels, and that distribution is set upon creation (the hacker gets part in direct transfer, part in vested reward and part in vested HAT token, part gets rewarded to the committee, part gets swapped to HAT token and burned and/or sent to Hats governance). NOTE: Vaults should not use tokens which do not guarantee that the amount specified is the amount transferred This project is open-source and can be found at: https://github.com/hats-finance/hats-contracts
 
 
 
@@ -124,7 +124,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
-Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the  HATVaultsRegistry the part of the bounty that will be swapped to HAT  tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
+Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the HATVaultsRegistry the part of the bounty that will be swapped to HAT tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
 
 
 
@@ -134,7 +134,7 @@ Approve a claim for a bounty submitted by a committee, and pay out bounty to hac
 |---|---|---|
 | _claimId | bytes32 | The claim ID |
 | _bountyPercentage | uint16 | The percentage of the vault&#39;s balance that will be sent as a bounty. This value will be ignored if the caller is not the arbitrator. |
-| _beneficiary | address | where the bounty will be sent to. This value will be  ignored if the caller is not the arbitrator. |
+| _beneficiary | address | where the bounty will be sent to. This value will be ignored if the caller is not the arbitrator. |
 
 ### asset
 
@@ -340,13 +340,30 @@ Redeem all of the user&#39;s shares in the vault for the respective amount of un
 
 | Name | Type | Description |
 |---|---|---|
-| receiver | address | Address of receiver of the funds  |
+| receiver | address | Address of receiver of the funds |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
 | assets | uint256 | undefined |
+
+### getActiveClaim
+
+```solidity
+function getActiveClaim() external view returns (struct IHATVault.Claim)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | IHATVault.Claim | undefined |
 
 ### getArbitrator
 
@@ -767,7 +784,7 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 | Name | Type | Description |
 |---|---|---|
 | shares | uint256 | Amount of shares to redeem |
-| receiver | address | Address of receiver of the funds  |
+| receiver | address | Address of receiver of the funds |
 | owner | address | Address of owner of the funds |
 | minAssets | uint256 | Minimum amount of assets to receive for the shares |
 
@@ -792,8 +809,8 @@ Redeem shares in the vault for the respective amount of underlying assets, witho
 | Name | Type | Description |
 |---|---|---|
 | shares | uint256 | Amount of shares to redeem |
-| receiver | address | Address of receiver of the funds  |
-| owner | address | Address of owner of the funds  |
+| receiver | address | Address of receiver of the funds |
+| owner | address | Address of owner of the funds |
 
 #### Returns
 
@@ -816,7 +833,7 @@ Redeem shares in the vault for the respective amount of underlying assets and cl
 | Name | Type | Description |
 |---|---|---|
 | shares | uint256 | Amount of shares to redeem |
-| receiver | address | Address of receiver of the funds  |
+| receiver | address | Address of receiver of the funds |
 | owner | address | Address of owner of the funds |
 | minAssets | uint256 | Minimum amount of assets to receive for the shares |
 
@@ -841,8 +858,8 @@ Redeem shares in the vault for the respective amount of underlying assets and cl
 | Name | Type | Description |
 |---|---|---|
 | shares | uint256 | Amount of shares to redeem |
-| receiver | address | Address of receiver of the funds  |
-| owner | address | Address of owner of the funds  |
+| receiver | address | Address of receiver of the funds |
+| owner | address | Address of owner of the funds |
 
 #### Returns
 
@@ -872,7 +889,7 @@ Called by the registry&#39;s owner to set the vault arbitrator If the value pass
 function setArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims) external nonpayable
 ```
 
-Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage and/ or beneficiary, and whether  the arbitrator can submit claims.
+Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage and/ or beneficiary, and whether the arbitrator can submit claims.
 
 
 
@@ -946,7 +963,7 @@ Set new committee address. Can be called by existing committee, or by the the va
 
 | Name | Type | Description |
 |---|---|---|
-| _committee | address | The address of the new committee  |
+| _committee | address | The address of the new committee |
 
 ### setDepositPause
 
@@ -970,7 +987,7 @@ Called by the vault&#39;s owner to disable all deposits to the vault
 function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
 ```
 
-Called by the registry&#39;s owner to set the vault HAT token bounty  split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+Called by the registry&#39;s owner to set the vault HAT token bounty split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
 
 
 
@@ -998,7 +1015,7 @@ Called by the vault&#39;s owner to set the vault&#39;s max bounty to the already
 function setPendingMaxBounty(uint16 _maxBounty) external nonpayable
 ```
 
-Called by the vault&#39;s owner to set a pending request for the maximum percentage of the vault that can be paid out as a bounty. Cannot be called if there is an active claim that has been submitted. Max bounty should be less than or equal to 90% (defined as 9000). It can also be set to 100%, but in this mode the vault will only allow payouts of the 100%, and the vault will become inactive forever afterwards. The pending value can be set by the owner after the time delay (of  {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
+Called by the vault&#39;s owner to set a pending request for the maximum percentage of the vault that can be paid out as a bounty. Cannot be called if there is an active claim that has been submitted. Max bounty should be less than or equal to 90% (defined as 9000). It can also be set to 100%, but in this mode the vault will only allow payouts of the 100%, and the vault will become inactive forever afterwards. The pending value can be set by the owner after the time delay (of {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
 
 
 
@@ -1047,7 +1064,7 @@ Called by the vault&#39;s owner to set the vesting params for the part of the bo
 function setWithdrawalFee(uint256 _fee) external nonpayable
 ```
 
-Called by the registry&#39;s fee setter to set the fee for  withdrawals from the vault.
+Called by the registry&#39;s fee setter to set the fee for withdrawals from the vault.
 
 
 
@@ -1063,7 +1080,7 @@ Called by the registry&#39;s fee setter to set the fee for  withdrawals from the
 function submitClaim(address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable returns (bytes32 claimId)
 ```
 
-Called by the committee to submit a claim for a bounty payout. This function should be called only on a safety period, when withdrawals are disabled, and while there&#39;s no other active claim. Cannot be called when the registry is in an emergency pause. Upon a call to this function by the committee the vault&#39;s withdrawals will be disabled until the claim is approved or dismissed. Also from the time of this call the arbitrator will have a period of  {HATVaultsRegistry.challengePeriod} to challenge the claim.
+Called by the committee to submit a claim for a bounty payout. This function should be called only on a safety period, when withdrawals are disabled, and while there&#39;s no other active claim. Cannot be called when the registry is in an emergency pause. Upon a call to this function by the committee the vault&#39;s withdrawals will be disabled until the claim is approved or dismissed. Also from the time of this call the arbitrator will have a period of {HATVaultsRegistry.challengePeriod} to challenge the claim.
 
 
 
@@ -1194,7 +1211,7 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 | Name | Type | Description |
 |---|---|---|
 | assets | uint256 | Amount of tokens to withdraw |
-| receiver | address | Address of receiver of the funds  |
+| receiver | address | Address of receiver of the funds |
 | owner | address | Address of owner of the funds |
 | maxShares | uint256 | Maximum amount of shares to burn for the assets |
 
@@ -1219,8 +1236,8 @@ Withdraw previously deposited funds from the vault, without transferring the acc
 | Name | Type | Description |
 |---|---|---|
 | assets | uint256 | Amount of tokens to withdraw |
-| receiver | address | Address of receiver of the funds  |
-| owner | address | Address of owner of the funds  |
+| receiver | address | Address of receiver of the funds |
+| owner | address | Address of owner of the funds |
 
 #### Returns
 

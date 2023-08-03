@@ -136,33 +136,20 @@ contract HATArbitrator {
     }
 
     modifier onlyChallengedActiveClaim(IHATVault _vault, bytes32 _claimId) {
-        (
-            bytes32 claimId,
-            ,
-            ,
-            ,
-            uint32 createdAt,
-            uint32 challengedAt,
-            ,
-            ,
-            ,
-            uint32 challengePeriod,
-            uint32 challengeTimeOutPeriod,
-            ,
-
-        ) = _vault.activeClaim();
-
-        if (claimId != _claimId) {
+        IHATVault.Claim memory claim = _vault.getActiveClaim();
+        if (claim.claimId != _claimId) {
             revert ClaimIsNotCurrentlyActiveClaim();
         }
 
-        if (challengedAt == 0) {
+        if (claim.challengedAt == 0) {
             revert ClaimIsNotDisputed();
         }
 
         if (
             block.timestamp >=
-            createdAt + challengePeriod + challengeTimeOutPeriod
+            claim.createdAt +
+                claim.challengePeriod +
+                claim.challengeTimeOutPeriod
         ) {
             revert ClaimExpired();
         }
@@ -222,35 +209,38 @@ contract HATArbitrator {
             revert BondAmountSubmittedTooLow();
         }
 
-        (bytes32 claimId, , , , , uint32 challengedAt, , , , , , , ) = _vault
-            .activeClaim();
-        if (claimId != _claimId) {
-            revert ClaimIsNotCurrentlyActiveClaim();
-        }
+        {
+            IHATVault.Claim memory claim = _vault.getActiveClaim();
+            if (claim.claimId != _claimId) {
+                revert ClaimIsNotCurrentlyActiveClaim();
+            }
 
-        disputersBonds[msg.sender][_vault][_claimId] += _bondAmount;
-        totalBondsOnClaim[_vault][_claimId] += _bondAmount;
+            disputersBonds[msg.sender][_vault][_claimId] += _bondAmount;
+            totalBondsOnClaim[_vault][_claimId] += _bondAmount;
 
-        token.safeTransferFrom(msg.sender, address(this), _bondAmount);
+            token.safeTransferFrom(msg.sender, address(this), _bondAmount);
 
-        if (totalBondsOnClaim[_vault][_claimId] >= bondsNeededToStartDispute) {
-            if (challengedAt == 0) {
-                _vault.challengeClaim(_claimId);
-            } else {
-                // solhint-disable-next-line not-rely-on-time
-                if (block.timestamp > challengedAt + 24 hours) {
-                    revert CannotSubmitMoreEvidence();
+            if (
+                totalBondsOnClaim[_vault][_claimId] >= bondsNeededToStartDispute
+            ) {
+                if (claim.challengedAt == 0) {
+                    _vault.challengeClaim(_claimId);
+                } else {
+                    // solhint-disable-next-line not-rely-on-time
+                    if (block.timestamp > claim.challengedAt + 24 hours) {
+                        revert CannotSubmitMoreEvidence();
+                    }
                 }
             }
-        }
 
-        emit ClaimDisputed(
-            _vault,
-            _claimId,
-            msg.sender,
-            _bondAmount,
-            _descriptionHash
-        );
+            emit ClaimDisputed(
+                _vault,
+                _claimId,
+                msg.sender,
+                _bondAmount,
+                _descriptionHash
+            );
+        }
     }
 
     /**
@@ -305,11 +295,8 @@ contract HATArbitrator {
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyUnresolvedDispute(_vault, _claimId)
     {
-        resolutions[_vault][_claimId] = Resolution({
-            bountyPercentage: _bountyPercentage,
-            beneficiary: _beneficiary,
-            resolvedAt: block.timestamp
-        });
+        _setResolution(_vault, _claimId, _bountyPercentage, _beneficiary);
+
         _refundDisputers(_vault, _claimId, _disputersToRefund);
         _confiscateDisputers(_vault, _claimId, _disputersToConfiscate);
 
@@ -322,8 +309,21 @@ contract HATArbitrator {
         );
     }
 
+    function _setResolution(
+        IHATVault _vault,
+        bytes32 _claimId,
+        uint16 _bountyPercentage,
+        address _beneficiary
+    ) internal {
+        resolutions[_vault][_claimId] = Resolution({
+            bountyPercentage: _bountyPercentage,
+            beneficiary: _beneficiary,
+            resolvedAt: block.timestamp
+        });
+    }
+
     /**
-     * @notice release the bonds of the disputers, so that they can claim them back
+     * @notice release the bonds of the disputers, so that they can claim them back later
      * @param _vault the address of the vault where the claim was started
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
      * @param _disputersToRefund array of addresses
@@ -402,34 +402,23 @@ contract HATArbitrator {
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
      */
     function reclaimBond(IHATVault _vault, bytes32 _claimId) external {
-        if (!bondClaimable[msg.sender][_vault][_claimId]) {
-            (
-                bytes32 claimId,
-                ,
-                ,
-                ,
-                uint32 createdAt,
-                ,
-                ,
-                ,
-                ,
-                uint32 challengePeriod,
-                uint32 challengeTimeOutPeriod,
-                ,
+        {
+            if (!bondClaimable[msg.sender][_vault][_claimId]) {
+                IHATVault.Claim memory claim = _vault.getActiveClaim();
 
-            ) = _vault.activeClaim();
-
-            if (
-                claimId == _claimId &&
-                block.timestamp <
-                createdAt + challengePeriod + challengeTimeOutPeriod
-            ) {
-                revert CannotClaimBond();
+                if (
+                    claim.claimId == _claimId &&
+                    block.timestamp <
+                    claim.createdAt +
+                        claim.challengePeriod +
+                        claim.challengeTimeOutPeriod
+                ) {
+                    revert CannotClaimBond();
+                }
+            } else {
+                bondClaimable[msg.sender][_vault][_claimId] = false;
             }
-        } else {
-            bondClaimable[msg.sender][_vault][_claimId] = false;
         }
-
         uint256 disputerBond = disputersBonds[msg.sender][_vault][_claimId];
         disputersBonds[msg.sender][_vault][_claimId] = 0;
         token.safeTransfer(msg.sender, disputerBond);
@@ -666,7 +655,10 @@ contract HATArbitrator {
         }
 
         delete submitClaimRequests[_internalClaimId];
-        token.safeTransfer(submitClaimRequest.submitter, bondsNeededToStartDispute);
+        token.safeTransfer(
+            submitClaimRequest.submitter,
+            bondsNeededToStartDispute
+        );
 
         emit SubmitClaimRequestExpired(_internalClaimId);
     }

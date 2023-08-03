@@ -662,6 +662,23 @@ See {IHATVault-emergencyWithdraw}.
 |---|---|---|
 | assets | uint256 | undefined |
 
+### getActiveClaim
+
+```solidity
+function getActiveClaim() external view returns (struct IHATVault.Claim)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | IHATVault.Claim | undefined |
+
 ### getArbitrator
 
 ```solidity
