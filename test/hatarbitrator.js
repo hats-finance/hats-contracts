@@ -1,5 +1,4 @@
 const utils = require("./utils.js");
-const HATArbitrator = artifacts.require("./HATArbitrator.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const { contract, web3 } = require("hardhat");
 const {
@@ -11,7 +10,7 @@ const {
 } = require("./common.js");
 const { assert } = require("chai");
 
-contract("Registry Arbitrator", (accounts) => {
+contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
   let hatArbitrator;
   let token;
@@ -19,6 +18,8 @@ contract("Registry Arbitrator", (accounts) => {
 
   async function setupHATArbitrator(registry, vault) {
     token = await ERC20Mock.new("Staking", "STK");
+    
+    const HATArbitrator = artifacts.require("./HATArbitrator.sol");
     hatArbitrator = await HATArbitrator.new(
       expertCommittee,
       accounts[9],
