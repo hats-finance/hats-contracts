@@ -136,7 +136,7 @@ contract HATArbitrator {
     }
 
     modifier onlyChallengedActiveClaim(IHATVault _vault, bytes32 _claimId) {
-        IHATVault.Claim memory claim = _vault.getActiveClaim();
+        IHATVault.Claim memory claim = getActiveClaim(_vault);
         if (claim.claimId != _claimId) {
             revert ClaimIsNotCurrentlyActiveClaim();
         }
@@ -210,7 +210,7 @@ contract HATArbitrator {
         }
 
         {
-            IHATVault.Claim memory claim = _vault.getActiveClaim();
+            IHATVault.Claim memory claim = getActiveClaim(_vault);
             if (claim.claimId != _claimId) {
                 revert ClaimIsNotCurrentlyActiveClaim();
             }
@@ -404,7 +404,7 @@ contract HATArbitrator {
     function reclaimBond(IHATVault _vault, bytes32 _claimId) external {
         {
             if (!bondClaimable[msg.sender][_vault][_claimId]) {
-                IHATVault.Claim memory claim = _vault.getActiveClaim();
+                IHATVault.Claim memory claim = getActiveClaim(_vault);
 
                 if (
                     claim.claimId == _claimId &&
@@ -661,5 +661,12 @@ contract HATArbitrator {
         );
 
         emit SubmitClaimRequestExpired(_internalClaimId);
+    }
+
+    function getActiveClaim(
+        IHATVault _vault
+    ) internal view returns (IHATVault.Claim memory) {
+        IHATVault.Claim memory claim = _vault.getActiveClaim();
+        return claim;
     }
 }
