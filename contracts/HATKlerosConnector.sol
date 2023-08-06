@@ -11,56 +11,31 @@
 pragma solidity 0.8.16;
 
 import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract/contracts/IDisputeResolver.sol";
-import "./interfaces/IHATVault.sol";
 import "./libraries/CappedMath.sol";
+import "./HATArbitrator.sol"; // TODO: add interface
+import "./interfaces/IHATVault.sol";
 
 /**
  *  @title HATKlerosConnector
  *  @dev This contract acts a connector between HatsFinance and Kleros court.
  *  This contract trusts that the Arbitrator is honest and will not reenter or modify its costs during a call.
  *  The arbitrator must support appeal period.
- *  The contract also trusts that HATVault contract is honest and won't reenter.
+ *  The contract also trusts that HATArbitrator contract is honest and won't reenter.
  */
 contract HATKlerosConnector is IDisputeResolver {
     using CappedMath for uint256;
 
     uint256 private constant RULING_OPTIONS = 2; // The amount of non 0 choices the arbitrator can give.
     uint256 private constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.
-
-    enum Status {
-        None, // Claim is open to challenge.
-        DisputedByClaimant, // Claim was challenged by the hacker.
-        DisputedByDepositor, // Claim was challenged by the pool participant.
-        Resolved // Claim was resolved by the arbitrator.
-    }
-    
+  
     enum Decision {
-        None, // Court wasn't able to make a decisive ruling. In this case the claim is unchanged. Both sides will get their appeal deposits back in this case.
-        MakeNoChanges, // Accept the claim as it is without changing.
-        SideWithChallenger // Side with the challenger and either change claim's severity, dismiss it altogether or submit a new claim, depending on who created a dispute.
-    }
-
-    struct Claim {
-        Status status; // Claim's current status.
-        uint16 bountyPercentage; // Bounty that the claimant demands.
-        address beneficiary; // Beneficiary address proposed by claimant.
-        address challenger; // Address that challenged the claim.
-        uint256 nbChallenges; // Number of times the claim was challenged, 2 max.
-        uint256 openToChallengeAt; // Time when the claim is open to 2nd challenge.
-    }
-
-    // Pending claims are the claims that will be created in Vault after successful hacker's dispute.
-    struct PendingClaim {
-        uint16 bountyPercentage; // Bounty that the claimant demands.
-        address challenger; // Address that challenged the claim.
-        string descriptionHash; // Description hash for the vulnerability that challenger wants to submit.
-        bool validated; // Claim was validated by arbitrator.
-        bool submitted; // Claim was submitted to Vault.
+        None, // Court wasn't able to make a decisive ruling. In this case the claim is executed. Both sides will get their appeal deposits back in this case.
+        ExecuteResolution, // Accept the claim as it is without changing.
+        DismissResolution // Dismiss the claim.
     }
 
     struct DisputeStruct {
-        bytes32 claimId; // Id of the claim in HATVault contract. It is left empty for submission disputes.
-        uint256 pendingClaimId; // Index of the pending claim in the array. It's only used for submission disputes.
+        bytes32 claimId; // Id of the claim in HATVault contract.
         uint256 externalDisputeId; // Id of the dispute created in Kleros court.
         Decision ruling; // Ruling given by the arbitrator.
         bool resolved; // True if the dispute has been resolved.
@@ -69,8 +44,8 @@ contract HATKlerosConnector is IDisputeResolver {
 
     // Round struct stores the contributions made to particular sides.
     // - 0 side for `Decision.None`.
-    // - 1 side for `Decision.MakeNoChanges`.
-    // - 2 side for `Decision.SideWithChallenger`.
+    // - 1 side for `Decision.ExecuteResolution`.
+    // - 2 side for `Decision.DismissResolution`.
     struct Round {
         uint256[3] paidFees; // Tracks the fees paid in this round in the form paidFees[side].
         bool[3] hasPaid; // True if the fees for this particular side have been fully paid in the form hasPaid[side].
@@ -79,51 +54,34 @@ contract HATKlerosConnector is IDisputeResolver {
         uint256[] fundedSides; // Stores the sides that are fully funded.
     }
 
-
     address public immutable governor; // Governor of this contract.
     IArbitrator public immutable klerosArbitrator; // The kleros arbitrator contract (e.g. Kleros Court).
-    IHATVault public immutable vault; // Address of the Vault contract.
+    HATArbitrator public immutable hatArbitrator; // Address of the Hat arbitrator contract.
+    IHATVault public immutable vault; // Vault contract.
     uint256 public metaEvidenceUpdates; // Relevant index of the metaevidence.
     bytes public arbitratorExtraData; // Extra data for the arbitrator.
 
-    uint256 public hackerChallengePeriod; // Time the hacker has to challenge the claim.
-    uint256 public depositorChallengePeriod; // Time the depositor has to challenge the claim.
-    
     uint256 public winnerMultiplier; // Multiplier for calculating the appeal fee that must be paid for the ruling that was chosen by the arbitrator in the previous round, in basis points.
     uint256 public loserMultiplier; // Multiplier for calculating the appeal fee that must be paid for the ruling that the arbitrator didn't rule for in the previous round, in basis points.
     uint256 public loserAppealPeriodMultiplier; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
 
     DisputeStruct[] public disputes; // Stores the disputes created in this contract.
-    PendingClaim[] public pendingClaims; // Stores pending claims. If such claim is validated it will be submitted to Vault as a result.
-    mapping(bytes32 => Claim) public claims; // Stores disputed claims from Vault.
+    mapping(bytes32 => bool) public claimChallenged; // True if the claim was challenged in this contract..
     mapping(uint256 => uint256) public override externalIDtoLocalID; // Maps external dispute ids to local dispute ids.
 
-    /** @dev Raised when a claim is challenged by claimant.
+    /** @dev Raised when a claim is challenged.
      *  @param _claimId Id of the claim in Vault cotract.
      */
-    event ChallengedByClaimant(bytes32 indexed _claimId);
-
-    /** @dev Raised when a claim is challenged by depositor.
-     *  @param _claimId Id of the claim in Vault cotract.
-     */
-    event ChallengedByDepositor(bytes32 indexed _claimId);
+    event Challenged(bytes32 indexed _claimId);
     
-    /** @dev Raised when a pending claim is validated.
-     *  @param _pendingClaimId Index of the pending claim.
-     */
-    event PendingClaimValidated(uint256 _pendingClaimId);
-
     modifier onlyGovernor {require(msg.sender == governor, "The caller must be the governor."); _;}
 
     /** @dev Constructor.
      *  @param _klerosArbitrator The Kleros arbitrator of the contract.
      *  @param _arbitratorExtraData Extra data for the arbitrator.
-     *  @param _vault Address of the Vault contract.
-     *  @param _metaEvidenceClaimant Metaevidence for the disputes raised by claimant.
-     *  @param _metaEvidenceDepositor Metaevidence for the disputes raised by depositor.
-     *  @param _metaEvidenceSubmit Metaevidence for the disputes that will submit a new claim.
-     *  @param _hackerChallengePeriod Time the hacker has to challenge a claim.
-     *  @param _depositorChallengePeriod Time the depositor has to challenge a claim
+     *  @param _hatArbitrator Address of the Hat arbitrator.
+     *  @param _vault Address of the vault.
+     *  @param _metaEvidence Metaevidence for the dispute.
      *  @param _winnerMultiplier Multiplier for calculating the appeal cost of the winning side.
      *  @param _loserMultiplier Multiplier for calculation the appeal cost of the losing side.
      *  @param _loserAppealPeriodMultiplier Multiplier for calculating the appeal period for the losing side.
@@ -131,28 +89,20 @@ contract HATKlerosConnector is IDisputeResolver {
     constructor (
         IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
+        HATArbitrator _hatArbitrator,
         IHATVault _vault,
-        string memory _metaEvidenceClaimant,
-        string memory _metaEvidenceDepositor,
-        string memory _metaEvidenceSubmit,
-        uint256 _hackerChallengePeriod,
-        uint256 _depositorChallengePeriod,
+        string memory _metaEvidence,
         uint256 _winnerMultiplier,
         uint256 _loserMultiplier,
         uint256 _loserAppealPeriodMultiplier
     ) {
-        emit MetaEvidence(0, _metaEvidenceClaimant);
-        emit MetaEvidence(1, _metaEvidenceDepositor);
-        emit MetaEvidence(2, _metaEvidenceSubmit);
+        emit MetaEvidence(0, _metaEvidence);
         
         governor = msg.sender;
         klerosArbitrator = _klerosArbitrator;
         arbitratorExtraData = _arbitratorExtraData;
+        hatArbitrator = _hatArbitrator;
         vault = _vault;
-        // Sum of both challenge periods shouldn't exceed challenge period of the vault so the depositor will have time to challenge before the claim is approved in Vault.
-        require(_hackerChallengePeriod + _depositorChallengePeriod <= vault.getChallengePeriod(), "Wrong timeout values");
-        hackerChallengePeriod = _hackerChallengePeriod;
-        depositorChallengePeriod = _depositorChallengePeriod;
         winnerMultiplier = _winnerMultiplier;
         loserMultiplier = _loserMultiplier;
         loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
@@ -161,16 +111,6 @@ contract HATKlerosConnector is IDisputeResolver {
     // ******************** //
     // *    Governance    * //
     // ******************** //
-
-    /** @dev Changes hackerChallengePeriod and depositorChallengePeriod variables.
-     *  @param _hackerChallengePeriod The new hackerChallengePeriod value.
-     *  @param _depositorChallengePeriod The new depositorChallengePeriod value.
-     */
-    function changeChallengePeriod(uint256 _hackerChallengePeriod, uint256 _depositorChallengePeriod) external onlyGovernor {
-        require(_hackerChallengePeriod + _depositorChallengePeriod <= vault.getChallengePeriod(), "Wrong timeout values");
-        hackerChallengePeriod = _hackerChallengePeriod;
-        depositorChallengePeriod = _depositorChallengePeriod;
-    }
 
     /** @dev Changes winnerMultiplier variable.
      *  @param _winnerMultiplier The new winnerMultiplier value.
@@ -194,95 +134,37 @@ contract HATKlerosConnector is IDisputeResolver {
     }
 
     /** @dev Update the meta evidence used for disputes.
-     *  @param _metaEvidenceClaimant URI of the new meta evidence for claimant.
-     *  @param _metaEvidenceDepositor URI of the new meta evidence for depositor.
-     *  @param _metaEvidenceSubmit URI of the new meta evidence for submitting a new claim.
+     *  @param _metaEvidence URI of the new meta evidence.
      */
-    function changeMetaEvidence(string calldata _metaEvidenceClaimant, string calldata _metaEvidenceDepositor, string calldata _metaEvidenceSubmit) external onlyGovernor {
+    function changeMetaEvidence(string calldata _metaEvidence) external onlyGovernor {
         metaEvidenceUpdates++;
-        emit MetaEvidence(3 * metaEvidenceUpdates, _metaEvidenceClaimant);
-        emit MetaEvidence(3 * metaEvidenceUpdates + 1, _metaEvidenceDepositor);
-        emit MetaEvidence(3 * metaEvidenceUpdates + 2, _metaEvidenceSubmit);
-    }
-
-    // **************************** //
-    // *    Hacker's submission   * //
-    // **************************** //
-
-    /** @dev Allows the hacker to submit a claim through Kleros court while bypassing the committee.
-     *  @param _bountyPercentage Bounty percentage the hacker thinks he is eligible to.
-     *  @param _descriptionHash Description hash of the vulnerability.
-     *  @param _evidence Link to evidence.
-     */
-    function startProcedureToSubmitClaim(uint16 _bountyPercentage, string calldata _descriptionHash, string calldata _evidence) external payable {
-        require(_bountyPercentage <= vault.maxBounty(), "Bounty too high");
-        uint256 arbitrationCost = getArbitrationCost();
-        require(msg.value >= arbitrationCost, "Should pay the full deposit.");
-
-        uint256 localDisputeId = disputes.length;
-        uint256 metaEvidenceId = 3 * metaEvidenceUpdates + 2;
-
-        DisputeStruct storage dispute = disputes.push();
-        dispute.pendingClaimId = pendingClaims.length;
-        // Preemptively create a new funding round for future appeals.
-        dispute.rounds.push();
-
-        PendingClaim storage pendingClaim = pendingClaims.push();
-        pendingClaim.challenger = msg.sender;
-        pendingClaim.bountyPercentage = _bountyPercentage;
-        pendingClaim.descriptionHash = _descriptionHash;
-
-        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
-        dispute.externalDisputeId = externalDisputeId;
-        externalIDtoLocalID[externalDisputeId] = localDisputeId;
-
-        if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
-    
-        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
-        emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
+        emit MetaEvidence(metaEvidenceUpdates, _metaEvidence);
     }
 
     // ******************** //
     // *    Challenges    * //
     // ******************** //
     
-    /** @dev Challenge the claim by the claimant to increase bounty.
-     *  @param _claimId The Id of the claim in Vault contract.
-     *  @param _bountyPercentage Bounty percentage the hacker thinks he is eligible to.
-     *  @param _beneficiary Address of beneficiary proposed by hacker.
+    /** @dev Notify KlerosArbitrator that expert's committee decision was challenged. Can only be called by Hat arbitrator.
+     *  Requires the arbitration fees to be paid.
+     *  @param _claimId The Id of the active claim in Vault contract.
      *  @param _evidence URI of the evidence to support the challenge.
+     *  Note that the validity of the claim should be checked by Hat arbitrator.
      */
-    function challengeByClaimant(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, string calldata _evidence) external payable {
-        (bytes32 claimId, address beneficiary, uint16 bountyPercentage,, uint256 createdAt,,,,,,,,) = vault.activeClaim();
+    function notifyArbitrator(bytes32 _claimId, string calldata _evidence) external payable {
+        require(msg.sender == address(hatArbitrator), "Wrong caller");
+        require(!claimChallenged[_claimId], "Claim already challenged");
 
-        Claim storage claim = claims[claimId];
+        // Surplus amount will be used to get more votes. Regardless, the UI should demand the correct value.
         uint256 arbitrationCost = getArbitrationCost();
-
-        require(claimId == _claimId, "Claim id does not match");
-        require(claimId != bytes32(0), "No active claim");
-        require(claim.status == Status.None, "Claim is already challenged or resolved");
-        require(msg.sender == beneficiary, "Only original beneficiary allowed to challenge");
         require(msg.value >= arbitrationCost, "Should pay the full deposit.");
 
-        uint256 metaEvidenceId;
-        require(claim.nbChallenges == 0, "Hacker already challenged");
-        // Hacker's challenge is identified by increased bounty.
-        require(block.timestamp - createdAt <= hackerChallengePeriod, "Time to challenge has passed for hacker");
-        require(_bountyPercentage > bountyPercentage && _bountyPercentage <= vault.maxBounty(), "Incorrect bounty");
-
-        metaEvidenceId = 3 * metaEvidenceUpdates;
-        claim.status = Status.DisputedByClaimant;
-
-        vault.challengeClaim(_claimId);
+        claimChallenged[_claimId] = true;
 
         uint256 localDisputeId = disputes.length;
-        claim.nbChallenges++;
-        claim.challenger = msg.sender;
-        claim.bountyPercentage = _bountyPercentage;
-        claim.beneficiary = _beneficiary;
 
         DisputeStruct storage dispute = disputes.push();
-        dispute.claimId = claimId;
+        dispute.claimId = _claimId;
 
         // Preemptively create a new funding round for future appeals.
         dispute.rounds.push();
@@ -291,68 +173,10 @@ contract HATKlerosConnector is IDisputeResolver {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
-        if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
-
-        emit ChallengedByClaimant(_claimId);
-        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
+        emit Challenged(_claimId);
+        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceUpdates, localDisputeId);
         emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
-    }
-
-    /** @dev Challenge the claim by depositor to dismiss it altogether.
-     *  @param _claimId The Id of the claim in Vault contract.
-     *  @param _evidence URI of the evidence to support the challenge.
-     */
-    function challengeByDepositor(bytes32 _claimId, string calldata _evidence) external payable {
-        (bytes32 claimId,,,, uint256 createdAt,,,,,,,,) = vault.activeClaim();
-
-        Claim storage claim = claims[claimId];
-        uint256 arbitrationCost = getArbitrationCost();
-
-        require(claimId == _claimId, "Claim id does not match");
-        require(claimId != bytes32(0), "No active claim");
-        require(claim.status == Status.None, "Claim is already challenged or resolved");
-        require(msg.value >= arbitrationCost, "Should pay the full deposit.");
-
-        uint256 metaEvidenceId;
-        // Hacker didn't challenge.
-        if (claim.nbChallenges == 0) {
-            require(
-                block.timestamp - createdAt > hackerChallengePeriod && 
-                block.timestamp - createdAt <= depositorChallengePeriod + hackerChallengePeriod,
-                "Not a time to challenge for depositor."
-            );
-            // Raise the flag in Vault. It's done only during the first challenge.
-            vault.challengeClaim(_claimId);
-        // Depositor's challenge after hacker's challenge was resolved unsuccessfully.
-        } else if (claim.nbChallenges == 1) {
-            require(block.timestamp - claim.openToChallengeAt <= depositorChallengePeriod, "Time to challenge has passed for depositor.");
-        } else {
-            revert("Can only challenge 2 times");
-        }
-
-        metaEvidenceId = 3 * metaEvidenceUpdates + 1;
-        claim.status = Status.DisputedByDepositor;
-
-        uint256 localDisputeId = disputes.length;
-        claim.nbChallenges++;
-        claim.challenger = msg.sender;
-
-        DisputeStruct storage dispute = disputes.push();
-        dispute.claimId = claimId;
-
-        // Preemptively create a new funding round for future appeals.
-        dispute.rounds.push();
-
-        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
-        dispute.externalDisputeId = externalDisputeId;
-        externalIDtoLocalID[externalDisputeId] = localDisputeId;
-
-        if (msg.value - arbitrationCost > 0) payable(msg.sender).send(msg.value - arbitrationCost);
-
-        emit ChallengedByDepositor(_claimId);
-        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceId, localDisputeId);
-        emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
-    }
+    } 
 
     /** @dev Give a ruling for a dispute. Can only be called by the arbitrator.
      *  @param _disputeId ID of the dispute in the arbitrator contract.
@@ -375,67 +199,15 @@ contract HATKlerosConnector is IDisputeResolver {
         dispute.ruling = Decision(finalRuling);
         dispute.resolved = true;
 
-        if (dispute.claimId == bytes32(0)) {
-            // Dispute to make a submission.
-            if (finalRuling == uint256(Decision.SideWithChallenger)) {
-                PendingClaim storage pendingClaim = pendingClaims[dispute.pendingClaimId];
-                pendingClaim.validated = true;
-                emit PendingClaimValidated(dispute.pendingClaimId);
-            }
+        bytes32 claimId = dispute.claimId;
+        if (finalRuling == uint256(Decision.DismissResolution)) {            
+            hatArbitrator.dismissResolution(vault, claimId); //
         } else {
-            bytes32 claimId = dispute.claimId;
-            Claim storage claim = claims[claimId];
-            if (finalRuling == uint256(Decision.SideWithChallenger)) {
-                if (claim.status == Status.DisputedByClaimant) {
-                    // Claimant won the dispute. Change the severity.
-                    vault.approveClaim(claimId, claim.bountyPercentage, claim.beneficiary);
-                } else {
-                    // Depositor won. Dismiss the claim.
-                    vault.dismissClaim(claimId);
-                }
-                claim.status = Status.Resolved;
-            } else {
-                // Arbitrator sided with committee or refused to arbitrate (gave 0 ruling).
-                if (claim.status == Status.DisputedByClaimant) {
-                    // Claimant lost. Set the claim status to default to allow the depositors to challenge.
-                    claim.status = Status.None;
-                    claim.openToChallengeAt = block.timestamp;
-                } else {
-                    // Depositor lost. Resolve the claim and report it to HATVault with default parameters.
-                    claim.status = Status.Resolved;
-                    vault.approveClaim(claimId, 0, address(0));
-                }     
-            }
-        }       
-
+            // Arbitrator sided with committee or refused to arbitrate (gave 0 ruling).
+            hatArbitrator.executeResolution(vault, claimId);
+        }
+      
         emit Ruling(IArbitrator(msg.sender), _disputeId, finalRuling);
-    }
-
-    /** @dev Approve a claim in Vault if it wasn't challenged by depositor, but was flagged in Vault after hacker's challenge.
-     *  @param _claimId The id of the claim in Vault.
-     */
-    function approveClaim(bytes32 _claimId) external {
-        Claim storage claim = claims[_claimId];
-        require(claim.status == Status.None, "Claim is already challenged or resolved");
-        // Check that the claim exists and was challenged by the hacker before.
-        // Note if the claim wasn't challenged before it wouldn't have been registered by this contract and could've been approved directly in Vault.
-        require(claim.nbChallenges == 1, "Claim does not exist");
-        require(block.timestamp - claim.openToChallengeAt > depositorChallengePeriod, "Depositor still can challenge");
-        // Approve the claim while leaving the percentage and beneficiary unchanged.
-        claim.status = Status.Resolved;
-        vault.approveClaim(_claimId, 0, address(0));
-    }
-
-    /** @dev Submits a pending claim to Vault if arbitrator deemed it valid.
-     *  @param _pendingClaimId The id in the array of pending claims.
-     */
-    function submitPendingClaim(uint256 _pendingClaimId) external {
-        PendingClaim storage pendingClaim = pendingClaims[_pendingClaimId];
-        require(!pendingClaim.submitted, "Already submitted");
-        require(pendingClaim.validated, "Claim should be validated");
-        pendingClaim.submitted = true;
-        // Submit will be reverted if Vault has an active claim. Also note that maxBounty can be decreased in Vault.
-        vault.submitClaim(pendingClaim.challenger, pendingClaim.bountyPercentage, pendingClaim.descriptionHash);
     }
 
     /** @dev Submit a reference to evidence. EVENT.

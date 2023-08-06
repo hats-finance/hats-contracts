@@ -532,6 +532,8 @@ contract HATArbitrator {
 
         emit ResolutionChallenged(_vault, _claimId);
 
+        // TODO: add a function to notify the court about the challenge.
+
         // TODO: Should resolution be possible to challenge by multiple challengers?
 
         // TODO: Here the challenger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
