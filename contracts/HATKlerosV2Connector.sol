@@ -99,6 +99,10 @@ contract HATKlerosV2Connector is IArbitrable {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
+        if (surplusFee > 0) {
+            payable(msg.sender).send(surplusFee);
+        }
+
         emit Challenged(_claimId);
         // TODO: add new IEvidence events once they're established.
         //emit Dispute(klerosArbitrator, externalDisputeId, 0, localDisputeId);

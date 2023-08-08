@@ -174,6 +174,10 @@ contract HATKlerosConnector is IDisputeResolver {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
+        if (surplusFee > 0) {
+            payable(msg.sender).send(surplusFee);
+        }
+
         emit Challenged(_claimId);
         emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceUpdates, localDisputeId);
         emit Evidence(klerosArbitrator, localDisputeId, msg.sender, _evidence);
