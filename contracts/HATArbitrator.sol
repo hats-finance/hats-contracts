@@ -533,6 +533,7 @@ contract HATArbitrator {
         emit ResolutionChallenged(_vault, _claimId);
 
         // TODO: add a function to notify the court about the challenge.
+        // TODO: reimburse the sender the surplus fee returned by notify() function.
 
         // TODO: Should resolution be possible to challenge by multiple challengers?
 

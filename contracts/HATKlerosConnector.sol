@@ -150,14 +150,15 @@ contract HATKlerosConnector is IDisputeResolver {
      *  @param _claimId The Id of the active claim in Vault contract.
      *  @param _evidence URI of the evidence to support the challenge.
      *  Note that the validity of the claim should be checked by Hat arbitrator.
+     *  @return surplusFee The amount of fee that exceeds required arbitration cost.
      */
-    function notifyArbitrator(bytes32 _claimId, string calldata _evidence) external payable {
+    function notifyArbitrator(bytes32 _claimId, string calldata _evidence) external payable returns (uint256 surplusFee) {
         require(msg.sender == address(hatArbitrator), "Wrong caller");
         require(!claimChallenged[_claimId], "Claim already challenged");
 
-        // Surplus amount will be used to get more votes. Regardless, the UI should demand the correct value.
         uint256 arbitrationCost = getArbitrationCost();
         require(msg.value >= arbitrationCost, "Should pay the full deposit.");
+        surplusFee = msg.value - arbitrationCost;
 
         claimChallenged[_claimId] = true;
 
