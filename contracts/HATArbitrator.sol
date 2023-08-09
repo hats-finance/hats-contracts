@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IHATVault.sol";
+import "./interfaces/IHATKlerosConnector.sol";
 
 /* solhint-disable not-rely-on-time */
 contract HATArbitrator {
@@ -508,10 +509,12 @@ contract HATArbitrator {
      * Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
      * @param _vault the address of the vault where the claim was started
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
+     * @param _evidence evidence ipfs for court.
      */
     function challengeResolution(
         IHATVault _vault,
-        bytes32 _claimId
+        bytes32 _claimId,
+        string calldata _evidence
     )
         external
         onlyChallengedActiveClaim(_vault, _claimId)
@@ -532,8 +535,7 @@ contract HATArbitrator {
 
         emit ResolutionChallenged(_vault, _claimId);
 
-        // TODO: add a function to notify the court about the challenge.
-        // TODO: reimburse the sender the surplus fee returned by notify() function.
+        IHATKlerosConnector(court).notifyArbitrator(_claimId, _evidence, _vault, msg.sender);
 
         // TODO: Should resolution be possible to challenge by multiple challengers?
 
