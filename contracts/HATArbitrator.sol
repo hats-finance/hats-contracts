@@ -516,7 +516,7 @@ contract HATArbitrator {
         bytes32 _claimId,
         string calldata _evidence
     )
-        external
+        external payable
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyResolvedDispute(_vault, _claimId)
     {
@@ -535,7 +535,7 @@ contract HATArbitrator {
 
         emit ResolutionChallenged(_vault, _claimId);
 
-        IHATKlerosConnector(court).notifyArbitrator(_claimId, _evidence, _vault, msg.sender);
+        IHATKlerosConnector(court).notifyArbitrator{value: msg.value}(_claimId, _evidence, _vault, msg.sender);
 
         // TODO: Should resolution be possible to challenge by multiple challengers?
 
