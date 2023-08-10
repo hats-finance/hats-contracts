@@ -56,7 +56,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
 
     uint256 public winnerMultiplier; // Multiplier for calculating the appeal fee that must be paid for the ruling that was chosen by the arbitrator in the previous round, in basis points.
     uint256 public loserMultiplier; // Multiplier for calculating the appeal fee that must be paid for the ruling that the arbitrator didn't rule for in the previous round, in basis points.
-    uint256 public loserAppealPeriodMultiplier; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
+    uint256 public immutable loserAppealPeriodMultiplier = 5000; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
 
     DisputeStruct[] public disputes; // Stores the disputes created in this contract.
     mapping(bytes32 => bool) public claimChallenged; // True if the claim was challenged in this contract.
@@ -74,7 +74,6 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _metaEvidence Metaevidence for the dispute.
      *  @param _winnerMultiplier Multiplier for calculating the appeal cost of the winning side.
      *  @param _loserMultiplier Multiplier for calculation the appeal cost of the losing side.
-     *  @param _loserAppealPeriodMultiplier Multiplier for calculating the appeal period for the losing side.
      */
     constructor (
         IArbitrator _klerosArbitrator,
@@ -82,8 +81,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         HATArbitrator _hatArbitrator,
         string memory _metaEvidence,
         uint256 _winnerMultiplier,
-        uint256 _loserMultiplier,
-        uint256 _loserAppealPeriodMultiplier
+        uint256 _loserMultiplier
     ) {
         emit MetaEvidence(0, _metaEvidence);
         
@@ -92,7 +90,6 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         hatArbitrator = _hatArbitrator;
         winnerMultiplier = _winnerMultiplier;
         loserMultiplier = _loserMultiplier;
-        loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
     }
 
     // ******************** //
@@ -111,13 +108,6 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      */
     function changeLoserMultiplier(uint256 _loserMultiplier) external onlyOwner {
         loserMultiplier = _loserMultiplier;
-    }
-
-    /** @dev Changes loserAppealPeriodMultiplier variable.
-     *  @param _loserAppealPeriodMultiplier The new loserAppealPeriodMultiplier value.
-     */
-    function changeLoserAppealPeriodMultiplier(uint256 _loserAppealPeriodMultiplier) external onlyOwner {
-        loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
     }
 
     /** @dev Update the meta evidence used for disputes.
