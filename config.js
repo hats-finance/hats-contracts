@@ -326,7 +326,7 @@ module.exports = {
         }
     },
     "meter": {
-        "governance": "0xdf766254f162A02bd79E0bC75A1B92101001a500",
+        "governance": "0x538B46F9966f0ef2E35a607adbEc51eDF74C25A4",
         "timelockDelay": 604800,
         "executors": [
             "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
