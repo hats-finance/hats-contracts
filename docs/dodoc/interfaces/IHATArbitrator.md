@@ -1,4 +1,4 @@
-# HATArbitrator
+# IHATArbitrator
 
 
 
@@ -16,7 +16,7 @@
 function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, address[] _disputersToConfiscate, string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-acceptDispute}. 
+Acccept the dispute - i.e. rule in favor of the disputers and against the original claim from the committee Can only be called by the Expert Committee The expert committee can include a payment for their service in the payout process
 
 
 
@@ -24,13 +24,13 @@ See {IHATArbitrator-acceptDispute}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _bountyPercentage | uint16 | undefined |
-| _beneficiary | address | undefined |
-| _disputersToRefund | address[] | undefined |
-| _disputersToConfiscate | address[] | undefined |
-| _descriptionHash | string | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
+| _beneficiary | address | the (new) benficiary of the claim |
+| _disputersToRefund | address[] | array of addresses of disputers that will get their bond back |
+| _disputersToConfiscate | address[] | array of addresses of disputers that will lose their bond |
+| _descriptionHash | string | a motivation of the ruling |
 
 ### approveSubmitClaimRequest
 
@@ -38,7 +38,7 @@ See {IHATArbitrator-acceptDispute}.
 function approveSubmitClaimRequest(contract IHATVault _vault, bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-approveSubmitClaimRequest}. 
+Submit a new claim on the basis of a submitClaimRequest only calleable by the expert committee the claim must be submitted within the submitClaimRequestReviewPeriod
 
 
 
@@ -46,52 +46,11 @@ See {IHATArbitrator-approveSubmitClaimRequest}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _internalClaimId | bytes32 | undefined |
-| _beneficiary | address | undefined |
-| _bountyPercentage | uint16 | undefined |
-| _descriptionHash | string | undefined |
-
-### bondClaimable
-
-```solidity
-function bondClaimable(address, contract IHATVault, bytes32) external view returns (bool)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-| _1 | contract IHATVault | undefined |
-| _2 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bool | undefined |
-
-### bondsNeededToStartDispute
-
-```solidity
-function bondsNeededToStartDispute() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
+| _vault | contract IHATVault | the vault where the claim was created |
+| _internalClaimId | bytes32 | the id of the claim to approve |
+| _beneficiary | address | the (new) benficiary of the claim |
+| _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
+| _descriptionHash | string | a motivation for the claim |
 
 ### challengeResolution
 
@@ -99,7 +58,7 @@ function bondsNeededToStartDispute() external view returns (uint256)
 function challengeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-See {IHATArbitrator-challengeResolution}. 
+Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
 
 
 
@@ -107,8 +66,8 @@ See {IHATArbitrator-challengeResolution}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### confiscateDisputers
 
@@ -116,7 +75,7 @@ See {IHATArbitrator-challengeResolution}.
 function confiscateDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToConfiscate) external nonpayable
 ```
 
-See {IHATArbitrator-confiscateDisputers}. 
+Forfeit the bonds of the given list of disputers. Their bonds will be sent to the expert committee
 
 
 
@@ -124,26 +83,9 @@ See {IHATArbitrator-confiscateDisputers}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _disputersToConfiscate | address[] | undefined |
-
-### court
-
-```solidity
-function court() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _disputersToConfiscate | address[] | a list of addresses of disputers whose bond will be forfeited |
 
 ### dismissDispute
 
@@ -151,7 +93,7 @@ function court() external view returns (address)
 function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-dismissDispute}. 
+Dismiss the dispute - i.e. approve the original claim from the committee Can only be called by the expert commmittee. The expert committee will receive the bonds of the disputers as a payment for their service
 
 
 
@@ -159,9 +101,9 @@ See {IHATArbitrator-dismissDispute}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _descriptionHash | string | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _descriptionHash | string | an (ipfs) hash representing the motiviations of the dismissal |
 
 ### dismissResolution
 
@@ -169,7 +111,7 @@ See {IHATArbitrator-dismissDispute}.
 function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-See {IHATArbitrator-dismissResolution}. 
+Dismiss a resolution from the expert committee can only be called by the court
 
 
 
@@ -177,8 +119,8 @@ See {IHATArbitrator-dismissResolution}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### dismissSubmitClaimRequest
 
@@ -186,7 +128,7 @@ See {IHATArbitrator-dismissResolution}.
 function dismissSubmitClaimRequest(bytes32 _internalClaimId, string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-dismissSubmitClaimRequest}. 
+Dismiss a request to create a claim. Can only be called by the expert committee
 
 
 
@@ -194,8 +136,8 @@ See {IHATArbitrator-dismissSubmitClaimRequest}.
 
 | Name | Type | Description |
 |---|---|---|
-| _internalClaimId | bytes32 | undefined |
-| _descriptionHash | string | undefined |
+| _internalClaimId | bytes32 | the id of the claim to dismiss |
+| _descriptionHash | string | a motivation for the dismissal |
 
 ### dispute
 
@@ -203,7 +145,7 @@ See {IHATArbitrator-dismissSubmitClaimRequest}.
 function dispute(contract IHATVault _vault, bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-dispute}. 
+Dispute the commitee&#39;s claim Can be called by anyone
 
 
 
@@ -211,34 +153,10 @@ See {IHATArbitrator-dispute}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _bondAmount | uint256 | undefined |
+| _vault | contract IHATVault | the vault that the claim was created |
+| _claimId | bytes32 | the id of the claim |
+| _bondAmount | uint256 | Amount of tokens that the disputer will put up as a bond. This must be at least minBondAmount. The dispute is accepted if the total amount of bonds exceeds bondsNeededToStartDispute |
 | _descriptionHash | string | undefined |
-
-### disputersBonds
-
-```solidity
-function disputersBonds(address, contract IHATVault, bytes32) external view returns (uint256)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-| _1 | contract IHATVault | undefined |
-| _2 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
 
 ### executeResolution
 
@@ -246,7 +164,7 @@ function disputersBonds(address, contract IHATVault, bytes32) external view retu
 function executeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-See {IHATArbitrator-executeResolution}. 
+execute a resolution from the expert committee if the resolution was challenged, this can only be called by the court if the resolution was not challenged durring the resolutionChallengePeriod, this can be called by anyone
 
 
 
@@ -254,42 +172,8 @@ See {IHATArbitrator-executeResolution}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-
-### expertCommittee
-
-```solidity
-function expertCommittee() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-
-### minBondAmount
-
-```solidity
-function minBondAmount() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### reclaimBond
 
@@ -297,7 +181,7 @@ function minBondAmount() external view returns (uint256)
 function reclaimBond(contract IHATVault _vault, bytes32 _claimId) external nonpayable
 ```
 
-See {IHATArbitrator-reclaimBond}. 
+reclaim a bond that msg.sender has put up for a given claim
 
 
 
@@ -305,8 +189,8 @@ See {IHATArbitrator-reclaimBond}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### refundDisputers
 
@@ -314,7 +198,7 @@ See {IHATArbitrator-reclaimBond}.
 function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToRefund) external nonpayable
 ```
 
-See {IHATArbitrator-refundDisputers}. 
+release the bonds of the disputers, so that they can claim them back
 
 
 
@@ -322,9 +206,9 @@ See {IHATArbitrator-refundDisputers}.
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
-| _claimId | bytes32 | undefined |
-| _disputersToRefund | address[] | undefined |
+| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _disputersToRefund | address[] | array of addresses |
 
 ### refundExpiredSubmitClaimRequest
 
@@ -332,7 +216,7 @@ See {IHATArbitrator-refundDisputers}.
 function refundExpiredSubmitClaimRequest(bytes32 _internalClaimId) external nonpayable
 ```
 
-See {IHATArbitrator-refundExpiredSubmitClaimRequest}. 
+Refund the bond of the claimRequest by the sumbitter of the claim
 
 
 
@@ -340,72 +224,7 @@ See {IHATArbitrator-refundExpiredSubmitClaimRequest}.
 
 | Name | Type | Description |
 |---|---|---|
-| _internalClaimId | bytes32 | undefined |
-
-### resolutionChallengePeriod
-
-```solidity
-function resolutionChallengePeriod() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### resolutionChallengedAt
-
-```solidity
-function resolutionChallengedAt(contract IHATVault, bytes32) external view returns (uint256)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IHATVault | undefined |
-| _1 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### resolutions
-
-```solidity
-function resolutions(contract IHATVault, bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IHATVault | undefined |
-| _1 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| beneficiary | address | undefined |
-| bountyPercentage | uint16 | undefined |
-| resolvedAt | uint256 | undefined |
+| _internalClaimId | bytes32 | the claim of which the bond will be refunded |
 
 ### submitClaimRequest
 
@@ -413,7 +232,7 @@ function resolutions(contract IHATVault, bytes32) external view returns (address
 function submitClaimRequest(string _descriptionHash) external nonpayable
 ```
 
-See {IHATArbitrator-submitClaimRequest}. 
+Submit a request for the expert committee to consider a claim A security researcher can use this if his claim is ignored by the committee The requester must provide a bond, which they will lose if the claim is considered invalid by the committee
 
 
 
@@ -421,89 +240,7 @@ See {IHATArbitrator-submitClaimRequest}.
 
 | Name | Type | Description |
 |---|---|---|
-| _descriptionHash | string | undefined |
-
-### submitClaimRequestReviewPeriod
-
-```solidity
-function submitClaimRequestReviewPeriod() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### submitClaimRequests
-
-```solidity
-function submitClaimRequests(bytes32) external view returns (address submitter, uint256 bond, uint256 submittedAt, string descriptionHash)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| submitter | address | undefined |
-| bond | uint256 | undefined |
-| submittedAt | uint256 | undefined |
-| descriptionHash | string | undefined |
-
-### token
-
-```solidity
-function token() external view returns (contract IERC20)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IERC20 | undefined |
-
-### totalBondsOnClaim
-
-```solidity
-function totalBondsOnClaim(contract IHATVault, bytes32) external view returns (uint256)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | contract IHATVault | undefined |
-| _1 | bytes32 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
+| _descriptionHash | string | a hash of a description of the claim |
 
 
 

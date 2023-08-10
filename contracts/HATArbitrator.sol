@@ -6,42 +6,12 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IHATVault.sol";
+import "./interfaces/IHATArbitrator.sol";
 
 /* solhint-disable not-rely-on-time */
-contract HATArbitrator {
-    error bondsNeededToStartDisputeMustBeHigherThanMinAmount();
-    error BondAmountSubmittedTooLow();
-    error ClaimIsNotCurrentlyActiveClaim();
-    error CannotSubmitMoreEvidence();
-    error ClaimIsNotDisputed();
-    error OnlyExpertCommittee();
-    error AlreadyResolved();
-    error NoResolution();
-    error ChallengePeriodDidNotPass();
-    error CanOnlyBeCalledByCourt();
-    error ChallengePeriodPassed();
-    error CannotClaimBond();
-    error CannotDismissUnchallengedResolution();
-    error ClaimReviewPeriodEnd();
-    error ClaimReviewPeriodDidNotEnd();
-    error ClaimExpired();
-    error AlreadyChallenged();
+contract HATArbitrator is IHATArbitrator {
 
     using SafeERC20 for IERC20;
-
-    struct Resolution {
-        address beneficiary;
-        uint16 bountyPercentage;
-        uint256 resolvedAt;
-    }
-
-    struct SubmitClaimRequest {
-        address submitter;
-        uint256 bond;
-        uint256 submittedAt;
-        string descriptionHash;
-    }
 
     address public expertCommittee; // address of the Expert Committee
     address public court; // address of the court - kleros, uma, etc
@@ -62,71 +32,6 @@ contract HATArbitrator {
     mapping(bytes32 => SubmitClaimRequest) public submitClaimRequests; // a registry of requests to the expert committee to submit a claim
 
     uint256 internal nonce;
-
-    event ClaimDisputed(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        address indexed _disputer,
-        uint256 _bondAmount,
-        string _descriptionHash
-    );
-    event DisputeDismissed(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        string _descriptionHash
-    );
-    event DisputeAccepted(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        uint16 _bountyPercentage,
-        address _beneficiary,
-        string _descriptionHash
-    );
-    event DisputersRefunded(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        address[] _disputers
-    );
-    event DisputersConfiscated(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        address[] _disputers
-    );
-    event BondRefundClaimed(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId,
-        address _disputer,
-        uint256 _amountClaimed
-    );
-    event ResolutionExecuted(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId
-    );
-    event ResolutionDismissed(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId
-    );
-    event ResolutionChallenged(
-        IHATVault indexed _vault,
-        bytes32 indexed _claimId
-    );
-
-    event SubmitClaimRequestCreated(
-        bytes32 indexed _internalClaimId,
-        address indexed _submitter,
-        uint256 _bond,
-        string _descriptionHash
-    );
-    event SubmitClaimRequestDismissed(
-        bytes32 indexed _internalClaimId,
-        string _descriptionHash
-    );
-    event SubmitClaimRequestApproved(
-        bytes32 indexed _internalClaimId,
-        bytes32 indexed _claimId,
-        IHATVault indexed _vault
-    );
-    event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId);
 
     modifier onlyExpertCommittee() {
         if (msg.sender != expertCommittee) {
@@ -204,14 +109,7 @@ contract HATArbitrator {
         }
     }
 
-    /**
-     * Dispute the commitee's claim
-     * Can be called by anyone
-     * @param _vault the vault that the claim was created
-     * @param _claimId the id of the claim
-     * @param _bondAmount Amount of tokens that the disputer will put up as a bond. This must be at least minBondAmount.
-     * The dispute is accepted if the total amount of bonds exceeds bondsNeededToStartDispute
-     */
+    /** @notice See {IHATArbitrator-dispute}. */
     function dispute(
         IHATVault _vault,
         bytes32 _claimId,
@@ -253,14 +151,7 @@ contract HATArbitrator {
         );
     }
 
-    /**
-     * Dismiss the dispute - i.e. approve the original claim from the committee
-     * Can only be called by the expert commmittee.
-     * The expert committee will receive the bonds of the disputers as a payment for their service
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     * @param _descriptionHash an (ipfs) hash representing the motiviations of the dismissal
-     */
+    /** @notice See {IHATArbitrator-dismissDispute}. */
     function dismissDispute(
         IHATVault _vault,
         bytes32 _claimId,
@@ -279,18 +170,7 @@ contract HATArbitrator {
         emit DisputeDismissed(_vault, _claimId, _descriptionHash);
     }
 
-    /**
-     * Acccept the dispute - i.e. rule in favor of the disputers and against the original claim from the committee
-     * Can only be called by the Expert Committee
-     * The expert committee can include a payment for their service in the payout process
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     * @param _bountyPercentage the percentage of the vault that will be paid out to the _beneficiary
-     * @param _beneficiary the (new) benficiary of the claim
-     * @param _disputersToRefund array of addresses of disputers that will get their bond back
-     * @param _disputersToConfiscate array of addresses of disputers that will lose their bond
-     * @param _descriptionHash a motivation of the ruling
-     */
+    /** @notice See {IHATArbitrator-acceptDispute}. */
     function acceptDispute(
         IHATVault _vault,
         bytes32 _claimId,
@@ -322,12 +202,7 @@ contract HATArbitrator {
         );
     }
 
-    /**
-     * @notice release the bonds of the disputers, so that they can claim them back
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     * @param _disputersToRefund array of addresses
-     */
+    /** @notice See {IHATArbitrator-refundDisputers}. */
     function refundDisputers(
         IHATVault _vault,
         bytes32 _claimId,
@@ -356,12 +231,7 @@ contract HATArbitrator {
         emit DisputersRefunded(_vault, _claimId, _disputersToRefund);
     }
 
-    /**
-     * Forfeit the bonds of the given list of disputers. Their bonds will be sent to the expert committee
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     * @param _disputersToConfiscate a list of addresses of disputers whose bond will be forfeited
-     */
+    /** @notice See {IHATArbitrator-confiscateDisputers}. */
     function confiscateDisputers(
         IHATVault _vault,
         bytes32 _claimId,
@@ -396,11 +266,7 @@ contract HATArbitrator {
         emit DisputersConfiscated(_vault, _claimId, _disputersToConfiscate);
     }
 
-    /**
-     * reclaim a bond that msg.sender has put up for a given claim
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     */
+    /** @notice See {IHATArbitrator-reclaimBond}. */
     function reclaimBond(IHATVault _vault, bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_vault][_claimId]) {
             (
@@ -437,13 +303,7 @@ contract HATArbitrator {
         emit BondRefundClaimed(_vault, _claimId, msg.sender, disputerBond);
     }
 
-    /**
-     * @notice execute a resolution from the expert committee
-     * if the resolution was challenged, this can only be called by the court
-     * if the resolution was not challenged durring the resolutionChallengePeriod, this can be called by anyone
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     */
+    /** @notice See {IHATArbitrator-executeResolution}. */
     function executeResolution(
         IHATVault _vault,
         bytes32 _claimId
@@ -477,12 +337,7 @@ contract HATArbitrator {
         emit ResolutionExecuted(_vault, _claimId);
     }
 
-    /**
-     * Dismiss a resolution from the expert committee
-     * can only be called by the court
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     */
+    /** @notice See {IHATArbitrator-dismissResolution}. */
     function dismissResolution(
         IHATVault _vault,
         bytes32 _claimId
@@ -504,11 +359,7 @@ contract HATArbitrator {
         emit ResolutionDismissed(_vault, _claimId);
     }
 
-    /**
-     * Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
-     * @param _vault the address of the vault where the claim was started
-     * @param _claimId id of the claim that was disputed. Must be the currently active claim
-     */
+    /** @notice See {IHATArbitrator-challengeResolution}. */
     function challengeResolution(
         IHATVault _vault,
         bytes32 _claimId
@@ -537,12 +388,7 @@ contract HATArbitrator {
         // TODO: Here the challenger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
     }
 
-    /**
-     * Submit a request for the expert committee to consider a claim
-     * A security researcher can use this if his claim is ignored by the committee
-     * The requester must provide a bond, which they will lose if the claim is considered invalid by the committee
-     * @param _descriptionHash a hash of a description of the claim
-     */
+    /** @notice See {IHATArbitrator-submitClaimRequest}. */
     function submitClaimRequest(string calldata _descriptionHash) external {
         bytes32 internalClaimId = keccak256(
             abi.encodePacked(address(this), ++nonce)
@@ -567,11 +413,7 @@ contract HATArbitrator {
         );
     }
 
-    /**
-     * Dismiss a request to create a claim. Can only be called by the expert committee
-     * @param _internalClaimId the id of the claim to dismiss
-     * @param _descriptionHash a motivation for the dismissal
-     */
+    /** @notice See {IHATArbitrator-dismissSubmitClaimRequest}. */
     function dismissSubmitClaimRequest(
         bytes32 _internalClaimId,
         string calldata _descriptionHash
@@ -594,16 +436,7 @@ contract HATArbitrator {
         emit SubmitClaimRequestDismissed(_internalClaimId, _descriptionHash);
     }
 
-    /**
-     * Submit a new claim on the basis of a submitClaimRequest
-     * only calleable by the expert committee
-     * the claim must be submitted within the submitClaimRequestReviewPeriod
-     * @param _vault the vault where the claim was created
-     * @param _internalClaimId the id of the claim to approve
-     * @param _bountyPercentage the percentage of the vault that will be paid out to the _beneficiary
-     * @param _beneficiary the (new) benficiary of the claim
-     * @param _descriptionHash a motivation for the claim
-     */
+    /** @notice See {IHATArbitrator-approveSubmitClaimRequest}. */
     function approveSubmitClaimRequest(
         IHATVault _vault,
         bytes32 _internalClaimId,
@@ -647,10 +480,7 @@ contract HATArbitrator {
         emit SubmitClaimRequestApproved(_internalClaimId, claimId, _vault);
     }
 
-    /**
-     * Refund the bond of the claimRequest by the sumbitter of the claim
-     * @param _internalClaimId the claim of which the bond will be refunded
-     */
+    /** @notice See {IHATArbitrator-refundExpiredSubmitClaimRequest}. */
     function refundExpiredSubmitClaimRequest(
         bytes32 _internalClaimId
     ) external {
