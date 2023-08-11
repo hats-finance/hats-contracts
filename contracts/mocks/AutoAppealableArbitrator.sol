@@ -12,14 +12,11 @@ pragma solidity 0.8.16;
 
 import "@kleros/erc-792/contracts/IArbitrable.sol";
 import "@kleros/erc-792/contracts/IArbitrator.sol";
-import "../libraries/CappedMath.sol";
 
 /** @title Auto Appealable Arbitrator
  *  @dev This is a centralized arbitrator which either gives direct rulings or provides a time and fee for appeal.
  */
 contract AutoAppealableArbitrator is IArbitrator {
-    using CappedMath for uint256; // Operations bounded between 0 and 2**256 - 1.
-
     address public owner = msg.sender;
     uint256 public arbitrationPrice; // Not public because arbitrationCost already acts as an accessor.
     uint256 public constant NOT_PAYABLE_VALUE = (2**256 - 2) / 2; // High value to be sure that the appeal is too expensive.
@@ -139,7 +136,7 @@ contract AutoAppealableArbitrator is IArbitrator {
         dispute.status = DisputeStatus.Appealable;
         dispute.appealCost = _appealCost;
         dispute.appealPeriodStart = block.timestamp;
-        dispute.appealPeriodEnd = block.timestamp.addCap(_timeToAppeal);
+        dispute.appealPeriodEnd = block.timestamp + _timeToAppeal;
 
         emit AppealPossible(_disputeID, dispute.arbitrated);
     }
