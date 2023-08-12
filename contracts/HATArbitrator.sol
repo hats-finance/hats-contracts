@@ -6,7 +6,9 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IHATKlerosConnector.sol";
 import "./interfaces/IHATArbitrator.sol";
+
 
 /* solhint-disable not-rely-on-time */
 contract HATArbitrator is IHATArbitrator {
@@ -362,9 +364,10 @@ contract HATArbitrator is IHATArbitrator {
     /** @notice See {IHATArbitrator-challengeResolution}. */
     function challengeResolution(
         IHATVault _vault,
-        bytes32 _claimId
+        bytes32 _claimId,
+        string calldata _evidence
     )
-        external
+        external payable
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyResolvedDispute(_vault, _claimId)
     {
@@ -382,6 +385,8 @@ contract HATArbitrator is IHATArbitrator {
         resolutionChallengedAt[_vault][_claimId] = block.timestamp;
 
         emit ResolutionChallenged(_vault, _claimId);
+
+        IHATKlerosConnector(court).notifyArbitrator{value: msg.value}(_claimId, _evidence, _vault, msg.sender);
 
         // TODO: Should resolution be possible to challenge by multiple challengers?
 
