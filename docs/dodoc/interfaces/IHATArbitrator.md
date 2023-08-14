@@ -55,7 +55,7 @@ Submit a new claim on the basis of a submitClaimRequest only calleable by the ex
 ### challengeResolution
 
 ```solidity
-function challengeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function challengeResolution(contract IHATVault _vault, bytes32 _claimId, string _evidence) external payable
 ```
 
 Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
@@ -68,6 +68,7 @@ Challenge a resolution of the expert committee - i.e. bring it to the attation o
 |---|---|---|
 | _vault | contract IHATVault | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
+| _evidence | string | URI of the evidence to support the challenge |
 
 ### confiscateDisputers
 
@@ -226,6 +227,22 @@ Refund the bond of the claimRequest by the sumbitter of the claim
 |---|---|---|
 | _internalClaimId | bytes32 | the claim of which the bond will be refunded |
 
+### setCourt
+
+```solidity
+function setCourt(address _court) external nonpayable
+```
+
+Sets the address of the court Can be called only once and only by the owner
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _court | address | the address of the decentralized court contract |
+
 ### submitClaimRequest
 
 ```solidity
@@ -284,6 +301,22 @@ event ClaimDisputed(contract IHATVault indexed _vault, bytes32 indexed _claimId,
 | _disputer `indexed` | address | undefined |
 | _bondAmount  | uint256 | undefined |
 | _descriptionHash  | string | undefined |
+
+### CourtSet
+
+```solidity
+event CourtSet(address indexed _court)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _court `indexed` | address | undefined |
 
 ### DisputeAccepted
 
@@ -528,6 +561,17 @@ error CanOnlyBeCalledByCourt()
 
 
 
+### CannontChangeCourtAddress
+
+```solidity
+error CannontChangeCourtAddress()
+```
+
+
+
+
+
+
 ### CannotClaimBond
 
 ```solidity
@@ -631,6 +675,17 @@ error ClaimReviewPeriodDidNotEnd()
 
 ```solidity
 error ClaimReviewPeriodEnd()
+```
+
+
+
+
+
+
+### CourtCannotBeZero
+
+```solidity
+error CourtCannotBeZero()
 ```
 
 

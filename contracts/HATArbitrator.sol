@@ -11,7 +11,7 @@ import "./interfaces/IHATArbitrator.sol";
 
 
 /* solhint-disable not-rely-on-time */
-contract HATArbitrator is IHATArbitrator {
+contract HATArbitrator is IHATArbitrator, Ownable {
 
     using SafeERC20 for IERC20;
 
@@ -92,7 +92,6 @@ contract HATArbitrator is IHATArbitrator {
 
     constructor(
         address _expertCommittee,
-        address _court,
         IERC20 _token,
         uint256 _bondsNeededToStartDispute,
         uint256 _minBondAmount,
@@ -100,7 +99,6 @@ contract HATArbitrator is IHATArbitrator {
         uint256 _submitClaimRequestReviewPeriod
     ) {
         expertCommittee = _expertCommittee;
-        court = _court;
         token = _token;
         bondsNeededToStartDispute = _bondsNeededToStartDispute;
         minBondAmount = _minBondAmount;
@@ -109,6 +107,21 @@ contract HATArbitrator is IHATArbitrator {
         if (minBondAmount > bondsNeededToStartDispute) {
             revert bondsNeededToStartDisputeMustBeHigherThanMinAmount();
         }
+    }
+
+    /** @notice See {IHATArbitrator-setCourt}. */
+    function setCourt(address _court) external onlyOwner {
+        if (_court == address(0)) {
+            revert CourtCannotBeZero();
+        }
+
+        if (court != address(0)) {
+            revert CannontChangeCourtAddress();
+        }
+
+        court = _court;
+
+        emit CourtSet(_court);
     }
 
     /** @notice See {IHATArbitrator-dispute}. */
