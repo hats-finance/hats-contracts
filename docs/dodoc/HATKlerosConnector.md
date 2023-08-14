@@ -6,7 +6,7 @@
 
 
 
-*This contract acts a connector between HatsFinance and Kleros court.  This contract trusts that the Arbitrator is honest and will not reenter or modify its costs during a call.  The arbitrator must support appeal period.  The contract also trusts that HATArbitrator contract is honest and won&#39;t reenter.*
+*This contract acts a connector between HatsFinance and Kleros court.  This contract trusts that the Arbitrator is honest and will not reenter or modify its costs during a call.  The arbitrator must support appeal period.  The contract also trusts that IHATArbitrator contract is honest and won&#39;t reenter.*
 
 ## Methods
 
@@ -321,7 +321,7 @@ function getTotalWithdrawableAmount(uint256 _localDisputeId, address payable _be
 ### hatArbitrator
 
 ```solidity
-function hatArbitrator() external view returns (contract HATArbitrator)
+function hatArbitrator() external view returns (contract IHATArbitrator)
 ```
 
 
@@ -333,7 +333,7 @@ function hatArbitrator() external view returns (contract HATArbitrator)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract HATArbitrator | undefined |
+| _0 | contract IHATArbitrator | undefined |
 
 ### klerosArbitrator
 

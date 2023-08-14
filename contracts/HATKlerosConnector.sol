@@ -12,7 +12,7 @@ pragma solidity 0.8.16;
 
 import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract/contracts/IDisputeResolver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IHATArbitrator.sol";
+import "./interfaces/IHATArbitrator.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 

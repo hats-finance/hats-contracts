@@ -357,7 +357,7 @@ function getTotalWithdrawableAmount(uint256 _localDisputeId, address payable _be
 ### hatArbitrator
 
 ```solidity
-function hatArbitrator() external view returns (contract HATArbitrator)
+function hatArbitrator() external view returns (contract IHATArbitrator)
 ```
 
 
@@ -369,7 +369,7 @@ function hatArbitrator() external view returns (contract HATArbitrator)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract HATArbitrator | undefined |
+| _0 | contract IHATArbitrator | undefined |
 
 ### klerosArbitrator
 

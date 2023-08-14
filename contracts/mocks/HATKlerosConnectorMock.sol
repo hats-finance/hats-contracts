@@ -9,7 +9,7 @@ contract HATKlerosConnectorMock is HATKlerosConnector {
     constructor (
         IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
-        HATArbitrator _hatArbitrator,
+        IHATArbitrator _hatArbitrator,
         string memory _metaEvidence,
         uint256 _winnerMultiplier,
         uint256 _loserMultiplier
