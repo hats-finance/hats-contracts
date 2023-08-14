@@ -1857,7 +1857,7 @@ event Approval(address indexed owner, address indexed spender, uint256 value)
 ### ApproveClaim
 
 ```solidity
-event ApproveClaim(bytes32 indexed _claimId, address indexed _committee, address indexed _beneficiary, uint256 _bountyPercentage, address _tokenLock, IHATVault.ClaimBounty _claimBounty)
+event ApproveClaim(bytes32 indexed _claimId, address _committee, address indexed _approver, address indexed _beneficiary, uint256 _bountyPercentage, address _tokenLock, IHATVault.ClaimBounty _claimBounty)
 ```
 
 
@@ -1869,7 +1869,8 @@ event ApproveClaim(bytes32 indexed _claimId, address indexed _committee, address
 | Name | Type | Description |
 |---|---|---|
 | _claimId `indexed` | bytes32 | undefined |
-| _committee `indexed` | address | undefined |
+| _committee  | address | undefined |
+| _approver `indexed` | address | undefined |
 | _beneficiary `indexed` | address | undefined |
 | _bountyPercentage  | uint256 | undefined |
 | _tokenLock  | address | undefined |
@@ -2185,7 +2186,7 @@ event SetWithdrawalFee(uint256 _newFee)
 ### SubmitClaim
 
 ```solidity
-event SubmitClaim(bytes32 indexed _claimId, address indexed _committee, address indexed _beneficiary, uint256 _bountyPercentage, string _descriptionHash)
+event SubmitClaim(bytes32 indexed _claimId, address _committee, address indexed _submitter, address indexed _beneficiary, uint256 _bountyPercentage, string _descriptionHash)
 ```
 
 
@@ -2197,7 +2198,8 @@ event SubmitClaim(bytes32 indexed _claimId, address indexed _committee, address 
 | Name | Type | Description |
 |---|---|---|
 | _claimId `indexed` | bytes32 | undefined |
-| _committee `indexed` | address | undefined |
+| _committee  | address | undefined |
+| _submitter `indexed` | address | undefined |
 | _beneficiary `indexed` | address | undefined |
 | _bountyPercentage  | uint256 | undefined |
 | _descriptionHash  | string | undefined |

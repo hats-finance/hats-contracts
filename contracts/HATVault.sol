@@ -216,7 +216,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
             claimId: claimId,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
-            committee: msg.sender,
+            committee: committee,
             // solhint-disable-next-line not-rely-on-time
             createdAt: uint32(block.timestamp),
             challengedAt: 0,
@@ -231,6 +231,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         emit SubmitClaim(
             claimId,
+            committee,
             msg.sender,
             _beneficiary,
             _bountyPercentage,
@@ -342,6 +343,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
 
         emit ApproveClaim(
             _claimId,
+            _claim.committee,
             msg.sender,
             _claim.beneficiary,
             _claim.bountyPercentage,
