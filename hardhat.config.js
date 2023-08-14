@@ -41,7 +41,8 @@ module.exports = {
       optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
       polygon: process.env.POLYGON_ETHERSCAN_API_KEY,
       arbitrum: process.env.ARBITRUM_ETHERSCAN_API_KEY,
-      bnb: process.env.BNB_ETHERSCAN_API_KEY
+      bnb: process.env.BNB_ETHERSCAN_API_KEY,
+      base: process.env.BASE_ETHERSCAN_API_KEY
     }
   },
   gasReporter: {
@@ -104,6 +105,24 @@ module.exports = {
     sepolia: {
       url: `https://rpc.sepolia.org`,
       accounts: [process.env.SEPOLIA_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    base: {
+      url: `https://developer-access-mainnet.base.org`,
+      accounts: [process.env.BASE_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    nautulis: {
+      url: `https://triton.api.nautchain.xyz`,
+      accounts: [process.env.NAUTULIS_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    meter: {
+      url: `https://rpc.meter.io/`,
+      accounts: [process.env.METER_PK],
       gasPrice: "auto",
       gas: "auto",
     },
