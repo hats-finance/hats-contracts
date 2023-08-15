@@ -96,7 +96,7 @@ function bondsNeededToStartDispute() external view returns (uint256)
 ### challengeResolution
 
 ```solidity
-function challengeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function challengeResolution(contract IHATVault _vault, bytes32 _claimId, string _evidence) external payable
 ```
 
 See {IHATArbitrator-challengeResolution}. 
@@ -109,6 +109,7 @@ See {IHATArbitrator-challengeResolution}.
 |---|---|---|
 | _vault | contract IHATVault | undefined |
 | _claimId | bytes32 | undefined |
+| _evidence | string | undefined |
 
 ### confiscateDisputers
 
@@ -291,6 +292,23 @@ function minBondAmount() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### owner
+
+```solidity
+function owner() external view returns (address)
+```
+
+
+
+*Returns the address of the current owner.*
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+
 ### reclaimBond
 
 ```solidity
@@ -341,6 +359,17 @@ See {IHATArbitrator-refundExpiredSubmitClaimRequest}.
 | Name | Type | Description |
 |---|---|---|
 | _internalClaimId | bytes32 | undefined |
+
+### renounceOwnership
+
+```solidity
+function renounceOwnership() external nonpayable
+```
+
+
+
+*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
+
 
 ### resolutionChallengePeriod
 
@@ -406,6 +435,22 @@ function resolutions(contract IHATVault, bytes32) external view returns (address
 | beneficiary | address | undefined |
 | bountyPercentage | uint16 | undefined |
 | resolvedAt | uint256 | undefined |
+
+### setCourt
+
+```solidity
+function setCourt(address _court) external nonpayable
+```
+
+See {IHATArbitrator-setCourt}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _court | address | undefined |
 
 ### submitClaimRequest
 
@@ -505,6 +550,22 @@ function totalBondsOnClaim(contract IHATVault, bytes32) external view returns (u
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### transferOwnership
+
+```solidity
+function transferOwnership(address newOwner) external nonpayable
+```
+
+
+
+*Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| newOwner | address | undefined |
+
 
 
 ## Events
@@ -547,6 +608,22 @@ event ClaimDisputed(contract IHATVault indexed _vault, bytes32 indexed _claimId,
 | _disputer `indexed` | address | undefined |
 | _bondAmount  | uint256 | undefined |
 | _descriptionHash  | string | undefined |
+
+### CourtSet
+
+```solidity
+event CourtSet(address indexed _court)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _court `indexed` | address | undefined |
 
 ### DisputeAccepted
 
@@ -621,6 +698,23 @@ event DisputersRefunded(contract IHATVault indexed _vault, bytes32 indexed _clai
 | _vault `indexed` | contract IHATVault | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputers  | address[] | undefined |
+
+### OwnershipTransferred
+
+```solidity
+event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| previousOwner `indexed` | address | undefined |
+| newOwner `indexed` | address | undefined |
 
 ### ResolutionChallenged
 
@@ -791,6 +885,17 @@ error CanOnlyBeCalledByCourt()
 
 
 
+### CannontChangeCourtAddress
+
+```solidity
+error CannontChangeCourtAddress()
+```
+
+
+
+
+
+
 ### CannotClaimBond
 
 ```solidity
@@ -894,6 +999,17 @@ error ClaimReviewPeriodDidNotEnd()
 
 ```solidity
 error ClaimReviewPeriodEnd()
+```
+
+
+
+
+
+
+### CourtCannotBeZero
+
+```solidity
+error CourtCannotBeZero()
 ```
 
 

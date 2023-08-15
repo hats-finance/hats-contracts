@@ -13,6 +13,7 @@ const { assert } = require("chai");
 contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
   let hatArbitrator;
+  let klerosConnector;
   let token;
   let expertCommittee = accounts[8];
 
@@ -22,13 +23,26 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
     const HATArbitrator = artifacts.require("./HATArbitrator.sol");
     hatArbitrator = await HATArbitrator.new(
       expertCommittee,
-      accounts[9],
       token.address,
       web3.utils.toWei("1000"),
       web3.utils.toWei("100"),
       60 * 60 * 24 * 7,
       60 * 60 * 24 * 90
     );
+
+    const Arbitrator = await ethers.getContractFactory("AutoAppealableArbitrator");
+    const arbitrator = await Arbitrator.deploy(1000);
+    const KlerosConnector = await ethers.getContractFactory("HATKlerosConnectorMock");
+    klerosConnector = await KlerosConnector.deploy(
+      arbitrator.address,
+      "0x85",
+      hatArbitrator.address,
+      "ipfs/",
+      3000,
+      7000
+    );
+
+    await hatArbitrator.setCourt(klerosConnector.address);
     
     await registry.setDefaultArbitrator(hatArbitrator.address);
     await vault.setArbitratorOptions(true, true, true);
@@ -38,6 +52,42 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
     await utils.increaseTime(parseInt((await vault.activeClaim()).challengePeriod.toString()));
     await utils.increaseTime(parseInt((await vault.activeClaim()).challengeTimeOutPeriod.toString()));
   }
+
+  it("Set court", async () => {
+    token = await ERC20Mock.new("Staking", "STK");
+
+    const HATArbitrator = artifacts.require("./HATArbitrator.sol");
+    hatArbitrator = await HATArbitrator.new(
+      expertCommittee,
+      token.address,
+      web3.utils.toWei("1000"),
+      web3.utils.toWei("100"),
+      60 * 60 * 24 * 7,
+      60 * 60 * 24 * 90
+    );
+ 
+    await assertFunctionRaisesException(
+      hatArbitrator.setCourt(accounts[2], { from: accounts[1] }),
+      "Ownable: caller is not the owner"
+    );
+
+    await assertFunctionRaisesException(
+      hatArbitrator.setCourt(ZERO_ADDRESS),
+      "CourtCannotBeZero"
+    );
+
+    let tx = await hatArbitrator.setCourt(accounts[2]);
+
+    assert.equal(tx.logs[0].event, "CourtSet");
+    assert.equal(tx.logs[0].args._court, accounts[2]);
+
+    assert.equal(await hatArbitrator.court(), accounts[2]);
+
+    await assertFunctionRaisesException(
+      hatArbitrator.setCourt(accounts[9]),
+      "CannontChangeCourtAddress"
+    );
+  });
 
   it("Dispute claim", async () => {
     const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
@@ -546,7 +596,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "ClaimIsNotDisputed"
     );
 
@@ -554,44 +604,44 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
     await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, web3.utils.randomHex(32), { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, web3.utils.randomHex(32), "evidence", { from: expertCommittee, value: 1000 }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "NoResolution"
     );
 
     await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
     
-    let tx = await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+    let tx = await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     assert.equal(tx.logs[0].event, "ResolutionChallenged");
     assert.equal(tx.logs[0].args._vault, vault.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "AlreadyChallenged"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "AlreadyChallenged"
     );
 
     await utils.increaseTime(60 * 60 * 24 * 7);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "ChallengePeriodPassed"
     );
 
     await makeClaimExpire(vault);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 }),
       "ClaimExpired"
     );
   });
@@ -669,18 +719,23 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await assertFunctionRaisesException(
       hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
       "CanOnlyBeCalledByCourt"
     );
 
-    tx = await hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[9] });
+    await klerosConnector.executeResolution(hatArbitrator.address, vault.address, claimId);
 
-    assert.equal(tx.logs[0].event, "ResolutionExecuted");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._claimId, claimId);
+    logs = await hatArbitrator.getPastEvents('ResolutionExecuted', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "ResolutionExecuted");
+    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._claimId, claimId);
 
     logs = await vault.getPastEvents('ApproveClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
@@ -702,7 +757,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await makeClaimExpire(vault);
 
@@ -752,18 +807,23 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
       "CannotDismissUnchallengedResolution"
     );
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await assertFunctionRaisesException(
       hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
       "CanOnlyBeCalledByCourt"
     );
 
-    tx = await hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] });
+    await klerosConnector.dismissResolution(hatArbitrator.address, vault.address, claimId);
 
-    assert.equal(tx.logs[0].event, "ResolutionDismissed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
-    assert.equal(tx.logs[0].args._claimId, claimId);
+    logs = await hatArbitrator.getPastEvents('ResolutionDismissed', {
+      fromBlock: (await web3.eth.getBlock("latest")).number - 1,
+      toBlock: (await web3.eth.getBlock("latest")).number
+    });
+
+    assert.equal(logs[0].event, "ResolutionDismissed");
+    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._claimId, claimId);
 
     logs = await vault.getPastEvents('DismissClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
@@ -782,7 +842,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, { from: accounts[0] });
+    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await makeClaimExpire(vault);
 

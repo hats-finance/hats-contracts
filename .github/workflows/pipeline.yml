@@ -31,6 +31,8 @@ jobs:
       - name: JS Lint
         run: |
           npx eslint .
+      - name: Solidity Tests # Needed because coverage doesn't work with all tests
+        run: npm run test
       - name: Solidity Test Coverage
         run: npm run coveralls
       - name: Coveralls

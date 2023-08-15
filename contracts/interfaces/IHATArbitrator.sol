@@ -23,6 +23,8 @@ interface IHATArbitrator {
     error ClaimReviewPeriodDidNotEnd();
     error ClaimExpired();
     error AlreadyChallenged();
+    error CourtCannotBeZero();
+    error CannontChangeCourtAddress();
 
     struct Resolution {
         address beneficiary;
@@ -101,6 +103,14 @@ interface IHATArbitrator {
         IHATVault indexed _vault
     );
     event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId);
+    event CourtSet(address indexed _court);
+
+    /**
+     * Sets the address of the court
+     * Can be called only once and only by the owner
+     * @param _court the address of the decentralized court contract
+     */
+    function setCourt(address _court) external;
 
     /**
      * Dispute the commitee's claim
@@ -217,12 +227,14 @@ interface IHATArbitrator {
      * Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
      * @param _vault the address of the vault where the claim was started
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
+     * @param _evidence URI of the evidence to support the challenge
      */
     function challengeResolution(
         IHATVault _vault,
-        bytes32 _claimId
+        bytes32 _claimId,
+        string calldata _evidence
     )
-        external;
+        external payable;
 
     /**
      * Submit a request for the expert committee to consider a claim

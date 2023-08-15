@@ -12,7 +12,7 @@ pragma solidity 0.8.16;
 
 import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract/contracts/IDisputeResolver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./HATArbitrator.sol"; // TODO: add interface
+import "./interfaces/IHATArbitrator.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 
@@ -21,7 +21,7 @@ import "./interfaces/IHATKlerosConnector.sol";
  *  @dev This contract acts a connector between HatsFinance and Kleros court.
  *  This contract trusts that the Arbitrator is honest and will not reenter or modify its costs during a call.
  *  The arbitrator must support appeal period.
- *  The contract also trusts that HATArbitrator contract is honest and won't reenter.
+ *  The contract also trusts that IHATArbitrator contract is honest and won't reenter.
  */
 contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
 
@@ -50,7 +50,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
     }
 
     IArbitrator public immutable klerosArbitrator; // The kleros arbitrator contract (e.g. Kleros Court).
-    HATArbitrator public immutable hatArbitrator; // Address of the Hat arbitrator contract.
+    IHATArbitrator public immutable hatArbitrator; // Address of the Hat arbitrator contract.
     uint256 public metaEvidenceUpdates; // Relevant index of the metaevidence.
     bytes public arbitratorExtraData; // Extra data for the arbitrator.
 
@@ -78,7 +78,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
     constructor (
         IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
-        HATArbitrator _hatArbitrator,
+        IHATArbitrator _hatArbitrator,
         string memory _metaEvidence,
         uint256 _winnerMultiplier,
         uint256 _loserMultiplier

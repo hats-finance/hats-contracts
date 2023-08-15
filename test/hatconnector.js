@@ -66,7 +66,6 @@ contract("HATKlerosConnector", () => {
     hatConnector = await HatConnector.deploy(
       arbitrator.address,
       arbitratorExtraData,
-      hatVault.address,
       metaEvidenceClaimant,
       metaEvidenceDepositor,
       metaEvidenceSubmit,
