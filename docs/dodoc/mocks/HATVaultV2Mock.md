@@ -479,7 +479,7 @@ function committeeCheckedIn() external view returns (bool)
 ### convertToAssets
 
 ```solidity
-function convertToAssets(uint256 shares) external view returns (uint256 assets)
+function convertToAssets(uint256 shares) external view returns (uint256)
 ```
 
 
@@ -496,12 +496,12 @@ function convertToAssets(uint256 shares) external view returns (uint256 assets)
 
 | Name | Type | Description |
 |---|---|---|
-| assets | uint256 | undefined |
+| _0 | uint256 | undefined |
 
 ### convertToShares
 
 ```solidity
-function convertToShares(uint256 assets) external view returns (uint256 shares)
+function convertToShares(uint256 assets) external view returns (uint256)
 ```
 
 
@@ -518,7 +518,7 @@ function convertToShares(uint256 assets) external view returns (uint256 shares)
 
 | Name | Type | Description |
 |---|---|---|
-| shares | uint256 | undefined |
+| _0 | uint256 | undefined |
 
 ### decimals
 
@@ -528,7 +528,7 @@ function decimals() external view returns (uint8)
 
 
 
-*Decimals are read from the underlying asset in the constructor and cached. If this fails (e.g., the asset has not been created yet), the cached value is set to a default obtained by `super.decimals()` (which depends on inheritance but is most likely 18). Override this function in order to set a guaranteed hardcoded value. See {IERC20Metadata-decimals}.*
+*Decimals are computed by adding the decimal offset on top of the underlying asset&#39;s decimals. This &quot;original&quot; value is cached during construction of the vault contract. If this read operation fails (e.g., the asset has not been created yet), a default of 18 is used to represent the underlying asset&#39;s decimals. See {IERC20Metadata-decimals}.*
 
 
 #### Returns
@@ -1264,7 +1264,7 @@ function renounceOwnership() external nonpayable
 
 
 
-*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
+*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.*
 
 
 ### rewardControllers

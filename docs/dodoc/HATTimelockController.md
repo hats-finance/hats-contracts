@@ -190,7 +190,7 @@ function executeBatch(address[] targets, uint256[] values, bytes[] payloads, byt
 ### getMinDelay
 
 ```solidity
-function getMinDelay() external view returns (uint256 duration)
+function getMinDelay() external view returns (uint256)
 ```
 
 
@@ -202,7 +202,7 @@ function getMinDelay() external view returns (uint256 duration)
 
 | Name | Type | Description |
 |---|---|---|
-| duration | uint256 | undefined |
+| _0 | uint256 | undefined |
 
 ### getRoleAdmin
 
@@ -229,12 +229,12 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ### getTimestamp
 
 ```solidity
-function getTimestamp(bytes32 id) external view returns (uint256 timestamp)
+function getTimestamp(bytes32 id) external view returns (uint256)
 ```
 
 
 
-*Returns the timestamp at with an operation becomes ready (0 for unset operations, 1 for done operations).*
+*Returns the timestamp at which an operation becomes ready (0 for unset operations, 1 for done operations).*
 
 #### Parameters
 
@@ -246,7 +246,7 @@ function getTimestamp(bytes32 id) external view returns (uint256 timestamp)
 
 | Name | Type | Description |
 |---|---|---|
-| timestamp | uint256 | undefined |
+| _0 | uint256 | undefined |
 
 ### grantRole
 
@@ -291,7 +291,7 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 ### hashOperation
 
 ```solidity
-function hashOperation(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt) external pure returns (bytes32 hash)
+function hashOperation(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt) external pure returns (bytes32)
 ```
 
 
@@ -312,12 +312,12 @@ function hashOperation(address target, uint256 value, bytes data, bytes32 predec
 
 | Name | Type | Description |
 |---|---|---|
-| hash | bytes32 | undefined |
+| _0 | bytes32 | undefined |
 
 ### hashOperationBatch
 
 ```solidity
-function hashOperationBatch(address[] targets, uint256[] values, bytes[] payloads, bytes32 predecessor, bytes32 salt) external pure returns (bytes32 hash)
+function hashOperationBatch(address[] targets, uint256[] values, bytes[] payloads, bytes32 predecessor, bytes32 salt) external pure returns (bytes32)
 ```
 
 
@@ -338,12 +338,12 @@ function hashOperationBatch(address[] targets, uint256[] values, bytes[] payload
 
 | Name | Type | Description |
 |---|---|---|
-| hash | bytes32 | undefined |
+| _0 | bytes32 | undefined |
 
 ### isOperation
 
 ```solidity
-function isOperation(bytes32 id) external view returns (bool registered)
+function isOperation(bytes32 id) external view returns (bool)
 ```
 
 
@@ -360,12 +360,12 @@ function isOperation(bytes32 id) external view returns (bool registered)
 
 | Name | Type | Description |
 |---|---|---|
-| registered | bool | undefined |
+| _0 | bool | undefined |
 
 ### isOperationDone
 
 ```solidity
-function isOperationDone(bytes32 id) external view returns (bool done)
+function isOperationDone(bytes32 id) external view returns (bool)
 ```
 
 
@@ -382,17 +382,17 @@ function isOperationDone(bytes32 id) external view returns (bool done)
 
 | Name | Type | Description |
 |---|---|---|
-| done | bool | undefined |
+| _0 | bool | undefined |
 
 ### isOperationPending
 
 ```solidity
-function isOperationPending(bytes32 id) external view returns (bool pending)
+function isOperationPending(bytes32 id) external view returns (bool)
 ```
 
 
 
-*Returns whether an operation is pending or not.*
+*Returns whether an operation is pending or not. Note that a &quot;pending&quot; operation may also be &quot;ready&quot;.*
 
 #### Parameters
 
@@ -404,17 +404,17 @@ function isOperationPending(bytes32 id) external view returns (bool pending)
 
 | Name | Type | Description |
 |---|---|---|
-| pending | bool | undefined |
+| _0 | bool | undefined |
 
 ### isOperationReady
 
 ```solidity
-function isOperationReady(bytes32 id) external view returns (bool ready)
+function isOperationReady(bytes32 id) external view returns (bool)
 ```
 
 
 
-*Returns whether an operation is ready or not.*
+*Returns whether an operation is ready for execution. Note that a &quot;ready&quot; operation is also &quot;pending&quot;.*
 
 #### Parameters
 
@@ -426,7 +426,7 @@ function isOperationReady(bytes32 id) external view returns (bool ready)
 
 | Name | Type | Description |
 |---|---|---|
-| ready | bool | undefined |
+| _0 | bool | undefined |
 
 ### onERC1155BatchReceived
 
@@ -547,7 +547,7 @@ function schedule(address target, uint256 value, bytes data, bytes32 predecessor
 
 
 
-*Schedule an operation containing a single transaction. Emits a {CallScheduled} event. Requirements: - the caller must have the &#39;proposer&#39; role.*
+*Schedule an operation containing a single transaction. Emits {CallSalt} if salt is nonzero, and {CallScheduled}. Requirements: - the caller must have the &#39;proposer&#39; role.*
 
 #### Parameters
 
@@ -568,7 +568,7 @@ function scheduleBatch(address[] targets, uint256[] values, bytes[] payloads, by
 
 
 
-*Schedule an operation containing a batch of transactions. Emits one {CallScheduled} event per transaction in the batch. Requirements: - the caller must have the &#39;proposer&#39; role.*
+*Schedule an operation containing a batch of transactions. Emits {CallSalt} if salt is nonzero, and one {CallScheduled} event per transaction in the batch. Requirements: - the caller must have the &#39;proposer&#39; role.*
 
 #### Parameters
 
@@ -766,6 +766,23 @@ event CallExecuted(bytes32 indexed id, uint256 indexed index, address target, ui
 | target  | address | undefined |
 | value  | uint256 | undefined |
 | data  | bytes | undefined |
+
+### CallSalt
+
+```solidity
+event CallSalt(bytes32 indexed id, bytes32 salt)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| id `indexed` | bytes32 | undefined |
+| salt  | bytes32 | undefined |
 
 ### CallScheduled
 

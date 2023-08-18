@@ -782,7 +782,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
         if (_from == _to) revert CannotTransferToSelf();
         // deposit/mint/transfer
         if (_to != address(0)) {
-            HATVaultsRegistry  _registry = registry;
+            HATVaultsRegistry _registry = registry;
             if (_registry.isEmergencyPaused()) revert SystemInEmergencyPause();
             // Cannot transfer or mint tokens to a user for which an active withdraw request exists
             // because then we would need to reset their withdraw request

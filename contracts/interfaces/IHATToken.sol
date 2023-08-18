@@ -2,9 +2,8 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 
-interface IHATToken is IVotes, IERC20Permit {
+interface IHATToken is IVotes {
 
     // Amount for minting or burning cannot be zero
     error ZeroAmount();
