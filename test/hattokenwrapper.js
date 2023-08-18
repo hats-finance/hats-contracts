@@ -1,6 +1,6 @@
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const HATTokenWrapper = artifacts.require("./HATTokenWrapper.sol");
-const { contract, web3 } = require("hardhat");
+const { contract } = require("hardhat");
 const {
   assertFunctionRaisesException,
 } = require("./common.js");
