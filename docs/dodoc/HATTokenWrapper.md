@@ -1,4 +1,4 @@
-# ERC4626Upgradeable
+# HATTokenWrapper
 
 
 
@@ -6,9 +6,26 @@
 
 
 
-*Implementation of the ERC4626 &quot;Tokenized Vault Standard&quot; as defined in https://eips.ethereum.org/EIPS/eip-4626[EIP-4626]. This extension allows the minting and burning of &quot;shares&quot; (represented using the ERC20 inheritance) in exchange for underlying &quot;assets&quot; through standardized {deposit}, {mint}, {redeem} and {burn} workflows. This contract extends the ERC20 standard. Any additional extensions included along it would affect the &quot;shares&quot; token represented by this contract and not the &quot;assets&quot; token which is an independent contract. [CAUTION] ==== In empty (or nearly empty) ERC-4626 vaults, deposits are at high risk of being stolen through frontrunning with a &quot;donation&quot; to the vault that inflates the price of a share. This is variously known as a donation or inflation attack and is essentially a problem of slippage. Vault deployers can protect against this attack by making an initial deposit of a non-trivial amount of the asset, such that price manipulation becomes infeasible. Withdrawals may similarly be affected by slippage. Users can protect against this attack as well as unexpected slippage in general by verifying the amount received is as expected, using a wrapper that performs these checks such as https://github.com/fei-protocol/ERC4626#erc4626router-and-base[ERC4626Router]. Since v4.9, this implementation uses virtual assets and shares to mitigate that risk. The `_decimalsOffset()` corresponds to an offset in the decimal representation between the underlying asset&#39;s decimals and the vault decimals. This offset also determines the rate of virtual shares to virtual assets in the vault, which itself determines the initial exchange rate. While not fully preventing the attack, analysis shows that the default offset (0) makes it non-profitable, as a result of the value being captured by the virtual shares (out of the attacker&#39;s donation) matching the attacker&#39;s expected gains. With a larger offset, the attack becomes orders of magnitude more expensive than it is profitable. More details about the underlying math can be found xref:erc4626.adoc#inflation-attack[here]. The drawback of this approach is that the virtual shares do capture (a very small) part of the value being accrued to the vault. Also, if the vault experiences losses, the users try to exit the vault, the virtual shares and assets will cause the first user to exit to experience reduced losses in detriment to the last users that will experience bigger losses. Developers willing to revert back to the pre-v4.9 behavior just need to override the `_convertToShares` and `_convertToAssets` functions. To learn more, check out our xref:ROOT:erc4626.adoc[ERC-4626 guide]. ==== _Available since v4.7._*
+
 
 ## Methods
+
+### MINIMAL_AMOUNT_OF_SHARES
+
+```solidity
+function MINIMAL_AMOUNT_OF_SHARES() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### allowance
 
@@ -628,22 +645,6 @@ event Deposit(address indexed sender, address indexed owner, uint256 assets, uin
 | assets  | uint256 | undefined |
 | shares  | uint256 | undefined |
 
-### Initialized
-
-```solidity
-event Initialized(uint8 version)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| version  | uint8 | undefined |
-
 ### Transfer
 
 ```solidity
@@ -681,6 +682,20 @@ event Withdraw(address indexed sender, address indexed receiver, address indexed
 | owner `indexed` | address | undefined |
 | assets  | uint256 | undefined |
 | shares  | uint256 | undefined |
+
+
+
+## Errors
+
+### AmountOfSharesMustBeMoreThanMinimalAmount
+
+```solidity
+error AmountOfSharesMustBeMoreThanMinimalAmount()
+```
+
+
+
+
 
 
 

@@ -10,6 +10,23 @@
 
 ## Methods
 
+### CLOCK_MODE
+
+```solidity
+function CLOCK_MODE() external view returns (string)
+```
+
+
+
+*Description of the clock*
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | undefined |
+
 ### DOMAIN_SEPARATOR
 
 ```solidity
@@ -168,6 +185,23 @@ function checkpoints(address account, uint32 pos) external view returns (struct 
 |---|---|---|
 | _0 | ERC20Votes.Checkpoint | undefined |
 
+### clock
+
+```solidity
+function clock() external view returns (uint48)
+```
+
+
+
+*Clock used for flagging checkpoints. Can be overridden to implement timestamp based checkpoints (and voting).*
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint48 | undefined |
+
 ### decimals
 
 ```solidity
@@ -176,7 +210,7 @@ function decimals() external view returns (uint8)
 
 
 
-*Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the value {ERC20} uses, unless this function is overridden; NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.*
+*Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the default value returned by this function, unless it&#39;s overridden. NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.*
 
 
 #### Returns
@@ -284,6 +318,29 @@ function delegates(address account) external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
+### eip712Domain
+
+```solidity
+function eip712Domain() external view returns (bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)
+```
+
+
+
+*See {EIP-5267}. _Available since v4.9._*
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| fields | bytes1 | undefined |
+| name | string | undefined |
+| version | string | undefined |
+| chainId | uint256 | undefined |
+| verifyingContract | address | undefined |
+| salt | bytes32 | undefined |
+| extensions | uint256[] | undefined |
+
 ### getChainId
 
 ```solidity
@@ -304,18 +361,18 @@ function getChainId() external view returns (uint256)
 ### getPastTotalSupply
 
 ```solidity
-function getPastTotalSupply(uint256 blockNumber) external view returns (uint256)
+function getPastTotalSupply(uint256 timepoint) external view returns (uint256)
 ```
 
 
 
-*Retrieve the `totalSupply` at the end of `blockNumber`. Note, this value is the sum of all balances. It is but NOT the sum of all the delegated votes! Requirements: - `blockNumber` must have been already mined*
+*Retrieve the `totalSupply` at the end of `timepoint`. Note, this value is the sum of all balances. It is NOT the sum of all the delegated votes! Requirements: - `timepoint` must be in the past*
 
 #### Parameters
 
 | Name | Type | Description |
 |---|---|---|
-| blockNumber | uint256 | undefined |
+| timepoint | uint256 | undefined |
 
 #### Returns
 
@@ -326,19 +383,19 @@ function getPastTotalSupply(uint256 blockNumber) external view returns (uint256)
 ### getPastVotes
 
 ```solidity
-function getPastVotes(address account, uint256 blockNumber) external view returns (uint256)
+function getPastVotes(address account, uint256 timepoint) external view returns (uint256)
 ```
 
 
 
-*Retrieve the number of votes for `account` at the end of `blockNumber`. Requirements: - `blockNumber` must have been already mined*
+*Retrieve the number of votes for `account` at the end of `timepoint`. Requirements: - `timepoint` must be in the past*
 
 #### Parameters
 
 | Name | Type | Description |
 |---|---|---|
 | account | address | undefined |
-| blockNumber | uint256 | undefined |
+| timepoint | uint256 | undefined |
 
 #### Returns
 
@@ -538,7 +595,7 @@ function renounceOwnership() external nonpayable
 
 
 
-*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
+*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.*
 
 
 ### setMinter
@@ -758,6 +815,17 @@ event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, ui
 | previousBalance  | uint256 | undefined |
 | newBalance  | uint256 | undefined |
 
+### EIP712DomainChanged
+
+```solidity
+event EIP712DomainChanged()
+```
+
+
+
+
+
+
 ### MinterSet
 
 ```solidity
@@ -824,6 +892,33 @@ An event thats emitted when the token is set to transferable
 
 
 ## Errors
+
+### InvalidShortString
+
+```solidity
+error InvalidShortString()
+```
+
+
+
+
+
+
+### StringTooLong
+
+```solidity
+error StringTooLong(string str)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| str | string | undefined |
 
 ### TransfersDisabled
 
