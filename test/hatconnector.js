@@ -15,33 +15,27 @@ const arbitrationCost = 1000;
 const arbitratorExtraData = "0x85";
 const appealTimeout = 180;
 const appealCost = 5000;
-const metaEvidenceClaimant = "ipfs/Claimant";
-const metaEvidenceDepositor = "ipfs/Depositor";
-const metaEvidenceSubmit = "ipfs/Submit";
-const hackerChallengePeriod = 180;
-const depositorChallengePeriod = 150;
+const metaEvidence = "ipfs/X";
 const winnerMultiplier = 3000;
 const loserMultiplier = 7000;
-const loserAppealPeriodMultiplier = 5000;
 const evidence = "Evidence string";
-
+const resolutionChallengePeriod = 300;
 const vaultBounty = 30;
-const hackerBounty = 50;
-const vaultDescritionHash = "NewClaim";
+const expertCommitteeBounty = 50;
+const vaultDescritionHash = "New Claim";
 
 let HatConnector;
 let Arbitrator;
-let HatVault;
+let HatArbitrator;
 let hatConnector;
 let arbitrator;
-let hatVault;
+let hatArbitrator;
 
-let vaultChalengePeriod;
+let activeClaim;
+let claimId;
 
 let governor;
 let claimant;
-let depositor;
-let submitter;
 let crowdfunder1;
 let crowdfunder2;
 let committee;
@@ -49,7 +43,7 @@ let other;
 
 contract("HATKlerosConnector", () => {
   beforeEach("initialize the contract", async function () {
-    [governor, claimant, depositor, submitter, crowdfunder1, crowdfunder2, committee, other] = await ethers.getSigners();
+    [governor, claimant, disputer, challenger, crowdfunder1, crowdfunder2, committee, expertCommittee, other] = await ethers.getSigners();
     vaultChalengePeriod = 1000;
 
     Arbitrator = await ethers.getContractFactory("AutoAppealableArbitrator", governor);
@@ -62,163 +56,108 @@ contract("HATKlerosConnector", () => {
     HatVault = await ethers.getContractFactory("HatVaultForConnectorMock", governor);
     hatVault = await HatVault.deploy(ZERO_ADDRESS, vaultChalengePeriod);
 
+    HatArbitrator = await ethers.getContractFactory("HATArbitratorForConnector", governor);
+    hatArbitrator = await HatArbitrator.deploy(resolutionChallengePeriod);
+
+    await hatVault.connect(governor).setArbitrator(hatArbitrator.address);
+
     HatConnector = await ethers.getContractFactory("HATKlerosConnector", governor);
     hatConnector = await HatConnector.deploy(
       arbitrator.address,
       arbitratorExtraData,
-      metaEvidenceClaimant,
-      metaEvidenceDepositor,
-      metaEvidenceSubmit,
-      hackerChallengePeriod,
-      depositorChallengePeriod,
+      hatArbitrator.address,
+      metaEvidence,
       winnerMultiplier,
-      loserMultiplier,
-      loserAppealPeriodMultiplier
+      loserMultiplier
     );
-
-    await hatVault.connect(governor).setArbitrator(hatConnector.address);
+    
+    await hatArbitrator.connect(governor).setCourt(hatConnector.address);
+    // Initial setup. Create claim, challenge it, accept the challenge by committee and invoke kleros arbitrator after
+    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
+    activeClaim = await hatVault.activeClaim();
+    claimId = activeClaim[0];
+    // Claim is disputed by the disputer and vault is notified.
+    await hatArbitrator.connect(disputer).dispute(hatVault.address, claimId);
+    // Expert committee arbitrates the dispute
+    await hatArbitrator.connect(expertCommittee).acceptDispute(hatVault.address, claimId, expertCommitteeBounty, await claimant.getAddress());
   });
 
-  it("Should revert if challenge timeout is too low", async () => {
-    vaultChalengePeriod = 329;
-    arbitrator = await Arbitrator.deploy(arbitrationCost);    
-    hatVault = await HatVault.deploy(arbitrator.address, vaultChalengePeriod);    
-    await expect(HatConnector.deploy(
-      arbitrator.address,
-      arbitratorExtraData,
-      hatVault.address,
-      metaEvidenceClaimant,
-      metaEvidenceDepositor,
-      metaEvidenceSubmit,
-      hackerChallengePeriod,
-      depositorChallengePeriod,
-      winnerMultiplier,
-      loserMultiplier,
-      loserAppealPeriodMultiplier
-    )).to.be.revertedWith("Wrong timeout values");
-  });
-
-  it("Should correctly set constructor params", async () => {
-    expect(await hatConnector.governor()).to.equal(await governor.getAddress());
+  it("Should correctly set initial values", async () => {
+    expect(await hatConnector.owner()).to.equal(await governor.getAddress());
     expect(await hatConnector.klerosArbitrator()).to.equal(arbitrator.address);
     expect(await hatConnector.arbitratorExtraData()).to.equal(arbitratorExtraData);
-    expect(await hatConnector.vault()).to.equal(hatVault.address);
-    expect(await hatConnector.hackerChallengePeriod()).to.equal(hackerChallengePeriod);
-    expect(await hatConnector.depositorChallengePeriod()).to.equal(depositorChallengePeriod);
+    expect(await hatConnector.hatArbitrator()).to.equal(hatArbitrator.address);
     expect(await hatConnector.winnerMultiplier()).to.equal(winnerMultiplier);
     expect(await hatConnector.loserMultiplier()).to.equal(loserMultiplier);
-    expect(await hatConnector.loserAppealPeriodMultiplier()).to.equal(loserAppealPeriodMultiplier);
+    expect(await hatConnector.loserAppealPeriodMultiplier()).to.equal(5000);
     expect(await hatConnector.metaEvidenceUpdates()).to.equal(0);
+
+    expect(await hatArbitrator.court()).to.equal(hatConnector.address);
+    const resolution = await hatArbitrator.resolutions(hatVault.address, claimId);
+  
+    expect(resolution[0]).to.equal(await claimant.getAddress());
+    expect(resolution[1]).to.equal(expertCommitteeBounty);
+    expect(resolution[2]).to.not.equal(0, "Resolve timestamp should not be 0");
+
+    activeClaim = await hatVault.activeClaim();
+    expect(activeClaim[5]).to.not.equal(0, "Challenge timestamp should not be 0");
   });
 
   it("Should make governance changes", async () => {
     await expect(
-      hatConnector.connect(other).changeChallengePeriod(10, 20)
-    ).to.be.revertedWith("The caller must be the governor.");
-    await expect(
-      hatConnector.connect(governor).changeChallengePeriod(500, 501)
-    ).to.be.revertedWith("Wrong timeout values");
-    await hatConnector.connect(governor).changeChallengePeriod(10, 20);
-    expect(await hatConnector.hackerChallengePeriod()).to.equal(10);
-    expect(await hatConnector.depositorChallengePeriod()).to.equal(20);
-
-    await expect(
       hatConnector.connect(other).changeWinnerMultiplier(101)
-    ).to.be.revertedWith("The caller must be the governor.");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
     await hatConnector.connect(governor).changeWinnerMultiplier(101);
     expect(await hatConnector.winnerMultiplier()).to.equal(101);
 
     await expect(
       hatConnector.connect(other).changeLoserMultiplier(202)
-    ).to.be.revertedWith("The caller must be the governor.");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
     await hatConnector.connect(governor).changeLoserMultiplier(202);
     expect(await hatConnector.loserMultiplier()).to.equal(202);
 
     await expect(
-      hatConnector.connect(other).changeLoserAppealPeriodMultiplier(303)
-    ).to.be.revertedWith("The caller must be the governor.");
-    await hatConnector.connect(governor).changeLoserAppealPeriodMultiplier(303);
-    expect(await hatConnector.loserAppealPeriodMultiplier()).to.equal(303);
-
-    await expect(
-      hatConnector.connect(other).changeMetaEvidence("A", "B", "C")
-    ).to.be.revertedWith("The caller must be the governor.");
-    await expect(hatConnector.connect(governor).changeMetaEvidence("A", "B", "C"))
+      hatConnector.connect(other).changeMetaEvidence("New meta")
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(hatConnector.connect(governor).changeMetaEvidence("New meta"))
       .to.emit(hatConnector, "MetaEvidence")
-      .withArgs(3, "A")
-      .to.emit(hatConnector, "MetaEvidence")
-      .withArgs(4, "B")
-      .to.emit(hatConnector, "MetaEvidence")
-      .withArgs(5, "C");
+      .withArgs(1, "New meta");
     expect(await hatConnector.metaEvidenceUpdates()).to.equal(1);    
   });
 
-  it("Check most of the requires for hacker challenge", async () => {
-    const falseClaim = "0xcd9b8f2a432501491d4f288a101653bd2885f67a39ef35776ccd47280e045027";
+  it("Check most of the requires for hacker challenge", async () => {      
     await expect(
-      hatConnector.connect(claimant).challengeByClaimant(EMPTY_HASH, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("No active claim");
-
-    const txClaim = await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    const activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    expect(txClaim)
-      .to.emit(hatVault, "SubmitClaim")
-      .withArgs(claimId, await committee.getAddress(), await claimant.getAddress(), vaultBounty, vaultDescritionHash);
+      hatConnector.connect(other).notifyArbitrator(claimId, evidence, hatVault.address, await challenger.getAddress(), { value: arbitrationCost })
+    ).to.be.revertedWith("Wrong caller");
 
     await expect(
-      hatConnector.connect(claimant).challengeByClaimant(falseClaim, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Claim id does not match");
-    await expect(
-      hatConnector.connect(other).challengeByClaimant(claimId, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Only original beneficiary allowed to challenge");
-    await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost - 1 })
+      hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost - 1 })
     ).to.be.revertedWith("Should pay the full deposit.");
 
-    // Lower bounty check
-    await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, vaultBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Incorrect bounty");
-    // Higher bounty check
-    await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, await hatVault.maxBounty() + 1, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Incorrect bounty");
+    await utils.increaseTime(resolutionChallengePeriod - 1);
 
-    await utils.increaseTime(hackerChallengePeriod + 1);
     await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Time to challenge has passed for hacker");   
+      hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost })
+    ).to.be.revertedWith("ChallengePeriodPassed");
   });
 
   it("Should set correct values after hacker challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    // Deliberately change beneficiary to check if it's stored correctly
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
 
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(1, "Incorrect status");
-    expect(claimData[1]).to.equal(hackerBounty, "Incorrect bounty");
-    expect(claimData[2]).to.equal(await other.getAddress(), "Incorrect beneficiary");
-    expect(claimData[3]).to.equal(await claimant.getAddress(), "Incorrect challenger");
-    expect(claimData[4]).to.equal(1, "Incorrect number of challenges");
-    expect(claimData[5]).to.equal(0, "openToChallengeAt should be 0");
+    expect(await hatConnector.claimChallenged(claimId)).to.equal(true, "Claim should be challenged");
 
     const disputeData = await hatConnector.disputes(0); // It's the first dispute
     expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
-    expect(disputeData[1]).to.equal(0, "pendingClaimId should be 0");
-    expect(disputeData[2]).to.equal(2, "Incorrect external disputeId"); // 2 disputes were already created before, so this should be 3rd external dispute.
-    expect(disputeData[3]).to.equal(0, "Ruling should be 0");
-    expect(disputeData[4]).to.equal(false, "Resolved should be false");
+    expect(disputeData[1]).to.equal(2, "Incorrect external disputeId"); // 2 disputes were already created before, so this should be 3rd external dispute.
+    expect(disputeData[2]).to.equal(0, "Ruling should be 0");
+    expect(disputeData[3]).to.equal(false, "Resolved should be false");
+    expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
     expect(await hatConnector.getNumberOfRounds(0)).to.equal(1, "Incorrect number of rounds");
     expect(await hatConnector.externalIDtoLocalID(2)).to.equal(0, "Incorrect local dispute Id");
 
     const currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-    activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[5]).to.equal(currentTimeStamp, "Incorrect challenge timestamp");
+    expect(await hatArbitrator.resolutionChallengedAt(hatVault.address, claimId)).to.equal(currentTimeStamp, "Wrong timestamp for resolution challenge");
 
     const dispute = await arbitrator.disputes(2);
     expect(dispute[0]).to.equal(hatConnector.address, "Incorrect arbitrable address");
@@ -226,102 +165,58 @@ contract("HATKlerosConnector", () => {
     expect(dispute[2]).to.equal(1000, "Incorrect fees value stored"); 
   });
 
-  it("Should not allow hacker to challenge 2nd time", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+  it("Should not allow to challenge 2nd time", async () => {
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await claimant.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Claim is already challenged or resolved");
+      hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost })
+    ).to.be.revertedWith("Claim already challenged");
   });
 
-  it("Should emit correct events after hacker challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await expect(hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost }))
-      .to.emit(hatVault, "ChallengeClaim")
-      .withArgs(claimId)
+  it("Should emit correct events after challenge", async () => {
+    await expect(hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost }))
       .to.emit(arbitrator, "DisputeCreation")
       .withArgs(2, hatConnector.address)
-      .to.emit(hatConnector, "ChallengedByClaimant")
+      .to.emit(hatConnector, "Challenged")
       .withArgs(claimId)
       .to.emit(hatConnector, "Dispute")
       .withArgs(arbitrator.address, 2, 0, 0) // Arbitrator, external dispute id, metaevidence id, local dispute id.
       .to.emit(hatConnector, "Evidence")
-      .withArgs(arbitrator.address, 0, await claimant.getAddress(), evidence); // Arbitrator, local dispute Id, challenger, evidence
+      .withArgs(arbitrator.address, 0, await challenger.getAddress(), evidence); // Arbitrator, local dispute Id, challenger, evidence
   });
 
   it("Should correctly reimburse the claimant in case of overpay", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    const oldBalance = await claimant.getBalance();
-    const tx = await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { gasPrice: gasPrice, value: oneETH });
+    const oldBalance = await challenger.getBalance();
+    const tx = await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { gasPrice: gasPrice, value: oneETH });
     txFee = (await tx.wait()).gasUsed * gasPrice;
     
-    newBalance = await claimant.getBalance();
+    newBalance = await challenger.getBalance();
     expect(newBalance).to.equal(
       oldBalance.sub(arbitrationCost).sub(txFee),
       "Claimant was not reimbursed correctly"
     );
   });
 
-  it("Should not be possible to approve claim during open hacker challenge", async () => {
-    let claimId = "0xcd9b8f2a432501491d4f288a101653bd2885f67a39ef35776ccd47280e045028";
-    await expect(
-      hatConnector.connect(claimant).approveClaim(claimId)
-    ).to.be.revertedWith("Claim does not exist");
-
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    const activeClaim = await hatVault.activeClaim();
-    claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
-    await expect(
-      hatConnector.connect(claimant).approveClaim(claimId)
-    ).to.be.revertedWith("Claim is already challenged or resolved");
-  });
-
-  it("Should correctly approve the claim and change the parameters after successful hacker challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
-    await expect(arbitrator.connect(governor).giveRuling(2, 2))
+  it("Should correctly execute resolution if the court decided so", async () => {
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
+    await expect(arbitrator.connect(governor).giveRuling(2, 1))
       .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 2, 2)
+      .withArgs(arbitrator.address, 2, 1)
       .to.emit(hatVault, "ApproveClaim")
-      .withArgs(claimId, hatConnector.address, await other.getAddress(), hackerBounty);
+      .withArgs(claimId, hatArbitrator.address, await claimant.getAddress(), expertCommitteeBounty);
 
     const disputeData = await hatConnector.disputes(0);
     expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
-    expect(disputeData[1]).to.equal(0, "pendingClaimId should be 0");
-    expect(disputeData[2]).to.equal(2, "Incorrect external disputeId");
-    expect(disputeData[3]).to.equal(2, "Ruling should be 2");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
-
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(3, "Incorrect status");
-    expect(claimData[1]).to.equal(hackerBounty, "Incorrect bounty");
-    expect(claimData[2]).to.equal(await other.getAddress(), "Incorrect beneficiary");
-    expect(claimData[3]).to.equal(await claimant.getAddress(), "Incorrect challenger");
-    expect(claimData[4]).to.equal(1, "Incorrect number of challenges");
-    expect(claimData[5]).to.equal(0, "openToChallengeAt should be 0");
+    expect(disputeData[1]).to.equal(2, "Incorrect external disputeId");
+    expect(disputeData[2]).to.equal(1, "Ruling should be 1");
+    expect(disputeData[3]).to.equal(true, "Resolved should be true");
+    expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
     activeClaim = await hatVault.activeClaim();
     expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 
   it("Check requires for rule", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await expect(
       hatConnector.connect(claimant).rule(2, 10)
     ).to.be.revertedWith("Invalid ruling option");
@@ -335,412 +230,42 @@ contract("HATKlerosConnector", () => {
     ).to.be.revertedWith("Already resolved");
   });
 
-  it("Should set correct values when arbitrator did not side with hacker", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
-    await expect(arbitrator.connect(governor).giveRuling(2, 0)) // 0 and 1 ruling should give the same result, but we check with 0
+  it("Should correctly dismiss the resolution", async () => {
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
+    await expect(arbitrator.connect(governor).giveRuling(2, 2)) 
       .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 2, 0);
-
-    const disputeData = await hatConnector.disputes(0);
-    expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
-    expect(disputeData[1]).to.equal(0, "pendingClaimId should be 0");
-    expect(disputeData[2]).to.equal(2, "Incorrect external disputeId");
-    expect(disputeData[3]).to.equal(0, "Ruling should be 0");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
-
-    const claimData = await hatConnector.claims(claimId);
-    const currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-    expect(claimData[0]).to.equal(0, "Incorrect status");
-    expect(claimData[1]).to.equal(hackerBounty, "Incorrect bounty");
-    expect(claimData[2]).to.equal(await other.getAddress(), "Incorrect beneficiary");
-    expect(claimData[3]).to.equal(await claimant.getAddress(), "Incorrect challenger");
-    expect(claimData[4]).to.equal(1, "Incorrect number of challenges");
-    expect(claimData[5]).to.equal(currentTimeStamp, "openToChallengeAt is incorrect");
-
-    activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[0]).to.equal(claimId, "Active claim should not change");
-  });
-
-  it("Should not allow hacker to challenge instead of depositor", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Hacker already challenged");
-  });
-
-  it("Depositor should not be able to challenge before or at the time of hacker dispute", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Not a time to challenge for depositor.");
-    
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Claim is already challenged or resolved");
-  });
-
-  it("Sanity checks for depositor challenge should work correctly", async () => {
-    const falseClaim = "0xcd9b8f2a432501491d4f288a101653bd2885f67a39ef35776ccd47280e045027";
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(EMPTY_HASH, evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("No active claim");
-
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(falseClaim, evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Claim id does not match");
-
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost - 1 }) 
-    ).to.be.revertedWith("Should pay the full deposit.");
-
-    await utils.increaseTime(depositorChallengePeriod + 1);
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Time to challenge has passed for depositor.");
-  });
-
-  it("Check depositor challenge timeout if there was no challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    
-    await utils.increaseTime(hackerChallengePeriod + depositorChallengePeriod + 1);
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Not a time to challenge for depositor.");
-  });
-
-  it("Depositor should not challenge two times in a row", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost });
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Claim is already challenged or resolved");
-  });
-
-  it("Should not be able to challenge if the claim was finalized in the vault", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 2);
-
-    await expect(
-      hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost })
-    ).to.be.revertedWith("Claim id does not match"); // Active claim was deleted so id won't match an empty hash
-    await expect(
-      hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Claim id does not match");
-  });
-
-  it("Depositor should be able to challenge if there was no hacker challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await utils.increaseTime(hackerChallengePeriod + 1);
-    
-    await expect(hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }))
-      .to.emit(hatVault, "ChallengeClaim")
-      .withArgs(claimId);
-  });
-
-  it("Should set correct values after depositor challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost });
-    
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(2, "Incorrect status");
-    expect(claimData[1]).to.equal(hackerBounty, "Incorrect bounty");
-    expect(claimData[2]).to.equal(await other.getAddress(), "Incorrect beneficiary");
-    expect(claimData[3]).to.equal(await depositor.getAddress(), "Incorrect challenger");
-    expect(claimData[4]).to.equal(2, "Incorrect number of challenges");
-
-    const disputeData = await hatConnector.disputes(1); // It's the 2nd dispute
-    expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
-    expect(disputeData[1]).to.equal(0, "pendingClaimId should be 0");
-    expect(disputeData[2]).to.equal(3, "Incorrect external disputeId"); // 2 disputes were already created at the start and 3rd dispute was done by claimant.
-    expect(disputeData[3]).to.equal(0, "Ruling should be 0");
-    expect(disputeData[4]).to.equal(false, "Resolved should be false");
-
-    expect(await hatConnector.getNumberOfRounds(1)).to.equal(1, "Incorrect number of rounds");
-    expect(await hatConnector.externalIDtoLocalID(3)).to.equal(1, "Incorrect local dispute Id");
-
-    const currentTimeStamp = (await web3.eth.getBlock("latest")).timestamp;
-    activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[5]).to.not.equal(currentTimeStamp, "Challenge timestamp should not change in vault");
-
-    const dispute = await arbitrator.disputes(3);
-    expect(dispute[0]).to.equal(hatConnector.address, "Incorrect arbitrable address");
-    expect(dispute[1]).to.equal(2, "Incorrect number of choices");
-    expect(dispute[2]).to.equal(1000, "Incorrect fees value stored");
-  });
-
-  it("Should emit correct events after depositor challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await expect(hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost }))
-      .to.emit(arbitrator, "DisputeCreation")
-      .withArgs(3, hatConnector.address)
-      .to.emit(hatConnector, "ChallengedByDepositor")
-      .withArgs(claimId)
-      .to.emit(hatConnector, "Dispute")
-      .withArgs(arbitrator.address, 3, 1, 1) // Arbitrator, external dispute id, metaevidence id, local dispute id.
-      .to.emit(hatConnector, "Evidence")
-      .withArgs(arbitrator.address, 1, await depositor.getAddress(), evidence); // Arbitrator, local dispute Id, challenger, evidence
-  });
-
-  it("Should correctly reimburse the depositor in case of overpay", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    const oldBalance = await depositor.getBalance();
-    const tx = await hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { gasPrice: gasPrice, value: oneETH });
-    txFee = (await tx.wait()).gasUsed * gasPrice;
-    
-    newBalance = await depositor.getBalance();
-    expect(newBalance).to.equal(
-      oldBalance.sub(arbitrationCost).sub(txFee),
-      "Depositor was not reimbursed correctly"
-    );
-  });
-
-  it("Should approve claim if the depositor did not challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-
-    await expect(
-      hatConnector.connect(other).approveClaim(claimId)
-    ).to.be.revertedWith("Depositor still can challenge");
-
-    await utils.increaseTime(depositorChallengePeriod + 1);
-    await expect(hatConnector.connect(other).approveClaim(claimId))
-      .to.emit(hatVault, "ApproveClaim")
-      .withArgs(claimId, hatConnector.address, await claimant.getAddress(), vaultBounty); // Beneficiary and bounty should be unchanged.
-
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(3, "Incorrect status");
-
-    activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
-  });
-
-  it("Should dismiss the claim after successful depositor challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-    await hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost });
-    await expect(arbitrator.connect(governor).giveRuling(3, 2))
-      .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 3, 2)
+      .withArgs(arbitrator.address, 2, 2)
       .to.emit(hatVault, "DismissClaim")
       .withArgs(claimId);
 
-    const disputeData = await hatConnector.disputes(1);
-    expect(disputeData[3]).to.equal(2, "Ruling should be 2");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
-
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(3, "Incorrect status");
-
-    activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
-  });
-
-  it("Should approve the claim with default parameters after unsuccessful depositor challenge", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 1);
-    await hatConnector.connect(depositor).challengeByDepositor(claimId, evidence, { value: arbitrationCost });
-    await expect(arbitrator.connect(governor).giveRuling(3, 1))
-      .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 3, 1)
-      .to.emit(hatVault, "ApproveClaim")
-      .withArgs(claimId, hatConnector.address, await claimant.getAddress(), vaultBounty);
-
-    const disputeData = await hatConnector.disputes(1);
-    expect(disputeData[3]).to.equal(1, "Ruling should be 2");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
-
-    const claimData = await hatConnector.claims(claimId);
-    expect(claimData[0]).to.equal(3, "Incorrect status");
+    const disputeData = await hatConnector.disputes(0);
+    expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
+    expect(disputeData[1]).to.equal(2, "Incorrect external disputeId");
+    expect(disputeData[2]).to.equal(2, "Ruling should be 2");
+    expect(disputeData[3]).to.equal(true, "Resolved should be true");
+    expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
     activeClaim = await hatVault.activeClaim();
     expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 
-  it("Check requires for manual claim submission", async () => {
-    await expect(
-      hatConnector.connect(submitter).startProcedureToSubmitClaim(await hatVault.maxBounty() + 1, vaultDescritionHash, evidence, { value: arbitrationCost }) 
-    ).to.be.revertedWith("Bounty too high");
-
-    await expect(
-      hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost - 1 }) 
-    ).to.be.revertedWith("Should pay the full deposit.");
-  });
-
-  it("Should set correct values after manual submission", async () => {
-    await hatConnector.connect(other).startProcedureToSubmitClaim(vaultBounty, "testDescription", evidence, { value: arbitrationCost });
-    // Make a 2nd submission so it's not a default index.
-    await hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost });
-
-    const disputeData = await hatConnector.disputes(1);
-    expect(disputeData[0]).to.equal(EMPTY_HASH, "ClaimId should be empty");
-    expect(disputeData[1]).to.equal(1, "pendingClaimId should be 1");
-    expect(disputeData[2]).to.equal(3, "Incorrect external disputeId"); // 2 disputes were already created at the start and 3rd dispute was done by 1st manual submission.
-    expect(disputeData[3]).to.equal(0, "Ruling should be 0");
-    expect(disputeData[4]).to.equal(false, "Resolved should be false");
-
-    expect(await hatConnector.getNumberOfRounds(1)).to.equal(1, "Incorrect number of rounds");
-    expect(await hatConnector.externalIDtoLocalID(3)).to.equal(1, "Incorrect local dispute Id");
-
-    const pendingClaimData = await hatConnector.pendingClaims(1);
-    expect(pendingClaimData[0]).to.equal(hackerBounty, "ClaimId should be empty");
-    expect(pendingClaimData[1]).to.equal(await submitter.getAddress(), "Incorrect challenger address");
-    expect(pendingClaimData[2]).to.equal(vaultDescritionHash, "Incorrect description");
-    expect(pendingClaimData[3]).to.equal(false, "Pending claim should not be validated");
-    expect(pendingClaimData[4]).to.equal(false, "Pending claim should not be submitted");
-
-    const dispute = await arbitrator.disputes(3);
-    expect(dispute[0]).to.equal(hatConnector.address, "Incorrect arbitrable address");
-    expect(dispute[1]).to.equal(2, "Incorrect number of choices");
-    expect(dispute[2]).to.equal(1000, "Incorrect fees value stored");
-  });
-
-  it("Should emit correct events after manual submission", async () => {
-    await expect(hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost }))
-      .to.emit(arbitrator, "DisputeCreation")
-      .withArgs(2, hatConnector.address)
-      .to.emit(hatConnector, "Dispute")
-      .withArgs(arbitrator.address, 2, 2, 0) // Arbitrator, external dispute id, metaevidence id, local dispute id.
-      .to.emit(hatConnector, "Evidence")
-      .withArgs(arbitrator.address, 0, await submitter.getAddress(), evidence); // Arbitrator, local dispute Id, challenger, evidence
-  });
-
-  it("Should correctly reimburse the submitter in case of overpay", async () => {
-    const oldBalance = await submitter.getBalance();
-    const tx = await hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { gasPrice: gasPrice, value: oneETH });
-    txFee = (await tx.wait()).gasUsed * gasPrice;
-    
-    newBalance = await submitter.getBalance();
-    expect(newBalance).to.equal(
-      oldBalance.sub(arbitrationCost).sub(txFee),
-      "Submitter was not reimbursed correctly"
-    );
-  });
-
-  it("Should successfully submit the claim in vault if it was validated by arbitrator", async () => { 
-    await hatConnector.connect(other).startProcedureToSubmitClaim(vaultBounty, "testDescription", evidence, { value: arbitrationCost });
-    // Make a 2nd submission so it's not a default index.
-    await hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost });
-
-    await expect(arbitrator.connect(governor).giveRuling(3, 2))
+  it("Should dismiss when 0 ruling", async () => {
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
+    await expect(arbitrator.connect(governor).giveRuling(2, 0)) 
       .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 3, 2)
-      .to.emit(hatConnector, "PendingClaimValidated")
-      .withArgs(1);
+      .withArgs(arbitrator.address, 2, 0)
+      .to.emit(hatVault, "DismissClaim")
+      .withArgs(claimId);
 
-    const disputeData = await hatConnector.disputes(1);
-    expect(disputeData[3]).to.equal(2, "Ruling should be 2");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
+    const disputeData = await hatConnector.disputes(0);
+    expect(disputeData[0]).to.equal(claimId, "Incorrect claimId");
+    expect(disputeData[1]).to.equal(2, "Incorrect external disputeId");
+    expect(disputeData[2]).to.equal(0, "Ruling should be 0");
+    expect(disputeData[3]).to.equal(true, "Resolved should be true");
+    expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
-    let pendingClaimData = await hatConnector.pendingClaims(1);
-    expect(pendingClaimData[3]).to.equal(true, "Pending claim should be validated");
-    expect(pendingClaimData[4]).to.equal(false, "Pending claim should not be submitted");
-
-    const txSubmit = await hatConnector.connect(submitter).submitPendingClaim(1);
-    pendingClaimData = await hatConnector.pendingClaims(1);
-    expect(pendingClaimData[3]).to.equal(true, "Pending claim should be validated");
-    expect(pendingClaimData[4]).to.equal(true, "Pending claim should be submitted");
-
-    const activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    expect(claimId).to.not.equal(EMPTY_HASH, "ClaimId should not be empty");
-    expect(activeClaim[1]).to.equal(await submitter.getAddress(), "Beneficiary is incorrect");
-    expect(activeClaim[2]).to.equal(hackerBounty, "Bounty is incorrect");
-    expect(activeClaim[3]).to.equal(hatConnector.address, "Committee address is incorrect");
-
-    expect(txSubmit)
-      .to.emit(hatVault, "SubmitClaim")
-      .withArgs(claimId, hatConnector.address, await submitter.getAddress(), hackerBounty, vaultDescritionHash);    
-  });
-
-  it("Should not send a pending claim that was not validated", async () => { 
-    await hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost });
-
-    await expect(
-      hatConnector.connect(submitter).submitPendingClaim(0)
-    ).to.be.revertedWith("Claim should be validated");
-
-    await arbitrator.connect(governor).giveRuling(2, 0); // Arbitrator did not side with submitter, claim should not be sent.
-
-    await expect(
-      hatConnector.connect(submitter).submitPendingClaim(0)
-    ).to.be.revertedWith("Claim should be validated");
-
-    const activeClaim = await hatVault.activeClaim();
-    expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be empty");
-  });
-
-  it("Should not send validated claim 2 times", async () => { 
-    await hatConnector.connect(submitter).startProcedureToSubmitClaim(hackerBounty, vaultDescritionHash, evidence, { value: arbitrationCost });
-    await arbitrator.connect(governor).giveRuling(2, 2);
-    await hatConnector.connect(submitter).submitPendingClaim(0);
-
-    await expect(
-      hatConnector.connect(submitter).submitPendingClaim(0)
-    ).to.be.revertedWith("Already submitted");
+    activeClaim = await hatVault.activeClaim();
+    expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 
   it("Should correctly fund an appeal and fire the events", async () => {
@@ -750,12 +275,7 @@ contract("HATKlerosConnector", () => {
     let txFee;
     let roundInfo;
     
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await expect(hatConnector.connect(crowdfunder1).fundAppeal(0, 3, { value: 1000 })).to.be.revertedWith(
       "Side out of bounds"
     );
@@ -834,11 +354,7 @@ contract("HATKlerosConnector", () => {
   it("Should correctly create and fund subsequent appeal rounds", async () => {
     let roundInfo;
 
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
 
     await hatConnector.connect(crowdfunder1).fundAppeal(0, 2, { value: 8500 });
@@ -881,11 +397,7 @@ contract("HATKlerosConnector", () => {
   });
 
   it("Should not fund the appeal after the timeout", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
 
     await utils.increaseTime(appealTimeout / 2 + 1);
@@ -905,10 +417,7 @@ contract("HATKlerosConnector", () => {
   });
 
   it("Should not fund appeal if dispute is resolved", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await arbitrator.connect(governor).giveRuling(2, 1);
 
     await expect(
@@ -926,10 +435,7 @@ contract("HATKlerosConnector", () => {
     const crowdfunder1Address = await crowdfunder1.getAddress();
     const crowdfunder2Address = await crowdfunder2.getAddress();
 
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
 
     await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
 
@@ -969,8 +475,8 @@ contract("HATKlerosConnector", () => {
     let ruling = await arbitrator.currentRuling(2);
 
     const disputeData = await hatConnector.disputes(0);
-    expect(disputeData[3]).to.equal(ruling, "Incorrect ruling");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
+    expect(disputeData[2]).to.equal(ruling, "Incorrect ruling");
+    expect(disputeData[3]).to.equal(true, "Resolved should be true");
 
     const oldBalance = await claimant.getBalance();
     oldBalance1 = await crowdfunder1.getBalance();
@@ -1086,11 +592,7 @@ contract("HATKlerosConnector", () => {
     let oldBalance;
     let newBalance;
 
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
 
     // LoserFee = 8500. AppealCost = 5000.
@@ -1132,11 +634,7 @@ contract("HATKlerosConnector", () => {
     let newBalance;
     let totalAmount;
 
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
-
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
 
     // LoserFee = 8500. AppealCost = 5000.
@@ -1187,24 +685,21 @@ contract("HATKlerosConnector", () => {
   });
 
   it("Should switch the ruling if the loser paid appeal fees while winner did not", async () => {
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
 
-    await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout); // 1 ruling that dismisses claim should be switched
+    await arbitrator.giveAppealableRuling(2, 2, appealCost, appealTimeout); // 2 ruling that dismisses claim should be switched
 
-    await hatConnector.connect(claimant).fundAppeal(0, 2, { value: 8500 });
+    await hatConnector.connect(claimant).fundAppeal(0, 1, { value: 8500 });
     await utils.increaseTime(appealTimeout + 1);
     await expect(arbitrator.executeRuling(2))
       .to.emit(hatConnector, "Ruling")
-      .withArgs(arbitrator.address, 2, 2)
-      .to.emit(hatVault, "ApproveClaim") // Claim should be approved
-      .withArgs(claimId, hatConnector.address, await other.getAddress(), hackerBounty);
+      .withArgs(arbitrator.address, 2, 1)
+      .to.emit(hatVault, "ApproveClaim") // Resolution should be executed
+      .withArgs(claimId, hatArbitrator.address, await claimant.getAddress(), expertCommitteeBounty);
 
     const disputeData = await hatConnector.disputes(0);
-    expect(disputeData[3]).to.equal(2, "Ruling should be switched to 2");
-    expect(disputeData[4]).to.equal(true, "Resolved should be true");
+    expect(disputeData[2]).to.equal(1, "Ruling should be switched to 1");
+    expect(disputeData[3]).to.equal(true, "Resolved should be true");
   });
 
   it("Should correctly submit evidence", async () => {
@@ -1212,10 +707,7 @@ contract("HATKlerosConnector", () => {
       hatConnector.connect(other).submitEvidence(0, "Test")
     ).to.be.reverted; // Dispute doesn't exist so it should revert
     
-    await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    let activeClaim = await hatVault.activeClaim();
-    const claimId = activeClaim[0];
-    await hatConnector.connect(claimant).challengeByClaimant(claimId, hackerBounty, await other.getAddress(), evidence, { value: arbitrationCost });
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
     
     await expect(hatConnector.connect(other).submitEvidence(0, "Test"))
       .to.emit(hatConnector, "Evidence")
