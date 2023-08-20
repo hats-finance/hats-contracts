@@ -70,7 +70,7 @@ contract HatVaultForConnectorMock {
             bountyGovernanceHAT: 0,
             bountyHackerHATVested: 0,
             arbitrator: arbitrator,
-            challengePeriod: getChallengePeriod(),
+            challengePeriod: challengePeriod,
             challengeTimeOutPeriod: CHALLENGE_TIMEOUT_PERIOD,
             arbitratorCanChangeBounty: true,
             arbitratorCanChangeBeneficiary: true
@@ -122,13 +122,5 @@ contract HatVaultForConnectorMock {
         delete activeClaim;
 
         emit DismissClaim(_claimId);
-    }
-
-    function getChallengePeriod() public view returns(uint32) {
-        return challengePeriod;
-    }
-
-    function maxBounty() public view returns(uint16) {
-        return  MAX_BOUNTY_LIMIT;
     }
 }
