@@ -7,7 +7,7 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS)
   .setAction(async (_, __, runSuper) => {
     const paths = await runSuper();
 
-    return paths.filter(p => !p.endsWith("HATArbitrator.sol"));
+    return paths.filter(p => !p.endsWith("HATArbitrator.sol") && !p.endsWith("Connector.sol") && !p.endsWith("ConnectorMock.sol"));
   });
 
 config.solidity.settings.viaIR = false;

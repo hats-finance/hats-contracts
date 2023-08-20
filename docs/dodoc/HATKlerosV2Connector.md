@@ -117,7 +117,7 @@ function getArbitrationCost() external view returns (uint256)
 ### hatArbitrator
 
 ```solidity
-function hatArbitrator() external view returns (contract HATArbitrator)
+function hatArbitrator() external view returns (contract IHATArbitrator)
 ```
 
 
@@ -129,7 +129,7 @@ function hatArbitrator() external view returns (contract HATArbitrator)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract HATArbitrator | undefined |
+| _0 | contract IHATArbitrator | undefined |
 
 ### klerosArbitrator
 
