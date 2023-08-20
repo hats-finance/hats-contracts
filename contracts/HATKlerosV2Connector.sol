@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.16;
 
-import "./HATArbitrator.sol"; // TODO: add interface
+import "./interfaces/IHATArbitrator.sol";
 import "./interfaces/IHATVault.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 import { IArbitrable, IArbitrator } from "@kleros/erc-792/contracts/IArbitrator.sol";
@@ -33,7 +33,7 @@ contract HATKlerosV2Connector is IArbitrable, IHATKlerosConnector {
     }
 
     IArbitrator public immutable klerosArbitrator; // The kleros arbitrator contract (e.g. Kleros Court).
-    HATArbitrator public immutable hatArbitrator; // Address of the Hat arbitrator contract.
+    IHATArbitrator public immutable hatArbitrator; // Address of the Hat arbitrator contract.
     bytes public arbitratorExtraData; // Extra data for the arbitrator.
 
     DisputeStruct[] public disputes; // Stores the disputes created in this contract.
@@ -54,7 +54,7 @@ contract HATKlerosV2Connector is IArbitrable, IHATKlerosConnector {
     constructor (
         IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
-        HATArbitrator _hatArbitrator,
+        IHATArbitrator _hatArbitrator,
         string memory _metaEvidence
     ) {
         // TODO: add new IEvidence events once they're established.
