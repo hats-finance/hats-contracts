@@ -213,7 +213,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     assert.equal(logs[0].event, "ApproveClaim");
     assert.equal(logs[0].args._claimId, claimId);
-    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._approver, hatArbitrator.address);
 
     claimId = await submitClaim(vault, { accounts });
     await token.mint(accounts[0], web3.utils.toWei("1000"));
@@ -701,7 +701,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     assert.equal(logs[0].event, "ApproveClaim");
     assert.equal(logs[0].args._claimId, claimId);
-    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._approver, hatArbitrator.address);
     assert.equal(logs[0].args._bountyPercentage, 5000);
     assert.equal(logs[0].args._beneficiary, accounts[4]);
 
@@ -744,7 +744,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     assert.equal(logs[0].event, "ApproveClaim");
     assert.equal(logs[0].args._claimId, claimId);
-    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._approver, hatArbitrator.address);
     assert.equal(logs[0].args._bountyPercentage, 4000);
     assert.equal(logs[0].args._beneficiary, accounts[5]);
 
@@ -1014,7 +1014,7 @@ contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
 
     assert.equal(logs[0].event, "SubmitClaim");
     assert.equal(logs[0].args._claimId, claimId);
-    assert.equal(logs[0].args._committee, hatArbitrator.address);
+    assert.equal(logs[0].args._submitter, hatArbitrator.address);
     assert.equal(logs[0].args._bountyPercentage, 5000);
     assert.equal(logs[0].args._beneficiary, accounts[2]);
     assert.equal(logs[0].args._descriptionHash, "desc2");

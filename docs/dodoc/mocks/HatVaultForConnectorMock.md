@@ -157,40 +157,6 @@ function dismissClaim(bytes32 _claimId) external nonpayable
 |---|---|---|
 | _claimId | bytes32 | undefined |
 
-### getChallengePeriod
-
-```solidity
-function getChallengePeriod() external view returns (uint32)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint32 | undefined |
-
-### maxBounty
-
-```solidity
-function maxBounty() external view returns (uint16)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | undefined |
-
 ### nonce
 
 ```solidity

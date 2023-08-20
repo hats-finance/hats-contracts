@@ -1740,7 +1740,7 @@ contract("HatVaults", (accounts) => {
     await vault.challengeClaim(claimId);
 
     // cannot withdraw while active claim exists
-    assertFunctionRaisesException(
+    await assertFunctionRaisesException(
       safeRedeem(vault, web3.utils.toWei(".01"), staker),
       "RedeemMoreThanMax"
     );
