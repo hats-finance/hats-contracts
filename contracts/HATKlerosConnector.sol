@@ -157,7 +157,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
-        if (msg.value > arbitrationCost) payable(_disputer).send(msg.value - arbitrationCost);
+        if (msg.value > arbitrationCost) payable(_disputer).transfer(msg.value - arbitrationCost);
 
         emit Challenged(_claimId);
         emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceUpdates, localDisputeId);
@@ -270,7 +270,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             klerosArbitrator.appeal{value: appealCost}(externalDisputeId, arbitratorExtraData);
         }
 
-        if (msg.value > contribution) payable(msg.sender).send(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
+        if (msg.value > contribution) payable(msg.sender).transfer(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
         return round.hasPaid[_side];
     }
 
@@ -310,7 +310,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
 
         if (reward != 0) {
             round.contributions[_beneficiary][_side] = 0;
-            _beneficiary.send(reward); // It is the user's responsibility to accept ETH.
+            _beneficiary.transfer(reward); // It is the user's responsibility to accept ETH.
             emit Withdrawal(_localDisputeId, _round, _side, _beneficiary, reward);
         }
     }
