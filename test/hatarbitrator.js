@@ -10,7 +10,7 @@ const {
 } = require("./common.js");
 const { assert } = require("chai");
 
-contract("Registry Arbitrator [ @skip-on-coverage ]", (accounts) => {
+contract("Registry Arbitrator", (accounts) => {
 
   let hatArbitrator;
   let klerosConnector;

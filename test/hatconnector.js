@@ -41,7 +41,7 @@ let crowdfunder2;
 let committee;
 let other;
 
-contract("HATKlerosConnector [ @skip-on-coverage ]", () => {
+contract("HATKlerosConnector", () => {
   beforeEach("initialize the contract", async function () {
     [governor, claimant, disputer, challenger, crowdfunder1, crowdfunder2, committee, expertCommittee, other] = await ethers.getSigners();
     vaultChalengePeriod = 1000;
