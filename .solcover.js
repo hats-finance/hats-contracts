@@ -6,7 +6,7 @@ module.exports = {
    timeout: 100000,
   },
   configureYulOptimizer: true,
-  skipFiles: ['test/', 'mocks/', 'HATArbitrator.sol', 'HATKlerosConnector.sol', 'HATKlerosV2Connector.sol'],
+  skipFiles: ['test/', 'mocks/', 'HATArbitrator.sol', 'HATKlerosV2Connector.sol'],
   providerOptions: {
     accounts: [
        {
