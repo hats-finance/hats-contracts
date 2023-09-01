@@ -298,10 +298,8 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         } else if (!round.hasPaid[finalRuling]) {
             // Reimburse unspent fees proportionally if the ultimate winner didn't pay appeal fees fully.
             // Note that if only one side is funded it will become a winner and this part of the condition won't be reached.
-            reward = round.fundedSides.length > 1
-                ? (round.contributions[_beneficiary][_side] * round.feeRewards) /
-                    (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]])
-                : 0;
+            reward = (round.contributions[_beneficiary][_side] * round.feeRewards) /
+                    (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]]);
         } else if (finalRuling == _side) {
             uint256 paidFees = round.paidFees[_side];
             // Reward the winner.
@@ -402,10 +400,8 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             } else if (!round.hasPaid[finalRuling]) {
                 // Reimburse unspent fees proportionally if the ultimate winner didn't pay appeal fees fully.
                 // Note that if only one side is funded it will become a winner and this part of the condition won't be reached.
-                sum += round.fundedSides.length > 1
-                    ? (round.contributions[_beneficiary][_contributedTo] * round.feeRewards) /
-                        (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]])
-                    : 0;
+                sum += (round.contributions[_beneficiary][_contributedTo] * round.feeRewards) /
+                        (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]]);
             } else if (finalRuling == _contributedTo) {
                 uint256 paidFees = round.paidFees[_contributedTo];
                 // Reward the winner.

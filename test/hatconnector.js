@@ -185,6 +185,10 @@ contract("HATKlerosConnector", () => {
   });
 
   it("Should correctly reimburse the claimant in case of overpay", async () => {
+    await ethers.provider.send("hardhat_setBalance", [
+      await challenger.getAddress(),
+      "0x77436DCB99D4CE4C0000", // 100 ETH
+    ]);
     const oldBalance = await challenger.getBalance();
     const tx = await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { gasPrice: gasPrice, value: oneETH });
     txFee = (await tx.wait()).gasUsed * gasPrice;
@@ -194,6 +198,17 @@ contract("HATKlerosConnector", () => {
       oldBalance.sub(arbitrationCost).sub(txFee),
       "Claimant was not reimbursed correctly"
     );
+  });
+
+  it("Check number of ruling options", async () => {
+    expect(await hatConnector.numberOfRulingOptions(0)).to.equal(2);
+  });
+
+  it("Check multipliers", async () => {
+    expect((await hatConnector.getMultipliers())[0].toString()).to.equal(winnerMultiplier.toString());
+    expect((await hatConnector.getMultipliers())[1].toString()).to.equal(loserMultiplier.toString());
+    expect((await hatConnector.getMultipliers())[2].toString()).to.equal("5000");
+    expect((await hatConnector.getMultipliers())[3].toString()).to.equal("10000");
   });
 
   it("Should correctly execute resolution if the court decided so", async () => {
@@ -496,6 +511,9 @@ contract("HATKlerosConnector", () => {
       "The balance of the claimant should stay the same (withdraw 0 round from winning ruling)"
     );
 
+    let totalWithdrawableAmount = await hatConnector.getTotalWithdrawableAmount(0, crowdfunder1Address, 2);
+    expect(totalWithdrawableAmount).to.equal(0, "Incorrect withdrawable amount for not resolved dispute");
+
     await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 0, 2);
 
     newBalance1 = await crowdfunder1.getBalance();
@@ -588,6 +606,157 @@ contract("HATKlerosConnector", () => {
     expect(contributionInfo[2]).to.equal(0, "Contribution of claimant should be 0 in 2 round");
   });
 
+  it("Should correctly withdraw appeal fees if a dispute had winner/loser when appeal cost is 0", async () => {
+    let oldBalance1;
+    let oldBalance2;
+    let newBalance;
+    let newBalance1;
+    let newBalance2;
+    const claimantAddress = await claimant.getAddress();
+    const crowdfunder1Address = await crowdfunder1.getAddress();
+    const crowdfunder2Address = await crowdfunder2.getAddress();
+
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
+
+    await arbitrator.giveAppealableRuling(2, 1, 0, appealTimeout);
+
+    // LoserFee = 8500, WinnerFee = 6500. AppealCost = 5000.
+    // 0 Round.
+    await hatConnector.connect(claimant).fundAppeal(0, 2, { value: 0 });
+
+    await hatConnector.connect(crowdfunder1).fundAppeal(0, 1, { value: 0 });
+
+    await arbitrator.giveAppealableRuling(2, 1, 0, appealTimeout);
+
+    // 1 Round.
+    await hatConnector.connect(claimant).fundAppeal(0, 2, { value: 0 });
+
+    await hatConnector.connect(crowdfunder2).fundAppeal(0, 1, { value: 0 });
+
+    await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
+
+    // 2 Round.
+    // Partially funded side should be reimbursed.
+    await hatConnector.connect(claimant).fundAppeal(0, 2, { value: 0 });
+
+    // Winner doesn't have to fund appeal in this case but let's check if it causes unexpected behaviour.
+    await hatConnector.connect(crowdfunder2).fundAppeal(0, 1, { value: 0 });
+
+    await utils.increaseTime(appealTimeout + 1);
+
+    await arbitrator.executeRuling(2);
+
+    const oldBalance = await claimant.getBalance();
+    oldBalance1 = await crowdfunder1.getBalance();
+    oldBalance2 = await crowdfunder2.getBalance();
+
+    let totalWithdrawableAmount = await hatConnector.getTotalWithdrawableAmount(0, await claimant.getAddress(), 1);
+    expect(totalWithdrawableAmount).to.equal(0, "Incorrect withdrawable amount for not resolved dispute");
+
+    // Withdraw 0 round.
+    await hatConnector.withdrawFeesAndRewards(0, claimantAddress, 0, 2);
+
+    newBalance = await claimant.getBalance();
+    expect(newBalance).to.equal(oldBalance, "The balance of the claimant should stay the same (withdraw 0 round)");
+
+    await hatConnector.withdrawFeesAndRewards(0, claimantAddress, 0, 1);
+
+    newBalance = await claimant.getBalance();
+    expect(newBalance).to.equal(
+      oldBalance,
+      "The balance of the claimant should stay the same (withdraw 0 round from winning ruling)"
+    );
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 0, 2);
+
+    newBalance1 = await crowdfunder1.getBalance();
+    expect(newBalance1).to.equal(
+      oldBalance1,
+      "The balance of the crowdfunder1 should stay the same (withdraw 0 round)"
+    );
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 0, 1);
+
+    newBalance1 = await crowdfunder1.getBalance();
+    expect(newBalance1).to.equal(
+      oldBalance1,
+      "The balance of the crowdfunder1 is incorrect after withdrawing from winning ruling 0 round"
+    );
+
+    oldBalance1 = newBalance1;
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 0, 1);
+
+    newBalance1 = await crowdfunder1.getBalance();
+    expect(newBalance1).to.equal(
+      oldBalance1,
+      "The balance of the crowdfunder1 should stay the same after withdrawing the 2nd time"
+    );
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder2Address, 0, 1);
+
+    newBalance2 = await crowdfunder2.getBalance();
+    expect(newBalance2).to.equal(
+      oldBalance2,
+      "The balance of the crowdfunder2 is incorrect (withdraw 0 round)"
+    );
+
+    oldBalance2 = newBalance2;
+
+    let contributionInfo = await hatConnector.getContributions(
+      0,
+      0,
+      crowdfunder1Address
+    );
+    expect(contributionInfo[1]).to.equal(0, "Contribution of crowdfunder1 should be 0");
+    contributionInfo = await hatConnector.getContributions(0, 0, crowdfunder2Address);
+    expect(contributionInfo[1]).to.equal(0, "Contribution of crowdfunder2 should be 0");
+
+    // Withdraw 1 round.
+    await hatConnector.withdrawFeesAndRewards(0, claimantAddress, 1, 1);
+    await hatConnector.withdrawFeesAndRewards(0, claimantAddress, 1, 2);
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 1, 1);
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder1Address, 1, 2);
+
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder2Address, 1, 1);
+
+    newBalance = await claimant.getBalance();
+    newBalance1 = await crowdfunder1.getBalance();
+    newBalance2 = await crowdfunder2.getBalance();
+    expect(newBalance).to.equal(oldBalance, "The balance of the claimant should stay the same (withdraw 1 round)");
+    expect(newBalance1).to.equal(
+      oldBalance1,
+      "The balance of the crowdfunder1 should stay the same (withdraw 1 round)"
+    );
+    expect(newBalance2).to.equal(
+      oldBalance2,
+      "The balance of the crowdfunder2 is incorrect (withdraw 1 round)"
+    );
+
+    contributionInfo = await hatConnector.getContributions(0, 1, crowdfunder2Address);
+    expect(contributionInfo[1]).to.equal(0, "Contribution of crowdfunder2 should be 0 in 1 round");
+    oldBalance2 = newBalance2;
+
+    // Withdraw 2 round.
+    await hatConnector.withdrawFeesAndRewards(0, claimantAddress, 2, 2);
+    await hatConnector.withdrawFeesAndRewards(0, crowdfunder2Address, 2, 1);
+
+    newBalance = await claimant.getBalance();
+    newBalance2 = await crowdfunder2.getBalance();
+    expect(newBalance).to.equal(oldBalance, "The balance of the claimant is incorrect (withdraw 2 round)");
+    expect(newBalance2).to.equal(
+      oldBalance2,
+      "The balance of the crowdfunder2 is incorrect (withdraw 2 round)"
+    );
+
+    contributionInfo = await hatConnector.getContributions(0, 2, crowdfunder2Address);
+    expect(contributionInfo[1]).to.equal(0, "Contribution of crowdfunder2 should be 0 in 2 round");
+    contributionInfo = await hatConnector.getContributions(0, 2, claimantAddress);
+    expect(contributionInfo[2]).to.equal(0, "Contribution of claimant should be 0 in 2 round");
+  });
+
+
   it("Should correctly withdraw appeal fees if the winner did not pay the fees in the round", async () => {
     let oldBalance;
     let newBalance;
@@ -607,6 +776,9 @@ contract("HATKlerosConnector", () => {
     await utils.increaseTime(appealTimeout + 1);
 
     await arbitrator.executeRuling(2);
+
+    let totalWithdrawableAmount = await hatConnector.getTotalWithdrawableAmount(0, await claimant.getAddress(), 2);
+    expect(totalWithdrawableAmount).to.equal(3529, "Incorrect withdrawable amount for not resolved dispute");
 
     oldBalance = await claimant.getBalance();
     await hatConnector.withdrawFeesAndRewards(0, await claimant.getAddress(), 0, 2);
@@ -651,6 +823,9 @@ contract("HATKlerosConnector", () => {
     await hatConnector.connect(crowdfunder1).fundAppeal(0, 0, { value: 22 });
 
     await utils.increaseTime(appealTimeout + 1);
+
+    totalAmount = await hatConnector.getTotalWithdrawableAmount(0, await claimant.getAddress(), 1);
+    expect(totalAmount).to.equal(0, "Incorrect withdrawable amount for not resolved dispute");
 
     await arbitrator.executeRuling(2);
 
