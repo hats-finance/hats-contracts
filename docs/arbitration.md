@@ -19,7 +19,7 @@ There are two ways in which a payout can be created. In the default system, clai
 
 
 
-![diagram of the dispute flow ](https://github.com/hats-finance/hats-contracts/blob/d1a9aa6dfe0def958fef0d12a2cf70896db129b0/docs/img/hatsv2.0-payout-flow.png | width=600)
+![diagram of the dispute flow ](https://github.com/hats-finance/hats-contracts/blob/d1a9aa6dfe0def958fef0d12a2cf70896db129b0/docs/img/hatsv2.0-payout-flow.png)
 
 ## Dispute of Committee's claim
 
