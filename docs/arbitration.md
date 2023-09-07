@@ -1,6 +1,6 @@
-# Arbitration for HATS 2.0
+# Arbitration for HATS 2.0
 
-## Motivation
+## Motivation
 
 Currently, HATs vaults are used for Bug Bounties and Audit Competitions. The procedure for payout is simple: each vault has a committee that judges the submissions and decides on a payout. 
 
@@ -17,7 +17,9 @@ In very broad terms, if there is a conflict, the decision can be delegated to a 
 
 There are two ways in which a payout can be created. In the default system, claims are submitted by the vault's committee. These claims can then be disputed and brought to attention to an Expert Committee, and if necessary escalated to a decentralized court such as Kleros. As this process is still gate-kept by the committee, we also offer a way to directly submit claims to the expert committee. 
 
-[diagram of the dispute flow ](https://github.com/hats-finance/hats-contracts/blob/d1a9aa6dfe0def958fef0d12a2cf70896db129b0/docs/img/hatsv2.0-payout-flow.png)
+
+
+![diagram of the dispute flow ](https://github.com/hats-finance/hats-contracts/blob/d1a9aa6dfe0def958fef0d12a2cf70896db129b0/docs/img/hatsv2.0-payout-flow.png | width=600)
 
 ## Dispute of Committee's claim
 
