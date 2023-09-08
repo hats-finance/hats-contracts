@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
-
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 interface ITokenLock {
     enum Revocability { NotSet, Enabled, Disabled }
+
+    // -- Value Transfer --
+
+    function release() external;
+
+    function withdrawSurplus(uint256 _amount) external;
+
+    function revoke() external;
 
     // -- Balances --
 
@@ -39,12 +45,4 @@ interface ITokenLock {
     function totalOutstandingAmount() external view returns (uint256);
 
     function surplusAmount() external view returns (uint256);
-
-    // -- Value Transfer --
-
-    function release() external;
-
-    function withdrawSurplus(uint256 _amount) external;
-
-    function revoke() external;
 }

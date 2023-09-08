@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "../interfaces/ISwapRouter.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./ISwapRouter.sol";
 
 
 contract UniSwapV3RouterMock {
 
-   /// @dev The length of the bytes encoded address
-    uint256 private constant ADDR_SIZE = 20;
-   /// @dev The length of the bytes encoded fee
-    uint256 private constant FEE_SIZE = 3;
-    /// @dev The offset of a single token address and pool fee
-    uint256 private constant NEXT_OFFSET = ADDR_SIZE + FEE_SIZE;
-
     enum ReturnType {ONE_TO_ONE, MINIMUM, BELOW_MINIMUM}
+
+   /// @notice The length of the bytes encoded address
+    uint256 private constant ADDR_SIZE = 20;
+   /// @notice The length of the bytes encoded fee
+    uint256 private constant FEE_SIZE = 3;
+    /// @notice The offset of a single token address and pool fee
+    uint256 private constant NEXT_OFFSET = ADDR_SIZE + FEE_SIZE;
 
     ReturnType public returnType;
     address public immutable WETH9;
+
+    bool public usePartialAmountFlag;
 
     constructor(
         ReturnType _returnType,
@@ -28,10 +30,18 @@ contract UniSwapV3RouterMock {
         WETH9 = _weth9;
     }
 
+    function setUsePartialAmountFlag(bool _usePartialAmountFlag) external {
+        usePartialAmountFlag = _usePartialAmountFlag;
+    }
+
     function exactInput(
         ISwapRouter.ExactInputParams memory _params
     ) external returns (uint256 amount) {
         uint256 amountToSendBack;
+
+        if (usePartialAmountFlag) {
+            _params.amountIn = _params.amountIn * 80 / 100;
+        }
 
         if (returnType == ReturnType.ONE_TO_ONE) {
             amountToSendBack = _params.amountIn;

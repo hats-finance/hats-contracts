@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 
 import "../HATToken.sol";
 //solhint-disable func-visibility 
 //solhint-disable no-empty-blocks
 
 contract HATTokenMock is HATToken {
-    constructor(address _governance, uint256 _timeLockDelayInBlocksUnits)
-    HATToken(_governance, _timeLockDelayInBlocksUnits) {
+    constructor(address _governance)
+    HATToken(_governance) {
     }
 
     function burnFrom(address _from, uint256 _amount) public {
@@ -21,12 +21,10 @@ contract HATTokenMock is HATToken {
     }
 
     function transferFromZero(address _dst, uint256 _amount) public {
-        uint96 amount = safe96(_amount, "HAT::transfer: amount exceeds 96 bits");
-        _transferTokens(0x0000000000000000000000000000000000000000, _dst, amount);
+        _transfer(0x0000000000000000000000000000000000000000, _dst, _amount);
     }
 
-    function testSafe32(uint256 _num) public pure returns (uint32) {
-        return safe32(_num, "HAT::_writeCheckpoint: block number exceeds 32 bits");
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
     }
-
 }

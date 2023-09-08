@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 
-import "./CloneFactory.sol";
-import "./ITokenLock.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./ITokenLockFactory.sol";
-import "openzeppelin-solidity/contracts/utils/Address.sol";
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 /**
  * @title TokenLockFactory
-*  a factory of TokenLock contracts.
+ *  a factory of TokenLock contracts.
  *
  * This contract receives funds to make the process of creating TokenLock contracts
  * easier by distributing them the initial tokens to be managed.
  */
-contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
+contract TokenLockFactory is ITokenLockFactory, Ownable {
     // -- State --
 
     address public masterCopy;
@@ -43,10 +42,11 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
     /**
      * Constructor.
      * @param _masterCopy Address of the master copy to use to clone proxies
+     * @param _governance Owner of the factory
      */
-    // solhint-disable-next-line func-visibility
-    constructor(address _masterCopy) {
+    constructor(address _masterCopy, address _governance) {
         setMasterCopy(_masterCopy);
+        _transferOwnership(_governance);
     }
 
     // -- Factory --
@@ -130,7 +130,7 @@ contract TokenLockFactory is CloneFactory, ITokenLockFactory, Ownable {
         bool _canDelegate
     ) private returns (address contractAddress) {
 
-        contractAddress = createClone(masterCopy);
+        contractAddress = Clones.clone(masterCopy);
 
         Address.functionCall(contractAddress, _initializer);
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 
 import "./TokenLock.sol";
 import "../HATToken.sol";
@@ -37,8 +37,8 @@ contract HATTokenLock is TokenLock {
         );
         if (_canDelegate) {
             _token.delegate(_beneficiary);
-        }
-        canDelegate = _canDelegate;
+            canDelegate = true;
+        }      
     }
 
     /// @dev delegate voting power

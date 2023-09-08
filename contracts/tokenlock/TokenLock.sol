@@ -1,27 +1,27 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.16;
 
-import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import "./OwnableInitializable.sol";
-import "./MathUtils.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./ITokenLock.sol";
 
 // this contract is based on GraphTokenLock
 // see https://github.com/graphprotocol/token-distribution/blob/main/contracts/GraphTokenLock.sol
 
 /**
- * @title HatTokenLock
+ * @title TokenLock
  * @notice Contract that manages an unlocking schedule of tokens.
- * @dev The contract lock manage a number of tokens deposited into the contract to ensure that
+ * The contract lock holds a certain amount of tokens deposited  and insures that
  * they can only be released under certain time conditions.
  *
  * This contract implements a release scheduled based on periods and tokens are released in steps
  * after each period ends. It can be configured with one period in which case it is like a plain TimeLock.
- * It also supports revocation to be used for vesting schedules.
+ * The contract also supports revocation to be used for vesting schedules. In case that the contract is configured to be  revocable,
+ * the owner can revoke the contract at any time and the unvested tokens will be sent back to the owner, even if the 
+ * the beneficiary has accepted the lock.
  *
  * The contract supports receiving extra funds than the managed tokens ones that can be
  * withdrawn by the beneficiary at any time.
@@ -31,8 +31,7 @@ import "./ITokenLock.sol";
  * default schedule.
  */
 // solhint-disable-next-line indent
-abstract contract TokenLock is OwnableInitializable, ITokenLock {
-    using SafeMath for uint256;
+abstract contract TokenLock is Ownable, ITokenLock {
     using SafeERC20 for IERC20;
 
     uint256 private constant MIN_PERIOD = 1;
@@ -84,58 +83,9 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         _;
     }
 
-    /**
-     * @notice Initializes the contract
-     * @param _tokenLockOwner Address of the contract owner
-     * @param _beneficiary Address of the beneficiary of locked tokens
-     * @param _managedAmount Amount of tokens to be managed by the lock contract
-     * @param _startTime Start time of the release schedule
-     * @param _endTime End time of the release schedule
-     * @param _periods Number of periods between start time and end time
-     * @param _releaseStartTime Override time for when the releases start
-     * @param _vestingCliffTime Override time for when the vesting start
-     * @param _revocable Whether the contract is revocable
-     */
-    function _initialize(
-        address _tokenLockOwner,
-        address _beneficiary,
-        address _token,
-        uint256 _managedAmount,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint256 _periods,
-        uint256 _releaseStartTime,
-        uint256 _vestingCliffTime,
-        Revocability _revocable
-    ) internal {
-        require(!isInitialized, "Already initialized");
-        require(_tokenLockOwner != address(0), "Owner cannot be zero");
-        require(_beneficiary != address(0), "Beneficiary cannot be zero");
-        require(_token != address(0), "Token cannot be zero");
-        require(_managedAmount > 0, "Managed tokens cannot be zero");
-        require(_startTime != 0, "Start time must be set");
-        require(_startTime < _endTime, "Start time > end time");
-        require(_periods >= MIN_PERIOD, "Periods cannot be below minimum");
-        require(_revocable != Revocability.NotSet, "Must set a revocability option");
-        require(_releaseStartTime < _endTime, "Release start time must be before end time");
-        require(_vestingCliffTime < _endTime, "Cliff time must be before end time");
-
+    constructor() {
+        endTime = type(uint256).max;
         isInitialized = true;
-
-        OwnableInitializable.initialize(_tokenLockOwner);
-        beneficiary = _beneficiary;
-        token = IERC20(_token);
-
-        managedAmount = _managedAmount;
-
-        startTime = _startTime;
-        endTime = _endTime;
-        periods = _periods;
-
-        // Optionals
-        releaseStartTime = _releaseStartTime;
-        vestingCliffTime = _vestingCliffTime;
-        revocable = _revocable;
     }
 
     /**
@@ -150,7 +100,8 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
     }
 
     /**
-     * @notice Beneficiary accepts the lock, the owner cannot retrieve back the tokens
+     * @notice Beneficiary accepts the lock, the owner cannot cancel the lock. But in case that the contract is defined as revocable,
+     * the owner can revoke the contract at any time and retrieve all unvested tokens.
      * @dev Can only be called by the beneficiary
      */
     function acceptLock() external onlyBeneficiary {
@@ -168,6 +119,71 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         token.safeTransfer(owner(), currentBalance());
 
         emit LockCanceled();
+    }
+
+    // -- Value Transfer --
+
+    /**
+     * @notice Releases tokens based on the configured schedule
+     * @dev All available releasable tokens are transferred to beneficiary
+     */
+    function release() external override onlyBeneficiary {
+        uint256 amountToRelease = releasableAmount();
+        require(amountToRelease > 0, "No available releasable amount");
+
+        releasedAmount += amountToRelease;
+
+        token.safeTransfer(beneficiary, amountToRelease);
+
+        emit TokensReleased(beneficiary, amountToRelease);
+
+        trySelfDestruct();
+    }
+
+    /**
+     * @notice Withdraws surplus, unmanaged tokens from the contract
+     * @dev Tokens in the contract over outstanding amount are considered as surplus
+     * @param _amount Amount of tokens to withdraw
+     */
+    function withdrawSurplus(uint256 _amount) external override onlyBeneficiary {
+        require(_amount > 0, "Amount cannot be zero");
+        require(surplusAmount() >= _amount, "Amount requested > surplus available");
+
+        token.safeTransfer(beneficiary, _amount);
+
+        emit TokensWithdrawn(beneficiary, _amount);
+
+        trySelfDestruct();
+    }
+
+    /**
+     * @notice Revokes a vesting schedule and return the unvested tokens to the owner
+     * @dev Vesting schedule is always calculated based on managed tokens
+     */
+    function revoke() external override onlyOwner {
+        require(revocable == Revocability.Enabled, "Contract is non-revocable");
+        require(isRevoked == false, "Already revoked");
+
+        uint256 unvestedAmount = managedAmount - vestedAmount();
+        require(unvestedAmount > 0, "No available unvested amount");
+
+        isRevoked = true;
+
+        token.safeTransfer(owner(), unvestedAmount);
+
+        emit TokensRevoked(beneficiary, unvestedAmount);
+    }
+
+    /// @dev sweeps out accidentally sent tokens
+    /// @param _token Address of token to sweep
+    function sweepToken(IERC20 _token) external {
+        address sweeper = owner() == address(0) ? beneficiary : owner();
+        require(msg.sender == sweeper, "!auth");
+        require(_token != token, "cannot sweep vested token");
+        uint256 tokenBalance = _token.balanceOf(address(this));
+        if (tokenBalance > 0) {
+            _token.safeTransfer(sweeper, tokenBalance);
+        }
     }
 
     // -- Balances --
@@ -196,7 +212,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of seconds from contract startTime to endTime
      */
     function duration() public override view returns (uint256) {
-        return endTime.sub(startTime);
+        return endTime - startTime;
     }
 
     /**
@@ -209,7 +225,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         if (current <= startTime) {
             return 0;
         }
-        return current.sub(startTime);
+        return current - startTime;
     }
 
     /**
@@ -217,7 +233,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of tokens available after each period
      */
     function amountPerPeriod() public override view returns (uint256) {
-        return managedAmount.div(periods);
+        return managedAmount / periods;
     }
 
     /**
@@ -225,7 +241,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Duration of each period in seconds
      */
     function periodDuration() public override view returns (uint256) {
-        return duration().div(periods);
+        return duration() / periods;
     }
 
     /**
@@ -233,7 +249,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return A number that represents the current period
      */
     function currentPeriod() public override view returns (uint256) {
-        return sinceStartTime().div(periodDuration()).add(MIN_PERIOD);
+        return sinceStartTime() / periodDuration() + MIN_PERIOD;
     }
 
     /**
@@ -241,7 +257,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return A number of periods that passed since the schedule started
      */
     function passedPeriods() public override view returns (uint256) {
-        return currentPeriod().sub(MIN_PERIOD);
+        return currentPeriod() - MIN_PERIOD;
     }
 
     // -- Locking & Release Schedule --
@@ -265,7 +281,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         }
 
         // Get available amount based on period
-        return passedPeriods().mul(amountPerPeriod());
+        return passedPeriods() * amountPerPeriod();
     }
 
     /**
@@ -307,8 +323,8 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         }
 
         // A beneficiary can never have more releasable tokens than the contract balance
-        uint256 releasable = availableAmount().sub(releasedAmount);
-        return MathUtils.min(currentBalance(), releasable);
+        uint256 releasable = availableAmount() - releasedAmount;
+        return Math.min(currentBalance(), releasable);
     }
 
     /**
@@ -317,7 +333,7 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
      * @return Amount of outstanding tokens for the lifetime of the contract
      */
     function totalOutstandingAmount() public override view returns (uint256) {
-        return managedAmount.sub(releasedAmount);
+        return managedAmount - releasedAmount;
     }
 
     /**
@@ -329,57 +345,67 @@ abstract contract TokenLock is OwnableInitializable, ITokenLock {
         uint256 balance = currentBalance();
         uint256 outstandingAmount = totalOutstandingAmount();
         if (balance > outstandingAmount) {
-            return balance.sub(outstandingAmount);
+            return balance - outstandingAmount;
         }
         return 0;
     }
 
-    // -- Value Transfer --
-
     /**
-     * @notice Releases tokens based on the configured schedule
-     * @dev All available releasable tokens are transferred to beneficiary
+     * @notice Initializes the contract
+     * @param _tokenLockOwner Address of the contract owner
+     * @param _beneficiary Address of the beneficiary of locked tokens
+     * @param _managedAmount Amount of tokens to be managed by the lock contract
+     * @param _startTime Start time of the release schedule
+     * @param _endTime End time of the release schedule
+     * @param _periods Number of periods between start time and end time
+     * @param _releaseStartTime Override time for when the releases start
+     * @param _vestingCliffTime Override time for when the vesting start
+     * @param _revocable Whether the contract is revocable
      */
-    function release() external override onlyBeneficiary {
-        uint256 amountToRelease = releasableAmount();
-        require(amountToRelease > 0, "No available releasable amount");
+    function _initialize(
+        address _tokenLockOwner,
+        address _beneficiary,
+        address _token,
+        uint256 _managedAmount,
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256 _periods,
+        uint256 _releaseStartTime,
+        uint256 _vestingCliffTime,
+        Revocability _revocable
+    ) internal {
+        require(!isInitialized, "Already initialized");
+        require(_beneficiary != address(0), "Beneficiary cannot be zero");
+        require(_token != address(0), "Token cannot be zero");
+        require(_managedAmount > 0, "Managed tokens cannot be zero");
+        require(_startTime != 0, "Start time must be set");
+        require(_startTime < _endTime, "Start time > end time");
+        require(_periods >= MIN_PERIOD, "Periods cannot be below minimum");
+        require(_revocable != Revocability.NotSet, "Must set a revocability option");
+        require(_releaseStartTime < _endTime, "Release start time must be before end time");
+        require(_vestingCliffTime < _endTime, "Cliff time must be before end time");
 
-        releasedAmount = releasedAmount.add(amountToRelease);
+        isInitialized = true;
 
-        token.safeTransfer(beneficiary, amountToRelease);
+        _transferOwnership(_tokenLockOwner);
+        beneficiary = _beneficiary;
+        token = IERC20(_token);
 
-        emit TokensReleased(beneficiary, amountToRelease);
+        managedAmount = _managedAmount;
+
+        startTime = _startTime;
+        endTime = _endTime;
+        periods = _periods;
+
+        // Optionals
+        releaseStartTime = _releaseStartTime;
+        vestingCliffTime = _vestingCliffTime;
+        revocable = _revocable;
     }
 
-    /**
-     * @notice Withdraws surplus, unmanaged tokens from the contract
-     * @dev Tokens in the contract over outstanding amount are considered as surplus
-     * @param _amount Amount of tokens to withdraw
-     */
-    function withdrawSurplus(uint256 _amount) external override onlyBeneficiary {
-        require(_amount > 0, "Amount cannot be zero");
-        require(surplusAmount() >= _amount, "Amount requested > surplus available");
-
-        token.safeTransfer(beneficiary, _amount);
-
-        emit TokensWithdrawn(beneficiary, _amount);
-    }
-
-    /**
-     * @notice Revokes a vesting schedule and return the unvested tokens to the owner
-     * @dev Vesting schedule is always calculated based on managed tokens
-     */
-    function revoke() external override onlyOwner {
-        require(revocable == Revocability.Enabled, "Contract is non-revocable");
-        require(isRevoked == false, "Already revoked");
-
-        uint256 unvestedAmount = managedAmount.sub(vestedAmount());
-        require(unvestedAmount > 0, "No available unvested amount");
-
-        isRevoked = true;
-
-        token.safeTransfer(owner(), unvestedAmount);
-
-        emit TokensRevoked(beneficiary, unvestedAmount);
+    function trySelfDestruct() private {
+        if (currentTime() > endTime && currentBalance() == 0) {
+            selfdestruct(payable(msg.sender));
+        }
     }
 }
