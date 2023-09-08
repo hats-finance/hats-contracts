@@ -28,11 +28,12 @@ There are two ways in which a payout can be created. In the default system, clai
   - `vault.submitClaim(_beneficiary, _bountyPercentage, _descriptionHash)`
   - a claim is a proposal to payout a percentage of the vault to one or more beneficiaries
 
-2. **Anyone** can dispute the claim by calling `arbitrator.dispute(_claimId, _ipfsHash, _bondAmount)`
+2. **Anyone** can dispute the claim by calling `arbitrator.dispute(_vault, _claimId, _ipfsHash, _bondAmount)`
   -  Participating in the dispute requires a minimal bond of at least `minBondAmount`. Disputers will lose their bond if they lose the dispute.
   - There can be more than one challenger that takes part in the dispute process
-  - When the combined amount of bonds exceeds `bondsNeededToStartDispute`, the payout is blocked and the dispute procedure described in step 3 is started
-  - if the quorum of `bondsNeededToStartDispute` is not reached during the dispute period, no dispute is started, and the committee’s claim is paid out. Disputers can then reclaim their stake by calling `withdrawFeesAndRewards(...)`
+  - When the combined amount of bonds exceeds `bondsNeededToStartDispute`, the payout is blocked and the dispute procedure described in step 3 is started.
+  - Stakeholders will have 24 hours after the dispute procedure started to submit extra evidence.
+  - if the quorum of `bondsNeededToStartDispute` is not reached during the dispute period, no dispute is started, and the committee’s claim is paid out. Disputers can then reclaim their stake by calling `reclaimBond(_vault, _claimId)`
   - The dispute period is equal to the challenge period in the vault
 
 3. An expert committee considers the challenges and formulates a new claim:
@@ -43,15 +44,15 @@ There are two ways in which a payout can be created. In the default system, clai
       - the expert committee gets paid from the bondsNeededToStartDispute that was collected from the challengers in step 2 (who lose their stake)
       - the process is finished
 
-    - (3b) proposes a new claim Y  by calling `acceptDispute(_claimId, _bountyPercentage, _beneficiary, _disputersToRefund)`
+    - (3b) accepted the dispute and propose a new claim Y  by calling `acceptDispute(_claimId, _bountyPercentage, _beneficiary, _disputersToRefund)`
       - this new claim may include a payout to the expert committee for their work (the amount is at the discretion of the expert committee)
       - expert committee also decides which of the challengers get their stake back
       - proceed to step 4.
-    - the expert committee has expertCommitteeTimeoutPeriod to make a decision. If it does not make a decision within this period, the original claim is dismissed
+    - the expert committee has `submitClaimRequestReviewPeriod` seconds to make a decision. If it does not make a decision within this period, the original claim is dismissed
 
 
 4. In case of 3b, **anyone** can fund a dispute with the goal to dismiss the expert’s committees claim Y in a decentralized court (like Kleros, UMA)  
-  - the challenge period is set by the variable `courtChallengePeriod`
+  - the dispute must be started within `resolutionChallengePeriod` seconds after the dispute was accepted
   - if nobody challenges during the challenge period, we pay out Y; 
   - anyone can call `arbitrator.executeResolution(_claimId)` after the challenge period is over
   -  if there _is_ a challenge we go to step 5. 

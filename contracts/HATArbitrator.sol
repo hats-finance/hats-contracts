@@ -9,10 +9,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 import "./interfaces/IHATArbitrator.sol";
 
-
 /* solhint-disable not-rely-on-time */
 contract HATArbitrator is IHATArbitrator, Ownable {
-
     using SafeERC20 for IERC20;
 
     address public expertCommittee; // address of the Expert Committee
@@ -284,6 +282,9 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     /** @notice See {IHATArbitrator-reclaimBond}. */
     function reclaimBond(IHATVault _vault, bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_vault][_claimId]) {
+            // the bond is claimable if either
+            // (a) it is not part of the curr
+
             (
                 bytes32 claimId,
                 ,
@@ -327,7 +328,6 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyResolvedDispute(_vault, _claimId)
     {
-        // TODO: This might be too long if the challenge timeout period is too short
         Resolution memory resolution = resolutions[_vault][_claimId];
 
         if (resolutionChallengedAt[_vault][_claimId] != 0) {
@@ -380,7 +380,8 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         bytes32 _claimId,
         string calldata _evidence
     )
-        external payable
+        external
+        payable
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyResolvedDispute(_vault, _claimId)
     {
@@ -399,11 +400,12 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
         emit ResolutionChallenged(_vault, _claimId);
 
-        IHATKlerosConnector(court).notifyArbitrator{value: msg.value}(_claimId, _evidence, _vault, msg.sender);
-
-        // TODO: Should resolution be possible to challenge by multiple challengers?
-
-        // TODO: Here the challenger should also fund the claim with the court to avoid spamming, we can just open it calling the court here
+        IHATKlerosConnector(court).notifyArbitrator{value: msg.value}(
+            _claimId,
+            _evidence,
+            _vault,
+            msg.sender
+        );
     }
 
     /** @notice See {IHATArbitrator-submitClaimRequest}. */
@@ -490,6 +492,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
             resolvedAt: block.timestamp
         });
 
+        // refund the bond to the submitter
         token.safeTransfer(
             submitClaimRequest.submitter,
             submitClaimRequest.bond
@@ -514,7 +517,10 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         }
 
         delete submitClaimRequests[_internalClaimId];
-        token.safeTransfer(submitClaimRequest.submitter, bondsNeededToStartDispute);
+        token.safeTransfer(
+            submitClaimRequest.submitter,
+            bondsNeededToStartDispute
+        );
 
         emit SubmitClaimRequestExpired(_internalClaimId);
     }
