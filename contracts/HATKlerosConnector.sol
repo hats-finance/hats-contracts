@@ -183,7 +183,6 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      */
     function rule(uint256 _disputeId, uint256 _ruling) external override {
         uint256 localDisputeId = externalIDtoLocalID[_disputeId];
-        require(localDisputeId < disputes.length, "Dispute does not exist");
 
         DisputeStruct storage dispute = disputes[localDisputeId];
 
