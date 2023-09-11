@@ -59,7 +59,7 @@ contract HATVault is IHATVault, ERC4626Upgradeable, OwnableUpgradeable, Reentran
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 1e4;
     uint256 public constant HUNDRED_PERCENT_SQRD = 1e8;
-    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty can be up to 90%
+    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty, can be up to 90%
     uint256 public constant MAX_WITHDRAWAL_FEE = 2e2; // Max fee is 2%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 10e2; // Max committee bounty can be up to 10%
 
