@@ -24,9 +24,8 @@ import "./interfaces/IHATKlerosConnector.sol";
  *  The contract also trusts that IHATArbitrator contract is honest and won't reenter.
  */
 contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
-
     uint256 private constant RULING_OPTIONS = 2; // The amount of non 0 choices the arbitrator can give.
-    uint256 private constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.        
+    uint256 private constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.
 
     struct DisputeStruct {
         bytes32 claimId; // Id of the claim in HATVault contract.
@@ -66,7 +65,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _claimId Id of the claim in Vault cotract.
      */
     event Challenged(bytes32 indexed _claimId);
-    
+
     /** @dev Constructor.
      *  @param _klerosArbitrator The Kleros arbitrator of the contract.
      *  @param _arbitratorExtraData Extra data for the arbitrator.
@@ -75,7 +74,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _winnerMultiplier Multiplier for calculating the appeal cost of the winning side.
      *  @param _loserMultiplier Multiplier for calculation the appeal cost of the losing side.
      */
-    constructor (
+    constructor(
         IArbitrator _klerosArbitrator,
         bytes memory _arbitratorExtraData,
         IHATArbitrator _hatArbitrator,
@@ -84,7 +83,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         uint256 _loserMultiplier
     ) {
         emit MetaEvidence(0, _metaEvidence);
-        
+
         klerosArbitrator = _klerosArbitrator;
         arbitratorExtraData = _arbitratorExtraData;
         hatArbitrator = _hatArbitrator;
@@ -99,21 +98,27 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
     /** @dev Changes winnerMultiplier variable.
      *  @param _winnerMultiplier The new winnerMultiplier value.
      */
-    function changeWinnerMultiplier(uint256 _winnerMultiplier) external onlyOwner {
+    function changeWinnerMultiplier(
+        uint256 _winnerMultiplier
+    ) external onlyOwner {
         winnerMultiplier = _winnerMultiplier;
     }
 
     /** @dev Changes loserMultiplier variable.
      *  @param _loserMultiplier The new winnerMultiplier value.
      */
-    function changeLoserMultiplier(uint256 _loserMultiplier) external onlyOwner {
+    function changeLoserMultiplier(
+        uint256 _loserMultiplier
+    ) external onlyOwner {
         loserMultiplier = _loserMultiplier;
     }
 
     /** @dev Update the meta evidence used for disputes.
      *  @param _metaEvidence URI of the new meta evidence.
      */
-    function changeMetaEvidence(string calldata _metaEvidence) external onlyOwner {
+    function changeMetaEvidence(
+        string calldata _metaEvidence
+    ) external onlyOwner {
         metaEvidenceUpdates++;
         emit MetaEvidence(metaEvidenceUpdates, _metaEvidence);
     }
@@ -121,7 +126,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
     // ******************** //
     // *    Challenges    * //
     // ******************** //
-    
+
     /** @dev Notify KlerosArbitrator that expert's committee decision was challenged. Can only be called by Hat arbitrator.
      *  Requires the arbitration fees to be paid.
      *  @param _claimId The Id of the active claim in Vault contract.
@@ -153,16 +158,24 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         // Preemptively create a new funding round for future appeals.
         dispute.rounds.push();
 
-        uint256 externalDisputeId = klerosArbitrator.createDispute{value: arbitrationCost}(RULING_OPTIONS,  arbitratorExtraData);
+        uint256 externalDisputeId = klerosArbitrator.createDispute{
+            value: arbitrationCost
+        }(RULING_OPTIONS, arbitratorExtraData);
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
-        if (msg.value > arbitrationCost) payable(_disputer).transfer(msg.value - arbitrationCost);
+        if (msg.value > arbitrationCost)
+            payable(_disputer).transfer(msg.value - arbitrationCost);
 
         emit Challenged(_claimId);
-        emit Dispute(klerosArbitrator, externalDisputeId, metaEvidenceUpdates, localDisputeId);
+        emit Dispute(
+            klerosArbitrator,
+            externalDisputeId,
+            metaEvidenceUpdates,
+            localDisputeId
+        );
         emit Evidence(klerosArbitrator, localDisputeId, _disputer, _evidence);
-    } 
+    }
 
     /** @dev Give a ruling for a dispute. Can only be called by the Kleros arbitrator.
      *  @param _disputeId ID of the dispute in the Kleros arbitrator contract.
@@ -170,14 +183,18 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      */
     function rule(uint256 _disputeId, uint256 _ruling) external override {
         uint256 localDisputeId = externalIDtoLocalID[_disputeId];
+        require(localDisputeId < disputes.length, "Dispute does not exist");
 
         DisputeStruct storage dispute = disputes[localDisputeId];
 
         require(!dispute.resolved, "Already resolved");
         require(_ruling <= RULING_OPTIONS, "Invalid ruling option");
-        require(address(klerosArbitrator) == msg.sender, "Only the arbitrator can execute");
+        require(
+            address(klerosArbitrator) == msg.sender,
+            "Only the arbitrator can execute"
+        );
         uint256 finalRuling = _ruling;
-    
+
         // If one side paid its fees, the ruling is in its favor. Note that if the other side had also paid, an appeal would have been created.
         Round storage round = dispute.rounds[dispute.rounds.length - 1];
         if (round.fundedSides.length == 1) finalRuling = round.fundedSides[0];
@@ -186,13 +203,13 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         dispute.resolved = true;
 
         bytes32 claimId = dispute.claimId;
-        if (finalRuling == uint256(Decision.ExecuteResolution)) {            
+        if (finalRuling == uint256(Decision.ExecuteResolution)) {
             hatArbitrator.executeResolution(dispute.vault, claimId);
         } else {
             // Arbitrator dismissed the resolution or refused to arbitrate (gave 0 ruling).
             hatArbitrator.dismissResolution(dispute.vault, claimId);
         }
-      
+
         emit Ruling(IArbitrator(msg.sender), _disputeId, finalRuling);
     }
 
@@ -200,12 +217,20 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _localDisputeId The id of the related dispute.
      *  @param _evidenceURI Link to evidence.
      */
-    function submitEvidence(uint256 _localDisputeId, string calldata _evidenceURI) external override {
+    function submitEvidence(
+        uint256 _localDisputeId,
+        string calldata _evidenceURI
+    ) external override {
         DisputeStruct storage dispute = disputes[_localDisputeId];
         // Note that by reading dispute's value we also check that it exists.
         require(!dispute.resolved, "Dispute already resolved");
 
-        emit Evidence(klerosArbitrator, _localDisputeId, msg.sender, _evidenceURI);
+        emit Evidence(
+            klerosArbitrator,
+            _localDisputeId,
+            msg.sender,
+            _evidenceURI
+        );
     }
 
     // ************************ //
@@ -217,14 +242,22 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _side The option to fund. 0 - refuse to rule, 1 - make no changes, 2 - side with challenger.
      *  @return fullyFunded Whether the side was fully funded or not.
      */
-    function fundAppeal(uint256 _localDisputeId, uint256 _side) external payable override returns (bool) {
+    function fundAppeal(
+        uint256 _localDisputeId,
+        uint256 _side
+    ) external payable override returns (bool) {
         DisputeStruct storage dispute = disputes[_localDisputeId];
         require(!dispute.resolved, "Dispute already resolved.");
         require(_side <= RULING_OPTIONS, "Side out of bounds");
 
         uint256 externalDisputeId = dispute.externalDisputeId;
-        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = klerosArbitrator.appealPeriod(externalDisputeId);
-        require(block.timestamp >= appealPeriodStart && block.timestamp < appealPeriodEnd, "Appeal period is over.");
+        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = klerosArbitrator
+            .appealPeriod(externalDisputeId);
+        require(
+            block.timestamp >= appealPeriodStart &&
+                block.timestamp < appealPeriodEnd,
+            "Appeal period is over."
+        );
 
         uint256 multiplier;
         {
@@ -234,7 +267,9 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             } else {
                 require(
                     block.timestamp - appealPeriodStart <
-                        ((appealPeriodEnd - appealPeriodStart) * loserAppealPeriodMultiplier) / MULTIPLIER_DIVISOR,
+                        ((appealPeriodEnd - appealPeriodStart) *
+                            loserAppealPeriodMultiplier) /
+                            MULTIPLIER_DIVISOR,
                     "Appeal period is over for loser"
                 );
                 multiplier = loserMultiplier;
@@ -244,14 +279,25 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         uint256 lastRoundId = dispute.rounds.length - 1;
         Round storage round = dispute.rounds[lastRoundId];
         require(!round.hasPaid[_side], "Appeal fee is already paid.");
-        uint256 appealCost = klerosArbitrator.appealCost(externalDisputeId, arbitratorExtraData);
-        uint256 totalCost = appealCost + (appealCost * multiplier) / MULTIPLIER_DIVISOR;
+        uint256 appealCost = klerosArbitrator.appealCost(
+            externalDisputeId,
+            arbitratorExtraData
+        );
+        uint256 totalCost = appealCost +
+            (appealCost * multiplier) /
+            MULTIPLIER_DIVISOR;
 
         // Take up to the amount necessary to fund the current round at the current costs.
         uint256 contribution = totalCost - round.paidFees[_side] > msg.value
             ? msg.value
             : totalCost - round.paidFees[_side];
-        emit Contribution(_localDisputeId, lastRoundId, _side, msg.sender, contribution);
+        emit Contribution(
+            _localDisputeId,
+            lastRoundId,
+            _side,
+            msg.sender,
+            contribution
+        );
 
         round.contributions[msg.sender][_side] += contribution;
         round.paidFees[_side] += contribution;
@@ -267,10 +313,14 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             dispute.rounds.push();
 
             round.feeRewards = round.feeRewards - appealCost;
-            klerosArbitrator.appeal{value: appealCost}(externalDisputeId, arbitratorExtraData);
+            klerosArbitrator.appeal{value: appealCost}(
+                externalDisputeId,
+                arbitratorExtraData
+            );
         }
 
-        if (msg.value > contribution) payable(msg.sender).transfer(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
+        if (msg.value > contribution)
+            payable(msg.sender).transfer(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
         return round.hasPaid[_side];
     }
 
@@ -298,18 +348,29 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         } else if (!round.hasPaid[finalRuling]) {
             // Reimburse unspent fees proportionally if the ultimate winner didn't pay appeal fees fully.
             // Note that if only one side is funded it will become a winner and this part of the condition won't be reached.
-            reward = (round.contributions[_beneficiary][_side] * round.feeRewards) /
-                    (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]]);
+            reward =
+                (round.contributions[_beneficiary][_side] * round.feeRewards) /
+                (round.paidFees[round.fundedSides[0]] +
+                    round.paidFees[round.fundedSides[1]]);
         } else if (finalRuling == _side) {
             uint256 paidFees = round.paidFees[_side];
             // Reward the winner.
-            reward = paidFees > 0 ? (round.contributions[_beneficiary][_side] * round.feeRewards) / paidFees : 0;
+            reward = paidFees > 0
+                ? (round.contributions[_beneficiary][_side] *
+                    round.feeRewards) / paidFees
+                : 0;
         }
 
         if (reward != 0) {
             round.contributions[_beneficiary][_side] = 0;
             _beneficiary.transfer(reward); // It is the user's responsibility to accept ETH.
-            emit Withdrawal(_localDisputeId, _round, _side, _beneficiary, reward);
+            emit Withdrawal(
+                _localDisputeId,
+                _round,
+                _side,
+                _beneficiary,
+                reward
+            );
         }
     }
 
@@ -328,8 +389,17 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         DisputeStruct storage dispute = disputes[_localDisputeId];
 
         uint256 numberOfRounds = dispute.rounds.length;
-        for (uint256 roundNumber = 0; roundNumber < numberOfRounds; roundNumber++) {
-            withdrawFeesAndRewards(_localDisputeId, _beneficiary, roundNumber, _contributedTo);
+        for (
+            uint256 roundNumber = 0;
+            roundNumber < numberOfRounds;
+            roundNumber++
+        ) {
+            withdrawFeesAndRewards(
+                _localDisputeId,
+                _beneficiary,
+                roundNumber,
+                _contributedTo
+            );
         }
     }
 
@@ -339,7 +409,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
 
     /** @dev Get the arbitration cost to challenge a claim.
      *  @return Arbitration cost.
-     */   
+     */
     function getArbitrationCost() public view returns (uint256) {
         return klerosArbitrator.arbitrationCost(arbitratorExtraData);
     }
@@ -370,7 +440,12 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             uint256 divisor
         )
     {
-        return (winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier, MULTIPLIER_DIVISOR);
+        return (
+            winnerMultiplier,
+            loserMultiplier,
+            loserAppealPeriodMultiplier,
+            MULTIPLIER_DIVISOR
+        );
     }
 
     /** @dev Returns the sum of withdrawable amount.
@@ -400,13 +475,17 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             } else if (!round.hasPaid[finalRuling]) {
                 // Reimburse unspent fees proportionally if the ultimate winner didn't pay appeal fees fully.
                 // Note that if only one side is funded it will become a winner and this part of the condition won't be reached.
-                sum += (round.contributions[_beneficiary][_contributedTo] * round.feeRewards) /
-                        (round.paidFees[round.fundedSides[0]] + round.paidFees[round.fundedSides[1]]);
+                sum +=
+                    (round.contributions[_beneficiary][_contributedTo] *
+                        round.feeRewards) /
+                    (round.paidFees[round.fundedSides[0]] +
+                        round.paidFees[round.fundedSides[1]]);
             } else if (finalRuling == _contributedTo) {
                 uint256 paidFees = round.paidFees[_contributedTo];
                 // Reward the winner.
                 sum += paidFees > 0
-                    ? (round.contributions[_beneficiary][_contributedTo] * round.feeRewards) / paidFees
+                    ? (round.contributions[_beneficiary][_contributedTo] *
+                        round.feeRewards) / paidFees
                     : 0;
             }
         }
@@ -416,7 +495,9 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @param _localDisputeId The ID of the dispute.
      *  @return The number of rounds.
      */
-    function getNumberOfRounds(uint256 _localDisputeId) external view returns (uint256) {
+    function getNumberOfRounds(
+        uint256 _localDisputeId
+    ) external view returns (uint256) {
         DisputeStruct storage dispute = disputes[_localDisputeId];
         return dispute.rounds.length;
     }
@@ -429,7 +510,10 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
      *  @return feeRewards The amount of fees that will be used as rewards.
      *  @return fundedSides Fully funded sides.
      */
-    function getRoundInfo(uint256 _localDisputeId, uint256 _round)
+    function getRoundInfo(
+        uint256 _localDisputeId,
+        uint256 _round
+    )
         external
         view
         returns (
@@ -459,7 +543,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         uint256 _localDisputeId,
         uint256 _round,
         address _contributor
-    ) external view returns(uint256[3] memory contributions) {
+    ) external view returns (uint256[3] memory contributions) {
         DisputeStruct storage dispute = disputes[_localDisputeId];
         Round storage round = dispute.rounds[_round];
         contributions = round.contributions[_contributor];
