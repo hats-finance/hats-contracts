@@ -54,7 +54,7 @@ interface IHATVault is IERC4626Upgradeable {
     * @param symbol The vault's symbol (concatenated as "HAT" + symbol)
     * @param rewardController The reward controller for the vault
     * @param asset The vault's native token
-    * @param owner The vault's owner
+    * @param owner The address of the vault's owner 
     * @param isPaused Whether to initialize the vault with deposits disabled
     * @param descriptionHash The hash of the vault's description
     */

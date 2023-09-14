@@ -358,7 +358,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
                     generalParameters.hatVestingPeriods,
                     0, // no release start
                     0, // no cliff
-                    ITokenLock.Revocability.Disabled,
+                    false, // not revocable
                     true
                 );
                 _HAT.safeTransfer(_tokenLock, _hackerReward);

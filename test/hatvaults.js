@@ -73,7 +73,8 @@ const setUpGlobalVars = async function(
   allocPoint = 100,
   weth = false,
   rewardInVaults = 2500000,
-  challengePeriod = 60 * 60 * 24
+  challengePeriod = 60 * 60 * 24,
+  isTokenLockRevocable = false
 ) {
   if (startBlock === 0) {
     startBlock = (await web3.eth.getBlock("latest")).number;
@@ -89,7 +90,8 @@ const setUpGlobalVars = async function(
     weth,
     rewardInVaults,
     challengePeriod,
-    setDefaultArbitrator: false
+    setDefaultArbitrator: false,
+    isTokenLockRevocable
   });
 
   // copy global variables
@@ -327,6 +329,7 @@ contract("HatVaults", (accounts) => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -770,6 +773,10 @@ contract("HatVaults", (accounts) => {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[3],
       arbitrator: accounts[2],
+      arbitratorCanChangeBounty: true,
+      arbitratorCanChangeBeneficiary: false,
+      arbitratorCanSubmitClaims: false,
+      isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
       vestingDuration: 86400,
@@ -834,6 +841,10 @@ contract("HatVaults", (accounts) => {
         arbitrator: accounts[2],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
+        arbitratorCanChangeBounty: true,
+        arbitratorCanChangeBeneficiary: false,
+        arbitratorCanSubmitClaims: false,
+        isTokenLockRevocable: false,
         vestingDuration: 86400,
         vestingPeriods: 10
       });
@@ -913,6 +924,7 @@ contract("HatVaults", (accounts) => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
       vestingDuration: 86400,
@@ -1442,6 +1454,7 @@ contract("HatVaults", (accounts) => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -1554,6 +1567,7 @@ contract("HatVaults", (accounts) => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -1878,7 +1892,7 @@ contract("HatVaults", (accounts) => {
     await claimsManager.challengeClaim(claimId);
 
     // cannot withdraw while active claim exists
-    assertFunctionRaisesException(
+    await assertFunctionRaisesException(
       safeRedeem(vault, web3.utils.toWei(".01"), staker),
       "RedeemMoreThanMax"
     );
@@ -3795,6 +3809,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
  
     assert.equal(tx.logs[0].event, "SubmitClaim");
     assert.equal(tx.logs[0].args._committee, accounts[1]);
+    assert.equal(tx.logs[0].args._submitter, accounts[1]);
     assert.equal(tx.logs[0].args._beneficiary, accounts[2]);
     assert.equal(tx.logs[0].args._bountyPercentage, 8000);
     assert.equal(tx.logs[0].args._descriptionHash, "description hash");
@@ -5029,6 +5044,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -5160,6 +5176,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -6130,6 +6147,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
       vestingDuration: 86400,
@@ -6470,6 +6488,109 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     }
   });
 
+  it("revoke vesting", async () => {
+    await setUpGlobalVars(
+      accounts,
+      0,
+      8000,
+      [7500, 2000, 500],
+      [1500, 500],
+      10,
+      0,
+      100,
+      false,
+      2500000,
+      60 * 60 * 24,
+      true
+    );
+    var staker = accounts[4];
+    var staker2 = accounts[3];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker2,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await stakingToken.mint(staker2, web3.utils.toWei("1"));
+
+    //stake
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+    await advanceToSafetyPeriod();
+    let tx = await claimsManager.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+    await utils.increaseTime(60 * 60 * 24);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+
+    assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
+    var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
+    var expectedHackerBalance = depositValutBNAfterClaim
+      .mul(new web3.utils.BN(6000))
+      .div(new web3.utils.BN(10000));
+    assert.isTrue(
+      (await stakingToken.balanceOf(vestingTokenLock.address)).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      new web3.utils.BN(tx.logs[1].args._claimBounty.hackerVested).eq(
+        expectedHackerBalance
+      )
+    );
+    assert.isTrue(
+      expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
+    );
+    assert.equal(await vestingTokenLock.revocable(), true); //Enabled
+    assert.equal(await vestingTokenLock.owner(), accounts[1]);
+    assert.equal(await vestingTokenLock.canDelegate(), false);
+
+    let hackerPreviousBalance = await stakingToken.balanceOf(accounts[2]);
+
+    await utils.increaseTime(8640);
+    await vestingTokenLock.release({ from: accounts[2] });
+    assert.equal(
+        (await stakingToken.balanceOf(accounts[2])).sub(hackerPreviousBalance).toString(),
+        expectedHackerBalance.div(new web3.utils.BN(10)).toString()
+    );
+
+    const vestingTokenLockBalance = await stakingToken.balanceOf(vestingTokenLock.address);
+    const committeePreviousBalance = await stakingToken.balanceOf(accounts[1]);
+    hackerPreviousBalance = await stakingToken.balanceOf(accounts[2]);
+
+    try {
+      await vestingTokenLock.revoke();
+      assert(false, "only committee can revoke");
+    } catch (ex) {
+      assertVMException(ex, "Ownable: caller is not the owner");
+    }
+
+    await vestingTokenLock.revoke({ from: accounts[1] });
+
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[2])).toString(),
+      hackerPreviousBalance.toString()
+    );
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[1])).sub(committeePreviousBalance).toString(),
+      vestingTokenLockBalance.toString()
+    );
+    expect(await ethers.provider.getCode(vestingTokenLock.address)).to.equal("0x");
+  });
+
+
   it("vesting", async () => {
     await setUpGlobalVars(accounts);
     var staker = accounts[4];
@@ -6522,7 +6643,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.isTrue(
       expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
     );
-    assert.equal(await vestingTokenLock.revocable(), 2); //Disable
+    assert.equal(await vestingTokenLock.revocable(), false); //Disable
+    assert.equal(await vestingTokenLock.owner(), "0x0000000000000000000000000000000000000000");
     assert.equal(await vestingTokenLock.canDelegate(), false);
 
     //hacker get also rewards via none vesting
@@ -6753,6 +6875,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -6809,6 +6932,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -6872,6 +6996,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
         arbitratorCanSubmitIssues: false,
+        isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         vestingDuration: 10,
@@ -6901,6 +7026,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
         arbitratorCanSubmitIssues: false,
+        isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         vestingDuration: 121 * 24 * 3600,
@@ -6930,6 +7056,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
         arbitratorCanSubmitIssues: false,
+        isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
         vestingDuration: 86400,
@@ -6957,6 +7084,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -7041,6 +7169,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
       vestingDuration: 86400,
@@ -7213,6 +7342,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
@@ -7320,6 +7450,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,

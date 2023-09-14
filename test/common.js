@@ -54,7 +54,10 @@ function assertVMException(error, expectedError = "") {
   if (expectedError) {
     assert(
       error.message === expectedErrorMessage ||
-        error.message === expectedReasonString,
+        error.message === expectedReasonString ||
+        // Needed for now because hardhat doesn't fully support the viaIR compiler setting
+        error.message === "Returned error: VM Exception while processing transaction: revert with unrecognized return data or custom error" ||
+        error.message === "Transaction reverted and Hardhat couldn't infer the reason.",
       "Expected error to be: " +
         expectedError +
         ", got this instead:" +
@@ -80,6 +83,7 @@ const setup = async function(
     rewardInVaults : 2500000,
     challengePeriod: 60 * 60 * 24,
     setDefaultArbitrator: true,
+    isTokenLockRevocable: false
   };
   options = { ...defaultOptions, ...options};
   const committee = accounts[1];
@@ -149,6 +153,7 @@ const setup = async function(
     arbitratorCanChangeBounty: true,
     arbitratorCanChangeBeneficiary: false,
     arbitratorCanSubmitIssues: false,
+    isTokenLockRevocable: options.isTokenLockRevocable,
     maxBounty: options.maxBounty,
     bountySplit: options.bountySplit,
     vestingDuration: 86400,

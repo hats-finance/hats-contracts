@@ -39,6 +39,7 @@ contract VaultsManagerMock {
                                     arbitratorCanChangeBounty: false,
                                     arbitratorCanChangeBeneficiary: false,
                                     arbitratorCanSubmitClaims: false,
+                                    isTokenLockRevocable: false,
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
                                     vestingDuration: 86400,

@@ -1,16 +1,16 @@
 const func = async function (hre) {
-const { deployments, getNamedAccounts } = hre;
-const { deploy } = deployments;
+    const { deployments, getNamedAccounts } = hre;
+    const { deploy } = deployments;
 
-const { deployer } = await getNamedAccounts();
+    const { deployer } = await getNamedAccounts();
 
-await deploy('HATPaymentSplitter', {
-    from: deployer,
-    args: [],
-    log: true,
-});
+    await deploy('HATPaymentSplitter', {
+        from: deployer,
+        args: [],
+        log: true,
+    });
 
-await deploy('HATPaymentSplitterFactory', {
+    await deploy('HATPaymentSplitterFactory', {
         from: deployer,
         args: [
         (await deployments.get('HATPaymentSplitter')).address,

@@ -275,4 +275,79 @@ module.exports = {
             "deadline": null
         }
     },
+    "base": {
+        "governance": "0x5c9d8Fd82a5F0E73384cdfe338ba25F346EEA391",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0x4200000000000000000000000000000000000006", // WETH
+        "hatVaultsRegistryConf": {
+            "swapToken": "0x4200000000000000000000000000000000000006", // WETH
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "nautulis": {
+        "governance": "NEED ADDRESS",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "NEED ADDRESS", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "NEED ADDRESS", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
+    "meter": {
+        "governance": "0x538B46F9966f0ef2E35a607adbEc51eDF74C25A4",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0xd714Dd60e22BbB1cbAFD0e40dE5Cfa7bBDD3F3C8"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
 };

@@ -33,6 +33,27 @@ import "./ITokenLock.sol";
 abstract contract TokenLock is Ownable, ITokenLock {
     using SafeERC20 for IERC20;
 
+    // -- Errors --
+
+    error OnlyBeneficiary();
+    error BeneficiaryCannotBeZero();
+    error CannotCancelAfterLockIsAccepted();
+    error NoAmountAvailableToRelease();
+    error AmountCannotBeZero();
+    error AmountRequestedBiggerThanSurplus();
+    error LockIsNonRevocable();
+    error NoAvailableUnvestedAmount();
+    error OnlySweeper();
+    error CannotSweepVestedToken();
+    error AlreadyInitialized();
+    error TokenCannotBeZero();
+    error ManagedAmountCannotBeZero();
+    error StartTimeCannotBeZero();
+    error StartTimeMustBeBeforeEndTime();
+    error PeriodsCannotBeBelowMinimum();
+    error ReleaseStartTimeMustBeBeforeEndTime();
+    error CliffTimeMustBeBeforeEndTime();
+
     uint256 private constant MIN_PERIOD = 1;
 
     // -- State --
@@ -56,7 +77,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
     // A cliff set a date to which a beneficiary needs to get to vest
     // all preceding periods
     uint256 public vestingCliffTime;
-    Revocability public revocable; // Whether to use vesting for locked funds
+    bool public revocable; // determines whether the owner can revoke all unvested tokens
 
     // State
 
@@ -78,7 +99,8 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @dev Only allow calls from the beneficiary of the contract
      */
     modifier onlyBeneficiary() {
-        require(msg.sender == beneficiary, "!auth");
+        if (msg.sender != beneficiary) 
+            revert OnlyBeneficiary();
         _;
     }
 
@@ -93,7 +115,8 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @param _newBeneficiary Address of the new beneficiary address
      */
     function changeBeneficiary(address _newBeneficiary) external onlyBeneficiary {
-        require(_newBeneficiary != address(0), "Empty beneficiary");
+        if (_newBeneficiary == address(0))
+            revert BeneficiaryCannotBeZero();
         beneficiary = _newBeneficiary;
         emit BeneficiaryChanged(_newBeneficiary);
     }
@@ -113,7 +136,8 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @dev Can only be called by the owner
      */
     function cancelLock() external onlyOwner {
-        require(isAccepted == false, "Cannot cancel accepted contract");
+        if (isAccepted)
+            revert CannotCancelAfterLockIsAccepted();
 
         token.safeTransfer(owner(), currentBalance());
 
@@ -128,7 +152,8 @@ abstract contract TokenLock is Ownable, ITokenLock {
      */
     function release() external override onlyBeneficiary {
         uint256 amountToRelease = releasableAmount();
-        require(amountToRelease > 0, "No available releasable amount");
+        if (amountToRelease == 0)
+            revert NoAmountAvailableToRelease();
 
         releasedAmount += amountToRelease;
 
@@ -145,8 +170,10 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @param _amount Amount of tokens to withdraw
      */
     function withdrawSurplus(uint256 _amount) external override onlyBeneficiary {
-        require(_amount > 0, "Amount cannot be zero");
-        require(surplusAmount() >= _amount, "Amount requested > surplus available");
+        if (_amount == 0)
+            revert AmountCannotBeZero();
+        if (surplusAmount() < _amount)
+        revert AmountRequestedBiggerThanSurplus();
 
         token.safeTransfer(beneficiary, _amount);
 
@@ -160,17 +187,20 @@ abstract contract TokenLock is Ownable, ITokenLock {
      * @dev Vesting schedule is always calculated based on managed tokens
      */
     function revoke() external override onlyOwner {
-        require(revocable == Revocability.Enabled, "Contract is non-revocable");
-        require(isRevoked == false, "Already revoked");
+        if (!revocable)
+            revert LockIsNonRevocable();
 
         uint256 unvestedAmount = managedAmount - vestedAmount();
-        require(unvestedAmount > 0, "No available unvested amount");
+        if (unvestedAmount == 0)
+            revert NoAvailableUnvestedAmount();
 
         isRevoked = true;
 
         token.safeTransfer(owner(), unvestedAmount);
 
         emit TokensRevoked(beneficiary, unvestedAmount);
+
+        selfdestruct(payable(msg.sender));
     }
 
     /**
@@ -179,8 +209,10 @@ abstract contract TokenLock is Ownable, ITokenLock {
      */
     function sweepToken(IERC20 _token) external override {
         address sweeper = owner() == address(0) ? beneficiary : owner();
-        require(msg.sender == sweeper, "!auth");
-        require(_token != token, "cannot sweep vested token");
+        if (msg.sender != sweeper)
+            revert OnlySweeper();
+        if (_token == token)
+            revert CannotSweepVestedToken();
         uint256 tokenBalance = _token.balanceOf(address(this));
         if (tokenBalance > 0) {
             _token.safeTransfer(sweeper, tokenBalance);
@@ -292,7 +324,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
      */
     function vestedAmount() public override view returns (uint256) {
         // If non-revocable it is fully vested
-        if (revocable == Revocability.Disabled) {
+        if (!revocable) {
             return managedAmount;
         }
 
@@ -319,7 +351,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
 
         // Vesting cliff is activated and it has not passed means nothing is vested yet
         // so funds cannot be released
-        if (revocable == Revocability.Enabled && vestingCliffTime > 0 && currentTime() < vestingCliffTime) {
+        if (revocable && vestingCliffTime > 0 && currentTime() < vestingCliffTime) {
             return 0;
         }
 
@@ -373,18 +405,26 @@ abstract contract TokenLock is Ownable, ITokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        Revocability _revocable
+        bool _revocable
     ) internal {
-        require(!isInitialized, "Already initialized");
-        require(_beneficiary != address(0), "Beneficiary cannot be zero");
-        require(_token != address(0), "Token cannot be zero");
-        require(_managedAmount > 0, "Managed tokens cannot be zero");
-        require(_startTime != 0, "Start time must be set");
-        require(_startTime < _endTime, "Start time > end time");
-        require(_periods >= MIN_PERIOD, "Periods cannot be below minimum");
-        require(_revocable != Revocability.NotSet, "Must set a revocability option");
-        require(_releaseStartTime < _endTime, "Release start time must be before end time");
-        require(_vestingCliffTime < _endTime, "Cliff time must be before end time");
+        if (isInitialized)
+            revert AlreadyInitialized();
+        if (_beneficiary == address(0))
+            revert BeneficiaryCannotBeZero();
+        if (_token == address(0))
+            revert TokenCannotBeZero();
+        if (_managedAmount == 0)
+            revert ManagedAmountCannotBeZero();
+        if (_startTime == 0)
+            revert StartTimeCannotBeZero();
+        if (_startTime >= _endTime)
+            revert StartTimeMustBeBeforeEndTime();
+        if (_periods < MIN_PERIOD)
+            revert PeriodsCannotBeBelowMinimum();
+        if (_releaseStartTime >= _endTime)
+            revert ReleaseStartTimeMustBeBeforeEndTime();
+        if (_vestingCliffTime >= _endTime)
+            revert CliffTimeMustBeBeforeEndTime();
 
         isInitialized = true;
 

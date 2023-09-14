@@ -16,6 +16,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * easier by distributing them the initial tokens to be managed.
  */
 contract TokenLockFactory is ITokenLockFactory, Ownable {
+    // -- Errors --
+
+    error MasterCopyCannotBeZero();
+
     // -- State --
 
     address public masterCopy;
@@ -36,7 +40,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
         uint256 periods,
         uint256 releaseStartTime,
         uint256 vestingCliffTime,
-        ITokenLock.Revocability revocable,
+        bool revocable,
         bool canDelegate
     );
 
@@ -74,12 +78,12 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        ITokenLock.Revocability _revocable,
+        bool _revocable,
         bool _canDelegate
     ) external override returns(address contractAddress) {
         // Create contract using a minimal proxy and call initializer
         bytes memory initializer = abi.encodeWithSignature(
-            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint8,bool)",
+            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,bool,bool)",
             _owner,
             _beneficiary,
             _token,
@@ -115,7 +119,8 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
     }
 
     function _setMasterCopy(address _masterCopy) internal {
-        require(_masterCopy != address(0), "MasterCopy cannot be zero");
+        if (_masterCopy == address(0))
+            revert MasterCopyCannotBeZero();
         masterCopy = _masterCopy;
         emit MasterCopyUpdated(_masterCopy);
     }
@@ -131,7 +136,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        ITokenLock.Revocability _revocable,
+        bool _revocable,
         bool _canDelegate
     ) private returns (address contractAddress) {
 
