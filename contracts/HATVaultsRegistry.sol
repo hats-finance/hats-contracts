@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IHATVaultsRegistry.sol";
 import "./interfaces/IHATVault.sol";
-import "./interfaces/IHATVault.sol";
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
  * @author Hats.finance
@@ -141,7 +140,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultChallengeTimeOutPeriod = 5 weeks;
         emit RegistryCreated(
             _hatVaultImplementation,
-            _hatVaultImplementation,
+            _hatClaimsManagerImplementation,
             _HAT,
             address(_tokenLockFactory),
             generalParameters,
