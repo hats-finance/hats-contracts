@@ -636,7 +636,7 @@ function setDepositPause(contract IHATVault _vault, bool _depositPause) external
 ### setEmergencyPaused
 
 ```solidity
-function setEmergencyPaused(contract HATVaultsRegistry _registry, bool _isEmergencyPaused) external nonpayable
+function setEmergencyPaused(contract IHATVaultsRegistry _registry, bool _isEmergencyPaused) external nonpayable
 ```
 
 
@@ -647,7 +647,7 @@ function setEmergencyPaused(contract HATVaultsRegistry _registry, bool _isEmerge
 
 | Name | Type | Description |
 |---|---|---|
-| _registry | contract HATVaultsRegistry | undefined |
+| _registry | contract IHATVaultsRegistry | undefined |
 | _isEmergencyPaused | bool | undefined |
 
 ### setVaultDescription
@@ -709,7 +709,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ### swapAndSend
 
 ```solidity
-function swapAndSend(contract HATVaultsRegistry _registry, address _asset, address[] _beneficiaries, uint256 _amountOutMinimum, address _routingContract, bytes _routingPayload) external nonpayable
+function swapAndSend(contract IHATVaultsRegistry _registry, address _asset, address[] _beneficiaries, uint256 _amountOutMinimum, address _routingContract, bytes _routingPayload) external nonpayable
 ```
 
 
@@ -720,7 +720,7 @@ function swapAndSend(contract HATVaultsRegistry _registry, address _asset, addre
 
 | Name | Type | Description |
 |---|---|---|
-| _registry | contract HATVaultsRegistry | undefined |
+| _registry | contract IHATVaultsRegistry | undefined |
 | _asset | address | undefined |
 | _beneficiaries | address[] | undefined |
 | _amountOutMinimum | uint256 | undefined |

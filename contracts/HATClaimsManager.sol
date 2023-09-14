@@ -42,10 +42,10 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 1e4;
     uint256 public constant HUNDRED_PERCENT_SQRD = 1e8;
-    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty can be up to 90%
+    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty, can be up to 90%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 10e2; // Max committee bounty can be up to 10%
 
-    HATVaultsRegistry public registry;
+    IHATVaultsRegistry public registry;
     IHATVault public vault;
     ITokenLockFactory public tokenLockFactory;
 
@@ -80,6 +80,8 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     bool public arbitratorCanChangeBeneficiary;
     // whether the arbitrator can submit claims
     bool public arbitratorCanSubmitClaims;
+    // Can the committee revoke the token lock
+    bool public isTokenLockRevocable;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -135,6 +137,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         arbitratorCanChangeBounty = _params.arbitratorCanChangeBounty;
         arbitratorCanChangeBeneficiary = _params.arbitratorCanChangeBeneficiary;
         arbitratorCanSubmitClaims = _params.arbitratorCanSubmitClaims;
+        isTokenLockRevocable = _params.isTokenLockRevocable;
 
         // Set vault to use default registry values where applicable
         bountyGovernanceHAT = NULL_UINT16;
@@ -152,7 +155,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         address arbitratorAddress = getArbitrator();
         if (!arbitratorCanSubmitClaims || arbitratorAddress != msg.sender)
             if (committee != msg.sender) revert OnlyCommittee();
-        HATVaultsRegistry _registry = registry;
+        IHATVaultsRegistry _registry = registry;
         uint256 withdrawPeriod = _registry.getWithdrawPeriod();
         // require we are in safetyPeriod
         // solhint-disable-next-line not-rely-on-time
@@ -169,7 +172,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             claimId: claimId,
             beneficiary: _beneficiary,
             bountyPercentage: _bountyPercentage,
-            committee: msg.sender,
+            committee: committee,
             // solhint-disable-next-line not-rely-on-time
             createdAt: uint32(block.timestamp),
             challengedAt: 0,
@@ -186,6 +189,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         emit SubmitClaim(
             claimId,
+            committee,
             msg.sender,
             _beneficiary,
             _bountyPercentage,
@@ -270,7 +274,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             //hacker gets part of bounty to a vesting contract
             tokenLock = tokenLockFactory.createTokenLock(
                 address(_asset),
-                0x0000000000000000000000000000000000000000, //this address as owner, so it can do nothing.
+                isTokenLockRevocable ? committee : 0x0000000000000000000000000000000000000000, // owner
                 _claim.beneficiary,
                 claimBounty.hackerVested,
                 // solhint-disable-next-line not-rely-on-time
@@ -280,7 +284,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
                 vestingPeriods,
                 0, //no release start
                 0, //no cliff
-                ITokenLock.Revocability.Disabled,
+                isTokenLockRevocable,
                 false
             );
             _asset.safeTransfer(tokenLock, claimBounty.hackerVested);
@@ -291,7 +295,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         // send to the registry the amount of tokens which should be swapped 
         // to HAT so it could call swapAndSend in a separate tx.
-        HATVaultsRegistry _registry = registry;
+        IHATVaultsRegistry _registry = registry;
         _asset.safeApprove(address(_registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
         _registry.addTokensToSwap(
             _asset,
@@ -305,6 +309,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         emit ApproveClaim(
             _claimId,
+            _claim.committee,
             msg.sender,
             _claim.beneficiary,
             _claim.bountyPercentage,

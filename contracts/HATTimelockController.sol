@@ -47,7 +47,7 @@ contract HATTimelockController is TimelockController {
     }
 
     function swapAndSend(
-        HATVaultsRegistry _registry,
+        IHATVaultsRegistry _registry,
         address _asset,
         address[] calldata _beneficiaries,
         uint256 _amountOutMinimum,
@@ -65,7 +65,7 @@ contract HATTimelockController is TimelockController {
         );
     }
 
-    function setEmergencyPaused(HATVaultsRegistry _registry, bool _isEmergencyPaused) external onlyRole(PROPOSER_ROLE) {
+    function setEmergencyPaused(IHATVaultsRegistry _registry, bool _isEmergencyPaused) external onlyRole(PROPOSER_ROLE) {
         _registry.setEmergencyPaused(_isEmergencyPaused);
     }
 }

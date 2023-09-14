@@ -53,6 +53,91 @@ function createVault(IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.C
 | vault | address | undefined |
 | vaultClaimsManager | address | undefined |
 
+### defaultArbitrator
+
+```solidity
+function defaultArbitrator() external view returns (address)
+```
+
+Get the default arbitrator address
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | The default arbitrator address |
+
+### defaultBountyGovernanceHAT
+
+```solidity
+function defaultBountyGovernanceHAT() external view returns (uint16)
+```
+
+Get the default percentage of the total bounty to be swapped to HATs and sent to governance
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to governance |
+
+### defaultBountyHackerHATVested
+
+```solidity
+function defaultBountyHackerHATVested() external view returns (uint16)
+```
+
+Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract |
+
+### defaultChallengePeriod
+
+```solidity
+function defaultChallengePeriod() external view returns (uint32)
+```
+
+Get the default challenge period
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint32 | The default challenge period |
+
+### defaultChallengeTimeOutPeriod
+
+```solidity
+function defaultChallengeTimeOutPeriod() external view returns (uint32)
+```
+
+Get the default challenge time out period
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint32 | The default challenge time out period |
+
 ### feeSetter
 
 ```solidity

@@ -17,7 +17,7 @@ contract("Registry Arbitrator", (accounts) => {
   let token;
   let expertCommittee = accounts[8];
 
-  async function setupHATArbitrator(registry, vault) {
+  async function setupHATArbitrator(registry, claimsManager) {
     token = await ERC20Mock.new("Staking", "STK");
     
     const HATArbitrator = artifacts.require("./HATArbitrator.sol");
@@ -45,12 +45,12 @@ contract("Registry Arbitrator", (accounts) => {
     await hatArbitrator.setCourt(klerosConnector.address);
     
     await registry.setDefaultArbitrator(hatArbitrator.address);
-    await vault.setArbitratorOptions(true, true, true);
+    await claimsManager.setArbitratorOptions(true, true, true);
   }
 
-  async function makeClaimExpire(vault) {
-    await utils.increaseTime(parseInt((await vault.activeClaim()).challengePeriod.toString()));
-    await utils.increaseTime(parseInt((await vault.activeClaim()).challengeTimeOutPeriod.toString()));
+  async function makeClaimExpire (claimsManager) {
+    await utils.increaseTime(parseInt((await claimsManager.activeClaim()).challengePeriod.toString()));
+    await utils.increaseTime(parseInt((await claimsManager.activeClaim()).challengeTimeOutPeriod.toString()));
   }
 
   it("Set court", async () => {
@@ -90,13 +90,13 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("Dispute claim", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("100"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("100"), { from: accounts[0] });
@@ -105,108 +105,108 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("1100"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("99"), "desc", { from: accounts[0] }),
+      hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("99"), "desc", { from: accounts[0] }),
       "BondAmountSubmittedTooLow"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.dispute(vault.address, web3.utils.randomHex(32), web3.utils.toWei("100"), "desc", { from: accounts[0] }),
+      hatArbitrator.dispute(claimsManager.address, web3.utils.randomHex(32), web3.utils.toWei("100"), "desc", { from: accounts[0] }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
-    let tx = await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("100"), "desc", { from: accounts[0] });
+    let tx = await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("100"), "desc", { from: accounts[0] });
 
     assert.equal(tx.logs[0].event, "ClaimDisputed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[0]);
     assert.equal(tx.logs[0].args._bondAmount, web3.utils.toWei("100"));
     assert.equal(tx.logs[0].args._descriptionHash, "desc");
 
-    assert.equal(await hatArbitrator.totalBondsOnClaim(vault.address, claimId), web3.utils.toWei("100"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("100"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal((await vault.activeClaim()).challengedAt, 0);
+    assert.equal(await hatArbitrator.totalBondsOnClaim(claimsManager.address, claimId), web3.utils.toWei("100"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("100"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal((await claimsManager.getActiveClaim()).challengedAt, 0);
 
-    tx = await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("900"), "desc2", { from: accounts[1] });
+    tx = await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("900"), "desc2", { from: accounts[1] });
     let challengedAtTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
     assert.equal(tx.logs[0].event, "ClaimDisputed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[1]);
     assert.equal(tx.logs[0].args._bondAmount, web3.utils.toWei("900"));
     assert.equal(tx.logs[0].args._descriptionHash, "desc2");
 
-    assert.equal(await hatArbitrator.totalBondsOnClaim(vault.address, claimId), web3.utils.toWei("1000"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("100"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("900"));
-    assert.equal((await vault.activeClaim()).challengedAt, challengedAtTimestamp);
+    assert.equal(await hatArbitrator.totalBondsOnClaim(claimsManager.address, claimId), web3.utils.toWei("1000"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("100"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("900"));
+    assert.equal((await claimsManager.getActiveClaim()).challengedAt, challengedAtTimestamp);
 
-    tx = await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("100"), "desc3", { from: accounts[1] });
+    tx = await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("100"), "desc3", { from: accounts[1] });
 
     assert.equal(tx.logs[0].event, "ClaimDisputed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[1]);
     assert.equal(tx.logs[0].args._bondAmount, web3.utils.toWei("100"));
     assert.equal(tx.logs[0].args._descriptionHash, "desc3");
 
-    assert.equal(await hatArbitrator.totalBondsOnClaim(vault.address, claimId), web3.utils.toWei("1100"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("100"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("1000"));
-    assert.equal((await vault.activeClaim()).challengedAt, challengedAtTimestamp);
+    assert.equal(await hatArbitrator.totalBondsOnClaim(claimsManager.address, claimId), web3.utils.toWei("1100"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("100"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("1000"));
+    assert.equal((await claimsManager.getActiveClaim()).challengedAt, challengedAtTimestamp);
 
     await utils.increaseTime(60 * 60 * 24);
 
     await assertFunctionRaisesException(
-      hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("100"), "desc", { from: accounts[1] }),
+      hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("100"), "desc", { from: accounts[1] }),
       "CannotSubmitMoreEvidence"
     );
   });
 
   it("Dismiss dispute", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissDispute(vault.address, claimId, "desc", { from: expertCommittee }),
+      hatArbitrator.dismissDispute(claimsManager.address, claimId, "desc", { from: expertCommittee }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissDispute(vault.address, claimId, "desc", { from: accounts[0] }),
+      hatArbitrator.dismissDispute(claimsManager.address, claimId, "desc", { from: accounts[0] }),
       "OnlyExpertCommittee"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissDispute(vault.address, web3.utils.randomHex(32), "desc", { from: expertCommittee }),
+      hatArbitrator.dismissDispute(claimsManager.address, web3.utils.randomHex(32), "desc", { from: expertCommittee }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
-    let tx = await hatArbitrator.dismissDispute(vault.address, claimId, "desc2", { from: expertCommittee });
+    let tx = await hatArbitrator.dismissDispute(claimsManager.address, claimId, "desc2", { from: expertCommittee });
     let resolvedAtTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
     assert.equal(tx.logs[0].event, "DisputeDismissed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._descriptionHash, "desc2");
 
     assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
     assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("1000"));
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).resolvedAt, resolvedAtTimestamp);
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).resolvedAt, resolvedAtTimestamp);
 
-    let logs = await vault.getPastEvents('ApproveClaim', {
+    let logs = await claimsManager.getPastEvents('ApproveClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -215,33 +215,33 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].args._claimId, claimId);
     assert.equal(logs[0].args._approver, hatArbitrator.address);
 
-    claimId = await submitClaim(vault, { accounts });
+    claimId = await submitClaim(claimsManager, { accounts });
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
-    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissDispute(vault.address, claimId, "desc", { from: expertCommittee }),
+      hatArbitrator.dismissDispute(claimsManager.address, claimId, "desc", { from: expertCommittee }),
       "AlreadyResolved"
     );
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire(claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissDispute(vault.address, claimId, "desc", { from: expertCommittee }),
+      hatArbitrator.dismissDispute(claimsManager.address, claimId, "desc", { from: expertCommittee }),
       "ClaimExpired"
     );
   });
 
   it("Accept dispute", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -250,72 +250,72 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee }),
+      hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: accounts[0] }),
+      hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: accounts[0] }),
       "OnlyExpertCommittee"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.acceptDispute(vault.address, web3.utils.randomHex(32), 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee }),
+      hatArbitrator.acceptDispute(claimsManager.address, web3.utils.randomHex(32), 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
-    let tx = await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+    let tx = await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
     let resolvedAtTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
     assert.equal(tx.logs[2].event, "DisputeAccepted");
-    assert.equal(tx.logs[2].args._vault, vault.address);
+    assert.equal(tx.logs[2].args._vault, claimsManager.address);
     assert.equal(tx.logs[2].args._claimId, claimId);
     assert.equal(tx.logs[2].args._bountyPercentage, 5000);
     assert.equal(tx.logs[2].args._beneficiary, accounts[4]);
     assert.equal(tx.logs[2].args._descriptionHash, "desc2");
 
     assert.equal(tx.logs[0].event, "DisputersRefunded");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputers.toString(), [accounts[0]].toString());
 
     assert.equal(tx.logs[1].event, "DisputersConfiscated");
-    assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._vault, claimsManager.address);
     assert.equal(tx.logs[1].args._claimId, claimId);
     assert.equal(tx.logs[1].args._disputers.toString(), [accounts[1]].toString());
 
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).bountyPercentage.toString(), "5000");
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).beneficiary, accounts[4]);
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).resolvedAt, resolvedAtTimestamp);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), true);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("1000"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("0"));
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).bountyPercentage.toString(), "5000");
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).beneficiary, accounts[4]);
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).resolvedAt, resolvedAtTimestamp);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("1000"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("0"));
 
     await assertFunctionRaisesException(
-      hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee }),
+      hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee }),
       "AlreadyResolved"
     );
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire(claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee }),
+      hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[2], [], [], "desc", { from: expertCommittee }),
       "ClaimExpired"
     );
   });
 
   it("Refund disputers", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("200"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("200"), { from: accounts[0] });
@@ -325,68 +325,68 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[2] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundDisputers(vault.address, claimId, [accounts[0]], { from: accounts[0] }),
+      hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[0]], { from: accounts[0] }),
       "OnlyExpertCommittee"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundDisputers(vault.address, web3.utils.randomHex(32), [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.refundDisputers(claimsManager.address, web3.utils.randomHex(32), [accounts[0]], { from: expertCommittee }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "NoResolution"
     );
 
 
-    let tx = await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee });
+    let tx = await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee });
 
     assert.equal(tx.logs[0].event, "DisputersRefunded");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputers.toString(), [accounts[0]].toString());
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), true);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), false);
 
-    tx = await hatArbitrator.refundDisputers(vault.address, claimId, [accounts[2]], { from: expertCommittee });
+    tx = await hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[2]], { from: expertCommittee });
 
     assert.equal(tx.logs[0].event, "DisputersRefunded");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputers.toString(), [accounts[2]].toString());
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), true);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), true);
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire(claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.refundDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "ClaimExpired"
     );
   });
 
   it("Confiscate disputers", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim(claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("200"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("200"), { from: accounts[0] });
@@ -396,78 +396,78 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[2] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.confiscateDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.confiscateDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.confiscateDisputers(vault.address, claimId, [accounts[0]], { from: accounts[0] }),
+      hatArbitrator.confiscateDisputers(claimsManager.address, claimId, [accounts[0]], { from: accounts[0] }),
       "OnlyExpertCommittee"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.confiscateDisputers(vault.address, web3.utils.randomHex(32), [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.confiscateDisputers(claimsManager.address, web3.utils.randomHex(32), [accounts[0]], { from: expertCommittee }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.confiscateDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.confiscateDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "NoResolution"
     );
 
-    let tx = await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [], [accounts[0]], "desc2", { from: expertCommittee });
+    let tx = await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [], [accounts[0]], "desc2", { from: expertCommittee });
 
     assert.equal(tx.logs[1].event, "DisputersConfiscated");
-    assert.equal(tx.logs[1].args._vault, vault.address);
+    assert.equal(tx.logs[1].args._vault, claimsManager.address);
     assert.equal(tx.logs[1].args._claimId, claimId);
     assert.equal(tx.logs[1].args._disputers.toString(), [accounts[0]].toString());
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), false);
 
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("300"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[2], vault.address, claimId), web3.utils.toWei("500"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("300"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[2], claimsManager.address, claimId), web3.utils.toWei("500"));
     assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("200"));
 
 
-    tx = await hatArbitrator.confiscateDisputers(vault.address, claimId, [accounts[1], accounts[2]], { from: expertCommittee });
+    tx = await hatArbitrator.confiscateDisputers(claimsManager.address, claimId, [accounts[1], accounts[2]], { from: expertCommittee });
 
     assert.equal(tx.logs[0].event, "DisputersConfiscated");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputers.toString(), [accounts[1], accounts[2]].toString());
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.disputersBonds(accounts[2], vault.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.disputersBonds(accounts[2], claimsManager.address, claimId), web3.utils.toWei("0"));
 
     assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("1000"));
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.confiscateDisputers(vault.address, claimId, [accounts[0]], { from: expertCommittee }),
+      hatArbitrator.confiscateDisputers(claimsManager.address, claimId, [accounts[0]], { from: expertCommittee }),
       "ClaimExpired"
     );
   });
 
   it("Refund bond", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("200"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("200"), { from: accounts[0] });
@@ -476,118 +476,118 @@ contract("Registry Arbitrator", (accounts) => {
     await token.mint(accounts[2], web3.utils.toWei("500"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[2] });
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("300"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[2] });
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), true);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), false);
 
     await assertFunctionRaisesException(
-      hatArbitrator.reclaimBond(vault.address, claimId, { from: expertCommittee }),
+      hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: expertCommittee }),
       "CannotClaimBond"
     );
 
-    let tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[0] });
+    let tx = await hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[0] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[0]);
     assert.equal(tx.logs[0].args._amountClaimed, web3.utils.toWei("200"));
     
-    assert.equal(await hatArbitrator.disputersBonds(accounts[0], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[0], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("200"));
 
     await assertFunctionRaisesException(
-      hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[0] }),
       "CannotClaimBond"
     );
 
-    await hatArbitrator.refundDisputers(vault.address, claimId, [accounts[2]], { from: expertCommittee });
+    await hatArbitrator.refundDisputers(claimsManager.address, claimId, [accounts[2]], { from: expertCommittee });
 
-    assert.equal(await hatArbitrator.bondClaimable(accounts[0], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), true);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[0], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), true);
 
-    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[2] });
+    tx = await hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[2] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[2]);
     assert.equal(tx.logs[0].args._amountClaimed, web3.utils.toWei("500"));
     
-    assert.equal(await hatArbitrator.disputersBonds(accounts[2], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.bondClaimable(accounts[2], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[2], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[2], claimsManager.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[2]), web3.utils.toWei("500"));
 
     await assertFunctionRaisesException(
-      hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[1] }),
+      hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[1] }),
       "CannotClaimBond"
     );
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
     
-    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[1] });
+    tx = await hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[1] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[1]);
     assert.equal(tx.logs[0].args._amountClaimed, web3.utils.toWei("300"));
     
-    assert.equal(await hatArbitrator.disputersBonds(accounts[1], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.bondClaimable(accounts[1], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[1], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[1], claimsManager.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[1]), web3.utils.toWei("300"));
 
-    await vault.dismissClaim(claimId);
-    claimId = await submitClaim(vault, { accounts });
+    await claimsManager.dismissClaim(claimId);
+    claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[3], web3.utils.toWei("200"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("200"), { from: accounts[3] });
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[3] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("200"), "desc", { from: accounts[3] });
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
 
-    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[3] });
+    tx = await hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[3] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[3]);
     assert.equal(tx.logs[0].args._amountClaimed, web3.utils.toWei("200"));
     
-    assert.equal(await hatArbitrator.disputersBonds(accounts[3], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.bondClaimable(accounts[3], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[3], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[3], claimsManager.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[3]), web3.utils.toWei("200"));
 
-    tx = await hatArbitrator.reclaimBond(vault.address, claimId, { from: accounts[3] });
+    tx = await hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[3] });
 
     assert.equal(tx.logs[0].event, "BondRefundClaimed");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
     assert.equal(tx.logs[0].args._disputer, accounts[3]);
     assert.equal(tx.logs[0].args._amountClaimed, web3.utils.toWei("0"));
     
-    assert.equal(await hatArbitrator.disputersBonds(accounts[3], vault.address, claimId), web3.utils.toWei("0"));
-    assert.equal(await hatArbitrator.bondClaimable(accounts[3], vault.address, claimId), false);
+    assert.equal(await hatArbitrator.disputersBonds(accounts[3], claimsManager.address, claimId), web3.utils.toWei("0"));
+    assert.equal(await hatArbitrator.bondClaimable(accounts[3], claimsManager.address, claimId), false);
     assert.equal(await token.balanceOf(accounts[3]), web3.utils.toWei("200"));
   });
 
   it("Challenge resolution", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -596,64 +596,64 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, web3.utils.randomHex(32), "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, web3.utils.randomHex(32), "evidence", { from: expertCommittee, value: 1000 }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "NoResolution"
     );
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
     
-    let tx = await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
+    let tx = await hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     assert.equal(tx.logs[0].event, "ResolutionChallenged");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "AlreadyChallenged"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "AlreadyChallenged"
     );
 
     await utils.increaseTime(60 * 60 * 24 * 7);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: expertCommittee, value: 1000 }),
       "ChallengePeriodPassed"
     );
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 }),
+      hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 }),
       "ClaimExpired"
     );
   });
 
   it("Execute resolution", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -662,39 +662,39 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, web3.utils.randomHex(32), { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, web3.utils.randomHex(32), { from: accounts[0] }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "NoResolution"
     );
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "ChallengePeriodDidNotPass"
     );
 
     await utils.increaseTime(60 * 60 * 24 * 7);
 
-    let tx = await hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] });
+    let tx = await hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] });
 
     assert.equal(tx.logs[0].event, "ResolutionExecuted");
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
     assert.equal(tx.logs[0].args._claimId, claimId);
 
-    let logs = await vault.getPastEvents('ApproveClaim', {
+    let logs = await claimsManager.getPastEvents('ApproveClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -706,27 +706,27 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].args._beneficiary, accounts[4]);
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
-    claimId = await submitClaim(vault, { accounts });
+    claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
+    await hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "CanOnlyBeCalledByCourt"
     );
 
-    await klerosConnector.executeResolution(hatArbitrator.address, vault.address, claimId);
+    await klerosConnector.executeResolution(hatArbitrator.address, claimsManager.address, claimId);
 
     logs = await hatArbitrator.getPastEvents('ResolutionExecuted', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
@@ -734,10 +734,10 @@ contract("Registry Arbitrator", (accounts) => {
     });
 
     assert.equal(logs[0].event, "ResolutionExecuted");
-    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._vault, claimsManager.address);
     assert.equal(logs[0].args._claimId, claimId);
 
-    logs = await vault.getPastEvents('ApproveClaim', {
+    logs = await claimsManager.getPastEvents('ApproveClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -748,33 +748,33 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].args._bountyPercentage, 4000);
     assert.equal(logs[0].args._beneficiary, accounts[5]);
 
-    claimId = await submitClaim(vault, { accounts });
+    claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
+    await hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.executeResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.executeResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "ClaimExpired"
     );
   });
 
   it("Dismiss resolution", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await advanceToSafetyPeriod(registry);
 
-    let claimId = await submitClaim(vault, { accounts });
+    let claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -783,38 +783,38 @@ contract("Registry Arbitrator", (accounts) => {
     await token.approve(hatArbitrator.address, web3.utils.toWei("500"), { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      hatArbitrator.dismissResolution(claimsManager.address, claimId, { from: accounts[9] }),
       "ClaimIsNotDisputed"
     );
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("500"), "desc", { from: accounts[1] });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, web3.utils.randomHex(32), { from: accounts[9] }),
+      hatArbitrator.dismissResolution(claimsManager.address, web3.utils.randomHex(32), { from: accounts[9] }),
       "ClaimIsNotCurrentlyActiveClaim"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      hatArbitrator.dismissResolution(claimsManager.address, claimId, { from: accounts[9] }),
       "NoResolution"
     );
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 5000, accounts[4], [accounts[0]], [accounts[1]], "desc2", { from: expertCommittee });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[9] }),
+      hatArbitrator.dismissResolution(claimsManager.address, claimId, { from: accounts[9] }),
       "CannotDismissUnchallengedResolution"
     );
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
+    await hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.dismissResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "CanOnlyBeCalledByCourt"
     );
 
-    await klerosConnector.dismissResolution(hatArbitrator.address, vault.address, claimId);
+    await klerosConnector.dismissResolution(hatArbitrator.address, claimsManager.address, claimId);
 
     logs = await hatArbitrator.getPastEvents('ResolutionDismissed', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
@@ -822,10 +822,10 @@ contract("Registry Arbitrator", (accounts) => {
     });
 
     assert.equal(logs[0].event, "ResolutionDismissed");
-    assert.equal(logs[0].args._vault, vault.address);
+    assert.equal(logs[0].args._vault, claimsManager.address);
     assert.equal(logs[0].args._claimId, claimId);
 
-    logs = await vault.getPastEvents('DismissClaim', {
+    logs = await claimsManager.getPastEvents('DismissClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -833,29 +833,29 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].event, "DismissClaim");
     assert.equal(logs[0].args._claimId, claimId);
 
-    claimId = await submitClaim(vault, { accounts });
+    claimId = await submitClaim (claimsManager, { accounts });
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
 
-    await hatArbitrator.dispute(vault.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
+    await hatArbitrator.dispute(claimsManager.address, claimId, web3.utils.toWei("1000"), "desc", { from: accounts[0] });
 
-    await hatArbitrator.acceptDispute(vault.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
+    await hatArbitrator.acceptDispute(claimsManager.address, claimId, 4000, accounts[5], [accounts[0]], [], "desc2", { from: expertCommittee });
 
-    await hatArbitrator.challengeResolution(vault.address, claimId, "evidence", { from: accounts[0], value: 1000 });
+    await hatArbitrator.challengeResolution(claimsManager.address, claimId, "evidence", { from: accounts[0], value: 1000 });
 
-    await makeClaimExpire(vault);
+    await makeClaimExpire (claimsManager);
 
     await assertFunctionRaisesException(
-      hatArbitrator.dismissResolution(vault.address, claimId, { from: accounts[0] }),
+      hatArbitrator.dismissResolution(claimsManager.address, claimId, { from: accounts[0] }),
       "ClaimExpired"
     );
   });
 
   it("Submit claim request", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -884,9 +884,9 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("Dismiss submit claim request", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -947,9 +947,9 @@ contract("Registry Arbitrator", (accounts) => {
   });
 
   it("Approve submit claim request", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
@@ -969,27 +969,27 @@ contract("Registry Arbitrator", (accounts) => {
     await advanceToSafetyPeriod(registry);
 
     await assertFunctionRaisesException(
-      hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: accounts[0] }),
+      hatArbitrator.approveSubmitClaimRequest(claimsManager.address, internalClaimId, accounts[2], 5000, "desc2", { from: accounts[0] }),
       "OnlyExpertCommittee"
     );
 
     await assertFunctionRaisesException(
-      hatArbitrator.approveSubmitClaimRequest(vault.address, wrongInternalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
+      hatArbitrator.approveSubmitClaimRequest(claimsManager.address, wrongInternalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
       "ClaimReviewPeriodEnd"
     );
 
-    let tx = await hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee });
+    let tx = await hatArbitrator.approveSubmitClaimRequest(claimsManager.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee });
     let approveSubmitClaimRequestTimestamp = (await web3.eth.getBlock("latest")).timestamp;
 
     let claimId = web3.utils.keccak256(web3.utils.encodePacked(
-      { value: vault.address, type: 'address' },
+      { value: claimsManager.address, type: 'address' },
       { value: 1, type: 'uint256' }
     ));
 
     assert.equal(tx.logs[0].event, "SubmitClaimRequestApproved");
     assert.equal(tx.logs[0].args._internalClaimId, internalClaimId);
     assert.equal(tx.logs[0].args._claimId, claimId);
-    assert.equal(tx.logs[0].args._vault, vault.address);
+    assert.equal(tx.logs[0].args._vault, claimsManager.address);
 
     assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).submitter, ZERO_ADDRESS);
     assert.equal((await hatArbitrator.submitClaimRequests(internalClaimId)).bond, 0);
@@ -1000,14 +1000,14 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
     assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("0"));
 
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).bountyPercentage.toString(), "5000");
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).beneficiary, accounts[2]);
-    assert.equal((await hatArbitrator.resolutions(vault.address, claimId)).resolvedAt, approveSubmitClaimRequestTimestamp);
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).bountyPercentage.toString(), "5000");
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).beneficiary, accounts[2]);
+    assert.equal((await hatArbitrator.resolutions(claimsManager.address, claimId)).resolvedAt, approveSubmitClaimRequestTimestamp);
 
-    assert.equal((await vault.activeClaim()).claimId, claimId);
-    assert.equal((await vault.activeClaim()).challengedAt, approveSubmitClaimRequestTimestamp);
+    assert.equal((await claimsManager.activeClaim()).claimId, claimId);
+    assert.equal((await claimsManager.activeClaim()).challengedAt, approveSubmitClaimRequestTimestamp);
 
-    let logs = await vault.getPastEvents('SubmitClaim', {
+    let logs = await claimsManager.getPastEvents('SubmitClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -1019,7 +1019,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].args._beneficiary, accounts[2]);
     assert.equal(logs[0].args._descriptionHash, "desc2");
 
-    logs = await vault.getPastEvents('ChallengeClaim', {
+    logs = await claimsManager.getPastEvents('ChallengeClaim', {
       fromBlock: (await web3.eth.getBlock("latest")).number - 1,
       toBlock: (await web3.eth.getBlock("latest")).number
     });
@@ -1039,15 +1039,15 @@ contract("Registry Arbitrator", (accounts) => {
     await utils.increaseTime(60 * 60 * 24 * 90);
 
     await assertFunctionRaisesException(
-      hatArbitrator.approveSubmitClaimRequest(vault.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
+      hatArbitrator.approveSubmitClaimRequest(claimsManager.address, internalClaimId, accounts[2], 5000, "desc2", { from: expertCommittee }),
       "ClaimReviewPeriodEnd"
     );
   });
 
   it("Refund submit claim request", async () => {
-    const { registry, vault } = await setup(accounts, { setDefaultArbitrator: false });
+    const { registry, claimsManager } = await setup(accounts, { setDefaultArbitrator: false });
 
-    await setupHATArbitrator(registry, vault);
+    await setupHATArbitrator(registry, claimsManager);
 
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });

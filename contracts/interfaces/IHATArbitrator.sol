@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.16;
 
-import "./IHATVault.sol";
+import "./IHATClaimsManager.sol";
 
 interface IHATArbitrator {
     error bondsNeededToStartDisputeMustBeHigherThanMinAmount();
@@ -40,50 +40,50 @@ interface IHATArbitrator {
     }
 
     event ClaimDisputed(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         address indexed _disputer,
         uint256 _bondAmount,
         string _descriptionHash
     );
     event DisputeDismissed(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         string _descriptionHash
     );
     event DisputeAccepted(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         uint16 _bountyPercentage,
         address _beneficiary,
         string _descriptionHash
     );
     event DisputersRefunded(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         address[] _disputers
     );
     event DisputersConfiscated(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         address[] _disputers
     );
     event BondRefundClaimed(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId,
         address _disputer,
         uint256 _amountClaimed
     );
     event ResolutionExecuted(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId
     );
     event ResolutionDismissed(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId
     );
     event ResolutionChallenged(
-        IHATVault indexed _vault,
+        IHATClaimsManager indexed _vault,
         bytes32 indexed _claimId
     );
 
@@ -100,7 +100,7 @@ interface IHATArbitrator {
     event SubmitClaimRequestApproved(
         bytes32 indexed _internalClaimId,
         bytes32 indexed _claimId,
-        IHATVault indexed _vault
+        IHATClaimsManager indexed _vault
     );
     event SubmitClaimRequestExpired(bytes32 indexed _internalClaimId);
     event CourtSet(address indexed _court);
@@ -121,7 +121,7 @@ interface IHATArbitrator {
      * The dispute is accepted if the total amount of bonds exceeds bondsNeededToStartDispute
      */
     function dispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         uint256 _bondAmount,
         string calldata _descriptionHash
@@ -136,7 +136,7 @@ interface IHATArbitrator {
      * @param _descriptionHash an (ipfs) hash representing the motiviations of the dismissal
      */
     function dismissDispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         string calldata _descriptionHash
     )
@@ -155,7 +155,7 @@ interface IHATArbitrator {
      * @param _descriptionHash a motivation of the ruling
      */
     function acceptDispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         uint16 _bountyPercentage,
         address _beneficiary,
@@ -172,7 +172,7 @@ interface IHATArbitrator {
      * @param _disputersToRefund array of addresses
      */
     function refundDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToRefund
     )
@@ -185,7 +185,7 @@ interface IHATArbitrator {
      * @param _disputersToConfiscate a list of addresses of disputers whose bond will be forfeited
      */
     function confiscateDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToConfiscate
     )
@@ -196,7 +196,7 @@ interface IHATArbitrator {
      * @param _vault the address of the vault where the claim was started
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
      */
-    function reclaimBond(IHATVault _vault, bytes32 _claimId) external;
+    function reclaimBond(IHATClaimsManager _vault, bytes32 _claimId) external;
 
     /**
      * @notice execute a resolution from the expert committee
@@ -206,7 +206,7 @@ interface IHATArbitrator {
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
      */
     function executeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external;
@@ -218,7 +218,7 @@ interface IHATArbitrator {
      * @param _claimId id of the claim that was disputed. Must be the currently active claim
      */
     function dismissResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external;
@@ -230,7 +230,7 @@ interface IHATArbitrator {
      * @param _evidence URI of the evidence to support the challenge
      */
     function challengeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         string calldata _evidence
     )
@@ -265,7 +265,7 @@ interface IHATArbitrator {
      * @param _descriptionHash a motivation for the claim
      */
     function approveSubmitClaimRequest(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _internalClaimId,
         address _beneficiary,
         uint16 _bountyPercentage,

@@ -13,7 +13,7 @@ pragma solidity 0.8.16;
 import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract/contracts/IDisputeResolver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IHATArbitrator.sol";
-import "./interfaces/IHATVault.sol";
+import "./interfaces/IHATClaimsManager.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 
 /**
@@ -32,7 +32,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         uint256 externalDisputeId; // Id of the dispute created in Kleros court.
         Decision ruling; // Ruling given by the arbitrator.
         bool resolved; // True if the dispute has been resolved.
-        IHATVault vault; // Address of the vault related to a dispute.
+        IHATClaimsManager vault; // Address of the vault related to a dispute.
         Round[] rounds; // Appeal rounds.
     }
 
@@ -138,7 +138,7 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
     function notifyArbitrator(
         bytes32 _claimId,
         string calldata _evidence,
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         address _disputer
     ) external payable override {
         require(msg.sender == address(hatArbitrator), "Wrong caller");

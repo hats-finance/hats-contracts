@@ -613,4 +613,34 @@ interface IHATVaultsRegistry {
      * @return The address of the owner
      */
     function owner() external view returns(address);
+
+    /**
+     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to governance
+     * @return The default percentage of the total bounty to be swapped to HATs and sent to governance
+     */
+    function defaultBountyGovernanceHAT() external view returns(uint16);
+
+    /**
+     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+     * @return The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+     */
+    function defaultBountyHackerHATVested() external view returns(uint16);
+
+    /**
+     * @notice Get the default arbitrator address
+     * @return The default arbitrator address
+     */
+    function defaultArbitrator() external view returns(address);
+
+    /**
+     * @notice Get the default challenge period
+     * @return The default challenge period
+     */
+    function defaultChallengePeriod() external view returns(uint32);
+
+    /**
+     * @notice Get the default challenge time out period
+     * @return The default challenge time out period
+     */
+    function defaultChallengeTimeOutPeriod() external view returns(uint32);
 }

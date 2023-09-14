@@ -110,7 +110,7 @@ function createVault(IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.C
 function defaultArbitrator() external view returns (address)
 ```
 
-
+Get the default arbitrator address
 
 
 
@@ -119,7 +119,7 @@ function defaultArbitrator() external view returns (address)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | address | undefined |
+| _0 | address | The default arbitrator address |
 
 ### defaultBountyGovernanceHAT
 
@@ -127,7 +127,7 @@ function defaultArbitrator() external view returns (address)
 function defaultBountyGovernanceHAT() external view returns (uint16)
 ```
 
-
+Get the default percentage of the total bounty to be swapped to HATs and sent to governance
 
 
 
@@ -136,7 +136,7 @@ function defaultBountyGovernanceHAT() external view returns (uint16)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | undefined |
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to governance |
 
 ### defaultBountyHackerHATVested
 
@@ -144,7 +144,7 @@ function defaultBountyGovernanceHAT() external view returns (uint16)
 function defaultBountyHackerHATVested() external view returns (uint16)
 ```
 
-
+Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
 
 
 
@@ -153,7 +153,7 @@ function defaultBountyHackerHATVested() external view returns (uint16)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | undefined |
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract |
 
 ### defaultChallengePeriod
 
@@ -161,7 +161,7 @@ function defaultBountyHackerHATVested() external view returns (uint16)
 function defaultChallengePeriod() external view returns (uint32)
 ```
 
-
+Get the default challenge period
 
 
 
@@ -170,7 +170,7 @@ function defaultChallengePeriod() external view returns (uint32)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint32 | undefined |
+| _0 | uint32 | The default challenge period |
 
 ### defaultChallengeTimeOutPeriod
 
@@ -178,7 +178,7 @@ function defaultChallengePeriod() external view returns (uint32)
 function defaultChallengeTimeOutPeriod() external view returns (uint32)
 ```
 
-
+Get the default challenge time out period
 
 
 
@@ -187,7 +187,7 @@ function defaultChallengeTimeOutPeriod() external view returns (uint32)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint32 | undefined |
+| _0 | uint32 | The default challenge time out period |
 
 ### feeSetter
 

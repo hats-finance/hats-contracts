@@ -129,6 +129,23 @@ function NULL_UINT32() external view returns (uint32)
 |---|---|---|
 | _0 | uint32 | undefined |
 
+### VERSION
+
+```solidity
+function VERSION() external view returns (string)
+```
+
+Returns the claims manager&#39;s version
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | The claims manager&#39;s version |
+
 ### activeClaim
 
 ```solidity
@@ -442,6 +459,23 @@ function initialize(contract IHATVault _vault, IHATClaimsManager.ClaimsManagerIn
 | _vault | contract IHATVault | undefined |
 | _params | IHATClaimsManager.ClaimsManagerInitParams | undefined |
 
+### isTokenLockRevocable
+
+```solidity
+function isTokenLockRevocable() external view returns (bool)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
 ### maxBounty
 
 ```solidity
@@ -497,7 +531,7 @@ function pendingMaxBounty() external view returns (uint16 maxBounty, uint32 time
 ### registry
 
 ```solidity
-function registry() external view returns (contract HATVaultsRegistry)
+function registry() external view returns (contract IHATVaultsRegistry)
 ```
 
 Returns the vault&#39;s registry
@@ -509,7 +543,7 @@ Returns the vault&#39;s registry
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract HATVaultsRegistry | The registry&#39;s address |
+| _0 | contract IHATVaultsRegistry | The registry&#39;s address |
 
 ### renounceOwnership
 
@@ -796,7 +830,7 @@ function vestingPeriods() external view returns (uint32)
 ### ApproveClaim
 
 ```solidity
-event ApproveClaim(bytes32 indexed _claimId, address indexed _committee, address indexed _beneficiary, uint256 _bountyPercentage, address _tokenLock, IHATClaimsManager.ClaimBounty _claimBounty)
+event ApproveClaim(bytes32 indexed _claimId, address _committee, address indexed _approver, address indexed _beneficiary, uint256 _bountyPercentage, address _tokenLock, IHATClaimsManager.ClaimBounty _claimBounty)
 ```
 
 
@@ -808,7 +842,8 @@ event ApproveClaim(bytes32 indexed _claimId, address indexed _committee, address
 | Name | Type | Description |
 |---|---|---|
 | _claimId `indexed` | bytes32 | undefined |
-| _committee `indexed` | address | undefined |
+| _committee  | address | undefined |
+| _approver `indexed` | address | undefined |
 | _beneficiary `indexed` | address | undefined |
 | _bountyPercentage  | uint256 | undefined |
 | _tokenLock  | address | undefined |
@@ -1057,7 +1092,7 @@ event SetVestingParams(uint256 _duration, uint256 _periods)
 ### SubmitClaim
 
 ```solidity
-event SubmitClaim(bytes32 indexed _claimId, address indexed _committee, address indexed _beneficiary, uint256 _bountyPercentage, string _descriptionHash)
+event SubmitClaim(bytes32 indexed _claimId, address _committee, address indexed _submitter, address indexed _beneficiary, uint256 _bountyPercentage, string _descriptionHash)
 ```
 
 
@@ -1069,7 +1104,8 @@ event SubmitClaim(bytes32 indexed _claimId, address indexed _committee, address 
 | Name | Type | Description |
 |---|---|---|
 | _claimId `indexed` | bytes32 | undefined |
-| _committee `indexed` | address | undefined |
+| _committee  | address | undefined |
+| _submitter `indexed` | address | undefined |
 | _beneficiary `indexed` | address | undefined |
 | _bountyPercentage  | uint256 | undefined |
 | _descriptionHash  | string | undefined |

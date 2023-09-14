@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IRewardController.sol";
 import "./IHATVault.sol";
-import "../HATVaultsRegistry.sol";
+import "./IHATVaultsRegistry.sol";
 
 /** @title Interface for Hats.finance Vaults
  * @author Hats.finance
@@ -19,7 +19,7 @@ import "../HATVaultsRegistry.sol";
  * the bug. Vaults have regular safety periods (typically for an hour twice a
  * day) which are time for the committee to make decisions.
  *
- * In addition to the roles defined in the HATVaultsRegistry, every HATVault 
+ * In addition to the roles defined in the IHATVaultsRegistry, every HATVault 
  * has the roles:
  * Committee - The only address which can submit a claim for a bounty payout
  * and set the maximum bounty.
@@ -47,10 +47,6 @@ import "../HATVaultsRegistry.sol";
  * https://github.com/hats-finance/hats-contracts
  */
 interface IHATClaimsManager {
-
-    enum ArbitratorCanChangeBounty{ NO, YES, DEFAULT }
-
-    enum ArbitratorCanChangeBeneficiary{ NO, YES, DEFAULT }
 
     // How to divide the bounty - after deducting the part that is swapped to
     // HAT tokens (and then sent to governance and vested to the hacker)
@@ -115,7 +111,11 @@ interface IHATClaimsManager {
     * @param asset The vault's native token
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
-    * @param arbitrator The address of the vault's arbitrator 
+    * @param arbitrator The address of the vault's arbitrator
+    * @param arbitratorCanChangeBounty Can the arbitrator change a claim's bounty
+    * @param arbitratorCanChangeBeneficiary Can the arbitrator change a claim's beneficiary
+    * @param arbitratorCanSubmitClaims Can the arbitrator submit a claim
+    * @param isTokenLockRevocable can the committee revoke the token lock
     * @dev Needed to avoid a "stack too deep" error
     */
     struct ClaimsManagerInitParams {
@@ -129,6 +129,7 @@ interface IHATClaimsManager {
         bool arbitratorCanChangeBounty;
         bool arbitratorCanChangeBeneficiary;
         bool arbitratorCanSubmitClaims;
+        bool isTokenLockRevocable;
     }
 
     // Only committee
@@ -197,7 +198,8 @@ interface IHATClaimsManager {
 
     event SubmitClaim(
         bytes32 indexed _claimId,
-        address indexed _committee,
+        address _committee,
+        address indexed _submitter,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         string _descriptionHash
@@ -205,7 +207,8 @@ interface IHATClaimsManager {
     event ChallengeClaim(bytes32 indexed _claimId);
     event ApproveClaim(
         bytes32 indexed _claimId,
-        address indexed _committee,
+        address _committee,
+        address indexed _approver,
         address indexed _beneficiary,
         uint256 _bountyPercentage,
         address _tokenLock,
@@ -248,7 +251,7 @@ interface IHATClaimsManager {
      * Upon a call to this function by the committee the vault's withdrawals
      * will be disabled until the claim is approved or dismissed. Also from the
      * time of this call the arbitrator will have a period of 
-     * {HATVaultsRegistry.challengePeriod} to challenge the claim.
+     * {IHATVaultsRegistry.challengePeriod} to challenge the claim.
      * @param _beneficiary The submitted claim's beneficiary
      * @param _bountyPercentage The submitted claim's bug requested reward percentage
      */
@@ -273,7 +276,7 @@ interface IHATClaimsManager {
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and
     * pay out bounty to hacker and committee. Also transfer to the 
-    * HATVaultsRegistry the part of the bounty that will be swapped to HAT 
+    * IHATVaultsRegistry the part of the bounty that will be swapped to HAT 
     * tokens.
     * If the claim had been previously challenged, this is only callable by
     * the arbitrator. Otherwise, callable by anyone after challengePeriod had
@@ -340,7 +343,7 @@ interface IHATClaimsManager {
     * It can also be set to 100%, but in this mode the vault will only allow
     * payouts of the 100%, and the vault will become inactive forever afterwards.
     * The pending value can be set by the owner after the time delay (of 
-    * {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
+    * {IHATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
     * @param _maxBounty The maximum bounty percentage that can be paid out
     */
     function setPendingMaxBounty(uint16 _maxBounty) external;
@@ -425,7 +428,7 @@ interface IHATClaimsManager {
     * @notice Returns the vault's registry
     * @return The registry's address
     */
-    function registry() external view returns(HATVaultsRegistry);
+    function registry() external view returns(IHATVaultsRegistry);
 
     /** 
     * @notice Returns whether the committee has checked in
