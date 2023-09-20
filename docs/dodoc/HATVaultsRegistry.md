@@ -83,7 +83,7 @@ See {IHATVaultsRegistry-addTokensToSwap}.
 ### createVault
 
 ```solidity
-function createVault(IHATVault.VaultInitParams _params) external nonpayable returns (address vault)
+function createVault(IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams) external nonpayable returns (address vault, address vaultClaimsManager)
 ```
 
 
@@ -94,13 +94,15 @@ function createVault(IHATVault.VaultInitParams _params) external nonpayable retu
 
 | Name | Type | Description |
 |---|---|---|
-| _params | IHATVault.VaultInitParams | undefined |
+| _vaultParams | IHATVault.VaultInitParams | undefined |
+| _claimsManagerParams | IHATClaimsManager.ClaimsManagerInitParams | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
 | vault | address | undefined |
+| vaultClaimsManager | address | undefined |
 
 ### defaultArbitrator
 
@@ -108,7 +110,7 @@ function createVault(IHATVault.VaultInitParams _params) external nonpayable retu
 function defaultArbitrator() external view returns (address)
 ```
 
-
+Get the default arbitrator address
 
 
 
@@ -117,7 +119,7 @@ function defaultArbitrator() external view returns (address)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | address | undefined |
+| _0 | address | The default arbitrator address |
 
 ### defaultBountyGovernanceHAT
 
@@ -125,7 +127,7 @@ function defaultArbitrator() external view returns (address)
 function defaultBountyGovernanceHAT() external view returns (uint16)
 ```
 
-
+Get the default percentage of the total bounty to be swapped to HATs and sent to governance
 
 
 
@@ -134,7 +136,7 @@ function defaultBountyGovernanceHAT() external view returns (uint16)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | undefined |
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to governance |
 
 ### defaultBountyHackerHATVested
 
@@ -142,7 +144,7 @@ function defaultBountyGovernanceHAT() external view returns (uint16)
 function defaultBountyHackerHATVested() external view returns (uint16)
 ```
 
-
+Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
 
 
 
@@ -151,7 +153,7 @@ function defaultBountyHackerHATVested() external view returns (uint16)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | undefined |
+| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract |
 
 ### defaultChallengePeriod
 
@@ -159,7 +161,7 @@ function defaultBountyHackerHATVested() external view returns (uint16)
 function defaultChallengePeriod() external view returns (uint32)
 ```
 
-
+Get the default challenge period
 
 
 
@@ -168,7 +170,7 @@ function defaultChallengePeriod() external view returns (uint32)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint32 | undefined |
+| _0 | uint32 | The default challenge period |
 
 ### defaultChallengeTimeOutPeriod
 
@@ -176,7 +178,7 @@ function defaultChallengePeriod() external view returns (uint32)
 function defaultChallengeTimeOutPeriod() external view returns (uint32)
 ```
 
-
+Get the default challenge time out period
 
 
 
@@ -185,7 +187,7 @@ function defaultChallengeTimeOutPeriod() external view returns (uint32)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint32 | undefined |
+| _0 | uint32 | The default challenge time out period |
 
 ### feeSetter
 
@@ -193,7 +195,7 @@ function defaultChallengeTimeOutPeriod() external view returns (uint32)
 function feeSetter() external view returns (address)
 ```
 
-
+Get the fee setter address
 
 
 
@@ -202,7 +204,7 @@ function feeSetter() external view returns (address)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | address | undefined |
+| _0 | address | The address of the fee setter |
 
 ### generalParameters
 
@@ -375,6 +377,23 @@ function hackersHatReward(address, address) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### hatClaimsManagerImplementation
+
+```solidity
+function hatClaimsManagerImplementation() external view returns (address)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+
 ### hatVaultImplementation
 
 ```solidity
@@ -420,7 +439,7 @@ function hatVaults(uint256) external view returns (address)
 function isEmergencyPaused() external view returns (bool)
 ```
 
-
+Get whether the system is in an emergency pause
 
 
 
@@ -429,7 +448,7 @@ function isEmergencyPaused() external view returns (bool)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | bool | undefined |
+| _0 | bool | Whether the system is in an emergency pause |
 
 ### isVaultVisible
 
@@ -477,7 +496,7 @@ function owner() external view returns (address)
 
 
 
-*Returns the address of the current owner.*
+
 
 
 #### Returns
@@ -610,22 +629,6 @@ See {IHATVaultsRegistry-setFeeSetter}.
 |---|---|---|
 | _feeSetter | address | undefined |
 
-### setHATVaultImplementation
-
-```solidity
-function setHATVaultImplementation(address _hatVaultImplementation) external nonpayable
-```
-
-See {IHATVaultsRegistry-setHATVaultImplementation}. 
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _hatVaultImplementation | address | undefined |
-
 ### setHatVestingParams
 
 ```solidity
@@ -674,6 +677,23 @@ See {IHATVaultsRegistry-setSwapToken}.
 | Name | Type | Description |
 |---|---|---|
 | _swapToken | address | undefined |
+
+### setVaultImplementations
+
+```solidity
+function setVaultImplementations(address _hatVaultImplementation, address _hatClaimsManagerImplementation) external nonpayable
+```
+
+See {IHATVaultsRegistry-setVaultImplementations}. 
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatVaultImplementation | address | undefined |
+| _hatClaimsManagerImplementation | address | undefined |
 
 ### setVaultVisibility
 
@@ -869,7 +889,7 @@ event OwnershipTransferred(address indexed previousOwner, address indexed newOwn
 ### RegistryCreated
 
 ```solidity
-event RegistryCreated(address _hatVaultImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod)
+event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod)
 ```
 
 Emitted on deployment of the registry
@@ -881,6 +901,7 @@ Emitted on deployment of the registry
 | Name | Type | Description |
 |---|---|---|
 | _hatVaultImplementation  | address | undefined |
+| _hatClaimsManagerImplementation  | address | undefined |
 | _HAT  | address | undefined |
 | _tokenLockFactory  | address | undefined |
 | _generalParameters  | IHATVaultsRegistry.GeneralParameters | undefined |
@@ -1003,6 +1024,22 @@ Emitted when a new fee setter is set
 | Name | Type | Description |
 |---|---|---|
 | _feeSetter `indexed` | address | undefined |
+
+### SetHATClaimsManagerImplementation
+
+```solidity
+event SetHATClaimsManagerImplementation(address indexed _hatClaimsManagerImplementation)
+```
+
+Emitted when a new HATClaimsManager implementation is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _hatClaimsManagerImplementation `indexed` | address | undefined |
 
 ### SetHATVaultImplementation
 
@@ -1142,7 +1179,7 @@ Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens ar
 ### VaultCreated
 
 ```solidity
-event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
+event VaultCreated(address indexed _vault, address indexed _claimsManager, IHATVault.VaultInitParams _vaultParams, IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams)
 ```
 
 
@@ -1154,7 +1191,9 @@ event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params)
 | Name | Type | Description |
 |---|---|---|
 | _vault `indexed` | address | undefined |
-| _params  | IHATVault.VaultInitParams | undefined |
+| _claimsManager `indexed` | address | undefined |
+| _vaultParams  | IHATVault.VaultInitParams | undefined |
+| _claimsManagerParams  | IHATClaimsManager.ClaimsManagerInitParams | undefined |
 
 
 

@@ -1,9 +1,11 @@
 const HATVault = artifacts.require("./HATVault.sol");
+const HATClaimsManager = artifacts.require("./HATClaimsManager.sol");
 const HATVaultsRegistry = artifacts.require("./HATVaultsRegistry.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const HATPaymentSplitter = artifacts.require("./HATPaymentSplitter.sol");
 const HATPaymentSplitterFactory = artifacts.require("./HATPaymentSplitterFactory.sol");
 const HATVaultV2Mock = artifacts.require("./HATVaultV2Mock.sol");
+const HATClaimsManagerV2Mock = artifacts.require("./HATClaimsManagerV2Mock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
@@ -32,6 +34,7 @@ let hatVaultImplementation;
 let tokenLockFactory;
 let hatVaultsRegistry;
 let vault;
+let claimsManager;
 let rewardController;
 let hatToken;
 let router;
@@ -96,6 +99,7 @@ const setUpGlobalVars = async function(
   tokenLockFactory = setupVars.tokenLockFactory;
   hatVaultsRegistry = setupVars.registry;
   vault = setupVars.vault;
+  claimsManager = setupVars.claimsManager;
   stakingToken = setupVars.stakingToken;
   hatToken = setupVars.hatToken;
   router = setupVars.router;
@@ -277,7 +281,6 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].args._hatGovernance, accounts[0]);
     assert.equal(logs[0].args._defaultArbitrator, await hatVaultsRegistry.defaultArbitrator());
     assert.equal(logs[0].args._defaultChallengePeriod.toString(), (await hatVaultsRegistry.defaultChallengePeriod()).toString());
-    assert.equal(logs[0].args._defaultChallengeTimeOutPeriod.toString(), (await hatVaultsRegistry.defaultChallengeTimeOutPeriod()).toString());
 
     logs = await rewardController.getPastEvents('RewardControllerCreated', {
       fromBlock: 0,
@@ -298,43 +301,130 @@ contract("HatVaults", (accounts) => {
     await setUpGlobalVars(accounts);
 
     let hatVaultV2Mock = await HATVaultV2Mock.new();
+    let hatClaimsManagerV2Mock = await HATClaimsManagerV2Mock.new();
 
     try {
-      await hatVaultsRegistry.setHATVaultImplementation(hatVaultV2Mock.address, { from: accounts[1] });
+      await hatVaultsRegistry.setVaultImplementations(hatVaultV2Mock.address, hatClaimsManagerV2Mock.address, { from: accounts[1] });
       assert(false, "only gov");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await hatVaultsRegistry.setHATVaultImplementation(hatVaultV2Mock.address);
+    await hatVaultsRegistry.setVaultImplementations(hatVaultV2Mock.address, hatClaimsManagerV2Mock.address);
 
-    let newVault = await HATVaultV2Mock.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVaultV2Mock.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManagerV2Mock.at(tx.logs[2].args._claimsManager);
 
     assert.equal((await newVault.getVersion()), "New version!");
+    assert.equal((await newClaimsManager.getVersion()), "New version!");
 
     try {
       await vault.getVersion();
       assert(false, "method doesn't exist for older vault");
     } catch (ex) {
       assert.equal(ex.message, "vault.getVersion is not a function");
+    }
+
+    try {
+      await claimsManager.getVersion();
+      assert(false, "method doesn't exist for older vault");
+    } catch (ex) {
+      assert.equal(ex.message, "claimsManager.getVersion is not a function");
+    }
+  });
+
+  it("Get active claim", async () => {
+    await setUpGlobalVars(accounts);
+
+    var staker = accounts[1];
+    await stakingToken.approve(vault.address, web3.utils.toWei("4"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await advanceToSafetyPeriod();
+    let tx = await claimsManager.submitClaim(
+      accounts[2],
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+
+    let activeClaim = await claimsManager.getActiveClaim();
+    assert.equal(activeClaim.claimId, claimId);
+    assert.equal(activeClaim.beneficiary, accounts[2]);
+    assert.equal(activeClaim.bountyPercentage, "8000");
+    assert.equal(activeClaim.committee, accounts[1]);
+    assert.equal(activeClaim.createdAt, (await web3.eth.getBlock(tx.receipt.blockNumber)).timestamp);
+    assert.equal(activeClaim.challengedAt, "0");
+    assert.equal(activeClaim.bountyGovernanceHAT, "1500");
+    assert.equal(activeClaim.bountyHackerHATVested, "500");
+    assert.equal(activeClaim.arbitrator, accounts[0]);
+    assert.equal(activeClaim.challengePeriod, "86400");
+    assert.equal(activeClaim.challengeTimeOutPeriod, "3024000");
+    assert.equal(activeClaim.arbitratorCanChangeBounty, true);
+    assert.equal(activeClaim.arbitratorCanChangeBeneficiary, false);
+  });
+
+  it("Only claims manager", async () => {
+    await setUpGlobalVars(accounts);
+
+    try {
+      await vault.makePayout(1);
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.setWithdrawPaused(false);
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.startVault();
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
+    }
+
+    try {
+      await vault.destroyVault();
+      assert(false, "only claims manager");
+    } catch (ex) {
+      assertVMException(ex, "OnlyClaimsManager");
     }
   });
 
@@ -381,7 +471,7 @@ contract("HatVaults", (accounts) => {
     }
 
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -392,16 +482,17 @@ contract("HatVaults", (accounts) => {
 
     let claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
-    try {
-      await vault.addRewardController(rewardController2.address);
-      assert(false, "cannot propose new reward controller while active claim exists");
-    } catch (ex) {
-      assertVMException(ex, "ActiveClaimExists");
-    }
+    // TODO: the limitation that a reward controller can't be added while a claim exists was removed.
+    // try {
+    //   await vault.addRewardController(rewardController2.address);
+    //   assert(false, "cannot propose new reward controller while active claim exists");
+    // } catch (ex) {
+    //   assertVMException(ex, "ActiveClaimExists");
+    // }
 
-    await vault.dismissClaim(claimId);
+    await claimsManager.dismissClaim(claimId);
 
     await rewardController2.setAllocPoint(vault.address, 100);
 
@@ -668,8 +759,17 @@ contract("HatVaults", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let tx = await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash1",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[3],
       arbitrator: accounts[2],
@@ -677,38 +777,36 @@ contract("HatVaults", (accounts) => {
       arbitratorCanChangeBeneficiary: false,
       arbitratorCanSubmitClaims: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: maxBounty,
       bountySplit: bountySplit,
-      descriptionHash: "_descriptionHash1",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    });
-    assert.equal(tx.logs[1].event, "VaultCreated");
+      vestingPeriods: 10
+      }
+    );
+    assert.equal(tx.logs[2].event, "VaultCreated");
     assert.equal(
-      tx.logs[1].args._vault,
+      tx.logs[2].args._vault,
       await hatVaultsRegistry.hatVaults((await hatVaultsRegistry.getNumberOfVaults()).sub(new web3.utils.BN("1")))
     );
 
-    assert.equal(tx.logs[1].args._params.asset, stakingToken2.address);
-    assert.equal(tx.logs[1].args._params.owner, await hatVaultsRegistry.owner());
-    assert.equal(tx.logs[1].args._params.committee, accounts[3]);
-    assert.equal(tx.logs[1].args._params.name, "VAULT");
-    assert.equal(tx.logs[1].args._params.symbol, "VLT");
-    assert.equal(tx.logs[1].args._params.rewardControllers[0], rewardController.address);
-    assert.equal(tx.logs[1].args._params.maxBounty, maxBounty);
-    assert.equal(tx.logs[1].args._params.bountySplit.hackerVested, "7000");
-    assert.equal(tx.logs[1].args._params.bountySplit.hacker, "2500");
-    assert.equal(tx.logs[1].args._params.bountySplit.committee, "500");
-    assert.equal(tx.logs[1].args._params.descriptionHash, "_descriptionHash1");
-    assert.equal(tx.logs[1].args._params.vestingDuration, 86400);
-    assert.equal(tx.logs[1].args._params.vestingPeriods, 10);
-    assert.equal(tx.logs[1].args._params.isPaused, false);
-    assert.equal(tx.logs[1].args._params.arbitrator, accounts[2]);
-    let newVault = await HATVault.at((tx).logs[1].args._vault);
+    assert.equal(tx.logs[2].args._vaultParams.asset, stakingToken2.address);
+    assert.equal(tx.logs[2].args._vaultParams.owner, await hatVaultsRegistry.owner());
+    assert.equal(tx.logs[2].args._vaultParams.rewardControllers[0], rewardController.address);
+    assert.equal(tx.logs[2].args._vaultParams.name, "VAULT");
+    assert.equal(tx.logs[2].args._vaultParams.symbol, "VLT");
+    assert.equal(tx.logs[2].args._vaultParams.isPaused, false);
+    assert.equal(tx.logs[2].args._vaultParams.descriptionHash, "_descriptionHash1");
+    assert.equal(tx.logs[2].args._claimsManagerParams.owner, await hatVaultsRegistry.owner());
+    assert.equal(tx.logs[2].args._claimsManagerParams.committee, accounts[3]);
+    assert.equal(tx.logs[2].args._claimsManagerParams.maxBounty, maxBounty);
+    assert.equal(tx.logs[2].args._claimsManagerParams.bountySplit.hackerVested, "7000");
+    assert.equal(tx.logs[2].args._claimsManagerParams.bountySplit.hacker, "2500");
+    assert.equal(tx.logs[2].args._claimsManagerParams.bountySplit.committee, "500");
+    assert.equal(tx.logs[2].args._claimsManagerParams.vestingDuration, 86400);
+    assert.equal(tx.logs[2].args._claimsManagerParams.vestingPeriods, 10);
+    assert.equal(tx.logs[2].args._claimsManagerParams.arbitrator, accounts[2]);
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
     let logs = await newVault.getPastEvents('SetVaultDescription', {
         fromBlock: 0,
         toBlock: (await web3.eth.getBlock("latest")).number
@@ -716,30 +814,39 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].event, "SetVaultDescription");
     assert.equal(logs[0].args._descriptionHash, "_descriptionHash1");
 
-    let vault = await HATVault.at(tx.logs[1].args._vault);
-    assert.equal(await vault.name(), "Hats Vault VAULT");
-    assert.equal(await vault.symbol(), "HATVLT");
-    assert.equal(await vault.VERSION(), "2.1");
+    assert.equal(await newVault.name(), "Hats Vault VAULT");
+    assert.equal(await newVault.symbol(), "HATVLT");
+    assert.equal(await newVault.VERSION(), "3.0");
+    assert.equal(await newClaimsManager.VERSION(), "3.0");
 
     try {
-      await vault.initialize({
-        asset: stakingToken2.address,
+      await newVault.initialize(newClaimsManager.address, {
+        asset: stakingToken.address,
         owner: await hatVaultsRegistry.owner(),
-        committee: accounts[3],
+        rewardControllers: [rewardController.address],
+        name: "VAULT",
+        symbol: "VLT",
+        descriptionHash: "_descriptionHash",
+        isPaused: false
+      });
+      assert(false, "already initialized");
+    } catch (ex) {
+      assertVMException(ex, "Initializable: contract is already initialized");
+    }
+
+    try {
+      await newClaimsManager.initialize(newVault.address, {
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[1],
         arbitrator: accounts[2],
+        maxBounty: 8000,
+        bountySplit: [7000, 2500, 500],
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
         arbitratorCanSubmitClaims: false,
         isTokenLockRevocable: false,
-        name: "VAULT",
-        symbol: "VLT",
-        rewardControllers: [rewardController.address],
-        maxBounty: maxBounty,
-        bountySplit: bountySplit,
-        descriptionHash: "_descriptionHash1",
         vestingDuration: 86400,
-        vestingPeriods: 10,
-        isPaused: false
+        vestingPeriods: 10
       });
       assert(false, "already initialized");
     } catch (ex) {
@@ -755,21 +862,26 @@ contract("HatVaults", (accounts) => {
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
 
     try {
-      await hatVaultsRegistry.createVault({
-        asset: stakingToken2.address,
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address, rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash1",
+        },
+        {
         owner: await hatVaultsRegistry.owner(),
         committee: accounts[3],
         arbitrator: accounts[2],
-        name: "VAULT",
-        symbol: "VLT",
-        rewardControllers: [rewardController.address, rewardController.address],
         maxBounty: maxBounty,
         bountySplit: bountySplit,
-        descriptionHash: "_descriptionHash1",
         vestingDuration: 86400,
-        vestingPeriods: 10,
-        isPaused: false
-      });
+        vestingPeriods: 10
+        }
+      );
       assert(false, "cannot create vault with duplicated reward controller");
     } catch (ex) {
       assertVMException(ex, "DuplicatedRewardController");
@@ -778,14 +890,14 @@ contract("HatVaults", (accounts) => {
 
   it("setCommittee", async () => {
     await setUpGlobalVars(accounts);
-    assert.equal(await vault.committee(), accounts[1]);
+    assert.equal(await claimsManager.committee(), accounts[1]);
 
-    await vault.setCommittee(accounts[2], { from: accounts[1] });
+    await claimsManager.setCommittee(accounts[2], { from: accounts[1] });
 
-    assert.equal(await vault.committee(), accounts[2]);
+    assert.equal(await claimsManager.committee(), accounts[2]);
 
     try {
-      await vault.setCommittee(accounts[2], { from: accounts[1] });
+      await claimsManager.setCommittee(accounts[2], { from: accounts[1] });
       assert(false, "cannot set committee from non committee account");
     } catch (ex) {
       assertVMException(ex, "OnlyCommittee");
@@ -795,27 +907,35 @@ contract("HatVaults", (accounts) => {
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    let tx = (await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[3],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: maxBounty,
       bountySplit: bountySplit,
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    ));
 
-    let tx = await rewardController.setAllocPoint(
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
+    tx = await rewardController.setAllocPoint(
       newVault.address,
       100
     );
@@ -825,11 +945,11 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._prevAllocPoint, 0);
     assert.equal(tx.logs[0].args._allocPoint, 100);
 
-    assert.equal(await newVault.committee(), accounts[3]);
+    assert.equal(await newClaimsManager.committee(), accounts[3]);
 
-    await newVault.setCommittee(accounts[1]);
+    await newClaimsManager.setCommittee(accounts[1]);
 
-    assert.equal(await newVault.committee(), accounts[1]);
+    assert.equal(await newClaimsManager.committee(), accounts[1]);
     var staker = accounts[1];
     await stakingToken2.approve(newVault.address, web3.utils.toWei("4"), {
       from: staker,
@@ -839,26 +959,26 @@ contract("HatVaults", (accounts) => {
       await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
       assert(false, "cannot deposit before committee check in");
     } catch (ex) {
-      assertVMException(ex, "CommitteeNotCheckedInYet");
+      assertVMException(ex, "VaultNotStartedYet");
     }
 
     try {
-      await newVault.committeeCheckIn({ from: accounts[0] });
+      await newClaimsManager.committeeCheckIn({ from: accounts[0] });
       assert(false, "only committee can check in");
     } catch (ex) {
       assertVMException(ex, "OnlyCommittee");
     }
-    tx = await newVault.committeeCheckIn({ from: accounts[1] });
+    tx = await newClaimsManager.committeeCheckIn({ from: accounts[1] });
     assert.equal(tx.logs[0].event, "CommitteeCheckedIn");
 
     try {
-      await newVault.setCommittee(accounts[2]);
+      await newClaimsManager.setCommittee(accounts[2]);
       assert(false, "committee already checked in");
     } catch (ex) {
       assertVMException(ex, "CommitteeAlreadyCheckedIn");
     }
-    await newVault.setCommittee(accounts[2], { from: accounts[1] });
-    await newVault.setCommittee(accounts[1], { from: accounts[2] });
+    await newClaimsManager.setCommittee(accounts[2], { from: accounts[1] });
+    await newClaimsManager.setCommittee(accounts[1], { from: accounts[2] });
   });
 
   it("dismiss can be called by anyone after 5 weeks delay", async () => {
@@ -871,7 +991,7 @@ contract("HatVaults", (accounts) => {
     });
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -882,9 +1002,9 @@ contract("HatVaults", (accounts) => {
 
     let claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
     try {
-      await vault.dismissClaim(claimId, { from: accounts[1] });
+      await claimsManager.dismissClaim(claimId, { from: accounts[1] });
       assert(false, "only arbitrator can dismiss before delay");
     } catch (ex) {
       assertVMException(
@@ -894,7 +1014,7 @@ contract("HatVaults", (accounts) => {
     }
     await utils.increaseTime(1);
     await utils.increaseTime(5 * 7 * 24 * 60 * 60);
-    tx = await vault.dismissClaim(claimId, { from: accounts[1] });
+    tx = await claimsManager.dismissClaim(claimId, { from: accounts[1] });
     assert.equal(tx.logs[0].event, "DismissClaim");
   });
 
@@ -935,161 +1055,161 @@ contract("HatVaults", (accounts) => {
     }
 
     await setUpGlobalVars(accounts, 0, 9000, [8000, 1500, 500], [200, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
-    assert.equal((await vault.maxBounty()).toString(), "9000");
+    assert.equal((await claimsManager.maxBounty()).toString(), "9000");
     assert.equal(
-      (await vault.bountySplit()).hacker.toString(),
+      (await claimsManager.bountySplit()).hacker.toString(),
       "1500"
     );
     assert.equal(
-      (await vault.bountySplit()).hackerVested.toString(),
+      (await claimsManager.bountySplit()).hackerVested.toString(),
       "8000"
     );
     assert.equal(
-      (await vault.bountySplit()).committee.toString(),
+      (await claimsManager.bountySplit()).committee.toString(),
       "500"
     );
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "700"
     );
 
     try {
-      await vault.setPendingMaxBounty(9001);
+      await claimsManager.setPendingMaxBounty(9001);
       assert(false, "max bounty can't be more than 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
     try {
-      await vault.setPendingMaxBounty(9000, { from: accounts[1] });
+      await claimsManager.setPendingMaxBounty(9000, { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
     try {
-      await vault.setMaxBounty();
+      await claimsManager.setMaxBounty();
       assert(false, "no pending");
     } catch (ex) {
       assertVMException(ex, "NoPendingMaxBounty");
     }
 
     try {
-      await vault.setPendingMaxBounty(9001);
+      await claimsManager.setPendingMaxBounty(9001);
       assert(false, "bounty level should be less than or equal to 9000");
     } catch (ex) {
       assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
 
     // bountylevel can be 9000 without throwing an error
-    let tx = await vault.setPendingMaxBounty(9000);
+    let tx = await claimsManager.setPendingMaxBounty(9000);
     assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 9000);
 
     await utils.increaseTime(1);
     try {
-      await vault.setMaxBounty();
+      await claimsManager.setMaxBounty();
       assert(false, "no delay yet");
     } catch (ex) {
       assertVMException(ex, "DelayPeriodForSettingMaxBountyHadNotPassed");
     }
     await utils.increaseTime(3600 * 24 * 2);
     try {
-      await vault.setMaxBounty({ from: accounts[1] });
+      await claimsManager.setMaxBounty({ from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
-    tx = await vault.setMaxBounty();
+    tx = await claimsManager.setMaxBounty();
     assert.equal(tx.logs[0].event, "SetMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 9000);
 
     await advanceToNonSafetyPeriod();
 
     try {
-      await vault.setBountySplit([8000, 1100, 1000]);
+      await claimsManager.setBountySplit([8000, 1100, 1000]);
       assert(false, "cannot init with bountySplit > 10000");
     } catch (ex) {
       assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
     
     try {
-      await vault.setBountySplit([8000, 999, 1001]);
+      await claimsManager.setBountySplit([8000, 999, 1001]);
       assert(false, "cannot init with committte bounty > 1000");
     } catch (ex) {
       assertVMException(ex, "CommitteeBountyCannotBeMoreThanMax");
     }
 
     try {
-      await vault.setHATBountySplit(1000, 1001);
+      await claimsManager.setHATBountySplit(1000, 1001);
       assert(false, "cannot set hat bounty split to more than 2000");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeUpToMaxHATSplit");
     }
 
     try {
-      await vault.setHATBountySplit(2001, 0);
+      await claimsManager.setHATBountySplit(2001, 0);
       assert(false, "cannot set hat bounty split to more than 2000");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeUpToMaxHATSplit");
     }
 
     try {
-      await vault.setHATBountySplit(0, 2001);
+      await claimsManager.setHATBountySplit(0, 2001);
       assert(false, "cannot set hat bounty split to more than 2000");
     } catch (ex) {
       assertVMException(ex, "TotalHatsSplitPercentageShouldBeUpToMaxHATSplit");
     }
 
     try {
-      await vault.setBountySplit([6800, 2200, 1000], { from: accounts[1] });
+      await claimsManager.setBountySplit([6800, 2200, 1000], { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
     try {
-      await vault.setHATBountySplit(0, 800, { from: accounts[1] });
+      await claimsManager.setHATBountySplit(0, 800, { from: accounts[1] });
       assert(false, "only registry owner");
     } catch (ex) {
       assertVMException(ex, "OnlyRegistryOwner");
     }
 
-    await vault.setBountySplit([6800, 2200, 1000]);
-    tx = await vault.setHATBountySplit(0, 800);
+    await claimsManager.setBountySplit([6800, 2200, 1000]);
+    tx = await claimsManager.setHATBountySplit(0, 800);
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
     assert.equal(tx.logs[0].args._bountyGovernanceHAT, "0");
     assert.equal(tx.logs[0].args._bountyHackerHATVested, "800");
 
     assert.equal(
-      (await vault.maxBounty()).toString(),
+      (await claimsManager.maxBounty()).toString(),
       "9000"
     );
     assert.equal(
-      (await vault.bountySplit()).hacker.toString(),
+      (await claimsManager.bountySplit()).hacker.toString(),
       "2200"
     );
     assert.equal(
-      (await vault.bountySplit()).hackerVested.toString(),
+      (await claimsManager.bountySplit()).hackerVested.toString(),
       "6800"
     );
 
     assert.equal(
-      (await vault.bountySplit()).committee.toString(),
+      (await claimsManager.bountySplit()).committee.toString(),
       "1000"
     );
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "0"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "800"
     );
     await advanceToSafetyPeriod();
-    tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       accounts[2],
       9000,
       "description hash",
@@ -1101,29 +1221,29 @@ contract("HatVaults", (accounts) => {
     let claimId = tx.logs[0].args._claimId;
 
     try {
-      await vault.setMaxBounty();
+      await claimsManager.setMaxBounty();
       assert(false, "active claim exists");
     } catch (ex) {
       assertVMException(ex, "ActiveClaimExists");
     }
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
     await assertFunctionRaisesException(
-      vault.setPendingMaxBounty(8000),
+      claimsManager.setPendingMaxBounty(8000),
       "ActiveClaimExists"
     );
     await assertFunctionRaisesException(
-      vault.setBountySplit([6000, 3000, 1000]),
+      claimsManager.setBountySplit([6000, 3000, 1000]),
       "ActiveClaimExists"
     );
 
-    tx = await vault.dismissClaim(claimId);
+    tx = await claimsManager.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
     assert.equal(tx.logs[0].args._claimId, claimId);
 
     try {
-      await vault.setBountySplit([6000, 3000, 1000]);
+      await claimsManager.setBountySplit([6000, 3000, 1000]);
       assert(false, "cannot set split while in safety period");
     } catch (ex) {
       assertVMException(ex, "SafetyPeriod");
@@ -1131,25 +1251,25 @@ contract("HatVaults", (accounts) => {
 
     await advanceToNonSafetyPeriod();
 
-    await vault.setBountySplit([6000, 3000, 1000]);
+    await claimsManager.setBountySplit([6000, 3000, 1000]);
 
-    tx = await vault.setHATBountySplit(1, 800);
+    tx = await claimsManager.setHATBountySplit(1, 800);
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
     assert.equal(tx.logs[0].args._bountyGovernanceHAT, "1");
     assert.equal(tx.logs[0].args._bountyHackerHATVested, "800");
 
-    await vault.setPendingMaxBounty(8000);
+    await claimsManager.setPendingMaxBounty(8000);
 
     await utils.increaseTime(24 * 3600 * 2);
-    await vault.setMaxBounty();
-    assert.equal((await vault.maxBounty()).toString(), "8000");
+    await claimsManager.setMaxBounty();
+    assert.equal((await claimsManager.maxBounty()).toString(), "8000");
   });
 
   it("max bounty can be 100%", async () => {
     await setUpGlobalVars(accounts, 0, 10000, [9000, 0, 1000], [100, 800]);
 
     // bountylevel can be 10000 without throwing an error
-    let tx = await vault.setPendingMaxBounty(10000);
+    let tx = await claimsManager.setPendingMaxBounty(10000);
     assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
     assert.equal(tx.logs[0].args._maxBounty, 10000);
 
@@ -1171,21 +1291,29 @@ contract("HatVaults", (accounts) => {
     await advanceToSafetyPeriod();
 
        // any claims with values under MBX_BOUNY_LIMIT work as usual
-    tx = await vault.submitClaim(accounts[2], 8000, "description hash", {
+    tx = await claimsManager.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
   
     let claimId = tx.logs[0].args._claimId;
   
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
   
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("1"));
   
-    tx = await vault.approveClaim(claimId, 8001, ZERO_ADDRESS);
+    tx = await claimsManager.approveClaim(claimId, 8001, ZERO_ADDRESS);
+
+    let logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount, web3.utils.toWei("0.8001").toString());
 
     // we cannot submit claims that are over MAX_BOUNY_LIMIT though
     try {
-      await vault.submitClaim(
+      await claimsManager.submitClaim(
         accounts[2],
         9500,
         "description hash",
@@ -1198,16 +1326,16 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
     }
 
-    tx = await vault.submitClaim(accounts[2], 10000, "description hash", {
+    tx = await claimsManager.submitClaim(accounts[2], 10000, "description hash", {
       from: accounts[1],
     });
 
     claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
     try {
-      await vault.approveClaim(claimId, 9500, ZERO_ADDRESS);
+      await claimsManager.approveClaim(claimId, 9500, ZERO_ADDRESS);
       assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
     } catch (ex) {
       assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
@@ -1215,9 +1343,22 @@ contract("HatVaults", (accounts) => {
 
     // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
 
-    tx = await vault.approveClaim(claimId, 10000, ZERO_ADDRESS);
+    tx = await claimsManager.approveClaim(claimId, 10000, ZERO_ADDRESS);
 
-    assert.equal(tx.logs[0].event, "VaultDestroyed");
+    logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount, web3.utils.toWei("0.1999").toString());
+
+    logs = await vault.getPastEvents('VaultDestroyed', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultDestroyed");
 
     assert.equal(await stakingToken.balanceOf(vault.address), "0");
 
@@ -1235,11 +1376,11 @@ contract("HatVaults", (accounts) => {
     await setUpGlobalVars(accounts);
 
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "1500"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "500"
     );
 
@@ -1280,7 +1421,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
 
-    await vault.setHATBountySplit(1500, 500);
+    await claimsManager.setHATBountySplit(1500, 500);
 
     let tx = await hatVaultsRegistry.setDefaultHATBountySplit(200, 800);
     assert.equal(tx.logs[0].event, "SetDefaultHATBountySplit");
@@ -1296,58 +1437,63 @@ contract("HatVaults", (accounts) => {
       "800"
     );
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
+    tx = await hatVaultsRegistry.createVault(
       {
         asset: stakingToken.address,
-        owner: await hatVaultsRegistry.owner(),
-        committee: accounts[1],
-        arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
-        arbitratorCanChangeBounty: true,
-        arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitClaims: false,
-        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
-        maxBounty: 8000,
-        bountySplit: [7000, 2500, 500],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
         descriptionHash: "_descriptionHash",
-        vestingDuration: 86400,
-        vestingPeriods: 10,
-        isPaused: false
+      },
+      {
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
+      arbitratorCanChangeBounty: true,
+      arbitratorCanChangeBeneficiary: false,
+      arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      vestingDuration: 86400,
+      vestingPeriods: 10
       },
       { from: accounts[1] }
-    )).logs[1].args._vault);
+    );
+
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     assert.equal(
-      (await newVault.getBountyGovernanceHAT()).toString(),
+      (await newClaimsManager.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await newVault.getBountyHackerHATVested()).toString(),
+      (await newClaimsManager.getBountyHackerHATVested()).toString(),
       "800"
     );
 
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "1500"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "500"
     );
 
-    tx = await vault.setHATBountySplit(await vault.NULL_UINT16(), await vault.NULL_UINT16());
+    tx = await claimsManager.setHATBountySplit(await claimsManager.NULL_UINT16(), await claimsManager.NULL_UINT16());
     assert.equal(tx.logs[0].event, "SetHATBountySplit");
-    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), (await vault.NULL_UINT16()).toString());
-    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), (await vault.NULL_UINT16()).toString());
+    assert.equal(tx.logs[0].args._bountyGovernanceHAT.toString(), (await claimsManager.NULL_UINT16()).toString());
+    assert.equal(tx.logs[0].args._bountyHackerHATVested.toString(), (await claimsManager.NULL_UINT16()).toString());
 
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "200"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "800"
     );
 
@@ -1357,20 +1503,20 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].args._defaultBountyHackerHATVested.toString(), "700");
 
     assert.equal(
-      (await newVault.getBountyGovernanceHAT()).toString(),
+      (await newClaimsManager.getBountyGovernanceHAT()).toString(),
       "300"
     );
     assert.equal(
-      (await newVault.getBountyHackerHATVested()).toString(),
+      (await newClaimsManager.getBountyHackerHATVested()).toString(),
       "700"
     );
 
     assert.equal(
-      (await vault.getBountyGovernanceHAT()).toString(),
+      (await claimsManager.getBountyGovernanceHAT()).toString(),
       "300"
     );
     assert.equal(
-      (await vault.getBountyHackerHATVested()).toString(),
+      (await claimsManager.getBountyHackerHATVested()).toString(),
       "700"
     );
   });
@@ -1404,31 +1550,37 @@ contract("HatVaults", (accounts) => {
 
     assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "1");
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault(
+    let tx = await hatVaultsRegistry.createVault(
       {
         asset: stakingToken.address,
-        owner: await hatVaultsRegistry.owner(),
-        committee: accounts[1],
-        arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
-        arbitratorCanChangeBounty: true,
-        arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitClaims: false,
-        isTokenLockRevocable: false,
         name: "VAULT",
         symbol: "VLT",
         rewardControllers: [rewardController.address],
-        maxBounty: 8000,
-        bountySplit: [7000, 2500, 500],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
         descriptionHash: "_descriptionHash",
-        vestingDuration: 86400,
-        vestingPeriods: 10,
-        isPaused: false
+      },
+      {
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[1],
+      arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
+      arbitratorCanChangeBounty: true,
+      arbitratorCanChangeBeneficiary: false,
+      arbitratorCanSubmitIssues: false,
+      isTokenLockRevocable: false,
+      maxBounty: 8000,
+      bountySplit: [7000, 2500, 500],
+      vestingDuration: 86400,
+      vestingPeriods: 10
       },
       { from: accounts[1] }
-    )).logs[1].args._vault);
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     assert.equal((await hatVaultsRegistry.getNumberOfVaults()).toString(), "2");
-    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
     await stakingToken.approve(newVault.address, web3.utils.toWei("1"), {
@@ -1644,7 +1796,7 @@ contract("HatVaults", (accounts) => {
     // can not submit a claim during emergency pause
     const committee = accounts[1];
     await assertFunctionRaisesException(
-      vault.submitClaim(
+      claimsManager.submitClaim(
         accounts[2],
         8000,
         "description hash",
@@ -1658,7 +1810,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(tx.logs[0].event, "SetEmergencyPaused");
     assert.equal(tx.logs[0].args._isEmergencyPaused, false);
 
-    tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -1671,7 +1823,7 @@ contract("HatVaults", (accounts) => {
     await hatVaultsRegistry.setEmergencyPaused(true);
 
     let claimId = tx.logs[0].args._claimId;
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
@@ -1680,7 +1832,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    tx = await vault.dismissClaim(claimId);
+    tx = await claimsManager.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -1734,10 +1886,10 @@ contract("HatVaults", (accounts) => {
 
     // submit a claim
     await advanceToSafetyPeriod();
-    tx = await vault.submitClaim(someAccount, 8000, "", { from: committee });
+    tx = await claimsManager.submitClaim(someAccount, 8000, "", { from: committee });
     claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
     // cannot withdraw while active claim exists
     await assertFunctionRaisesException(
@@ -1745,7 +1897,7 @@ contract("HatVaults", (accounts) => {
       "RedeemMoreThanMax"
     );
 
-    await vault.dismissClaim(claimId);
+    await claimsManager.dismissClaim(claimId);
 
     await advanceToNonSafetyPeriod();
     // withdrawal is possible again now claim is dismissed
@@ -1770,14 +1922,14 @@ contract("HatVaults", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(accounts[2], 8000, "description hash", {
+    let tx = await claimsManager.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
     
     await utils.increaseTime(60 * 60 * 24);
 
     let claimId = tx.logs[0].args._claimId;
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     try {
       await safeRedeem(vault, 1, staker);
@@ -1846,13 +1998,13 @@ contract("HatVaults", (accounts) => {
       );
     }
 
-    tx = await vault.submitClaim(accounts[2], 8000, "description hash", {
+    tx = await claimsManager.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
 
     let claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
 
     try {
       await safeRedeem(vault, web3.utils.toWei("1"), staker);
@@ -1861,7 +2013,7 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "RedeemMoreThanMax");
     }
 
-    tx = await vault.dismissClaim(claimId);
+    tx = await claimsManager.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
     let currentBlockNumber = (await web3.eth.getBlock("latest")).number;
@@ -2237,7 +2389,7 @@ contract("HatVaults", (accounts) => {
 
     // we submit and approve a claim for 90% of the vault value
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -2248,7 +2400,7 @@ contract("HatVaults", (accounts) => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
     await advanceToSafetyPeriod();
     result = (await vault.previewRedeemAndFee(web3.utils.toWei("1")));
     assert.equal(result.assets.toString(), web3.utils.toWei("0.196")); 
@@ -3327,7 +3479,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       '84000000000000000000', '38000000000000000000'
     ];
 
-    var startBlock = (await web3.eth.getBlock("latest")).number;
+    var startBlock = (await web3.eth.getBlock("latest")).number + 1;
     await setUpGlobalVars(accounts, startBlock);
     let allocPoint = (await rewardController.vaultInfo(vault.address)).allocPoint;
     let globalUpdatesLen = await rewardController.getGlobalVaultsUpdatesLength();
@@ -3578,7 +3730,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken.mint(staker, web3.utils.toWei("1"));
     await stakingToken.mint(staker2, web3.utils.toWei("1"));
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -3595,10 +3747,10 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       web3.utils.toWei("0")
     );
 
-    await vault.challengeClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
     await utils.increaseTime(60 * 60 * 24 * 3 + 1);
 
-    tx = await vault.dismissClaim(claimId);
+    tx = await claimsManager.dismissClaim(claimId);
     assert.equal(tx.logs[0].event, "DismissClaim");
 
     //stake
@@ -3613,14 +3765,14 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToNonSafetyPeriod();
     await assertFunctionRaisesException(
-      vault.submitClaim(accounts[2], 8000, "description hash", {
+      claimsManager.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[1],
       }),
       "NotSafetyPeriod"
     );
     await advanceToSafetyPeriod();
     await assertFunctionRaisesException(
-      vault.submitClaim(accounts[2], 8001, "description hash", {
+      claimsManager.submitClaim(accounts[2], 8001, "description hash", {
         from: accounts[1]
       }),
       "BountyPercentageHigherThanMaxBounty"
@@ -3628,20 +3780,20 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     // only the comittee can submit a claim
     await assertFunctionRaisesException(
-      vault.submitClaim(accounts[2], 8000, "description hash", {
+      claimsManager.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[2],
       }),
       "OnlyCommittee"
     );
 
     try {
-      await vault.approveClaim(web3.utils.randomHex(32), 8000, ZERO_ADDRESS);
+      await claimsManager.approveClaim(web3.utils.randomHex(32), 8000, ZERO_ADDRESS);
       assert(false, "there is no pending approval");
     } catch (ex) {
       assertVMException(ex, "NoActiveClaimExists");
     }
 
-    tx = await vault.submitClaim(accounts[2], 8000, "description hash", {
+    tx = await claimsManager.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
 
@@ -3649,7 +3801,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     // cannot submit a claim if an active claim already exists
     await assertFunctionRaisesException(
-      vault.submitClaim(accounts[2], 8000, "description hash", {
+      claimsManager.submitClaim(accounts[2], 8000, "description hash", {
         from: accounts[1],
       }),
       "ActiveClaimExists"
@@ -3666,22 +3818,22 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await stakingToken.setReenterApproveClaim(true);
     try {
-      await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+      await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
       assert(false, "fail on reentrancy attempt");
     } catch (ex) {
       assertVMException(ex, "ReentrancyGuard: reentrant call");
     }
     await stakingToken.setReenterApproveClaim(false);
 
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     assert.equal(
       await hatToken.balanceOf(rewardController.address),
       web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
     );
 
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
 
     currentBlockNumber = (await web3.eth.getBlock("latest")).number;
     await vault.deposit(web3.utils.toWei("1"), staker2, { from: staker2 });
@@ -3733,7 +3885,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -3745,9 +3897,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
 
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
     let stakerAmount = await vault.balanceOf(staker);
     assert.equal(stakerAmount.toString(), web3.utils.toWei("1"));
     await safeRedeem(vault, stakerAmount, staker);
@@ -3786,7 +3938,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -3798,7 +3950,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
     await safeRedeem(vault, await vault.balanceOf(staker), staker, staker);
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await safeRedeem(vault, web3.utils.toWei("1"), staker2);
@@ -3842,7 +3994,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -3854,9 +4006,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
 
     assert.equal(await vault.totalSupply(), web3.utils.toWei("1"));
     assert.equal(await vault.balanceOf(staker), web3.utils.toWei("1"));
@@ -3985,7 +4137,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -3997,9 +4149,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
 
     await vault.withdrawRequest({ from: staker });
     //increase time for pending period
@@ -4307,9 +4459,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
   it("redeeming and transfer is locked while an active claim exists", async () => {
     // cannot transfer if an active claim exists
-    const { vault, registry, stakingToken, someAccount } = await setup(accounts);
+    const { vault, claimsManager, registry, stakingToken, someAccount } = await setup(accounts);
     await advanceToSafetyPeriod(registry);
-    await submitClaim(vault, { accounts });
+    await submitClaim(claimsManager, { accounts });
     // there is an active claim, so call to transfer or redeem will be
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: someAccount,
@@ -4446,7 +4598,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //increase time for pending period
     await utils.increaseTime(parseInt((await hatVaultsRegistry.generalParameters()).withdrawRequestPendingPeriod.toString()));
 
-    tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -4460,8 +4612,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId);
-    await vault.dismissClaim(claimId);
+    await claimsManager.challengeClaim(claimId);
+    await claimsManager.dismissClaim(claimId);
 
     await hatVaultsRegistry.setEmergencyPaused(true);
     await assertFunctionRaisesException(
@@ -4570,7 +4722,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     //exit
     assert.equal(await hatToken.balanceOf(staker), 0);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       4000,
       "description hash",
@@ -4582,15 +4734,15 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
 
-    await vault.approveClaim(claimId, 4000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 4000, ZERO_ADDRESS);
     await advanceToSafetyPeriod();
-    tx = await vault.submitClaim(accounts[2], 4000, "description hash", {
+    tx = await claimsManager.submitClaim(accounts[2], 4000, "description hash", {
       from: accounts[1],
     });
 
     claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 4000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 4000, ZERO_ADDRESS);
 
     await advanceToNonSafetyPeriod();
 
@@ -4714,7 +4866,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       assertVMException(ex, "AmountToSwapIsZero");
     }
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -4725,7 +4877,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     await stakingToken.approveDisable(true);
     try {
@@ -4822,7 +4974,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -4833,7 +4985,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     await stakingToken.approveDisable(true);
 
@@ -4875,25 +5027,34 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("approve+ swapAndSend with HAT vault", async () => {
     await setUpGlobalVars(accounts);
     var staker = accounts[4];
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: hatToken.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: hatToken.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
     await hatVaultsRegistry.setDefaultChallengePeriod(60 * 60 * 24);
 
     await rewardController.setAllocPoint(
@@ -4906,7 +5067,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     });
     await hatToken.setMinter(accounts[0], web3.utils.toWei("1"));
     await hatToken.mint(staker, web3.utils.toWei("1"));
-    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[1] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(await hatToken.balanceOf(staker), 0);
     assert.equal(
@@ -4934,7 +5095,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       assertVMException(ex, "AmountToSwapIsZero");
     }
     await advanceToSafetyPeriod();
-    let tx = await newVault.submitClaim(
+    tx = await newClaimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -4945,7 +5106,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await newVault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await newClaimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     assert.equal(await hatToken.balanceOf(accounts[0]), 0);
     amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
@@ -4998,34 +5159,42 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("approve + swapAndSend 2 vaults with same token", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [600, 400]);
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
-      bountySplit: [8400, 1500, 100],
-      descriptionHash: "_descriptionHash",
+      bountySplit: [7000, 2500, 500],
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
 
-    await newVault.setHATBountySplit(500, 400);
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
+    await newClaimsManager.setHATBountySplit(500, 400);
 
     await rewardController.setAllocPoint(
       newVault.address,
       100
     );
 
-    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[3];
     var beneficiary1 = accounts[4];
@@ -5043,7 +5212,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await utils.increaseTime(7 * 24 * 3600);
 
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       beneficiary1,
       8000,
       "description hash",
@@ -5054,7 +5223,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId1 = tx.logs[0].args._claimId;
 
-    tx = await newVault.submitClaim(
+    tx = await newClaimsManager.submitClaim(
       beneficiary2,
       4000,
       "description hash",
@@ -5065,11 +5234,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId2 = tx.logs[0].args._claimId;
 
-    await vault.challengeClaim(claimId1);
-    await newVault.challengeClaim(claimId2);
+    await claimsManager.challengeClaim(claimId1);
+    await newClaimsManager.challengeClaim(claimId2);
 
-    await vault.approveClaim(claimId1, 8000, ZERO_ADDRESS);
-    await newVault.approveClaim(claimId2, 4000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId1, 8000, ZERO_ADDRESS);
+    await newClaimsManager.approveClaim(claimId2, 4000, ZERO_ADDRESS);
     
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5172,7 +5341,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
 
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -5183,7 +5352,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5238,7 +5407,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await stakingToken2.mint(router.address, web3.utils.toWei("2500000"));
 
     await advanceToSafetyPeriod();
-    tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -5249,7 +5418,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     try {
       await hatVaultsRegistry.setSwapToken(stakingToken2.address, { from: accounts[1] });
@@ -5354,7 +5523,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     }
 
     await advanceToSafetyPeriod();
-    tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       hatPaymentSplitter.address,
       8000,
       "description hash",
@@ -5365,7 +5534,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5489,7 +5658,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
     
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -5500,7 +5669,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
       stakingToken.address,
@@ -5587,7 +5756,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -5598,7 +5767,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5668,7 +5837,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyHackerHATVested())
+            (await claimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5734,7 +5903,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -5745,7 +5914,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -5790,7 +5959,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyHackerHATVested())
+            (await claimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5808,7 +5977,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyGovernanceHAT())
+            (await claimsManager.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5852,7 +6021,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyHackerHATVested())
+            (await claimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5869,7 +6038,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.16")).mul(new web3.utils.BN(80)).div(new web3.utils.BN(100))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyGovernanceHAT())
+            (await claimsManager.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5917,7 +6086,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.032"))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyHackerHATVested())
+            (await claimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5934,7 +6103,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.032"))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyGovernanceHAT())
+            (await claimsManager.getBountyGovernanceHAT())
           )
         )
         .div(new web3.utils.BN("10000"))
@@ -5961,32 +6130,40 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
   it("swapAndSend 2 vaults with same token", async () => {
     await setUpGlobalVars(accounts);
 
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     await rewardController.setAllocPoint(
       newVault.address,
       100
     );
 
-    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[1] });
 
     var staker = accounts[4];
     var staker2 = accounts[3];
@@ -6012,7 +6189,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6023,16 +6200,16 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId1 = tx.logs[0].args._claimId;
 
-    tx = await newVault.submitClaim(accounts[2], 8000, "description hash", {
+    tx = await newClaimsManager.submitClaim(accounts[2], 8000, "description hash", {
       from: accounts[1],
     });
 
     let claimId2 = tx.logs[0].args._claimId;
 
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId1, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId1, 8000, ZERO_ADDRESS);
     await utils.increaseTime(60 * 60 * 24 * 2);
-    await newVault.approveClaim(claimId2, 8000, ZERO_ADDRESS);
+    await newClaimsManager.approveClaim(claimId2, 8000, ZERO_ADDRESS);
  
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -6099,13 +6276,13 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await vault.getBountyHackerHATVested())
+            (await claimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000")).add(new web3.utils.BN(web3.utils.toWei("0.8"))
         .mul(
           new web3.utils.BN(
-            (await newVault.getBountyHackerHATVested())
+            (await newClaimsManager.getBountyHackerHATVested())
           )
         )
         .div(new web3.utils.BN("10000")))
@@ -6147,7 +6324,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6158,7 +6335,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let path = ethers.utils.solidityPack(
       ["address", "uint24", "address", "uint24", "address"],
@@ -6216,7 +6393,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6227,7 +6404,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
     let payload = "0x00000000000000000000000000000000000001";
     try {
@@ -6342,7 +6519,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6353,10 +6530,10 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
 
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
@@ -6369,7 +6546,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[8].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[1].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -6432,7 +6609,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await hatToken.balanceOf(staker), 0);
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6443,10 +6620,10 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
-    assert.equal(tx.logs[8].event, "ApproveClaim");
-    assert.equal(tx.logs[8].args._claimId, claimId);
-    var vestingTokenLock = await HATTokenLock.at(tx.logs[8].args._tokenLock);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    assert.equal(tx.logs[1].event, "ApproveClaim");
+    assert.equal(tx.logs[1].args._claimId, claimId);
+    var vestingTokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
 
     assert.equal(await vestingTokenLock.beneficiary(), accounts[2]);
     var depositValutBNAfterClaim = new web3.utils.BN(web3.utils.toWei("0.8"));
@@ -6459,7 +6636,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       )
     );
     assert.isTrue(
-      new web3.utils.BN(tx.logs[8].args._claimBounty.hackerVested).eq(
+      new web3.utils.BN(tx.logs[1].args._claimBounty.hackerVested).eq(
         expectedHackerBalance
       )
     );
@@ -6534,7 +6711,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     await utils.increaseTime(7 * 24 * 3600);
     await advanceToSafetyPeriod();
-    let tx = await vault.submitClaim(
+    let tx = await claimsManager.submitClaim(
       accounts[2],
       8000,
       "description hash",
@@ -6545,11 +6722,11 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     let claimId = tx.logs[0].args._claimId;
     await utils.increaseTime(60 * 60 * 24);
-    tx = await vault.approveClaim(claimId, 8000, ZERO_ADDRESS);
+    tx = await claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS);
 
-    assert.equal(tx.logs[6].event, "ApproveClaim");
-    assert.equal(tx.logs[6].args._claimId, claimId);
-    assert.equal(tx.logs[6].args._tokenLock, utils.NULL_ADDRESS);
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._claimId, claimId);
+    assert.equal(tx.logs[0].args._tokenLock, utils.NULL_ADDRESS);
     assert.equal(
       await stakingToken.balanceOf(vault.address),
       web3.utils.toWei("0.2")
@@ -6562,40 +6739,40 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
   it("set vesting params", async () => {
     await setUpGlobalVars(accounts);
-    assert.equal(await vault.vestingDuration(), 86400);
-    assert.equal(await vault.vestingPeriods(), 10);
+    assert.equal(await claimsManager.vestingDuration(), 86400);
+    assert.equal(await claimsManager.vestingPeriods(), 10);
 
     try {
-      await vault.setVestingParams(21000, 7, { from: accounts[2] });
+      await claimsManager.setVestingParams(21000, 7, { from: accounts[2] });
       assert(false, "only gov can set vesting params");
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
     try {
-      await vault.setVestingParams(21000, 0);
+      await claimsManager.setVestingParams(21000, 0);
       assert(false, "period should not be zero");
     } catch (ex) {
       assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
     try {
-      await vault.setVestingParams(120 * 24 * 3600 + 1, 7);
+      await claimsManager.setVestingParams(120 * 24 * 3600 + 1, 7);
       assert(false, "duration should be less than or equal to 120 days");
     } catch (ex) {
       assertVMException(ex, "VestingDurationTooLong");
     }
     try {
-      await vault.setVestingParams(6, 7);
+      await claimsManager.setVestingParams(6, 7);
       assert(false, "duration should be greater than or equal to period");
     } catch (ex) {
       assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
-    var tx = await vault.setVestingParams(21000, 7);
+    var tx = await claimsManager.setVestingParams(21000, 7);
     assert.equal(tx.logs[0].event, "SetVestingParams");
     assert.equal(tx.logs[0].args._duration, 21000);
     assert.equal(tx.logs[0].args._periods, 7);
 
-    assert.equal(await vault.vestingDuration(), 21000);
-    assert.equal(await vault.vestingPeriods(), 7);
+    assert.equal(await claimsManager.vestingDuration(), 21000);
+    assert.equal(await claimsManager.vestingPeriods(), 7);
   });
 
   it("set hat vesting params", async () => {
@@ -6681,25 +6858,34 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[0],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 200);
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
@@ -6708,7 +6894,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("2"));
-    await newVault.committeeCheckIn({ from: accounts[0] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
     assert.equal(
       Math.round(
@@ -6729,31 +6915,40 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[0],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
     await stakingToken2.approve(newVault.address, web3.utils.toWei("2"), {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("2"));
-    await newVault.committeeCheckIn({ from: accounts[0] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("2"), staker, { from: staker });
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("2"));
     await newVault.withdrawRequest({ from: staker });
@@ -6784,112 +6979,135 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
 
     try {
-      await hatVaultsRegistry.createVault({
-        asset: stakingToken2.address,
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash",
+        },
+        {
         owner: await hatVaultsRegistry.owner(),
         committee: accounts[1],
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitClaims: false,
+        arbitratorCanSubmitIssues: false,
         isTokenLockRevocable: false,
-        name: "VAULT",
-        symbol: "VLT",
-        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
-        descriptionHash: "_descriptionHash",
         vestingDuration: 10,
-        vestingPeriods: 86400,
-        isPaused: false
-      });
+        vestingPeriods: 86400
+        }
+      );
       assert(false, "vesting duration smaller than period");
     } catch (ex) {
       assertVMException(ex, "VestingDurationSmallerThanPeriods");
     }
 
     try {
-      await hatVaultsRegistry.createVault({
-        asset: stakingToken2.address,
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash",
+        },
+        {
         owner: await hatVaultsRegistry.owner(),
         committee: accounts[1],
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitClaims: false,
+        arbitratorCanSubmitIssues: false,
         isTokenLockRevocable: false,
-        name: "VAULT",
-        symbol: "VLT",
-        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
-        descriptionHash: "_descriptionHash",
         vestingDuration: 121 * 24 * 3600,
-        vestingPeriods: 10,
-        isPaused: false
-      });
+        vestingPeriods: 10
+        }
+      );
       assert(false, "vesting duration is too long");
     } catch (ex) {
       assertVMException(ex, "VestingDurationTooLong");
     }
 
     try {
-      await hatVaultsRegistry.createVault({
-        asset: stakingToken2.address,
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash",
+        },
+        {
         owner: await hatVaultsRegistry.owner(),
         committee: accounts[1],
         arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
-        arbitratorCanSubmitClaims: false,
+        arbitratorCanSubmitIssues: false,
         isTokenLockRevocable: false,
-        name: "VAULT",
-        symbol: "VLT",
-        rewardControllers: [rewardController.address],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
-        descriptionHash: "_descriptionHash",
         vestingDuration: 86400,
-        vestingPeriods: 0,
-        isPaused: false
-      });
+        vestingPeriods: 0
+        }
+      );
       assert(false, "vesting period cannot be zero");
     } catch (ex) {
       assertVMException(ex, "VestingPeriodsCannotBeZero");
     }
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     await rewardController.setAllocPoint(
       newVault.address,
       100
     );
 
-    await newVault.setCommittee(accounts[0], { from: accounts[1] });
+    await newClaimsManager.setCommittee(accounts[0], { from: accounts[1] });
     await stakingToken2.approve(newVault.address, web3.utils.toWei("1"), {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("1"));
 
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-    await newVault.committeeCheckIn({ from: accounts[0] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[0] });
     await newVault.deposit(web3.utils.toWei("1"), staker, { from: staker });
 
     await hatVaultsRegistry.setVaultVisibility(vault.address, true);
@@ -6934,25 +7152,32 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     var globalVaultsUpdatesLength = await rewardController1.getGlobalVaultsUpdatesLength();
     assert.equal(globalVaultsUpdatesLength, 0);
     let stakingToken2 = await ERC20Mock.new("Staking", "STK");
-    const vault1 = await HATVault.at((await hatVaultsRegistry1.createVault({
-      asset: stakingToken2.address,
+    const tx = await hatVaultsRegistry1.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let vault1 = await HATVault.at(tx.logs[2].args._vault);
 
     await rewardController1.updateVault(vault1.address);
     await rewardController1.updateVault(vault1.address);
@@ -7096,29 +7321,37 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       from: staker,
     });
     await stakingToken2.mint(staker, web3.utils.toWei("1"));
-    var tx = await vault.deposit(web3.utils.toWei("1"), staker, {
+    let depositTx = await vault.deposit(web3.utils.toWei("1"), staker, {
       from: staker,
     });
     //10
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: stakingToken2.address,
+    tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     let tx2 = await rewardController.setAllocPoint(
       newVault.address,
@@ -7131,7 +7364,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(tx2.logs[0].args._allocPoint, 100);
 
     //5
-    await newVault.setCommittee(accounts[0], { from: accounts[1] });
+    await newClaimsManager.setCommittee(accounts[0], { from: accounts[1] });
     //5
     await hatVaultsRegistry.setVaultVisibility(newVault.address, true);
     await rewardController.setAllocPoint(newVault.address, 300);
@@ -7140,7 +7373,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal(await rewardController.getGlobalVaultsUpdatesLength(), 3);
     assert.equal(
       (await rewardController.vaultInfo(vault.address)).lastRewardBlock,
-      tx.receipt.blockNumber
+      depositTx.receipt.blockNumber
     );
     await rewardController.claimReward(vault.address, staker, { from: staker });
     assert.equal(
@@ -7200,25 +7433,33 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await setUpGlobalVars(accounts, (await web3.eth.getBlock("latest")).number);
     var staker = accounts[1];
     var staker2 = accounts[5];
-    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
-      asset: hatToken.address,
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: hatToken.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash",
+      },
+      {
       owner: await hatVaultsRegistry.owner(),
       committee: accounts[1],
       arbitrator: "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF",
       arbitratorCanChangeBounty: true,
       arbitratorCanChangeBeneficiary: false,
-      arbitratorCanSubmitClaims: false,
+      arbitratorCanSubmitIssues: false,
       isTokenLockRevocable: false,
-      name: "VAULT",
-      symbol: "VLT",
-      rewardControllers: [rewardController.address],
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
-      descriptionHash: "_descriptionHash",
       vestingDuration: 86400,
-      vestingPeriods: 10,
-      isPaused: false
-    })).logs[1].args._vault);
+      vestingPeriods: 10
+      }
+    );
+
+    let newVault = await HATVault.at(tx.logs[2].args._vault);
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
 
     await rewardController.setAllocPoint(
       newVault.address,
@@ -7226,7 +7467,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
 
     await hatToken.setMinter(accounts[0], web3.utils.toWei("110"));
-    await newVault.committeeCheckIn({ from: accounts[1] });
+    await newClaimsManager.committeeCheckIn({ from: accounts[1] });
 
     await hatToken.approve(newVault.address, web3.utils.toWei("1"), {
       from: staker,
@@ -7259,7 +7500,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     await hatToken.mint(newVault.address, web3.utils.toWei("100"));
     assert.equal((await hatToken.balanceOf(staker)).toString(), 0);
     await advanceToNonSafetyPeriod();
-    var tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
+    tx = await newVault.methods["withdraw(uint256,address,address)"](web3.utils.toWei("1"), staker, staker, {
       from: staker,
     });
     assert.equal((await newVault.balanceOf(staker)).toString(), web3.utils.toWei("0.97087378640776699"));
@@ -7353,9 +7594,9 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), MINIMAL_AMOUNT_OF_SHARES);
     // now pay out a large amount
     await advanceToSafetyPeriod();
-    const claimId = await submitClaim(vault, { accounts, bountyPercentage});
+    const claimId = await submitClaim(claimsManager, { accounts, bountyPercentage});
     await utils.increaseTime(60 * 60 * 24);
-    await vault.approveClaim(claimId, bountyPercentage, ZERO_ADDRESS);
+    await claimsManager.approveClaim(claimId, bountyPercentage, ZERO_ADDRESS);
 
     assert.equal((await stakingToken.balanceOf(vault.address)).toString(), (HUNDRED_PERCENT - bountyPercentage) * MINIMAL_AMOUNT_OF_SHARES/HUNDRED_PERCENT);
 

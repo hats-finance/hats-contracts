@@ -157,6 +157,23 @@ function dismissClaim(bytes32 _claimId) external nonpayable
 |---|---|---|
 | _claimId | bytes32 | undefined |
 
+### getActiveClaim
+
+```solidity
+function getActiveClaim() external view returns (struct HatVaultForConnectorMock.Claim)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | HatVaultForConnectorMock.Claim | undefined |
+
 ### nonce
 
 ```solidity

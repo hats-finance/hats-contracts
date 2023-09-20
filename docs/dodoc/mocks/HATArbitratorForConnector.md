@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
+function acceptDispute(contract IHATClaimsManager _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
 ```
 
 
@@ -24,7 +24,7 @@ function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _boun
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 | _bountyPercentage | uint16 | undefined |
 | _beneficiary | address | undefined |
@@ -32,7 +32,7 @@ function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _boun
 ### challengeResolution
 
 ```solidity
-function challengeResolution(contract IHATVault _vault, bytes32 _claimId, string _evidence) external payable
+function challengeResolution(contract IHATClaimsManager _vault, bytes32 _claimId, string _evidence) external payable
 ```
 
 
@@ -43,7 +43,7 @@ function challengeResolution(contract IHATVault _vault, bytes32 _claimId, string
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 | _evidence | string | undefined |
 
@@ -67,7 +67,7 @@ function court() external view returns (contract IHATKlerosConnector)
 ### dismissResolution
 
 ```solidity
-function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function dismissResolution(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -78,13 +78,13 @@ function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### dispute
 
 ```solidity
-function dispute(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function dispute(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -95,13 +95,13 @@ function dispute(contract IHATVault _vault, bytes32 _claimId) external nonpayabl
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### executeResolution
 
 ```solidity
-function executeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function executeResolution(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 
@@ -112,7 +112,7 @@ function executeResolution(contract IHATVault _vault, bytes32 _claimId) external
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _claimId | bytes32 | undefined |
 
 ### resolutionChallengePeriod
@@ -135,7 +135,7 @@ function resolutionChallengePeriod() external view returns (uint256)
 ### resolutionChallengedAt
 
 ```solidity
-function resolutionChallengedAt(contract IHATVault, bytes32) external view returns (uint256)
+function resolutionChallengedAt(contract IHATClaimsManager, bytes32) external view returns (uint256)
 ```
 
 
@@ -146,7 +146,7 @@ function resolutionChallengedAt(contract IHATVault, bytes32) external view retur
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract IHATVault | undefined |
+| _0 | contract IHATClaimsManager | undefined |
 | _1 | bytes32 | undefined |
 
 #### Returns
@@ -158,7 +158,7 @@ function resolutionChallengedAt(contract IHATVault, bytes32) external view retur
 ### resolutions
 
 ```solidity
-function resolutions(contract IHATVault, bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
+function resolutions(contract IHATClaimsManager, bytes32) external view returns (address beneficiary, uint16 bountyPercentage, uint256 resolvedAt)
 ```
 
 
@@ -169,7 +169,7 @@ function resolutions(contract IHATVault, bytes32) external view returns (address
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract IHATVault | undefined |
+| _0 | contract IHATClaimsManager | undefined |
 | _1 | bytes32 | undefined |
 
 #### Returns

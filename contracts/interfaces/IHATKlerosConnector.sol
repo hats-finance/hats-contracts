@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./IHATVault.sol";
+import "./IHATClaimsManager.sol";
 
 interface IHATKlerosConnector {
 
@@ -11,5 +11,5 @@ interface IHATKlerosConnector {
         DismissResolution // Dismiss the resolution.
     }
 
-    function notifyArbitrator(bytes32 _claimId, string calldata _evidence, IHATVault _vault, address _disputer) external payable;
+    function notifyArbitrator(bytes32 _claimId, string calldata _evidence, IHATClaimsManager _vault, address _disputer) external payable;
 }

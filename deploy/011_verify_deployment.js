@@ -207,6 +207,11 @@ const func = async function (hre) {
     );
 
     verify(
+        await read('HATVaultsRegistry', {}, 'hatClaimsManagerImplementation') === (await deployments.get('HATClaimsManager')).address,
+        "HATVaultsRegistry HATVault implementation is correct"
+    );
+
+    verify(
         (await read('HATVaultsRegistry', {}, 'tokenLockFactory')).toLowerCase() === (await deployments.get('TokenLockFactory')).address.toLowerCase(),
         "HATVaultsRegistry TokenLockFactory is correct"
     );

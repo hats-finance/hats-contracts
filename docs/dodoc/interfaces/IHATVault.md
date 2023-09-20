@@ -27,42 +27,13 @@ Returns the vault&#39;s version
 |---|---|---|
 | _0 | string | The vault&#39;s version |
 
-### activeClaim
-
-```solidity
-function activeClaim() external view returns (bytes32, address, uint16, address, uint32, uint32, uint256, uint256, address, uint32, uint32, bool, bool)
-```
-
-Returns the current active claim
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes32 | The current active claim |
-| _1 | address | undefined |
-| _2 | uint16 | undefined |
-| _3 | address | undefined |
-| _4 | uint32 | undefined |
-| _5 | uint32 | undefined |
-| _6 | uint256 | undefined |
-| _7 | uint256 | undefined |
-| _8 | address | undefined |
-| _9 | uint32 | undefined |
-| _10 | uint32 | undefined |
-| _11 | bool | undefined |
-| _12 | bool | undefined |
-
 ### addRewardController
 
 ```solidity
-function addRewardController(contract IRewardController _newRewardController) external nonpayable
+function addRewardController(contract IRewardController _rewardController) external nonpayable
 ```
 
-Called by the registry&#39;s owner to add a reward controller to the vault
+Adds a reward controller to the reward controllers list
 
 
 
@@ -70,7 +41,7 @@ Called by the registry&#39;s owner to add a reward controller to the vault
 
 | Name | Type | Description |
 |---|---|---|
-| _newRewardController | contract IRewardController | The new reward controller to add |
+| _rewardController | contract IRewardController | The reward controller to add |
 
 ### allowance
 
@@ -118,24 +89,6 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 |---|---|---|
 | _0 | bool | undefined |
 
-### approveClaim
-
-```solidity
-function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
-```
-
-Approve a claim for a bounty submitted by a committee, and pay out bounty to hacker and committee. Also transfer to the  HATVaultsRegistry the part of the bounty that will be swapped to HAT  tokens. If the claim had been previously challenged, this is only callable by the arbitrator. Otherwise, callable by anyone after challengePeriod had passed.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId | bytes32 | The claim ID |
-| _bountyPercentage | uint16 | The percentage of the vault&#39;s balance that will be sent as a bounty. This value will be ignored if the caller is not the arbitrator. |
-| _beneficiary | address | where the bounty will be sent to. This value will be  ignored if the caller is not the arbitrator. |
-
 ### asset
 
 ```solidity
@@ -175,32 +128,22 @@ function balanceOf(address account) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### challengeClaim
+### claimsManager
 
 ```solidity
-function challengeClaim(bytes32 _claimId) external nonpayable
+function claimsManager() external view returns (address)
 ```
 
-Called by the arbitrator or governance to challenge a claim for a bounty payout that had been previously submitted by the committee. Can only be called during the challenge period after submission of the claim.
+Returns the vault&#39;s registry
 
 
 
-#### Parameters
+
+#### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| _claimId | bytes32 | The claim ID |
-
-### committeeCheckIn
-
-```solidity
-function committeeCheckIn() external nonpayable
-```
-
-Called by the vault&#39;s committee to claim it&#39;s role. Deposits are enabled only after committee check in.
-
-
-
+| _0 | address | The registry&#39;s address |
 
 ### convertToAssets
 
@@ -310,21 +253,16 @@ function deposit(uint256 assets, address receiver, uint256 minShares) external n
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### dismissClaim
+### destroyVault
 
 ```solidity
-function dismissClaim(bytes32 _claimId) external nonpayable
+function destroyVault() external nonpayable
 ```
 
-Dismiss the active claim for bounty payout submitted by the committee. Called either by the arbitrator, or by anyone if the claim has timed out.
+Permanently disables deposits to the vault
 
 
 
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId | bytes32 | The claim ID |
 
 ### emergencyWithdraw
 
@@ -348,95 +286,10 @@ Redeem all of the user&#39;s shares in the vault for the respective amount of un
 |---|---|---|
 | assets | uint256 | undefined |
 
-### getArbitrator
-
-```solidity
-function getArbitrator() external view returns (address)
-```
-
-Returns the address of the vault&#39;s arbitrator If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | The address of the vault&#39;s arbitrator |
-
-### getBountyGovernanceHAT
-
-```solidity
-function getBountyGovernanceHAT() external view returns (uint16)
-```
-
-Returns the vault HAT bounty split part that goes to the governance If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that goes to the governance |
-
-### getBountyHackerHATVested
-
-```solidity
-function getBountyHackerHATVested() external view returns (uint16)
-```
-
-Returns the vault HAT bounty split part that is vested for the hacker If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that is vested for the hacker |
-
-### getChallengePeriod
-
-```solidity
-function getChallengePeriod() external view returns (uint32)
-```
-
-Returns the period of time after a claim for a bounty payout has been submitted that it can be challenged by the arbitrator. If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint32 | The vault&#39;s challenge period |
-
-### getChallengeTimeOutPeriod
-
-```solidity
-function getChallengeTimeOutPeriod() external view returns (uint32)
-```
-
-Returns the period of time after which a claim for a bounty payout can be dismissed by anyone. If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint32 | The vault&#39;s challenge timeout period |
-
 ### initialize
 
 ```solidity
-function initialize(IHATVault.VaultInitParams _params) external nonpayable
+function initialize(address _claimsManager, IHATVault.VaultInitParams _params) external nonpayable
 ```
 
 
@@ -447,24 +300,24 @@ function initialize(IHATVault.VaultInitParams _params) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _claimsManager | address | undefined |
 | _params | IHATVault.VaultInitParams | undefined |
 
-### maxBounty
+### makePayout
 
 ```solidity
-function maxBounty() external view returns (uint16)
+function makePayout(uint256 _amount) external nonpayable
 ```
 
-Returns the max bounty that can be paid from the vault in percentages out of HUNDRED_PERCENT
+Make a payout out of the vault
 
 
 
-
-#### Returns
+#### Parameters
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | uint16 | The max bounty |
+| _amount | uint256 | The amount to send out for the payout |
 
 ### maxDeposit
 
@@ -850,103 +703,22 @@ Redeem shares in the vault for the respective amount of underlying assets and cl
 |---|---|---|
 | assets | uint256 | undefined |
 
-### setArbitrator
+### registry
 
 ```solidity
-function setArbitrator(address _arbitrator) external nonpayable
+function registry() external view returns (contract IHATVaultsRegistry)
 ```
 
-Called by the registry&#39;s owner to set the vault arbitrator If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+Returns the vault&#39;s registry
 
 
 
-#### Parameters
+
+#### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| _arbitrator | address | The address of vault&#39;s arbitrator |
-
-### setArbitratorOptions
-
-```solidity
-function setArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims) external nonpayable
-```
-
-Called by the registry&#39;s owner to set whether the arbitrator can change a claim bounty percentage and/ or beneficiary, and whether  the arbitrator can submit claims.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBounty | bool | Whether the arbitrator can change a claim bounty percentage |
-| _arbitratorCanChangeBeneficiary | bool | Whether the arbitrator can change a claim beneficiary |
-| _arbitratorCanSubmitClaims | bool | Whether the arbitrator can submit claims |
-
-### setBountySplit
-
-```solidity
-function setBountySplit(IHATVault.BountySplit _bountySplit) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountySplit | IHATVault.BountySplit | undefined |
-
-### setChallengePeriod
-
-```solidity
-function setChallengePeriod(uint32 _challengePeriod) external nonpayable
-```
-
-Called by the registry&#39;s owner to set the period of time after a claim for a bounty payout has been submitted that it can be challenged by the arbitrator. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _challengePeriod | uint32 | The vault&#39;s challenge period |
-
-### setChallengeTimeOutPeriod
-
-```solidity
-function setChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) external nonpayable
-```
-
-Called by the registry&#39;s owner to set the period of time after which a claim for a bounty payout can be dismissed by anyone. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _challengeTimeOutPeriod | uint32 | The vault&#39;s challenge timeout period |
-
-### setCommittee
-
-```solidity
-function setCommittee(address _committee) external nonpayable
-```
-
-Set new committee address. Can be called by existing committee, or by the the vault&#39;s owner in the case that the committee hadn&#39;t checked in yet.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _committee | address | The address of the new committee  |
+| _0 | contract IHATVaultsRegistry | The registry&#39;s address |
 
 ### setDepositPause
 
@@ -964,50 +736,6 @@ Called by the vault&#39;s owner to disable all deposits to the vault
 |---|---|---|
 | _depositPause | bool | Are deposits paused |
 
-### setHATBountySplit
-
-```solidity
-function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
-```
-
-Called by the registry&#39;s owner to set the vault HAT token bounty  split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT | uint16 | The HAT bounty for governance |
-| _bountyHackerHATVested | uint16 | The HAT bounty vested for the hacker |
-
-### setMaxBounty
-
-```solidity
-function setMaxBounty() external nonpayable
-```
-
-Called by the vault&#39;s owner to set the vault&#39;s max bounty to the already pending max bounty. Cannot be called if there are active claims that have been submitted. Can only be called if there is a max bounty pending approval, and the time delay since setting the pending max bounty had passed.
-
-
-
-
-### setPendingMaxBounty
-
-```solidity
-function setPendingMaxBounty(uint16 _maxBounty) external nonpayable
-```
-
-Called by the vault&#39;s owner to set a pending request for the maximum percentage of the vault that can be paid out as a bounty. Cannot be called if there is an active claim that has been submitted. Max bounty should be less than or equal to 90% (defined as 9000). It can also be set to 100%, but in this mode the vault will only allow payouts of the 100%, and the vault will become inactive forever afterwards. The pending value can be set by the owner after the time delay (of  {HATVaultsRegistry.generalParameters.setMaxBountyDelay}) had passed.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _maxBounty | uint16 | The maximum bounty percentage that can be paid out |
-
 ### setVaultDescription
 
 ```solidity
@@ -1024,13 +752,13 @@ Called by the registry&#39;s owner to change the description of the vault in the
 |---|---|---|
 | _descriptionHash | string | the hash of the vault&#39;s description |
 
-### setVestingParams
+### setWithdrawPaused
 
 ```solidity
-function setVestingParams(uint32 _duration, uint32 _periods) external nonpayable
+function setWithdrawPaused(bool _withdrawPaused) external nonpayable
 ```
 
-Called by the vault&#39;s owner to set the vesting params for the part of the bounty that the hacker gets vested in the vault&#39;s native token
+Called by the vault&#39;s claims manager to disable all withdrawals from the vault
 
 
 
@@ -1038,8 +766,7 @@ Called by the vault&#39;s owner to set the vesting params for the part of the bo
 
 | Name | Type | Description |
 |---|---|---|
-| _duration | uint32 | Duration of the vesting period. Must be smaller than 120 days and bigger than `_periods` |
-| _periods | uint32 | Number of vesting periods. Cannot be 0. |
+| _withdrawPaused | bool | Are withdraws paused |
 
 ### setWithdrawalFee
 
@@ -1057,29 +784,16 @@ Called by the registry&#39;s fee setter to set the fee for  withdrawals from the
 |---|---|---|
 | _fee | uint256 | The new fee. Must be smaller than or equal to `MAX_WITHDRAWAL_FEE` |
 
-### submitClaim
+### startVault
 
 ```solidity
-function submitClaim(address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable returns (bytes32 claimId)
+function startVault() external nonpayable
 ```
 
-Called by the committee to submit a claim for a bounty payout. This function should be called only on a safety period, when withdrawals are disabled, and while there&#39;s no other active claim. Cannot be called when the registry is in an emergency pause. Upon a call to this function by the committee the vault&#39;s withdrawals will be disabled until the claim is approved or dismissed. Also from the time of this call the arbitrator will have a period of  {HATVaultsRegistry.challengePeriod} to challenge the claim.
+Start the vault, deposits are disabled until the vault is first started
 
 
 
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _beneficiary | address | The submitted claim&#39;s beneficiary |
-| _bountyPercentage | uint16 | The submitted claim&#39;s bug requested reward percentage |
-| _descriptionHash | string | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| claimId | bytes32 | undefined |
 
 ### symbol
 
@@ -1326,55 +1040,6 @@ event Approval(address indexed owner, address indexed spender, uint256 value)
 | spender `indexed` | address | undefined |
 | value  | uint256 | undefined |
 
-### ApproveClaim
-
-```solidity
-event ApproveClaim(bytes32 indexed _claimId, address _committee, address indexed _approver, address indexed _beneficiary, uint256 _bountyPercentage, address _tokenLock, IHATVault.ClaimBounty _claimBounty)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId `indexed` | bytes32 | undefined |
-| _committee  | address | undefined |
-| _approver `indexed` | address | undefined |
-| _beneficiary `indexed` | address | undefined |
-| _bountyPercentage  | uint256 | undefined |
-| _tokenLock  | address | undefined |
-| _claimBounty  | IHATVault.ClaimBounty | undefined |
-
-### ChallengeClaim
-
-```solidity
-event ChallengeClaim(bytes32 indexed _claimId)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId `indexed` | bytes32 | undefined |
-
-### CommitteeCheckedIn
-
-```solidity
-event CommitteeCheckedIn()
-```
-
-
-
-
-
-
 ### Deposit
 
 ```solidity
@@ -1394,120 +1059,6 @@ event Deposit(address indexed sender, address indexed owner, uint256 assets, uin
 | assets  | uint256 | undefined |
 | shares  | uint256 | undefined |
 
-### DismissClaim
-
-```solidity
-event DismissClaim(bytes32 indexed _claimId)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId `indexed` | bytes32 | undefined |
-
-### SetArbitrator
-
-```solidity
-event SetArbitrator(address indexed _arbitrator)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitrator `indexed` | address | undefined |
-
-### SetArbitratorOptions
-
-```solidity
-event SetArbitratorOptions(bool _arbitratorCanChangeBounty, bool _arbitratorCanChangeBeneficiary, bool _arbitratorCanSubmitClaims)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _arbitratorCanChangeBounty  | bool | undefined |
-| _arbitratorCanChangeBeneficiary  | bool | undefined |
-| _arbitratorCanSubmitClaims  | bool | undefined |
-
-### SetBountySplit
-
-```solidity
-event SetBountySplit(IHATVault.BountySplit _bountySplit)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountySplit  | IHATVault.BountySplit | undefined |
-
-### SetChallengePeriod
-
-```solidity
-event SetChallengePeriod(uint256 _challengePeriod)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _challengePeriod  | uint256 | undefined |
-
-### SetChallengeTimeOutPeriod
-
-```solidity
-event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _challengeTimeOutPeriod  | uint256 | undefined |
-
-### SetCommittee
-
-```solidity
-event SetCommittee(address indexed _committee)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _committee `indexed` | address | undefined |
-
 ### SetDepositPause
 
 ```solidity
@@ -1523,55 +1074,6 @@ event SetDepositPause(bool _depositPause)
 | Name | Type | Description |
 |---|---|---|
 | _depositPause  | bool | undefined |
-
-### SetHATBountySplit
-
-```solidity
-event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
-
-### SetMaxBounty
-
-```solidity
-event SetMaxBounty(uint256 _maxBounty)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _maxBounty  | uint256 | undefined |
-
-### SetPendingMaxBounty
-
-```solidity
-event SetPendingMaxBounty(uint256 _maxBounty)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _maxBounty  | uint256 | undefined |
 
 ### SetVaultDescription
 
@@ -1589,10 +1091,10 @@ event SetVaultDescription(string _descriptionHash)
 |---|---|---|
 | _descriptionHash  | string | undefined |
 
-### SetVestingParams
+### SetWithdrawPaused
 
 ```solidity
-event SetVestingParams(uint256 _duration, uint256 _periods)
+event SetWithdrawPaused(bool _withdrawPaused)
 ```
 
 
@@ -1603,8 +1105,7 @@ event SetVestingParams(uint256 _duration, uint256 _periods)
 
 | Name | Type | Description |
 |---|---|---|
-| _duration  | uint256 | undefined |
-| _periods  | uint256 | undefined |
+| _withdrawPaused  | bool | undefined |
 
 ### SetWithdrawalFee
 
@@ -1621,27 +1122,6 @@ event SetWithdrawalFee(uint256 _newFee)
 | Name | Type | Description |
 |---|---|---|
 | _newFee  | uint256 | undefined |
-
-### SubmitClaim
-
-```solidity
-event SubmitClaim(bytes32 indexed _claimId, address _committee, address indexed _submitter, address indexed _beneficiary, uint256 _bountyPercentage, string _descriptionHash)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _claimId `indexed` | bytes32 | undefined |
-| _committee  | address | undefined |
-| _submitter `indexed` | address | undefined |
-| _beneficiary `indexed` | address | undefined |
-| _bountyPercentage  | uint256 | undefined |
-| _descriptionHash  | string | undefined |
 
 ### Transfer
 
@@ -1665,6 +1145,33 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 
 ```solidity
 event VaultDestroyed()
+```
+
+
+
+
+
+
+### VaultPayout
+
+```solidity
+event VaultPayout(uint256 _amount)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _amount  | uint256 | undefined |
+
+### VaultStarted
+
+```solidity
+event VaultStarted()
 ```
 
 
@@ -1713,17 +1220,6 @@ event WithdrawRequest(address indexed _beneficiary, uint256 _withdrawEnableTime)
 
 ## Errors
 
-### ActiveClaimExists
-
-```solidity
-error ActiveClaimExists()
-```
-
-
-
-
-
-
 ### AmountCannotBeZero
 
 ```solidity
@@ -1739,28 +1235,6 @@ error AmountCannotBeZero()
 
 ```solidity
 error AmountOfSharesMustBeMoreThanMinimalAmount()
-```
-
-
-
-
-
-
-### BountyPercentageHigherThanMaxBounty
-
-```solidity
-error BountyPercentageHigherThanMaxBounty()
-```
-
-
-
-
-
-
-### CannotSetToPerviousRewardController
-
-```solidity
-error CannotSetToPerviousRewardController()
 ```
 
 
@@ -1801,105 +1275,6 @@ error CannotUnpauseDestroyedVault()
 
 
 
-### ChallengePeriodEnded
-
-```solidity
-error ChallengePeriodEnded()
-```
-
-
-
-
-
-
-### ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod
-
-```solidity
-error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod()
-```
-
-
-
-
-
-
-### ClaimAlreadyChallenged
-
-```solidity
-error ClaimAlreadyChallenged()
-```
-
-
-
-
-
-
-### ClaimExpired
-
-```solidity
-error ClaimExpired()
-```
-
-
-
-
-
-
-### ClaimIdIsNotActive
-
-```solidity
-error ClaimIdIsNotActive()
-```
-
-
-
-
-
-
-### CommitteeAlreadyCheckedIn
-
-```solidity
-error CommitteeAlreadyCheckedIn()
-```
-
-
-
-
-
-
-### CommitteeBountyCannotBeMoreThanMax
-
-```solidity
-error CommitteeBountyCannotBeMoreThanMax()
-```
-
-
-
-
-
-
-### CommitteeNotCheckedInYet
-
-```solidity
-error CommitteeNotCheckedInYet()
-```
-
-
-
-
-
-
-### DelayPeriodForSettingMaxBountyHadNotPassed
-
-```solidity
-error DelayPeriodForSettingMaxBountyHadNotPassed()
-```
-
-
-
-
-
-
 ### DepositSlippageProtection
 
 ```solidity
@@ -1922,17 +1297,6 @@ error DuplicatedRewardController()
 
 
 
-### MaxBountyCannotBeMoreThanMaxBountyLimit
-
-```solidity
-error MaxBountyCannotBeMoreThanMaxBountyLimit()
-```
-
-
-
-
-
-
 ### MintSlippageProtection
 
 ```solidity
@@ -1944,98 +1308,10 @@ error MintSlippageProtection()
 
 
 
-### NoActiveClaimExists
+### OnlyClaimsManager
 
 ```solidity
-error NoActiveClaimExists()
-```
-
-
-
-
-
-
-### NoPendingMaxBounty
-
-```solidity
-error NoPendingMaxBounty()
-```
-
-
-
-
-
-
-### NotEnoughFeePaid
-
-```solidity
-error NotEnoughFeePaid()
-```
-
-
-
-
-
-
-### NotEnoughUserBalance
-
-```solidity
-error NotEnoughUserBalance()
-```
-
-
-
-
-
-
-### NotSafetyPeriod
-
-```solidity
-error NotSafetyPeriod()
-```
-
-
-
-
-
-
-### OnlyArbitratorOrRegistryOwner
-
-```solidity
-error OnlyArbitratorOrRegistryOwner()
-```
-
-
-
-
-
-
-### OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod
-
-```solidity
-error OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod()
-```
-
-
-
-
-
-
-### OnlyCallableIfChallenged
-
-```solidity
-error OnlyCallableIfChallenged()
-```
-
-
-
-
-
-
-### OnlyCommittee
-
-```solidity
-error OnlyCommittee()
+error OnlyClaimsManager()
 ```
 
 
@@ -2065,17 +1341,6 @@ error OnlyRegistryOwner()
 
 
 
-### PayoutMustBeUpToMaxBountyLimitOrHundredPercent
-
-```solidity
-error PayoutMustBeUpToMaxBountyLimitOrHundredPercent()
-```
-
-
-
-
-
-
 ### RedeemMoreThanMax
 
 ```solidity
@@ -2098,28 +1363,6 @@ error RedeemSlippageProtection()
 
 
 
-### SafetyPeriod
-
-```solidity
-error SafetyPeriod()
-```
-
-
-
-
-
-
-### SetSharesArraysMustHaveSameLength
-
-```solidity
-error SetSharesArraysMustHaveSameLength()
-```
-
-
-
-
-
-
 ### SystemInEmergencyPause
 
 ```solidity
@@ -2131,54 +1374,10 @@ error SystemInEmergencyPause()
 
 
 
-### TotalSplitPercentageShouldBeHundredPercent
+### VaultNotStartedYet
 
 ```solidity
-error TotalSplitPercentageShouldBeHundredPercent()
-```
-
-
-
-
-
-
-### UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod
-
-```solidity
-error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod()
-```
-
-
-
-
-
-
-### VestingDurationSmallerThanPeriods
-
-```solidity
-error VestingDurationSmallerThanPeriods()
-```
-
-
-
-
-
-
-### VestingDurationTooLong
-
-```solidity
-error VestingDurationTooLong()
-```
-
-
-
-
-
-
-### VestingPeriodsCannotBeZero
-
-```solidity
-error VestingPeriodsCannotBeZero()
+error VaultNotStartedYet()
 ```
 
 

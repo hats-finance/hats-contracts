@@ -13,7 +13,7 @@
 ### notifyArbitrator
 
 ```solidity
-function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATVault _vault, address _disputer) external payable
+function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATClaimsManager _vault, address _disputer) external payable
 ```
 
 
@@ -26,7 +26,7 @@ function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATVault
 |---|---|---|
 | _claimId | bytes32 | undefined |
 | _evidence | string | undefined |
-| _vault | contract IHATVault | undefined |
+| _vault | contract IHATClaimsManager | undefined |
 | _disputer | address | undefined |
 
 

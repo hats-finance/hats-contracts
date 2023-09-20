@@ -117,7 +117,7 @@ function claimChallenged(bytes32) external view returns (bool)
 ### disputes
 
 ```solidity
-function disputes(uint256) external view returns (bytes32 claimId, uint256 externalDisputeId, enum IHATKlerosConnector.Decision ruling, bool resolved, contract IHATVault vault)
+function disputes(uint256) external view returns (bytes32 claimId, uint256 externalDisputeId, enum IHATKlerosConnector.Decision ruling, bool resolved, contract IHATClaimsManager vault)
 ```
 
 
@@ -138,7 +138,7 @@ function disputes(uint256) external view returns (bytes32 claimId, uint256 exter
 | externalDisputeId | uint256 | undefined |
 | ruling | enum IHATKlerosConnector.Decision | undefined |
 | resolved | bool | undefined |
-| vault | contract IHATVault | undefined |
+| vault | contract IHATClaimsManager | undefined |
 
 ### externalIDtoLocalID
 
@@ -406,7 +406,7 @@ function metaEvidenceUpdates() external view returns (uint256)
 ### notifyArbitrator
 
 ```solidity
-function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATVault _vault, address _disputer) external payable
+function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATClaimsManager _vault, address _disputer) external payable
 ```
 
 
@@ -419,7 +419,7 @@ function notifyArbitrator(bytes32 _claimId, string _evidence, contract IHATVault
 |---|---|---|
 | _claimId | bytes32 | The Id of the active claim in Vault contract. |
 | _evidence | string | URI of the evidence to support the challenge. |
-| _vault | contract IHATVault | Relevant vault address. |
+| _vault | contract IHATClaimsManager | Relevant vault address. |
 | _disputer | address | Address that made the challenge.  Note that the validity of the claim should be checked by Hat arbitrator. |
 
 ### numberOfRulingOptions

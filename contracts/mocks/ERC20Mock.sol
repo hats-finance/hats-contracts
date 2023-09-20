@@ -83,19 +83,19 @@ contract ERC20Mock is ERC20 {
         uint256 amount
     ) internal override {
         if (reenterApproveClaim) {
-            HATVault(msg.sender).approveClaim("", 1000, address(0));
+            IHATClaimsManager(IHATVault(msg.sender).claimsManager()).approveClaim("", 1000, address(0));
         }
 
         if (reenterDeposit) {
-            HATVault(msg.sender).deposit(1, address(this));
+            IHATVault(msg.sender).deposit(1, address(this));
         }
 
         if (reenterWithdrawRequest) {
-            HATVault(msg.sender).withdrawRequest();
+            IHATVault(msg.sender).withdrawRequest();
         }
 
         if (reenterWithdraw) {
-            HATVault(msg.sender).withdraw(1, address(this), address(this));
+            IHATVault(msg.sender).withdraw(1, address(this), address(this));
         }
 
         if (badTransferFlag) {

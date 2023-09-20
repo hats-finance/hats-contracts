@@ -15,11 +15,11 @@ contract HATKlerosConnectorMock is HATKlerosConnector {
         uint256 _loserMultiplier
     ) HATKlerosConnector(_klerosArbitrator,_arbitratorExtraData, _hatArbitrator, _metaEvidence, _winnerMultiplier, _loserMultiplier) {}
 
-    function executeResolution(IHATArbitrator _arbitrator, IHATVault _vault, bytes32 _claimId) external {
+    function executeResolution(IHATArbitrator _arbitrator, IHATClaimsManager _vault, bytes32 _claimId) external {
         _arbitrator.executeResolution(_vault, _claimId);
     }
 
-    function dismissResolution(IHATArbitrator _arbitrator, IHATVault _vault, bytes32 _claimId) external {
+    function dismissResolution(IHATArbitrator _arbitrator, IHATClaimsManager _vault, bytes32 _claimId) external {
         _arbitrator.dismissResolution(_vault, _claimId);
     }
 }

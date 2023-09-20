@@ -18,18 +18,18 @@ contract HATArbitratorForConnector {
     IHATKlerosConnector public court;
     uint256 public resolutionChallengePeriod; // the amount of time that the expert committee's resolution can be challenged
 
-    mapping(IHATVault => mapping(bytes32 => Resolution)) public resolutions; // resolutions of disputes by the expert committee
-    mapping(IHATVault => mapping(bytes32 => uint256)) public resolutionChallengedAt;
+    mapping(IHATClaimsManager => mapping(bytes32 => Resolution)) public resolutions; // resolutions of disputes by the expert committee
+    mapping(IHATClaimsManager => mapping(bytes32 => uint256)) public resolutionChallengedAt;
 
 
-    modifier onlyResolvedDispute(IHATVault _vault, bytes32 _claimId) {
+    modifier onlyResolvedDispute(IHATClaimsManager _vault, bytes32 _claimId) {
         if (resolutions[_vault][_claimId].resolvedAt == 0) {
             revert("Unresolved");
         }
         _;
     }
 
-    modifier onlyUnresolvedDispute(IHATVault _vault, bytes32 _claimId) {
+    modifier onlyUnresolvedDispute(IHATClaimsManager _vault, bytes32 _claimId) {
         if (resolutions[_vault][_claimId].resolvedAt != 0) {
             revert("AlreadyResolved");
         }
@@ -46,23 +46,22 @@ contract HATArbitratorForConnector {
 
     // Challenge committee's claim
     function dispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     ) external {
-        (bytes32 claimId, , , , , uint32 challengedAt, , , , , , , ) = _vault
-            .activeClaim();
-        if (claimId != _claimId) {
+        IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
+        if (claim.claimId != _claimId) {
             revert("ClaimIsNotCurrentlyActiveClaim");
         }
 
-        if (challengedAt == 0) {
+        if (claim.challengedAt == 0) {
             _vault.challengeClaim(_claimId);
         }
     }
 
     // Accept the dispute on behalf of expert's committee.
     function acceptDispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         uint16 _bountyPercentage,
         address _beneficiary
@@ -79,7 +78,7 @@ contract HATArbitratorForConnector {
     }
 
     function challengeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         string calldata _evidence
     )
@@ -98,7 +97,7 @@ contract HATArbitratorForConnector {
     }  
 
     function executeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external
@@ -127,7 +126,7 @@ contract HATArbitratorForConnector {
     }
 
     function dismissResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external

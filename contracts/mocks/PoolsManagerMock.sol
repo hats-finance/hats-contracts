@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "../interfaces/IHATVault.sol";
+import "../interfaces/IHATVault.sol";
 import "../HATVaultsRegistry.sol";
 import "../RewardController.sol";
 //this contract is used as an helper contract only for testing purpose
@@ -13,15 +15,24 @@ contract VaultsManagerMock {
                     IERC20[] memory _assets,
                     address _committee,
                     uint16 _maxBounty,
-                    HATVault.BountySplit memory _bountySplit,
+                    IHATClaimsManager.BountySplit memory _bountySplit,
                     string memory _descriptionHash
                     ) external {
 
         IRewardController[] memory _rewardControllers = new IRewardController[](1);
         _rewardControllers[0] = _rewardController;
         for (uint256 i=0; i < _assets.length; i++) {
-            address vault = _hatVaults.createVault(IHATVault.VaultInitParams({
+            (address vault, ) = _hatVaults.createVault(
+                                IHATVault.VaultInitParams({
                                     asset: _assets[i],
+                                    name: "VAULT",
+                                    symbol: "VLT",
+                                    rewardControllers: _rewardControllers,
+                                    owner: _hatVaults.owner(),
+                                    isPaused: false,
+                                    descriptionHash: _descriptionHash
+                                }),
+                                IHATClaimsManager.ClaimsManagerInitParams({
                                     owner: _hatVaults.owner(),
                                     committee: _committee,
                                     arbitrator: 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF,
@@ -29,21 +40,16 @@ contract VaultsManagerMock {
                                     arbitratorCanChangeBeneficiary: false,
                                     arbitratorCanSubmitClaims: false,
                                     isTokenLockRevocable: false,
-                                    name: "VAULT",
-                                    symbol: "VLT",
-                                    rewardControllers: _rewardControllers,
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
-                                    descriptionHash: _descriptionHash,
                                     vestingDuration: 86400,
-                                    vestingPeriods: 10,
-                                    isPaused: false
+                                    vestingPeriods: 10
                                 }));
             _rewardController.setAllocPoint(vault, _allocPoint);
         }
     }
 
-    function setVaultsAllocPoint(HATVault[] memory _hatVaults, IRewardController _rewardController, uint256 _allocPoint) external {
+    function setVaultsAllocPoint(IHATVault[] memory _hatVaults, IRewardController _rewardController, uint256 _allocPoint) external {
         for (uint256 i=0; i < _hatVaults.length; i++) {
             _rewardController.setAllocPoint(address(_hatVaults[i]), _allocPoint);
         }
@@ -54,12 +60,12 @@ contract VaultsManagerMock {
         target.claimReward(_vault, address(this));
     }
 
-    function deposit(HATVault _target, IERC20 _asset, uint256 _amount) external {
+    function deposit(IHATVault _target, IERC20 _asset, uint256 _amount) external {
         _asset.approve(address(_target), _amount);
         _target.deposit(_amount, address(this));
     }
 
-    function depositTwice(HATVault _target, IERC20 _asset, uint256 _amount) external {
+    function depositTwice(IHATVault _target, IERC20 _asset, uint256 _amount) external {
         _asset.approve(address(_target), _amount * 2);
         _target.deposit(_amount, address(this));
         _target.deposit(_amount, address(this));

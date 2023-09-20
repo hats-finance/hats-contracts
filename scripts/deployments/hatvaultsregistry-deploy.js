@@ -75,6 +75,10 @@ async function main(config) {
     const hatVaultImplementation = await HATVault.deploy();
     await hatVaultImplementation.deployed();
 
+    const HATClaimsManager = await ethers.getContractFactory("HATClaimsManager");
+    const hatClaimsManagerImplementation = await HATClaimsManager.deploy();
+    await hatVaultImplementation.deployed();
+
     if (!silent) {
         console.log("HATVault implementation address: " + hatVaultImplementation.address);
     }
@@ -90,6 +94,7 @@ async function main(config) {
     const HATVaultsRegistry = await ethers.getContractFactory("HATVaultsRegistry");
     const hatVaultsRegistry = await HATVaultsRegistry.deploy(
         hatVaultImplementation.address,
+        hatClaimsManagerImplementation.address,
         governance,
         arbitrator,
         hatToken,

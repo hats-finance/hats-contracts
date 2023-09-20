@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./tokenlock/TokenLockFactory.sol";
 import "./interfaces/IHATVaultsRegistry.sol";
-import "./HATVault.sol";
+import "./interfaces/IHATVault.sol";
 
 /** @title Registry to deploy Hats.finance vaults and manage shared parameters
  * @author Hats.finance
@@ -55,6 +55,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     uint16 public constant MAX_HAT_SPLIT = 2000;
 
     address public hatVaultImplementation;
+    address public hatClaimsManagerImplementation;
     address[] public hatVaults;
     
     // vault address => is visible
@@ -92,6 +93,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     /**
     * @notice initialize -
     * @param _hatVaultImplementation The hat vault implementation address.
+    * @param _hatClaimsManagerImplementation The hat claims manager implementation address.
     * @param _hatGovernance The governance address.
     * @param _HAT the HAT token address
     * @param _bountyGovernanceHAT The default percentage of a claim's total
@@ -105,6 +107,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     */
     constructor(
         address _hatVaultImplementation,
+        address _hatClaimsManagerImplementation,
         address _hatGovernance,
         address _defaultArbitrator,
         address _HAT,
@@ -114,6 +117,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     ) {
         _transferOwnership(_hatGovernance);
         hatVaultImplementation = _hatVaultImplementation;
+        hatClaimsManagerImplementation = _hatClaimsManagerImplementation;
         HAT = IERC20(_HAT);
 
         validateHATSplit(_bountyGovernanceHAT, _bountyHackerHATVested);
@@ -136,6 +140,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultChallengeTimeOutPeriod = 5 weeks;
         emit RegistryCreated(
             _hatVaultImplementation,
+            _hatClaimsManagerImplementation,
             _HAT,
             address(_tokenLockFactory),
             generalParameters,
@@ -148,10 +153,16 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         );
     }
 
-    /** @notice See {IHATVaultsRegistry-setHATVaultImplementation}. */
-    function setHATVaultImplementation(address _hatVaultImplementation) external onlyOwner {
+    /** @notice See {IHATVaultsRegistry-setVaultImplementations}. */
+    function setVaultImplementations(
+        address _hatVaultImplementation,
+        address _hatClaimsManagerImplementation
+    ) external onlyOwner {
         hatVaultImplementation = _hatVaultImplementation;
+        hatClaimsManagerImplementation = _hatClaimsManagerImplementation;
+
         emit SetHATVaultImplementation(_hatVaultImplementation);
+        emit SetHATClaimsManagerImplementation(_hatClaimsManagerImplementation);
     }
 
     /** @notice See {IHATVaultsRegistry-setSwapToken}. */
@@ -266,14 +277,19 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     }
 
     /** @notice See {IHATVaultsRegistry-createVault}. */
-    function createVault(IHATVault.VaultInitParams calldata _params) external returns(address vault) {
+    function createVault(
+        IHATVault.VaultInitParams calldata _vaultParams,
+        IHATClaimsManager.ClaimsManagerInitParams calldata _claimsManagerParams
+    ) external returns(address vault, address vaultClaimsManager) {
         vault = Clones.clone(hatVaultImplementation);
+        vaultClaimsManager = Clones.clone(hatClaimsManagerImplementation);
 
-        HATVault(vault).initialize(_params);
+        IHATVault(vault).initialize(vaultClaimsManager, _vaultParams);
+        IHATClaimsManager(vaultClaimsManager).initialize(IHATVault(vault), _claimsManagerParams);
 
         hatVaults.push(vault);
 
-        emit VaultCreated(vault, _params);
+        emit VaultCreated(vault, vaultClaimsManager, _vaultParams, _claimsManagerParams);
     }
 
     /** @notice See {IHATVaultsRegistry-setVaultVisibility}. */
@@ -383,6 +399,10 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     /** @notice See {IHATVaultsRegistry-getNumberOfVaults}. */
     function getNumberOfVaults() external view returns(uint256) {
         return hatVaults.length;
+    }
+
+    function owner() public view override(IHATVaultsRegistry, Ownable) virtual returns (address) {
+        return Ownable.owner();
     }
 
     /** @notice See {IHATVaultsRegistry-validateHATSplit}. */

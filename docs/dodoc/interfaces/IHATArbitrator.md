@@ -13,7 +13,7 @@
 ### acceptDispute
 
 ```solidity
-function acceptDispute(contract IHATVault _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, address[] _disputersToConfiscate, string _descriptionHash) external nonpayable
+function acceptDispute(contract IHATClaimsManager _vault, bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary, address[] _disputersToRefund, address[] _disputersToConfiscate, string _descriptionHash) external nonpayable
 ```
 
 Acccept the dispute - i.e. rule in favor of the disputers and against the original claim from the committee Can only be called by the Expert Committee The expert committee can include a payment for their service in the payout process
@@ -24,7 +24,7 @@ Acccept the dispute - i.e. rule in favor of the disputers and against the origin
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 | _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
 | _beneficiary | address | the (new) benficiary of the claim |
@@ -35,7 +35,7 @@ Acccept the dispute - i.e. rule in favor of the disputers and against the origin
 ### approveSubmitClaimRequest
 
 ```solidity
-function approveSubmitClaimRequest(contract IHATVault _vault, bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
+function approveSubmitClaimRequest(contract IHATClaimsManager _vault, bytes32 _internalClaimId, address _beneficiary, uint16 _bountyPercentage, string _descriptionHash) external nonpayable
 ```
 
 Submit a new claim on the basis of a submitClaimRequest only calleable by the expert committee the claim must be submitted within the submitClaimRequestReviewPeriod
@@ -46,7 +46,7 @@ Submit a new claim on the basis of a submitClaimRequest only calleable by the ex
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the vault where the claim was created |
+| _vault | contract IHATClaimsManager | the vault where the claim was created |
 | _internalClaimId | bytes32 | the id of the claim to approve |
 | _beneficiary | address | the (new) benficiary of the claim |
 | _bountyPercentage | uint16 | the percentage of the vault that will be paid out to the _beneficiary |
@@ -55,7 +55,7 @@ Submit a new claim on the basis of a submitClaimRequest only calleable by the ex
 ### challengeResolution
 
 ```solidity
-function challengeResolution(contract IHATVault _vault, bytes32 _claimId, string _evidence) external payable
+function challengeResolution(contract IHATClaimsManager _vault, bytes32 _claimId, string _evidence) external payable
 ```
 
 Challenge a resolution of the expert committee - i.e. bring it to the attation of the court
@@ -66,14 +66,14 @@ Challenge a resolution of the expert committee - i.e. bring it to the attation o
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 | _evidence | string | URI of the evidence to support the challenge |
 
 ### confiscateDisputers
 
 ```solidity
-function confiscateDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToConfiscate) external nonpayable
+function confiscateDisputers(contract IHATClaimsManager _vault, bytes32 _claimId, address[] _disputersToConfiscate) external nonpayable
 ```
 
 Forfeit the bonds of the given list of disputers. Their bonds will be sent to the expert committee
@@ -84,14 +84,14 @@ Forfeit the bonds of the given list of disputers. Their bonds will be sent to th
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 | _disputersToConfiscate | address[] | a list of addresses of disputers whose bond will be forfeited |
 
 ### dismissDispute
 
 ```solidity
-function dismissDispute(contract IHATVault _vault, bytes32 _claimId, string _descriptionHash) external nonpayable
+function dismissDispute(contract IHATClaimsManager _vault, bytes32 _claimId, string _descriptionHash) external nonpayable
 ```
 
 Dismiss the dispute - i.e. approve the original claim from the committee Can only be called by the expert commmittee. The expert committee will receive the bonds of the disputers as a payment for their service
@@ -102,14 +102,14 @@ Dismiss the dispute - i.e. approve the original claim from the committee Can onl
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 | _descriptionHash | string | an (ipfs) hash representing the motiviations of the dismissal |
 
 ### dismissResolution
 
 ```solidity
-function dismissResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function dismissResolution(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 Dismiss a resolution from the expert committee can only be called by the court
@@ -120,7 +120,7 @@ Dismiss a resolution from the expert committee can only be called by the court
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### dismissSubmitClaimRequest
@@ -143,7 +143,7 @@ Dismiss a request to create a claim. Can only be called by the expert committee
 ### dispute
 
 ```solidity
-function dispute(contract IHATVault _vault, bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
+function dispute(contract IHATClaimsManager _vault, bytes32 _claimId, uint256 _bondAmount, string _descriptionHash) external nonpayable
 ```
 
 Dispute the commitee&#39;s claim Can be called by anyone
@@ -154,7 +154,7 @@ Dispute the commitee&#39;s claim Can be called by anyone
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the vault that the claim was created |
+| _vault | contract IHATClaimsManager | the vault that the claim was created |
 | _claimId | bytes32 | the id of the claim |
 | _bondAmount | uint256 | Amount of tokens that the disputer will put up as a bond. This must be at least minBondAmount. The dispute is accepted if the total amount of bonds exceeds bondsNeededToStartDispute |
 | _descriptionHash | string | undefined |
@@ -162,7 +162,7 @@ Dispute the commitee&#39;s claim Can be called by anyone
 ### executeResolution
 
 ```solidity
-function executeResolution(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function executeResolution(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 execute a resolution from the expert committee if the resolution was challenged, this can only be called by the court if the resolution was not challenged durring the resolutionChallengePeriod, this can be called by anyone
@@ -173,13 +173,13 @@ execute a resolution from the expert committee if the resolution was challenged,
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### reclaimBond
 
 ```solidity
-function reclaimBond(contract IHATVault _vault, bytes32 _claimId) external nonpayable
+function reclaimBond(contract IHATClaimsManager _vault, bytes32 _claimId) external nonpayable
 ```
 
 reclaim a bond that msg.sender has put up for a given claim
@@ -190,13 +190,13 @@ reclaim a bond that msg.sender has put up for a given claim
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 
 ### refundDisputers
 
 ```solidity
-function refundDisputers(contract IHATVault _vault, bytes32 _claimId, address[] _disputersToRefund) external nonpayable
+function refundDisputers(contract IHATClaimsManager _vault, bytes32 _claimId, address[] _disputersToRefund) external nonpayable
 ```
 
 release the bonds of the disputers, so that they can claim them back
@@ -207,7 +207,7 @@ release the bonds of the disputers, so that they can claim them back
 
 | Name | Type | Description |
 |---|---|---|
-| _vault | contract IHATVault | the address of the vault where the claim was started |
+| _vault | contract IHATClaimsManager | the address of the vault where the claim was started |
 | _claimId | bytes32 | id of the claim that was disputed. Must be the currently active claim |
 | _disputersToRefund | address[] | array of addresses |
 
@@ -266,7 +266,7 @@ Submit a request for the expert committee to consider a claim A security researc
 ### BondRefundClaimed
 
 ```solidity
-event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address _disputer, uint256 _amountClaimed)
+event BondRefundClaimed(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, address _disputer, uint256 _amountClaimed)
 ```
 
 
@@ -277,7 +277,7 @@ event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _clai
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer  | address | undefined |
 | _amountClaimed  | uint256 | undefined |
@@ -285,7 +285,7 @@ event BondRefundClaimed(contract IHATVault indexed _vault, bytes32 indexed _clai
 ### ClaimDisputed
 
 ```solidity
-event ClaimDisputed(contract IHATVault indexed _vault, bytes32 indexed _claimId, address indexed _disputer, uint256 _bondAmount, string _descriptionHash)
+event ClaimDisputed(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, address indexed _disputer, uint256 _bondAmount, string _descriptionHash)
 ```
 
 
@@ -296,7 +296,7 @@ event ClaimDisputed(contract IHATVault indexed _vault, bytes32 indexed _claimId,
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputer `indexed` | address | undefined |
 | _bondAmount  | uint256 | undefined |
@@ -321,7 +321,7 @@ event CourtSet(address indexed _court)
 ### DisputeAccepted
 
 ```solidity
-event DisputeAccepted(contract IHATVault indexed _vault, bytes32 indexed _claimId, uint16 _bountyPercentage, address _beneficiary, string _descriptionHash)
+event DisputeAccepted(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, uint16 _bountyPercentage, address _beneficiary, string _descriptionHash)
 ```
 
 
@@ -332,7 +332,7 @@ event DisputeAccepted(contract IHATVault indexed _vault, bytes32 indexed _claimI
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _bountyPercentage  | uint16 | undefined |
 | _beneficiary  | address | undefined |
@@ -341,7 +341,7 @@ event DisputeAccepted(contract IHATVault indexed _vault, bytes32 indexed _claimI
 ### DisputeDismissed
 
 ```solidity
-event DisputeDismissed(contract IHATVault indexed _vault, bytes32 indexed _claimId, string _descriptionHash)
+event DisputeDismissed(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, string _descriptionHash)
 ```
 
 
@@ -352,14 +352,14 @@ event DisputeDismissed(contract IHATVault indexed _vault, bytes32 indexed _claim
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _descriptionHash  | string | undefined |
 
 ### DisputersConfiscated
 
 ```solidity
-event DisputersConfiscated(contract IHATVault indexed _vault, bytes32 indexed _claimId, address[] _disputers)
+event DisputersConfiscated(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, address[] _disputers)
 ```
 
 
@@ -370,14 +370,14 @@ event DisputersConfiscated(contract IHATVault indexed _vault, bytes32 indexed _c
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputers  | address[] | undefined |
 
 ### DisputersRefunded
 
 ```solidity
-event DisputersRefunded(contract IHATVault indexed _vault, bytes32 indexed _claimId, address[] _disputers)
+event DisputersRefunded(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId, address[] _disputers)
 ```
 
 
@@ -388,14 +388,14 @@ event DisputersRefunded(contract IHATVault indexed _vault, bytes32 indexed _clai
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 | _disputers  | address[] | undefined |
 
 ### ResolutionChallenged
 
 ```solidity
-event ResolutionChallenged(contract IHATVault indexed _vault, bytes32 indexed _claimId)
+event ResolutionChallenged(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -406,13 +406,13 @@ event ResolutionChallenged(contract IHATVault indexed _vault, bytes32 indexed _c
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### ResolutionDismissed
 
 ```solidity
-event ResolutionDismissed(contract IHATVault indexed _vault, bytes32 indexed _claimId)
+event ResolutionDismissed(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -423,13 +423,13 @@ event ResolutionDismissed(contract IHATVault indexed _vault, bytes32 indexed _cl
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### ResolutionExecuted
 
 ```solidity
-event ResolutionExecuted(contract IHATVault indexed _vault, bytes32 indexed _claimId)
+event ResolutionExecuted(contract IHATClaimsManager indexed _vault, bytes32 indexed _claimId)
 ```
 
 
@@ -440,13 +440,13 @@ event ResolutionExecuted(contract IHATVault indexed _vault, bytes32 indexed _cla
 
 | Name | Type | Description |
 |---|---|---|
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 | _claimId `indexed` | bytes32 | undefined |
 
 ### SubmitClaimRequestApproved
 
 ```solidity
-event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId, contract IHATVault indexed _vault)
+event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 indexed _claimId, contract IHATClaimsManager indexed _vault)
 ```
 
 
@@ -459,7 +459,7 @@ event SubmitClaimRequestApproved(bytes32 indexed _internalClaimId, bytes32 index
 |---|---|---|
 | _internalClaimId `indexed` | bytes32 | undefined |
 | _claimId `indexed` | bytes32 | undefined |
-| _vault `indexed` | contract IHATVault | undefined |
+| _vault `indexed` | contract IHATClaimsManager | undefined |
 
 ### SubmitClaimRequestCreated
 

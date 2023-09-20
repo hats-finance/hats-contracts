@@ -123,4 +123,8 @@ contract HatVaultForConnectorMock {
 
         emit DismissClaim(_claimId);
     }
+
+    function getActiveClaim() public view returns(Claim memory) {
+        return activeClaim;
+    }
 }

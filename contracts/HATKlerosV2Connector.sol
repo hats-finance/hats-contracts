@@ -11,7 +11,7 @@
 pragma solidity 0.8.16;
 
 import "./interfaces/IHATArbitrator.sol";
-import "./interfaces/IHATVault.sol";
+import "./interfaces/IHATClaimsManager.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 import { IArbitrable, IArbitrator } from "@kleros/erc-792/contracts/IArbitrator.sol";
 
@@ -29,7 +29,7 @@ contract HATKlerosV2Connector is IArbitrable, IHATKlerosConnector {
         uint256 externalDisputeId; // Id of the dispute created in Kleros court.
         Decision ruling; // Ruling given by the arbitrator.
         bool resolved; // True if the dispute has been resolved.
-        IHATVault vault; // Address of the vault related to a dispute.
+        IHATClaimsManager vault; // Address of the vault related to a dispute.
     }
 
     IArbitrator public immutable klerosArbitrator; // The kleros arbitrator contract (e.g. Kleros Court).
@@ -76,7 +76,7 @@ contract HATKlerosV2Connector is IArbitrable, IHATKlerosConnector {
     function notifyArbitrator(
         bytes32 _claimId,
         string calldata _evidence,
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         address _disputer
     ) external payable override {
         require(msg.sender == address(hatArbitrator), "Wrong caller");

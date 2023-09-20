@@ -74,7 +74,7 @@ contract("HATKlerosConnector", () => {
     await hatArbitrator.connect(governor).setCourt(hatConnector.address);
     // Initial setup. Create claim, challenge it, accept the challenge by committee and invoke kleros arbitrator after
     await hatVault.connect(committee).submitClaim(await claimant.getAddress(), vaultBounty, vaultDescritionHash);
-    activeClaim = await hatVault.activeClaim();
+    activeClaim = await hatVault.getActiveClaim();
     claimId = activeClaim[0];
     // Claim is disputed by the disputer and vault is notified.
     await hatArbitrator.connect(disputer).dispute(hatVault.address, claimId);
@@ -99,7 +99,7 @@ contract("HATKlerosConnector", () => {
     expect(resolution[1]).to.equal(expertCommitteeBounty);
     expect(resolution[2]).to.not.equal(0, "Resolve timestamp should not be 0");
 
-    activeClaim = await hatVault.activeClaim();
+    activeClaim = await hatVault.getActiveClaim();
     expect(activeClaim[5]).to.not.equal(0, "Challenge timestamp should not be 0");
   });
 
@@ -226,7 +226,7 @@ contract("HATKlerosConnector", () => {
     expect(disputeData[3]).to.equal(true, "Resolved should be true");
     expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
-    activeClaim = await hatVault.activeClaim();
+    activeClaim = await hatVault.getActiveClaim();
     expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 
@@ -260,7 +260,7 @@ contract("HATKlerosConnector", () => {
     expect(disputeData[3]).to.equal(true, "Resolved should be true");
     expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
-    activeClaim = await hatVault.activeClaim();
+    activeClaim = await hatVault.getActiveClaim();
     expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 
@@ -279,7 +279,7 @@ contract("HATKlerosConnector", () => {
     expect(disputeData[3]).to.equal(true, "Resolved should be true");
     expect(disputeData[4]).to.equal(hatVault.address, "Incorrect hat vault address");
 
-    activeClaim = await hatVault.activeClaim();
+    activeClaim = await hatVault.getActiveClaim();
     expect(activeClaim[0]).to.equal(EMPTY_HASH, "Active claim should be deleted");
   });
 

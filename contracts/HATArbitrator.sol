@@ -21,13 +21,13 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     uint256 public resolutionChallengePeriod; // the amount of time that the expert committee's resolution can be challenged
     uint256 public submitClaimRequestReviewPeriod; // the time within which the expert committee must decide on a submitClaimRequest
 
-    mapping(address => mapping(IHATVault => mapping(bytes32 => uint256)))
+    mapping(address => mapping(IHATClaimsManager => mapping(bytes32 => uint256)))
         public disputersBonds; // bonds provided by disputers
-    mapping(address => mapping(IHATVault => mapping(bytes32 => bool)))
+    mapping(address => mapping(IHATClaimsManager => mapping(bytes32 => bool)))
         public bondClaimable; // whether a given bond is reclaimable by the disputer
-    mapping(IHATVault => mapping(bytes32 => uint256)) public totalBondsOnClaim; // total amount of bonds ona given claim
-    mapping(IHATVault => mapping(bytes32 => Resolution)) public resolutions; // resolutions of disputes by the expert committee
-    mapping(IHATVault => mapping(bytes32 => uint256))
+    mapping(IHATClaimsManager => mapping(bytes32 => uint256)) public totalBondsOnClaim; // total amount of bonds ona given claim
+    mapping(IHATClaimsManager => mapping(bytes32 => Resolution)) public resolutions; // resolutions of disputes by the expert committee
+    mapping(IHATClaimsManager => mapping(bytes32 => uint256))
         public resolutionChallengedAt; // the time an expert committee's resolution was challenged
     mapping(bytes32 => SubmitClaimRequest) public submitClaimRequests; // a registry of requests to the expert committee to submit a claim
 
@@ -40,48 +40,34 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         _;
     }
 
-    modifier onlyChallengedActiveClaim(IHATVault _vault, bytes32 _claimId) {
-        (
-            bytes32 claimId,
-            ,
-            ,
-            ,
-            uint32 createdAt,
-            uint32 challengedAt,
-            ,
-            ,
-            ,
-            uint32 challengePeriod,
-            uint32 challengeTimeOutPeriod,
-            ,
+    modifier onlyChallengedActiveClaim(IHATClaimsManager _vault, bytes32 _claimId) {
+        IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
 
-        ) = _vault.activeClaim();
-
-        if (claimId != _claimId) {
+        if (claim.claimId != _claimId) {
             revert ClaimIsNotCurrentlyActiveClaim();
         }
 
-        if (challengedAt == 0) {
+        if (claim.challengedAt == 0) {
             revert ClaimIsNotDisputed();
         }
 
         if (
             block.timestamp >=
-            createdAt + challengePeriod + challengeTimeOutPeriod
+            claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod
         ) {
             revert ClaimExpired();
         }
         _;
     }
 
-    modifier onlyUnresolvedDispute(IHATVault _vault, bytes32 _claimId) {
+    modifier onlyUnresolvedDispute(IHATClaimsManager _vault, bytes32 _claimId) {
         if (resolutions[_vault][_claimId].resolvedAt != 0) {
             revert AlreadyResolved();
         }
         _;
     }
 
-    modifier onlyResolvedDispute(IHATVault _vault, bytes32 _claimId) {
+    modifier onlyResolvedDispute(IHATClaimsManager _vault, bytes32 _claimId) {
         if (resolutions[_vault][_claimId].resolvedAt == 0) {
             revert NoResolution();
         }
@@ -124,7 +110,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-dispute}. */
     function dispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         uint256 _bondAmount,
         string calldata _descriptionHash
@@ -133,9 +119,8 @@ contract HATArbitrator is IHATArbitrator, Ownable {
             revert BondAmountSubmittedTooLow();
         }
 
-        (bytes32 claimId, , , , , uint32 challengedAt, , , , , , , ) = _vault
-            .activeClaim();
-        if (claimId != _claimId) {
+        IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
+        if (claim.claimId != _claimId) {
             revert ClaimIsNotCurrentlyActiveClaim();
         }
 
@@ -145,11 +130,11 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         token.safeTransferFrom(msg.sender, address(this), _bondAmount);
 
         if (totalBondsOnClaim[_vault][_claimId] >= bondsNeededToStartDispute) {
-            if (challengedAt == 0) {
+            if (claim.challengedAt == 0) {
                 _vault.challengeClaim(_claimId);
             } else {
                 // solhint-disable-next-line not-rely-on-time
-                if (block.timestamp > challengedAt + 24 hours) {
+                if (block.timestamp > claim.challengedAt + 24 hours) {
                     revert CannotSubmitMoreEvidence();
                 }
             }
@@ -166,7 +151,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-dismissDispute}. */
     function dismissDispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         string calldata _descriptionHash
     )
@@ -185,7 +170,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-acceptDispute}. */
     function acceptDispute(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         uint16 _bountyPercentage,
         address _beneficiary,
@@ -217,7 +202,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-refundDisputers}. */
     function refundDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToRefund
     )
@@ -230,7 +215,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     }
 
     function _refundDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToRefund
     ) internal {
@@ -246,7 +231,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-confiscateDisputers}. */
     function confiscateDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToConfiscate
     )
@@ -259,7 +244,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     }
 
     function _confiscateDisputers(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         address[] calldata _disputersToConfiscate
     ) internal {
@@ -280,31 +265,17 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     }
 
     /** @notice See {IHATArbitrator-reclaimBond}. */
-    function reclaimBond(IHATVault _vault, bytes32 _claimId) external {
+    function reclaimBond(IHATClaimsManager _vault, bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_vault][_claimId]) {
             // the bond is claimable if either
             // (a) it is not part of the curr
 
-            (
-                bytes32 claimId,
-                ,
-                ,
-                ,
-                uint32 createdAt,
-                ,
-                ,
-                ,
-                ,
-                uint32 challengePeriod,
-                uint32 challengeTimeOutPeriod,
-                ,
-
-            ) = _vault.activeClaim();
+            IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
 
             if (
-                claimId == _claimId &&
+                claim.claimId == _claimId &&
                 block.timestamp <
-                createdAt + challengePeriod + challengeTimeOutPeriod
+                claim.createdAt + claim.challengePeriod + claim.challengeTimeOutPeriod
             ) {
                 revert CannotClaimBond();
             }
@@ -321,7 +292,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-executeResolution}. */
     function executeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external
@@ -354,7 +325,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-dismissResolution}. */
     function dismissResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId
     )
         external
@@ -376,7 +347,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-challengeResolution}. */
     function challengeResolution(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _claimId,
         string calldata _evidence
     )
@@ -458,7 +429,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
 
     /** @notice See {IHATArbitrator-approveSubmitClaimRequest}. */
     function approveSubmitClaimRequest(
-        IHATVault _vault,
+        IHATClaimsManager _vault,
         bytes32 _internalClaimId,
         address _beneficiary,
         uint16 _bountyPercentage,

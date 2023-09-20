@@ -4,6 +4,7 @@
 pragma solidity 0.8.16;
 
 import "./IHATVault.sol";
+import "./IHATClaimsManager.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /** @title Interface for the Hats.finance Vault Registry
@@ -171,6 +172,7 @@ interface IHATVaultsRegistry {
     /**
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
+     * @param _hatClaimsManagerImplementation The HATClaimsManager implementation address
      * @param _HAT The HAT token address
      * @param _tokenLockFactory The token lock factory address
      * @param _generalParameters The registry's general parameters
@@ -178,9 +180,11 @@ interface IHATVaultsRegistry {
      * @param _bountyHackerHATVested The HAT bounty vested for the hacker
      * @param _hatGovernance The registry's governance
      * @param _defaultChallengePeriod The new default challenge period
+     * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
      */
     event RegistryCreated(
         address _hatVaultImplementation,
+        address _hatClaimsManagerImplementation,
         address _HAT,
         address _tokenLockFactory,
         GeneralParameters _generalParameters,
@@ -260,9 +264,16 @@ interface IHATVaultsRegistry {
 
     /** @dev Emitted when a new vault is created
      * @param _vault The address of the vault to add to the registry
-     * @param _params The vault initialization parameters
+     * @param _claimsManager The address of the vault's claims manager
+     * @param _vaultParams The vault initialization parameters
+     * @param _claimsManagerParams The vault's claims manager initialization parameters
      */
-    event VaultCreated(address indexed _vault, IHATVault.VaultInitParams _params);
+    event VaultCreated(
+        address indexed _vault,
+        address indexed _claimsManager,
+        IHATVault.VaultInitParams _vaultParams,
+        IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams
+    );
     
     /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
      * the HATS tokens are sent to beneficiary through vesting contract
@@ -323,6 +334,12 @@ interface IHATVaultsRegistry {
     event SetHATVaultImplementation(address indexed _hatVaultImplementation);
 
     /**
+     * @notice Emitted when a new HATClaimsManager implementation is set
+     * @param _hatClaimsManagerImplementation The address of the new HATClaimsManager implementation
+     */
+    event SetHATClaimsManagerImplementation(address indexed _hatClaimsManagerImplementation);
+
+    /**
      * @notice Called by governance to pause/unpause the system in case of an
      * emergency
      * @param _isEmergencyPaused Is the system in an emergency pause
@@ -336,11 +353,12 @@ interface IHATVaultsRegistry {
     function setSwapToken(address _swapToken) external;
 
     /**
-     * @notice Called by governance to set a new HATVault implementation to be
+     * @notice Called by governance to set a new HATVault and HATVault implementation to be
      * used by the registry for creating new vaults
-     * @param _hatVaultImplementation Is the system in an emergency pause
+     * @param _hatVaultImplementation The address of the HATVault implementation
+     * @param _hatClaimsManagerImplementation The address of the HATClaimsManager implementation
      */
-    function setHATVaultImplementation(address _hatVaultImplementation) external;
+    function setVaultImplementations(address _hatVaultImplementation, address _hatClaimsManagerImplementation) external;
 
     /**
      * @notice Emit an event that includes the given _descriptionHash
@@ -479,10 +497,14 @@ interface IHATVaultsRegistry {
      * @notice Create a new vault
      * NOTE: Vaults should not use tokens which do not guarantee that the 
      * amount specified is the amount transferred
-     * @param _params The vault initialization parameters
+     * @param _vaultParams The vault initialization parameters
+     * @param _vaultParams The vault token initialization parameters
      * @return vault The address of the new vault
      */
-    function createVault(IHATVault.VaultInitParams calldata _params) external returns(address vault);
+    function createVault(
+        IHATVault.VaultInitParams calldata _vaultParams,
+        IHATClaimsManager.ClaimsManagerInitParams calldata _claimsManagerParams
+    ) external returns(address vault, address vaultClaimsManager);
 
     /**
      * @notice Called by governance to change the UI visibility of a vault
@@ -574,4 +596,51 @@ interface IHATVaultsRegistry {
      */
     function getNumberOfVaults() external view returns(uint256);
 
+    /**
+     * @notice Get the fee setter address
+     * @return The address of the fee setter
+     */
+    function feeSetter() external view returns(address);
+
+    /**
+     * @notice Get whether the system is in an emergency pause
+     * @return Whether the system is in an emergency pause
+     */
+    function isEmergencyPaused() external view returns(bool);
+
+    /**
+     * @notice Get the owner address
+     * @return The address of the owner
+     */
+    function owner() external view returns(address);
+
+    /**
+     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to governance
+     * @return The default percentage of the total bounty to be swapped to HATs and sent to governance
+     */
+    function defaultBountyGovernanceHAT() external view returns(uint16);
+
+    /**
+     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+     * @return The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
+     */
+    function defaultBountyHackerHATVested() external view returns(uint16);
+
+    /**
+     * @notice Get the default arbitrator address
+     * @return The default arbitrator address
+     */
+    function defaultArbitrator() external view returns(address);
+
+    /**
+     * @notice Get the default challenge period
+     * @return The default challenge period
+     */
+    function defaultChallengePeriod() external view returns(uint32);
+
+    /**
+     * @notice Get the default challenge time out period
+     * @return The default challenge time out period
+     */
+    function defaultChallengeTimeOutPeriod() external view returns(uint32);
 }

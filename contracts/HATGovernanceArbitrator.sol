@@ -4,16 +4,16 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./HATVault.sol";
+import "./interfaces/IHATClaimsManager.sol";
 
 contract HATGovernanceArbitrator is Ownable {
 
-    function approveClaim(HATVault _vault, bytes32 _claimId) external onlyOwner {
+    function approveClaim(IHATClaimsManager _vault, bytes32 _claimId) external onlyOwner {
         _vault.challengeClaim(_claimId);
         _vault.approveClaim(_claimId, 0, address(0));
     }
 
-    function dismissClaim(HATVault _vault, bytes32 _claimId) external onlyOwner {
+    function dismissClaim(IHATClaimsManager _vault, bytes32 _claimId) external onlyOwner {
         _vault.challengeClaim(_claimId);
         _vault.dismissClaim(_claimId);
     }
