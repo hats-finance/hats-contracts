@@ -16,6 +16,7 @@ import "./interfaces/IHATArbitrator.sol";
 import "./interfaces/IHATClaimsManager.sol";
 import "./interfaces/IHATKlerosConnector.sol";
 
+/** dummy change for the gas savings competition **/
 /**
  *  @title HATKlerosConnector
  *  @dev This contract acts a connector between HatsFinance and Kleros court.
