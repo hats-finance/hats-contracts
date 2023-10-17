@@ -1249,7 +1249,7 @@ Raised on {setDefaultChallengePeriod} if the challenge period  to be set is shor
 error ChallengeTimeOutPeriodTooLong()
 ```
 
-Raised on {setDefaultChallengeTimeOutPeriod} if the challenge timeout period to be set is longer than 85 days
+Raised on {setDefaultChallengeTimeOutPeriod} if the challenge timeout period to be set is longer than 125 days
 
 
 
