@@ -137,7 +137,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
         defaultBountyHackerHATVested = _bountyHackerHATVested;
         defaultArbitrator = _defaultArbitrator;
         defaultChallengePeriod = 3 days;
-        defaultChallengeTimeOutPeriod = 5 weeks;
+        defaultChallengeTimeOutPeriod = 125 days;
         emit RegistryCreated(
             _hatVaultImplementation,
             _hatClaimsManagerImplementation,
@@ -420,7 +420,7 @@ contract HATVaultsRegistry is IHATVaultsRegistry, Ownable {
     /** @notice See {IHATVaultsRegistry-validateChallengeTimeOutPeriod}. */
     function validateChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) public pure {
         if (_challengeTimeOutPeriod < 2 days) revert ChallengeTimeOutPeriodTooShort();
-        if (_challengeTimeOutPeriod > 85 days) revert ChallengeTimeOutPeriodTooLong();
+        if (_challengeTimeOutPeriod > 125 days) revert ChallengeTimeOutPeriodTooLong();
     }
     
     /**
