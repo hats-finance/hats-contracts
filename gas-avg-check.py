@@ -1,6 +1,6 @@
 with open('gas-report.txt') as f:
     lines = f.readlines()
-    included_contracts = ["HATArbitrator", "HATClaimsManager", "HATKlerosConnector"]
+    included_contracts = ["HATArbitrator", "HATKlerosConnector"]
     total_avg_gas = 0
     for i in range(9, len(lines), 2):
         line = lines[i]
