@@ -1,6 +1,6 @@
 with open('gas-report.txt') as f:
     lines = f.readlines()
-    included_contracts = ["HATArbitrator", "HATClaimsManager", "HATKlerosConnector", "HATVault", "HATVaultsRegistry"]
+    included_contracts = ["HATArbitrator", "HATClaimsManager", "HATKlerosConnector"]
     total_avg_gas = 0
     for i in range(9, len(lines), 2):
         line = lines[i]
@@ -9,4 +9,4 @@ with open('gas-report.txt') as f:
             break
         if contract_name in included_contracts:
             total_avg_gas += int(lines[i].split("·")[4].strip())
-    print("Total of averages: " + str(total_avg_gas))
+    print("Total of averages for the Arbitrator Audit Competition: " + str(total_avg_gas))
