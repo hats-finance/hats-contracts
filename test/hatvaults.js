@@ -391,7 +391,7 @@ contract("HatVaults", (accounts) => {
     assert.equal(activeClaim.bountyHackerHATVested, "500");
     assert.equal(activeClaim.arbitrator, accounts[0]);
     assert.equal(activeClaim.challengePeriod, "86400");
-    assert.equal(activeClaim.challengeTimeOutPeriod, "3024000");
+    assert.equal(activeClaim.challengeTimeOutPeriod, "10800000");
     assert.equal(activeClaim.arbitratorCanChangeBounty, true);
     assert.equal(activeClaim.arbitratorCanChangeBeneficiary, false);
   });
@@ -981,7 +981,7 @@ contract("HatVaults", (accounts) => {
     await newClaimsManager.setCommittee(accounts[1], { from: accounts[2] });
   });
 
-  it("dismiss can be called by anyone after 5 weeks delay", async () => {
+  it("dismiss can be called by anyone after 125 days delay", async () => {
     var staker = accounts[1];
     await setUpGlobalVars(accounts, 0, 9000, [9000, 0, 1000], [1000, 500], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
 
@@ -1013,7 +1013,7 @@ contract("HatVaults", (accounts) => {
       );
     }
     await utils.increaseTime(1);
-    await utils.increaseTime(5 * 7 * 24 * 60 * 60);
+    await utils.increaseTime(125 * 24 * 60 * 60);
     tx = await claimsManager.dismissClaim(claimId, { from: accounts[1] });
     assert.equal(tx.logs[0].event, "DismissClaim");
   });

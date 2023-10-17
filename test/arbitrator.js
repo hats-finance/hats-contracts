@@ -73,8 +73,8 @@ contract("Registry Arbitrator", (accounts) => {
   it("Set default challengeTimeOutPeriod", async () => {
     const { registry, claimsManager } = await setup(accounts);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
-    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
+    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
 
     await assertFunctionRaisesException(
       registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 2, { from: accounts[1] }),
@@ -87,7 +87,7 @@ contract("Registry Arbitrator", (accounts) => {
     );
 
     await assertFunctionRaisesException(
-      registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 85 + 1),
+      registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 125 + 1),
       "ChallengeTimeOutPeriodTooLong"
     );
 
@@ -98,12 +98,12 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetDefaultChallengeTimeOutPeriod");
     assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 2);
 
-    tx = await registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 85);
+    tx = await registry.setDefaultChallengeTimeOutPeriod(60 * 60 * 24 * 125);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
-    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
+    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
     assert.equal(tx.logs[0].event, "SetDefaultChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 85);
+    assert.equal(tx.logs[0].args._defaultChallengeTimeOutPeriod, 60 * 60 * 24 * 125);
   });
 
   it("Set vault arbitration parameters", async () => {
@@ -117,8 +117,8 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal((await registry.defaultChallengePeriod()).toString(), 60 * 60 * 24 * 3);
     assert.equal(await claimsManager.getChallengePeriod(), 60 * 60 * 24 * 3);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
-    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
+    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
 
     assert.equal(await claimsManager.arbitratorCanChangeBounty(), true);
     assert.equal(await claimsManager.arbitratorCanChangeBeneficiary(), false);
@@ -172,7 +172,7 @@ contract("Registry Arbitrator", (accounts) => {
     );
 
     await assertFunctionRaisesException(
-      claimsManager.setChallengeTimeOutPeriod(60 * 60 * 24 * 85 + 1),
+      claimsManager.setChallengeTimeOutPeriod(60 * 60 * 24 * 125 + 1),
       "ChallengeTimeOutPeriodTooLong"
     );
 
@@ -200,7 +200,7 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultChallengePeriod(), 60 * 60 * 24 * 3);
     assert.equal(await claimsManager.getChallengePeriod(), 60 * 60 * 24);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
     assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 2);
 
     assert.equal(await claimsManager.arbitratorCanChangeBounty(), false);
@@ -217,9 +217,9 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(tx.logs[0].event, "SetChallengePeriod");
     assert.equal(tx.logs[0].args._challengePeriod, 60 * 60 * 24 * 5);
 
-    tx = await claimsManager.setChallengeTimeOutPeriod(60 * 60 * 24 * 85);
+    tx = await claimsManager.setChallengeTimeOutPeriod(60 * 60 * 24 * 125);
     assert.equal(tx.logs[0].event, "SetChallengeTimeOutPeriod");
-    assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 85);
+    assert.equal(tx.logs[0].args._challengeTimeOutPeriod, 60 * 60 * 24 * 125);
 
     tx = await claimsManager.setArbitratorOptions(true, false, false);
     assert.equal(tx.logs[0].event, "SetArbitratorOptions");
@@ -233,8 +233,8 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultChallengePeriod(), 60 * 60 * 24 * 3);
     assert.equal(await claimsManager.getChallengePeriod(), 60 * 60 * 24 * 5);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
-    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 85);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
+    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
 
     assert.equal(await claimsManager.arbitratorCanChangeBounty(), true);
 
@@ -266,8 +266,8 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await registry.defaultChallengePeriod(), 60 * 60 * 24 * 3);
     assert.equal(await claimsManager.getChallengePeriod(), 60 * 60 * 24 * 3);
 
-    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
-    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 35);
+    assert.equal(await registry.defaultChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
+    assert.equal(await claimsManager.getChallengeTimeOutPeriod(), 60 * 60 * 24 * 125);
 
     assert.equal(await claimsManager.arbitratorCanChangeBounty(), true);
 

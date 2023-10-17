@@ -579,7 +579,7 @@ Check that the given challenge period is legal, meaning that it is greater than 
 function validateChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) external pure
 ```
 
-Check that the given challenge timeout period is legal, meaning that it is greater than 2 days and less than 85 days.
+Check that the given challenge timeout period is legal, meaning that it is greater than 2 days and less than 125 days.
 
 
 
@@ -990,7 +990,7 @@ Raised on {setDefaultChallengePeriod} if the challenge period  to be set is shor
 error ChallengeTimeOutPeriodTooLong()
 ```
 
-Raised on {setDefaultChallengeTimeOutPeriod} if the challenge timeout period to be set is longer than 85 days
+Raised on {setDefaultChallengeTimeOutPeriod} if the challenge timeout period to be set is longer than 125 days
 
 
 

@@ -268,7 +268,8 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     function reclaimBond(IHATClaimsManager _vault, bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_vault][_claimId]) {
             // the bond is claimable if either
-            // (a) it is not part of the curr
+            // (a) it is not related to the current active claim
+            // (b) it is about the current active claim but the claim has already expired
 
             IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
 
