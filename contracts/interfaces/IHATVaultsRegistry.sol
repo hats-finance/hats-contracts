@@ -154,7 +154,7 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Raised on {setDefaultChallengeTimeOutPeriod} if the challenge
-     * timeout period to be set is longer than 85 days
+     * timeout period to be set is longer than 125 days
      */
     error ChallengeTimeOutPeriodTooLong();
     
@@ -426,7 +426,7 @@ interface IHATVaultsRegistry {
 
     /**
      * @notice Check that the given challenge timeout period is legal, meaning
-     * that it is greater than 2 days and less than 85 days.
+     * that it is greater than 2 days and less than 125 days.
      * @param _challengeTimeOutPeriod The challenge timeout period to check
      */
     function validateChallengeTimeOutPeriod(uint32 _challengeTimeOutPeriod) external pure;
