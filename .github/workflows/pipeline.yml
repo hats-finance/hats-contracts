@@ -41,3 +41,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Solidity contract sizes
         run: npx hardhat compile && npx hardhat size-contracts
+      - name: Average contract size 
+        run: python3 gas-avg-check.py
+
