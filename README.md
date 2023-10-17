@@ -24,7 +24,9 @@ npx hardhat test
 
 ## Security
 
+
 Audit reports are in the [audit](./audit) directory.
+
 
 Please report any security issues you find to contact@hats.finance
 
