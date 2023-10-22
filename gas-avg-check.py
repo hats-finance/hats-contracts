@@ -9,4 +9,4 @@ with open('gas-report.txt') as f:
             break
         if contract_name in included_contracts:
             total_avg_gas += int(lines[i].split("·")[4].strip())
-    print("Total of averages: " + str(total_avg_gas))
+    print("Total of averages for the Arbitrator Audit Competition: " + str(total_avg_gas))
