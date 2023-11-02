@@ -111,6 +111,29 @@ See {IHATArbitrator-challengeResolution}.
 | _claimId | bytes32 | undefined |
 | _evidence | string | undefined |
 
+### claimDisputesDismissed
+
+```solidity
+function claimDisputesDismissed(contract IHATClaimsManager, bytes32) external view returns (bool)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IHATClaimsManager | undefined |
+| _1 | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
 ### confiscateDisputers
 
 ```solidity
@@ -944,6 +967,17 @@ error ChallengePeriodDidNotPass()
 
 ```solidity
 error ChallengePeriodPassed()
+```
+
+
+
+
+
+
+### ClaimDisputesDismissed
+
+```solidity
+error ClaimDisputesDismissed()
 ```
 
 
