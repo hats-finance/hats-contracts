@@ -295,6 +295,17 @@ contract("TokenLock", (accounts) => {
     }
   });
 
+  it("cannot revoke twice", async () => {
+    await setup(accounts);
+    await tokenLock.revoke();
+    try {
+      await tokenLock.revoke();
+      assert(false, "cannot revoke after full amount is redeemable");
+    } catch (ex) {
+      assertVMException(ex, "LockIsAlreadyRevoked");
+    }
+  });
+
   it("sinceStartTime", async () => {
     await setup(accounts, true, false, 100);
     assert.equal(await tokenLock.sinceStartTime(), 0);
@@ -314,6 +325,22 @@ contract("TokenLock", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "Ownable: caller is not the owner");
     }
+  });
+
+  it("redeem and withdraw surplus after revoke", async () => {
+    await setup(accounts);
+    await stakingToken.mint(tokenLock.address, web3.utils.toWei("1"));
+    await utils.increaseTime(300);
+    await tokenLock.revoke();
+    assert.equal(await stakingToken.balanceOf(accounts[0]), web3.utils.toWei("0.8"));
+    assert.equal(await stakingToken.balanceOf(tokenLock.address), web3.utils.toWei("1.2"));
+    await tokenLock.release({ from: accounts[1] });
+    assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("0.2"));
+    assert.equal(await stakingToken.balanceOf(tokenLock.address), web3.utils.toWei("1"));
+    await tokenLock.withdrawSurplus(web3.utils.toWei("1"), { from: accounts[1] });
+    assert.equal(await stakingToken.balanceOf(accounts[1]), web3.utils.toWei("1.2"));
+    assert.equal(await stakingToken.balanceOf(tokenLock.address), web3.utils.toWei("0"));
+    expect(await ethers.provider.getCode(tokenLock.address)).to.equal("0x");
   });
 
   it("owner cannot be 0", async () => {

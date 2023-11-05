@@ -849,6 +849,17 @@ error DelegateDisabled()
 
 
 
+### LockIsAlreadyRevoked
+
+```solidity
+error LockIsAlreadyRevoked()
+```
+
+
+
+
+
+
 ### LockIsNonRevocable
 
 ```solidity
