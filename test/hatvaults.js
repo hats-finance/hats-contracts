@@ -25,7 +25,8 @@ const {
   epochRewardPerBlock,
   setup,
   submitClaim,
-  ZERO_ADDRESS
+  ZERO_ADDRESS,
+  MAX_UINT16
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");
@@ -332,6 +333,8 @@ contract("HatVaults", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -779,6 +782,8 @@ contract("HatVaults", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -841,6 +846,8 @@ contract("HatVaults", (accounts) => {
         arbitrator: accounts[2],
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
+        bountyGovernanceHAT: MAX_UINT16,
+        bountyHackerHATVested: MAX_UINT16,
         arbitratorCanChangeBounty: true,
         arbitratorCanChangeBeneficiary: false,
         arbitratorCanSubmitClaims: false,
@@ -878,6 +885,8 @@ contract("HatVaults", (accounts) => {
         arbitrator: accounts[2],
         maxBounty: maxBounty,
         bountySplit: bountySplit,
+        bountyGovernanceHAT: MAX_UINT16,
+        bountyHackerHATVested: MAX_UINT16,
         vestingDuration: 86400,
         vestingPeriods: 10
         }
@@ -886,6 +895,85 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "DuplicatedRewardController");
     }
+  });
+
+  it("cannot create vault with wrong hat bounty split", async () => {
+    await setUpGlobalVars(accounts);
+
+    let maxBounty = 8000;
+    let bountySplit = [7000, 2500, 500];
+    let stakingToken2 = await ERC20Mock.new("Staking", "STK");
+
+    try {
+      await hatVaultsRegistry.createVault(
+        {
+          asset: stakingToken2.address,
+          name: "VAULT",
+          symbol: "VLT",
+          rewardControllers: [rewardController.address],
+          owner: await hatVaultsRegistry.owner(),
+          isPaused: false,
+          descriptionHash: "_descriptionHash1",
+        },
+        {
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[3],
+        arbitrator: accounts[2],
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        bountyGovernanceHAT: 1000,
+        bountyHackerHATVested: 1001,
+        vestingDuration: 86400,
+        vestingPeriods: 10
+        }
+      );
+      assert(false, "cannot create vault with wrong hat bounty split");
+    } catch (ex) {
+      assertVMException(ex, "TotalHatsSplitPercentageShouldBeUpToMaxHATSplit");
+    }
+
+    let tx = await hatVaultsRegistry.createVault(
+      {
+        asset: stakingToken2.address,
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        owner: await hatVaultsRegistry.owner(),
+        isPaused: false,
+        descriptionHash: "_descriptionHash1",
+      },
+      {
+      owner: await hatVaultsRegistry.owner(),
+      committee: accounts[3],
+      arbitrator: accounts[2],
+      maxBounty: maxBounty,
+      bountySplit: bountySplit,
+      bountyGovernanceHAT: 100,
+      bountyHackerHATVested: 101,
+      vestingDuration: 86400,
+      vestingPeriods: 10
+      }
+    );
+
+    let newClaimsManager = await HATClaimsManager.at(tx.logs[2].args._claimsManager);
+
+    let logs = await newClaimsManager.getPastEvents('SetHATBountySplit', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "SetHATBountySplit");
+    assert.equal(logs[0].args._bountyGovernanceHAT, "100");
+    assert.equal(logs[0].args._bountyHackerHATVested, "101");
+
+    assert.equal(
+      (await newClaimsManager.getBountyGovernanceHAT()).toString(),
+      "100"
+    );
+    assert.equal(
+      (await newClaimsManager.getBountyHackerHATVested()).toString(),
+      "101"
+    );
   });
 
   it("setCommittee", async () => {
@@ -927,6 +1015,8 @@ contract("HatVaults", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -1457,6 +1547,8 @@ contract("HatVaults", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       },
@@ -1570,6 +1662,8 @@ contract("HatVaults", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       },
@@ -5047,6 +5141,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -5179,6 +5275,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -6150,6 +6248,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -6878,6 +6978,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -6935,6 +7037,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -6999,6 +7103,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
+        bountyGovernanceHAT: MAX_UINT16,
+        bountyHackerHATVested: MAX_UINT16,
         vestingDuration: 10,
         vestingPeriods: 86400
         }
@@ -7029,6 +7135,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
+        bountyGovernanceHAT: MAX_UINT16,
+        bountyHackerHATVested: MAX_UINT16,
         vestingDuration: 121 * 24 * 3600,
         vestingPeriods: 10
         }
@@ -7059,6 +7167,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
         isTokenLockRevocable: false,
         maxBounty: 8000,
         bountySplit: [7000, 2500, 500],
+        bountyGovernanceHAT: MAX_UINT16,
+        bountyHackerHATVested: MAX_UINT16,
         vestingDuration: 86400,
         vestingPeriods: 0
         }
@@ -7087,6 +7197,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -7172,6 +7284,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [8400, 1500, 100],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -7345,6 +7459,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
@@ -7453,6 +7569,8 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       isTokenLockRevocable: false,
       maxBounty: 8000,
       bountySplit: [7000, 2500, 500],
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }

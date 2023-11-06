@@ -108,6 +108,8 @@ interface IHATClaimsManager {
     * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
+    * @param bountyGovernanceHAT The HAT bounty for governance
+    * @param bountyHackerHATVested The HAT bounty vested for the hacker
     * @param asset The vault's native token
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
@@ -123,6 +125,8 @@ interface IHATClaimsManager {
         uint32 vestingPeriods;
         uint16 maxBounty;
         BountySplit bountySplit;
+        uint16 bountyGovernanceHAT;
+        uint16 bountyHackerHATVested;
         address owner;
         address committee;
         address arbitrator;
