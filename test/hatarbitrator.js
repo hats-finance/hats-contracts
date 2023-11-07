@@ -1079,5 +1079,10 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(await token.balanceOf(accounts[0]), web3.utils.toWei("1000"));
     assert.equal(await token.balanceOf(hatArbitrator.address), web3.utils.toWei("0"));
     assert.equal(await token.balanceOf(expertCommittee), web3.utils.toWei("0"));
+
+    await assertFunctionRaisesException(
+      hatArbitrator.refundExpiredSubmitClaimRequest(web3.utils.randomHex(32), { from: accounts[1] }),
+      "ClaimReviewPeriodDidNotEnd"
+    );
   });
 });
