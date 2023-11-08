@@ -627,6 +627,17 @@ error ChallengePeriodPassed()
 
 
 
+### ClaimDisputesDismissed
+
+```solidity
+error ClaimDisputesDismissed()
+```
+
+
+
+
+
+
 ### ClaimExpired
 
 ```solidity
