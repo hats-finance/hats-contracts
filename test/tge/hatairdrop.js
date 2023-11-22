@@ -2,11 +2,7 @@ const utils = require("../utils.js");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
 const { contract, web3 } = require("hardhat");
 const {
-  setup,
-  advanceToSafetyPeriod,
-  submitClaim,
   assertFunctionRaisesException,
-  ZERO_ADDRESS,
 } = require("../common.js");
 const airdropData = require('./airdropData.json');
 const { assert } = require("chai");
