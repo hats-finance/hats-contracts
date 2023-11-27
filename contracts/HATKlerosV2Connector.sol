@@ -97,7 +97,10 @@ contract HATKlerosV2Connector is IArbitrable, IHATKlerosConnector {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
-        if (msg.value > arbitrationCost) payable(_disputer).transfer(msg.value - arbitrationCost);
+        if (msg.value > arbitrationCost) {
+            (bool success,) = payable(_disputer).call{value: msg.value - arbitrationCost}("");
+            require(success, "Failed to send ETH");
+        }
 
         emit Challenged(_claimId);
         // TODO: add new IEvidence events once they're established.
