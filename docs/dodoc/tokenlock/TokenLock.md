@@ -779,6 +779,17 @@ error CliffTimeMustBeBeforeEndTime()
 
 
 
+### LockIsAlreadyRevoked
+
+```solidity
+error LockIsAlreadyRevoked()
+```
+
+
+
+
+
+
 ### LockIsNonRevocable
 
 ```solidity

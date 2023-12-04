@@ -42,6 +42,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
     error AmountCannotBeZero();
     error AmountRequestedBiggerThanSurplus();
     error LockIsNonRevocable();
+    error LockIsAlreadyRevoked();
     error NoAvailableUnvestedAmount();
     error OnlySweeper();
     error CannotSweepVestedToken();
@@ -190,17 +191,27 @@ abstract contract TokenLock is Ownable, ITokenLock {
         if (!revocable)
             revert LockIsNonRevocable();
 
-        uint256 unvestedAmount = managedAmount - vestedAmount();
+        if (isRevoked)
+            revert LockIsAlreadyRevoked();
+
+        uint256 vestedAmount = vestedAmount();
+
+        uint256 unvestedAmount = managedAmount - vestedAmount;
         if (unvestedAmount == 0)
             revert NoAvailableUnvestedAmount();
 
         isRevoked = true;
 
+        managedAmount = vestedAmount;
+
+        // solhint-disable-next-line not-rely-on-time
+        endTime = block.timestamp;
+
         token.safeTransfer(owner(), unvestedAmount);
 
         emit TokensRevoked(beneficiary, unvestedAmount);
 
-        selfdestruct(payable(msg.sender));
+        trySelfDestruct();
     }
 
     /**
@@ -445,7 +456,7 @@ abstract contract TokenLock is Ownable, ITokenLock {
     }
 
     function trySelfDestruct() private {
-        if (currentTime() > endTime && currentBalance() == 0) {
+        if (currentTime() >= endTime && currentBalance() == 0) {
             selfdestruct(payable(msg.sender));
         }
     }
