@@ -176,7 +176,7 @@ interface IHATClaimsManager {
     error NotEnoughUserBalance();
     // Only arbitrator or registry owner
     error OnlyArbitratorOrRegistryOwner();
-    // Unchalleged claim can only be approved if challenge period is over
+    // Unchallenged claim can only be approved if challenge period is over
     error UnchallengedClaimCanOnlyBeApprovedAfterChallengePeriod();
     // Challenged claim can only be approved by arbitrator before the challenge timeout period
     error ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
