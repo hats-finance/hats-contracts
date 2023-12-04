@@ -66,6 +66,23 @@ function owner() external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
+### periods
+
+```solidity
+function periods() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### recoverTokens
 
 ```solidity
@@ -157,6 +174,23 @@ function token() external view returns (contract IERC20)
 |---|---|---|
 | _0 | contract IERC20 | undefined |
 
+### tokenLockFactory
+
+```solidity
+function tokenLockFactory() external view returns (contract TokenLockFactory)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract TokenLockFactory | undefined |
+
 ### transferOwnership
 
 ```solidity
@@ -216,7 +250,7 @@ event OwnershipTransferred(address indexed previousOwner, address indexed newOwn
 ### TokensRecovered
 
 ```solidity
-event TokensRecovered(address _owner, uint256 _amount)
+event TokensRecovered(address indexed _owner, uint256 _amount)
 ```
 
 
@@ -227,13 +261,13 @@ event TokensRecovered(address _owner, uint256 _amount)
 
 | Name | Type | Description |
 |---|---|---|
-| _owner  | address | undefined |
+| _owner `indexed` | address | undefined |
 | _amount  | uint256 | undefined |
 
 ### TokensRedeemed
 
 ```solidity
-event TokensRedeemed(address _account, uint256 _amount)
+event TokensRedeemed(address indexed _account, address indexed _tokenLock, uint256 _amount)
 ```
 
 
@@ -244,7 +278,8 @@ event TokensRedeemed(address _account, uint256 _amount)
 
 | Name | Type | Description |
 |---|---|---|
-| _account  | address | undefined |
+| _account `indexed` | address | undefined |
+| _tokenLock `indexed` | address | undefined |
 | _amount  | uint256 | undefined |
 
 
