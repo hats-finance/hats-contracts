@@ -30,6 +30,8 @@ let HatArbitrator;
 let hatConnector;
 let arbitrator;
 let hatArbitrator;
+let BadEthReceiver;
+let badEthReceiver;
 
 let activeClaim;
 let claimId;
@@ -70,6 +72,9 @@ contract("HATKlerosConnector", () => {
       winnerMultiplier,
       loserMultiplier
     );
+
+    BadEthReceiver = await ethers.getContractFactory("BadKlerosConnectorEthReceiver", governor);
+    badEthReceiver = await BadEthReceiver.deploy();
     
     await hatArbitrator.connect(governor).setCourt(hatConnector.address);
     // Initial setup. Create claim, challenge it, accept the challenge by committee and invoke kleros arbitrator after
@@ -189,6 +194,11 @@ contract("HATKlerosConnector", () => {
       await challenger.getAddress(),
       "0x77436DCB99D4CE4C0000", // 100 ETH
     ]);
+
+    await expect(
+      badEthReceiver.connect(challenger).challengeResolution(hatArbitrator.address, hatVault.address, claimId, evidence, { gasPrice: gasPrice, value: oneETH })
+    ).to.be.revertedWith("Failed to send ETH");
+
     const oldBalance = await challenger.getBalance();
     const tx = await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { gasPrice: gasPrice, value: oneETH });
     txFee = (await tx.wait()).gasUsed * gasPrice;
@@ -327,6 +337,10 @@ contract("HATKlerosConnector", () => {
       .withArgs(0, 0, 2, await crowdfunder1.getAddress(), 5000); // local dispute id, NbRound, Ruling, Sender, Amount
 
     // 2nd Funding ////////////////////////////////////
+    await expect(
+      badEthReceiver.connect(challenger).fundAppeal(hatConnector.address, 0, 2, { gasPrice: gasPrice, value: oneETH })
+    ).to.be.revertedWith("Failed to send ETH");
+
     oldBalance = newBalance;
     txFundAppeal = await hatConnector
       .connect(crowdfunder1)
@@ -604,6 +618,49 @@ contract("HATKlerosConnector", () => {
     expect(contributionInfo[1]).to.equal(0, "Contribution of crowdfunder2 should be 0 in 2 round");
     contributionInfo = await hatConnector.getContributions(0, 2, claimantAddress);
     expect(contributionInfo[2]).to.equal(0, "Contribution of claimant should be 0 in 2 round");
+  });
+
+  it("Should fail to withdraw when receiver reverts", async () => {
+    await hatArbitrator.connect(challenger).challengeResolution(hatVault.address, claimId, evidence, { value: arbitrationCost });
+
+    await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
+
+    await badEthReceiver.setShouldFail(false);
+
+    // LoserFee = 8500, WinnerFee = 6500. AppealCost = 5000.
+    // 0 Round.
+    await badEthReceiver.connect(claimant).fundAppeal(hatConnector.address, 0, 2, { value: 4000 });
+    await badEthReceiver.connect(crowdfunder1).fundAppeal(hatConnector.address, 0, 2, { value: oneETH });
+
+    await hatConnector.connect(crowdfunder2).fundAppeal(0, 1, { value: 6000 });
+    await hatConnector.connect(crowdfunder1).fundAppeal(0, 1, { value: 6000 });
+
+    await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
+
+    // 1 Round.
+    await badEthReceiver.connect(claimant).fundAppeal(hatConnector.address, 0, 2, { value: 500 });
+    await badEthReceiver.connect(crowdfunder1).fundAppeal(hatConnector.address, 0, 2, { value: 8000 });
+
+    await hatConnector.connect(crowdfunder2).fundAppeal(0, 1, { value: 20000 });
+
+    await arbitrator.giveAppealableRuling(2, 1, appealCost, appealTimeout);
+
+    // 2 Round.
+    // Partially funded side should be reimbursed.
+    await badEthReceiver.connect(claimant).fundAppeal(hatConnector.address, 0, 2, { value: 8499 });
+
+    // Winner doesn't have to fund appeal in this case but let's check if it causes unexpected behaviour.
+    await hatConnector.connect(crowdfunder2).fundAppeal(0, 1, { value: oneETH });
+
+    await utils.increaseTime(appealTimeout + 1);
+
+    await arbitrator.executeRuling(2);
+
+    await badEthReceiver.setShouldFail(true);
+
+    await expect(
+      hatConnector.withdrawFeesAndRewards(0, badEthReceiver.address, 2, 2)
+    ).to.be.revertedWith("Failed to send ETH");
   });
 
   it("Should correctly withdraw appeal fees if a dispute had winner/loser when appeal cost is 0", async () => {
