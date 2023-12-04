@@ -215,6 +215,11 @@ contract("Registry Arbitrator", (accounts) => {
     assert.equal(logs[0].args._claimId, claimId);
     assert.equal(logs[0].args._approver, hatArbitrator.address);
 
+    await assertFunctionRaisesException(
+      hatArbitrator.reclaimBond(claimsManager.address, claimId, { from: accounts[0] }),
+      "ClaimDisputesDismissed"
+    );
+
     claimId = await submitClaim(claimsManager, { accounts });
     await token.mint(accounts[0], web3.utils.toWei("1000"));
     await token.approve(hatArbitrator.address, web3.utils.toWei("1000"), { from: accounts[0] });
