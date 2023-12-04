@@ -488,6 +488,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         ];
 
         if (
+            submitClaimRequest.submittedAt == 0 ||
             block.timestamp <=
             submitClaimRequest.submittedAt + submitClaimRequestReviewPeriod
         ) {
@@ -497,7 +498,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         delete submitClaimRequests[_internalClaimId];
         token.safeTransfer(
             submitClaimRequest.submitter,
-            bondsNeededToStartDispute
+            submitClaimRequest.bond
         );
 
         emit SubmitClaimRequestExpired(_internalClaimId);
