@@ -5528,7 +5528,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
       );
       assert(false, "dulpicated payee");
     } catch (ex) {
-      assertVMException(ex, "DulpicatedPayee");
+      assertVMException(ex, "DuplicatedPayee");
     }
   });
 

@@ -14,7 +14,7 @@ contract HATPaymentSplitterFactory {
     error NoPayees();
     error ZeroAddress();
     error ZeroShares();
-    error DulpicatedPayee();
+    error DuplicatedPayee();
 
     constructor (address _implementation) {
         implementation = _implementation;
@@ -34,7 +34,7 @@ contract HATPaymentSplitterFactory {
             if (_payees[i] == address(0)) revert ZeroAddress();
             if (_shares[i] == 0) revert ZeroShares();
             for (uint256 j = i + 1; j < _payees.length; j++) {
-                if (_payees[i] == _payees[j]) revert DulpicatedPayee();
+                if (_payees[i] == _payees[j]) revert DuplicatedPayee();
             }
         }
 

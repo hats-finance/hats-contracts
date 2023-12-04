@@ -108,10 +108,10 @@ error ArrayLengthMismatch()
 
 
 
-### DulpicatedPayee
+### DuplicatedPayee
 
 ```solidity
-error DulpicatedPayee()
+error DuplicatedPayee()
 ```
 
 
