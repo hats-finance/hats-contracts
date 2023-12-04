@@ -5477,6 +5477,61 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     );
   });
 
+  it("hatpaymentsplitter predict bad splitter", async () => {
+    let hatPaymentSplitterImplementation = await HATPaymentSplitter.new();
+    let hatPaymentSplitterFactory = await HATPaymentSplitterFactory.new(hatPaymentSplitterImplementation.address);
+
+    try {
+      await hatPaymentSplitterFactory.predictSplitterAddress(
+        [accounts[2], accounts[3]],
+        [5000]
+      );
+      assert(false, "array length mismatch");
+    } catch (ex) {
+      assertVMException(ex, "ArrayLengthMismatch");
+    }
+
+    try {
+      await hatPaymentSplitterFactory.predictSplitterAddress(
+        [],
+        []
+      );
+      assert(false, "no payees");
+    } catch (ex) {
+      assertVMException(ex, "NoPayees");
+    }
+
+    try {
+      await hatPaymentSplitterFactory.predictSplitterAddress(
+        [ZERO_ADDRESS],
+        [5000]
+      );
+      assert(false, "zero address");
+    } catch (ex) {
+      assertVMException(ex, "ZeroAddress");
+    }
+
+    try {
+      await hatPaymentSplitterFactory.predictSplitterAddress(
+        [accounts[2]],
+        [0]
+      );
+      assert(false, "zero shares");
+    } catch (ex) {
+      assertVMException(ex, "ZeroShares");
+    }
+
+    try {
+      await hatPaymentSplitterFactory.predictSplitterAddress(
+        [accounts[2], accounts[2]],
+        [5000, 2000]
+      );
+      assert(false, "dulpicated payee");
+    } catch (ex) {
+      assertVMException(ex, "DuplicatedPayee");
+    }
+  });
+
   it("hatpaymentsplitter withdraw from tokenlock", async () => {
     await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [550, 450]);
     var staker = accounts[4];
