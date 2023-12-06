@@ -1,3 +1,11 @@
+# Audit Competition for HATs-Arbitration-Contracts
+This repository is for the audit competition for the HATs-Arbitration-Contracts.
+To participate, submit your findings only by using the on-chain submission process on https://app.hats.finance/vulnerability .
+## How to participate
+- follow the instructions on https://app.hats.finance/
+## Good luck!
+We look forward to seeing your findings.
+* * *
 # <img src="https://raw.githubusercontent.com/hats-finance/icons/main/hats.svg" alt="Hats.Finance" text="sds" height="40px"> Hats.Finance | Contracts
 
 [![Coverage Status](https://coveralls.io/repos/github/hats-finance/hats-contracts/badge.svg?t=Ko4Ndz&kill_cache=2)](https://coveralls.io/github/hats-finance/hats-contracts)

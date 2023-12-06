@@ -25,6 +25,7 @@ interface IHATArbitrator {
     error AlreadyChallenged();
     error CourtCannotBeZero();
     error CannontChangeCourtAddress();
+    error ClaimDisputesDismissed();
 
     struct Resolution {
         address beneficiary;

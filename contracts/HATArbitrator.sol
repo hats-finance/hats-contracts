@@ -25,6 +25,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         public disputersBonds; // bonds provided by disputers
     mapping(address => mapping(IHATClaimsManager => mapping(bytes32 => bool)))
         public bondClaimable; // whether a given bond is reclaimable by the disputer
+    mapping(IHATClaimsManager => mapping(bytes32 => bool)) public claimDisputesDismissed; // claims of which disputes were dismissed
     mapping(IHATClaimsManager => mapping(bytes32 => uint256)) public totalBondsOnClaim; // total amount of bonds ona given claim
     mapping(IHATClaimsManager => mapping(bytes32 => Resolution)) public resolutions; // resolutions of disputes by the expert committee
     mapping(IHATClaimsManager => mapping(bytes32 => uint256))
@@ -160,6 +161,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         onlyChallengedActiveClaim(_vault, _claimId)
         onlyUnresolvedDispute(_vault, _claimId)
     {
+        claimDisputesDismissed[_vault][_claimId] = true;
         resolutions[_vault][_claimId].resolvedAt = block.timestamp;
         token.safeTransfer(msg.sender, totalBondsOnClaim[_vault][_claimId]);
 
@@ -267,9 +269,13 @@ contract HATArbitrator is IHATArbitrator, Ownable {
     /** @notice See {IHATArbitrator-reclaimBond}. */
     function reclaimBond(IHATClaimsManager _vault, bytes32 _claimId) external {
         if (!bondClaimable[msg.sender][_vault][_claimId]) {
-            // the bond is claimable if either
+            // the bond is claimable if the claim wasn't dismissed and either
             // (a) it is not related to the current active claim
             // (b) it is about the current active claim but the claim has already expired
+
+            if (claimDisputesDismissed[_vault][_claimId]) {
+                revert ClaimDisputesDismissed();
+            }
 
             IHATClaimsManager.Claim memory claim = _vault.getActiveClaim();
 
@@ -482,6 +488,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         ];
 
         if (
+            submitClaimRequest.submittedAt == 0 ||
             block.timestamp <=
             submitClaimRequest.submittedAt + submitClaimRequestReviewPeriod
         ) {
@@ -491,7 +498,7 @@ contract HATArbitrator is IHATArbitrator, Ownable {
         delete submitClaimRequests[_internalClaimId];
         token.safeTransfer(
             submitClaimRequest.submitter,
-            bondsNeededToStartDispute
+            submitClaimRequest.bond
         );
 
         emit SubmitClaimRequestExpired(_internalClaimId);

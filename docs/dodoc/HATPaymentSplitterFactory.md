@@ -95,3 +95,61 @@ event HATPaymentSplitterCreated(address indexed _hatPaymentSplitter)
 
 
 
+## Errors
+
+### ArrayLengthMismatch
+
+```solidity
+error ArrayLengthMismatch()
+```
+
+
+
+
+
+
+### DuplicatedPayee
+
+```solidity
+error DuplicatedPayee()
+```
+
+
+
+
+
+
+### NoPayees
+
+```solidity
+error NoPayees()
+```
+
+
+
+
+
+
+### ZeroAddress
+
+```solidity
+error ZeroAddress()
+```
+
+
+
+
+
+
+### ZeroShares
+
+```solidity
+error ZeroShares()
+```
+
+
+
+
+
+
+

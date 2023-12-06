@@ -164,8 +164,10 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
         dispute.externalDisputeId = externalDisputeId;
         externalIDtoLocalID[externalDisputeId] = localDisputeId;
 
-        if (msg.value > arbitrationCost)
-            payable(_disputer).transfer(msg.value - arbitrationCost);
+        if (msg.value > arbitrationCost) {
+            (bool success,) = payable(_disputer).call{value: msg.value - arbitrationCost}("");
+            require(success, "Failed to send ETH");
+        }
 
         emit Challenged(_claimId);
         emit Dispute(
@@ -318,8 +320,11 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
             );
         }
 
-        if (msg.value > contribution)
-            payable(msg.sender).transfer(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
+        if (msg.value > contribution) {
+            (bool success,) = payable(msg.sender).call{value: msg.value - contribution}("");
+            require(success, "Failed to send ETH"); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
+        }
+
         return round.hasPaid[_side];
     }
 
@@ -362,7 +367,8 @@ contract HATKlerosConnector is IDisputeResolver, IHATKlerosConnector, Ownable {
 
         if (reward != 0) {
             round.contributions[_beneficiary][_side] = 0;
-            _beneficiary.transfer(reward); // It is the user's responsibility to accept ETH.
+            (bool success,) = payable(_beneficiary).call{value: reward}("");
+            require(success, "Failed to send ETH");  // It is the user's responsibility to accept ETH.
             emit Withdrawal(
                 _localDisputeId,
                 _round,
