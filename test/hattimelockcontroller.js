@@ -4,12 +4,10 @@ const HATClaimsManager = artifacts.require("./HATClaimsManager.sol");
 const HATTimelockController = artifacts.require("./HATTimelockController.sol");
 const HATTokenMock = artifacts.require("./HATTokenMock.sol");
 const ERC20Mock = artifacts.require("./ERC20Mock.sol");
-const UniSwapV3RouterMock = artifacts.require("./UniSwapV3RouterMock.sol");
 const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const RewardController = artifacts.require("./RewardController.sol");
 const HATGovernanceArbitrator = artifacts.require("./HATGovernanceArbitrator.sol");
-const utils = require("./utils.js");
 
 const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 
@@ -19,7 +17,6 @@ var claimsManager;
 var rewardController;
 var hatTimelockController;
 var hatToken;
-var router;
 var stakingToken;
 var tokenLockFactory;
 var arbitratorContract;
@@ -40,21 +37,15 @@ const setup = async function(
   startBlock = 0,
   maxBounty = 8000,
   bountySplit = [7000, 2500, 500],
-  hatBountySplit = [1000, 500],
+  governanceFee = 1000,
   halvingAfterBlock = 10,
-  routerReturnType = 0,
   allocPoint = 100,
-  weth = true,
   rewardInVaults = 2500000
 ) {
   hatToken = await HATTokenMock.new(accounts[0]);
   await hatToken.setTransferable({from: accounts[0]});
   stakingToken = await ERC20Mock.new("Staking", "STK");
-  var wethAddress = utils.NULL_ADDRESS;
-  if (weth) {
-    wethAddress = stakingToken.address;
-  }
-  router = await UniSwapV3RouterMock.new(routerReturnType, wethAddress);
+
   var tokenLock = await HATTokenLock.new();
   tokenLockFactory = await TokenLockFactory.new(tokenLock.address, accounts[0]);
   let deployment = await deployHATVaults({
@@ -67,8 +58,7 @@ const setup = async function(
       epochRewardPerBlock
     }],
     hatVaultsRegistryConf: {
-      bountyGovernanceHAT: hatBountySplit[0],
-      bountyHackerHATVested: hatBountySplit[1]
+      governanceFee: governanceFee
     },
     silent: true
   });
@@ -87,7 +77,7 @@ const setup = async function(
     accounts[0],
     web3.utils.toWei((2500000 + rewardInVaults).toString())
   );
-  await hatToken.mint(router.address, web3.utils.toWei("2500000"));
+
   await hatToken.mint(accounts[0], web3.utils.toWei(rewardInVaults.toString()));
   await hatToken.transfer(
     rewardController.address,
@@ -114,8 +104,7 @@ const setup = async function(
     isTokenLockRevocable: false,
     maxBounty: maxBounty,
     bountySplit: bountySplit,
-    bountyGovernanceHAT: MAX_UINT16,
-    bountyHackerHATVested: MAX_UINT16,
+    governanceFee: governanceFee,
     vestingDuration: 86400,
     vestingPeriods: 10
     }
@@ -294,113 +283,6 @@ contract("HatTimelockController", (accounts) => {
     await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
   });
 
-  it("swapAndSend", async () => {
-    await setup(accounts);
-    var staker = accounts[4];
-    var staker2 = accounts[3];
-
-    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
-      from: staker,
-    });
-    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
-      from: staker2,
-    });
-    await stakingToken.mint(staker, web3.utils.toWei("1"));
-    await stakingToken.mint(staker2, web3.utils.toWei("1"));
-
-    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
-
-    assert.equal(await hatToken.balanceOf(staker), 0);
-    await utils.increaseTime(7 * 24 * 3600);
-    await advanceToSafetyPeriod(hatVaultsRegistry);
-    const bountyPercentage = 300;
-    let tx = await claimsManager.submitClaim(
-      accounts[2],
-      bountyPercentage,
-      "description hash",
-      {
-        from: accounts[1],
-      }
-    );
-
-    let claimId = tx.logs[0].args._claimId;
-
-    try {
-      await arbitratorContract.approveClaim(claimsManager.address, claimId);
-      assert(false, "only governance");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId, {
-        from: accounts[3],
-      });
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId);
-
-    let path = ethers.utils.solidityPack(
-      ["address", "uint24", "address"],
-      [stakingToken.address, 0, hatToken.address]
-    );
-    let amountForHackersHatRewards = await hatVaultsRegistry.hackersHatReward(
-      stakingToken.address,
-      accounts[1]
-    );
-    let amount = amountForHackersHatRewards.add(await hatVaultsRegistry.governanceHatReward(stakingToken.address));
-    let ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
-    let payload = ISwapRouter.encodeFunctionData("exactInput", [
-      [path, hatVaultsRegistry.address, 0, amount.toString(), 0],
-    ]);
-
-    try {
-      await hatTimelockController.swapAndSend(
-        hatVaultsRegistry.address,
-        stakingToken.address,
-        [accounts[1]],
-        0,
-        router.address,
-        payload,
-        {
-          from: accounts[3],
-        }
-      );
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    try {
-      await hatVaultsRegistry.swapAndSend(stakingToken.address, [accounts[1]], 0, router.address, payload);
-      assert(false, "only gov");
-    } catch (ex) {
-      assertVMException(ex);
-    }
-
-    tx = await hatTimelockController.swapAndSend(
-      hatVaultsRegistry.address,
-      stakingToken.address,
-      [accounts[1]],
-      0,
-      router.address,
-      payload,
-      { from: accounts[0] }
-    );
-
-    let log = (
-      await hatVaultsRegistry.getPastEvents("SwapAndSend", {
-        fromBlock: tx.blockNumber,
-        toBlock: "latest",
-      })
-    )[0];
-    assert.equal(log.event, "SwapAndSend");
-    assert.equal(log.args._amountSent.toString(), "0");
-  });
-
   it("challenge - approve Claim ", async () => {
     await setup(accounts);
     const staker = accounts[1];
@@ -420,6 +302,22 @@ contract("HatTimelockController", (accounts) => {
       claimsManager.challengeClaim(claimId),
       "OnlyArbitratorOrRegistryOwner"
     );
+
+    try {
+      await arbitratorContract.approveClaim(claimsManager.address, claimId);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    try {
+      await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId, {
+        from: accounts[3],
+      });
+      assert(false, "only gov");
+    } catch (ex) {
+      assertVMException(ex);
+    }
 
     await hatTimelockController.approveClaim(arbitratorContract.address, claimsManager.address, claimId);
   });
@@ -460,6 +358,7 @@ contract("HatTimelockController", (accounts) => {
     //creat another vault with a different committee
     let maxBounty = 8000;
     let bountySplit = [7000, 2500, 500];
+    let governanceFee = 65535;
     var stakingToken2 = await ERC20Mock.new("Staking", "STK");
     let tx = await hatVaultsRegistry.createVault(
       {
@@ -481,8 +380,7 @@ contract("HatTimelockController", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
-      bountyGovernanceHAT: MAX_UINT16,
-      bountyHackerHATVested: MAX_UINT16,
+      governanceFee: governanceFee,
       vestingDuration: 86400,
       vestingPeriods: 10
       }

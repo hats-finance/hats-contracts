@@ -7,12 +7,17 @@ const func = async function (hre) {
     const { deploy } = deployments;
 
     const { deployer } = await getNamedAccounts();
+    
+    let governance = config["governance"];
+    if (!governance && network.name === "hardhat") {
+        governance = deployer;
+    }
 
-    let bountyGovernanceHAT = config.hatVaultsRegistryConf.bountyGovernanceHAT;
-    let bountyHackerHATVested = config.hatVaultsRegistryConf.bountyHackerHATVested;
-    let swapToken = config.hatVaultsRegistryConf.swapToken;
-    if (!swapToken || swapToken === "HATToken") {
-        swapToken = (await deployments.get('HATToken')).address;  
+    let governanceFee = config.hatVaultsRegistryConf.governanceFee;
+    let governanceFeeReceiver = config.hatVaultsRegistryConf.governanceFeeReceiver;
+
+    if (!governanceFeeReceiver) {
+        governanceFeeReceiver = governance;
     }
 
     await deploy('HATVaultsRegistry', {
@@ -22,10 +27,9 @@ const func = async function (hre) {
             (await deployments.get('HATClaimsManager')).address,
             (await deployments.get('HATTimelockController')).address,
             (await deployments.get('HATGovernanceArbitrator')).address,
-            swapToken,
-            bountyGovernanceHAT,
-            bountyHackerHATVested,
-            (await deployments.get('TokenLockFactory')).address,
+            governanceFee,
+            governanceFeeReceiver,
+            (await deployments.get('TokenLockFactory')).address
         ],
         log: true,
     });

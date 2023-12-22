@@ -149,7 +149,7 @@ Returns the claims manager&#39;s version
 ### activeClaim
 
 ```solidity
-function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
+function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint16 governanceFee, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -167,8 +167,7 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | committee | address | undefined |
 | createdAt | uint32 | undefined |
 | challengedAt | uint32 | undefined |
-| bountyGovernanceHAT | uint256 | undefined |
-| bountyHackerHATVested | uint256 | undefined |
+| governanceFee | uint16 | undefined |
 | arbitrator | address | undefined |
 | challengePeriod | uint32 | undefined |
 | challengeTimeOutPeriod | uint32 | undefined |
@@ -374,40 +373,6 @@ See {IHATClaimsManager-getArbitrator}.
 |---|---|---|
 | _0 | address | undefined |
 
-### getBountyGovernanceHAT
-
-```solidity
-function getBountyGovernanceHAT() external view returns (uint16)
-```
-
-See {IHATClaimsManager-getBountyGovernanceHAT}. 
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | undefined |
-
-### getBountyHackerHATVested
-
-```solidity
-function getBountyHackerHATVested() external view returns (uint16)
-```
-
-See {IHATClaimsManager-getBountyHackerHATVested}. 
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | undefined |
-
 ### getChallengePeriod
 
 ```solidity
@@ -441,6 +406,23 @@ See {IHATClaimsManager-getChallengeTimeOutPeriod}.
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint32 | undefined |
+
+### getGovernanceFee
+
+```solidity
+function getGovernanceFee() external view returns (uint16)
+```
+
+See {IHATClaimsManager-getGovernanceFee}. 
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | undefined |
 
 ### initialize
 
@@ -654,13 +636,13 @@ See {IHATClaimsManager-setCommittee}.
 |---|---|---|
 | _committee | address | undefined |
 
-### setHATBountySplit
+### setGovernanceFee
 
 ```solidity
-function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
+function setGovernanceFee(uint16 _governanceFee) external nonpayable
 ```
 
-See {IHATClaimsManager-setHATBountySplit}. 
+See {IHATClaimsManager-setGoveranceFee}. 
 
 
 
@@ -668,8 +650,7 @@ See {IHATClaimsManager-setHATBountySplit}.
 
 | Name | Type | Description |
 |---|---|---|
-| _bountyGovernanceHAT | uint16 | undefined |
-| _bountyHackerHATVested | uint16 | undefined |
+| _governanceFee | uint16 | undefined |
 
 ### setMaxBounty
 
@@ -1023,10 +1004,10 @@ event SetCommittee(address indexed _committee)
 |---|---|---|
 | _committee `indexed` | address | undefined |
 
-### SetHATBountySplit
+### SetGovernanceFee
 
 ```solidity
-event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
+event SetGovernanceFee(uint16 _governanceFee)
 ```
 
 
@@ -1037,8 +1018,7 @@ event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVe
 
 | Name | Type | Description |
 |---|---|---|
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
+| _governanceFee  | uint16 | undefined |
 
 ### SetMaxBounty
 
@@ -1228,6 +1208,17 @@ error CommitteeBountyCannotBeMoreThanMax()
 
 ```solidity
 error DelayPeriodForSettingMaxBountyHadNotPassed()
+```
+
+
+
+
+
+
+### FeeCannotBeMoreThanMaxFee
+
+```solidity
+error FeeCannotBeMoreThanMaxFee()
 ```
 
 

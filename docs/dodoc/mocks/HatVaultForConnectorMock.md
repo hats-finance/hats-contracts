@@ -47,7 +47,7 @@ function MAX_BOUNTY_LIMIT() external view returns (uint16)
 ### activeClaim
 
 ```solidity
-function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 bountyGovernanceHAT, uint256 bountyHackerHATVested, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
+function activeClaim() external view returns (bytes32 claimId, address beneficiary, uint16 bountyPercentage, address committee, uint32 createdAt, uint32 challengedAt, uint256 governanceFee, address arbitrator, uint32 challengePeriod, uint32 challengeTimeOutPeriod, bool arbitratorCanChangeBounty, bool arbitratorCanChangeBeneficiary)
 ```
 
 
@@ -65,8 +65,7 @@ function activeClaim() external view returns (bytes32 claimId, address beneficia
 | committee | address | undefined |
 | createdAt | uint32 | undefined |
 | challengedAt | uint32 | undefined |
-| bountyGovernanceHAT | uint256 | undefined |
-| bountyHackerHATVested | uint256 | undefined |
+| governanceFee | uint256 | undefined |
 | arbitrator | address | undefined |
 | challengePeriod | uint32 | undefined |
 | challengeTimeOutPeriod | uint32 | undefined |

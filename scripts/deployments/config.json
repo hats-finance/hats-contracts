@@ -36,8 +36,7 @@
             ]
         }],
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -82,8 +81,7 @@
             ]
         }],
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -123,8 +121,7 @@
             ]
         }],
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -139,8 +136,7 @@
         "rewardControllersConf": [],
         "hatToken": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", 
         "hatVaultsRegistryConf": {
-          "bountyGovernanceHAT": "0",
-          "bountyHackerHATVested": "0"
+          "governanceFee": "0"
       },
       "hatVaultsNFTConf": {
           "merkleTreeIPFSRef": "",

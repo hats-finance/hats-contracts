@@ -706,27 +706,6 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
-### swapAndSend
-
-```solidity
-function swapAndSend(contract IHATVaultsRegistry _registry, address _asset, address[] _beneficiaries, uint256 _amountOutMinimum, address _routingContract, bytes _routingPayload) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _registry | contract IHATVaultsRegistry | undefined |
-| _asset | address | undefined |
-| _beneficiaries | address[] | undefined |
-| _amountOutMinimum | uint256 | undefined |
-| _routingContract | address | undefined |
-| _routingPayload | bytes | undefined |
-
 ### updateDelay
 
 ```solidity

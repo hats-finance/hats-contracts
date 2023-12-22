@@ -112,27 +112,10 @@ interface IHATVaultsRegistry {
     error DelayTooShort();
 
     /**
-     * @notice Raised on {swapAndSend} if the amount to swap is zero
+     * @notice Raised on {setDefaultGovernanceFee} if the fee to be set is
+     * greater than 35% (defined as 3500)
      */
-    error AmountToSwapIsZero();
-
-    /**
-     * @notice Raised on {swapAndSend} if the swap was not successful
-     */
-    error SwapFailed();
-    // Wrong amount received
-
-    /**
-     * @notice Raised on {swapAndSend} if the amount that was recieved in
-     * the swap was less than the minimum amount specified
-     */
-    error AmountSwappedLessThanMinimum();
-
-    /**
-     * @notice Raised on {setDefaultHATBountySplit} if the split to be set is
-     * greater than 20% (defined as 2000)
-     */
-    error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit();
+    error FeeCannotBeMoreThanMaxFee();
 
     /**
      * @notice Raised on {setDefaultChallengePeriod} if the challenge period
@@ -173,11 +156,10 @@ interface IHATVaultsRegistry {
      * @notice Emitted on deployment of the registry
      * @param _hatVaultImplementation The HATVault implementation address
      * @param _hatClaimsManagerImplementation The HATClaimsManager implementation address
-     * @param _HAT The HAT token address
      * @param _tokenLockFactory The token lock factory address
      * @param _generalParameters The registry's general parameters
-     * @param _bountyGovernanceHAT The HAT bounty for governance
-     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+     * @param _defaultGovernanceFee The fee percentage for governance
+     * @param _governanceFeeReceiver The fee receiver address
      * @param _hatGovernance The registry's governance
      * @param _defaultChallengePeriod The new default challenge period
      * @param _defaultChallengeTimeOutPeriod The new default challenge timeout
@@ -185,11 +167,10 @@ interface IHATVaultsRegistry {
     event RegistryCreated(
         address _hatVaultImplementation,
         address _hatClaimsManagerImplementation,
-        address _HAT,
         address _tokenLockFactory,
         GeneralParameters _generalParameters,
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested,
+        uint16 _defaultGovernanceFee,
+        address _governanceFeeReceiver,
         address _hatGovernance,
         address _defaultArbitrator,
         uint256 _defaultChallengePeriod,
@@ -256,6 +237,12 @@ interface IHATVaultsRegistry {
     event SetMaxBountyDelay(uint256 _delay);
 
     /**
+     * @notice Emitted when a new fee receiver address is set
+     * @param _governaceFeeReceiver The receiver of the fee from the payouts of the vaults
+     */
+    event SetGovernanceFeeReceiver(address indexed _governaceFeeReceiver);
+
+    /**
      * @notice Emitted when the UI visibility of a vault is changed
      * @param _vault The address of the vault to update
      * @param _visible Is this vault visible in the UI
@@ -274,28 +261,12 @@ interface IHATVaultsRegistry {
         IHATVault.VaultInitParams _vaultParams,
         IHATClaimsManager.ClaimsManagerInitParams _claimsManagerParams
     );
-    
-    /** @notice Emitted when a swap of vault tokens to HAT tokens is done and
-     * the HATS tokens are sent to beneficiary through vesting contract
-     * @param _beneficiary Address of beneficiary
-     * @param _amountSwapped Amount of vault's native tokens that was swapped
-     * @param _amountSent Amount of HAT tokens sent to beneficiary
-     * @param _tokenLock Address of the token lock contract that holds the HAT
-     * tokens (address(0) if no token lock is used)
-     */
-    event SwapAndSend(
-        address indexed _beneficiary,
-        uint256 _amountSwapped,
-        uint256 _amountSent,
-        address indexed _tokenLock
-    );
 
     /**
-     * @notice Emitted when a new default HAT bounty split is set
-     * @param _defaultBountyGovernanceHAT The new default HAT bounty part sent to governance
-     * @param _defaultBountyHackerHATVested The new default HAT bounty part vseted for the hacker
+     * @notice Emitted when a new default governance fee is set
+     * @param _defaultGovernanceFee The new default fee part sent to governance
      */
-    event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested);
+    event SetDefaultGovernanceFee(uint16 _defaultGovernanceFee);
 
     /**
      * @notice Emitted when a new default arbitrator is set
@@ -322,12 +293,6 @@ interface IHATVaultsRegistry {
     event SetEmergencyPaused(bool _isEmergencyPaused);
 
     /**
-     * @notice Emitted when a new swap token is set
-     * @param _swapToken The new swap token address
-     */
-    event SetSwapToken(address indexed _swapToken);
-
-    /**
      * @notice Emitted when a new HATVault implementation is set
      * @param _hatVaultImplementation The address of the new HATVault implementation
      */
@@ -345,12 +310,6 @@ interface IHATVaultsRegistry {
      * @param _isEmergencyPaused Is the system in an emergency pause
      */
     function setEmergencyPaused(bool _isEmergencyPaused) external;
-
-    /**
-     * @notice Called by governance to set a new swap token
-     * @param _swapToken the new swap token address
-     */
-    function setSwapToken(address _swapToken) external;
 
     /**
      * @notice Called by governance to set a new HATVault and HATVault implementation to be
@@ -372,28 +331,10 @@ interface IHATVaultsRegistry {
     function logClaim(string calldata _descriptionHash) external payable;
 
     /**
-     * @notice Called by governance to set the default percentage of each claim bounty
-     * that will be swapped for hats and sent to the governance or vested for the hacker
-     * @param _defaultBountyGovernanceHAT The HAT bounty for governance
-     * @param _defaultBountyHackerHATVested The HAT bounty vested for the hacker
+     * @notice Called by governance to set the default fee percentage
+     * @param _defaultGovernanceFee The fee for governance
      */
-    function setDefaultHATBountySplit(
-        uint16 _defaultBountyGovernanceHAT,
-        uint16 _defaultBountyHackerHATVested
-    ) 
-        external;
-
-    /** 
-     * @dev Check that a given hats bounty split is legal, meaning that:
-     *   Each entry is a number between 0 and less than `MAX_HAT_SPLIT`.
-     *   Total splits should be less than `MAX_HAT_SPLIT`.
-     * function will revert in case the bounty split is not legal.
-     * @param _bountyGovernanceHAT The HAT bounty for governance
-     * @param _bountyHackerHATVested The HAT bounty vested for the hacker
-     */
-    function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested)
-         external
-         pure;
+    function setDefaultGovernanceFee(uint16 _defaultGovernanceFee) external;
 
     /**
      * @notice Called by governance to set the default arbitrator.
@@ -494,6 +435,12 @@ interface IHATVaultsRegistry {
     function setMaxBountyDelay(uint32 _delay) external;
 
     /**
+     * @notice Called by governance to set the fee receiver address
+     * @param _governanceFeeReceiver The receiver of the fees from the payouts of the vaults
+     */
+    function setGovernanceFeeReceiver(address _governanceFeeReceiver) external;
+
+    /**
      * @notice Create a new vault
      * NOTE: Vaults should not use tokens which do not guarantee that the 
      * amount specified is the amount transferred
@@ -514,43 +461,6 @@ interface IHATVaultsRegistry {
      */
     function setVaultVisibility(address _vault, bool _visible) external;
 
-    /**
-     * @notice Transfer the part of the bounty that is supposed to be swapped
-     * into HAT tokens from the HATVault to the registry, and keep track of
-     * the amounts to be swapped and sent/burnt in a later transaction
-     * @param _asset The vault's native token
-     * @param _hacker The address of the beneficiary of the bounty
-     * @param _hackersHatReward The amount of the vault's native token to be
-     * swapped to HAT tokens and sent to the hacker via a vesting contract
-     * @param _governanceHatReward The amount of the vault's native token to
-     * be swapped to HAT tokens and sent to governance
-     */
-    function addTokensToSwap(
-        IERC20 _asset,
-        address _hacker,
-        uint256 _hackersHatReward,
-        uint256 _governanceHatReward
-    ) external;
-
-    /**
-     * @notice Called by governance to swap the given asset to HAT tokens and 
-     * distribute the HAT tokens: Send to governance their share and send to
-     * beneficiaries their share through a vesting contract.
-     * @param _asset The address of the token to be swapped to HAT tokens
-     * @param _beneficiaries Addresses of beneficiaries
-     * @param _amountOutMinimum Minimum amount of HAT tokens at swap
-     * @param _routingContract Routing contract to call for the swap
-     * @param _routingPayload Payload to send to the _routingContract for the
-     * swap
-     */
-    function swapAndSend(
-        address _asset,
-        address[] calldata _beneficiaries,
-        uint256 _amountOutMinimum,
-        address _routingContract,
-        bytes calldata _routingPayload
-    ) external;
-  
     /**
      * @notice Returns the withdraw enable period for all vaults. The safety
      * period starts when finished.
@@ -603,6 +513,12 @@ interface IHATVaultsRegistry {
     function feeSetter() external view returns(address);
 
     /**
+     * @notice Get the fee receiver address
+     * @return The address of the fee receiver
+     */
+    function governanceFeeReceiver() external view returns(address);
+
+    /**
      * @notice Get whether the system is in an emergency pause
      * @return Whether the system is in an emergency pause
      */
@@ -615,16 +531,10 @@ interface IHATVaultsRegistry {
     function owner() external view returns(address);
 
     /**
-     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to governance
-     * @return The default percentage of the total bounty to be swapped to HATs and sent to governance
+     * @notice Get the default fee percentage of the total bounty
+     * @return The default fee percentage of the total bounty
      */
-    function defaultBountyGovernanceHAT() external view returns(uint16);
-
-    /**
-     * @notice Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-     * @return The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-     */
-    function defaultBountyHackerHATVested() external view returns(uint16);
+    function defaultGovernanceFee() external view returns(uint16);
 
     /**
      * @notice Get the default arbitrator address
@@ -643,4 +553,10 @@ interface IHATVaultsRegistry {
      * @return The default challenge time out period
      */
     function defaultChallengeTimeOutPeriod() external view returns(uint32);
+
+    /**
+     * @notice Get the max governance fee
+     * @return The max governance fee
+     */
+    function MAX_GOVERNANCE_FEE() external view returns(uint16);
 }

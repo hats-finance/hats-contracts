@@ -14,9 +14,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -39,9 +37,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -86,8 +82,7 @@ module.exports = {
             ]
         }],
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -129,9 +124,7 @@ module.exports = {
             "rewardToken": "HATToken"
         }],
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "500",
-            "swapToken": "HATToken"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -146,8 +139,7 @@ module.exports = {
         "rewardControllersConf": [], // no reward controllers
         "hatToken": "",  // deploy a fresh HATToken contract
         "hatVaultsRegistryConf": {
-            "bountyGovernanceHAT": "0",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         }
     },
     "polygon": {
@@ -165,9 +157,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -190,9 +180,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -215,9 +203,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -240,9 +226,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -265,9 +249,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -290,9 +272,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0x4200000000000000000000000000000000000006", // WETH
         "hatVaultsRegistryConf": {
-            "swapToken": "0x4200000000000000000000000000000000000006", // WETH
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -315,9 +295,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "NEED ADDRESS", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "NEED ADDRESS", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
@@ -340,9 +318,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0xd86e243fc0007e6226b07c9a50c9d70d78299eb5", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
