@@ -21,7 +21,7 @@ contract HATTokenLock is TokenLock {
         uint256 _periods,
         uint256 _releaseStartTime,
         uint256 _vestingCliffTime,
-        bool _revocable,
+        Revocability _revocable,
         bool _canDelegate
     ) external {
         _initialize(
@@ -34,7 +34,7 @@ contract HATTokenLock is TokenLock {
             _periods,
             _releaseStartTime,
             _vestingCliffTime,
-            _revocable
+            _revocable == Revocability.Enabled
         );
         if (_canDelegate) {
             _token.delegate(_beneficiary);

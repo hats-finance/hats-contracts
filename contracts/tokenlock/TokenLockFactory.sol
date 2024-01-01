@@ -81,9 +81,11 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
         bool _revocable,
         bool _canDelegate
     ) external override returns(address contractAddress) {
+        ITokenLock.Revocability revocable = _revocable ? ITokenLock.Revocability.Enabled : ITokenLock.Revocability.Disabled;
+
         // Create contract using a minimal proxy and call initializer
         bytes memory initializer = abi.encodeWithSignature(
-            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,bool,bool)",
+            "initialize(address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint8,bool)",
             _owner,
             _beneficiary,
             _token,
@@ -93,7 +95,7 @@ contract TokenLockFactory is ITokenLockFactory, Ownable {
             _periods,
             _releaseStartTime,
             _vestingCliffTime,
-            _revocable,
+            revocable,
             _canDelegate
         );
 
