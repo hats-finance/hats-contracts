@@ -8,7 +8,18 @@ import "./HATAirdrop.sol";
 
 contract HATAirdropFactory {
     address public immutable implementation;
-    event HATAirdropCreated(address indexed _hatAirdrop);
+    event HATAirdropCreated(
+        address indexed _hatAirdrop,
+        address _owner,
+        string _merkleTreeIPFSRef,
+        bytes32 _root,
+        uint256 _startTime,
+        uint256 _deadline,
+        uint256 _lockEndTime,
+        uint256 _periods,
+        IERC20Upgradeable _token,
+        ITokenLockFactory _tokenLockFactory
+    );
 
     constructor (address _implementation) {
         implementation = _implementation;
@@ -49,7 +60,18 @@ contract HATAirdropFactory {
             _tokenLockFactory
         );
 
-        emit HATAirdropCreated(result);
+        emit HATAirdropCreated(
+            result,
+            _owner,
+            _merkleTreeIPFSRef,
+            _root,
+            _startTime,
+            _deadline,
+            _lockEndTime,
+            _periods,
+            _token,
+            _tokenLockFactory
+        );
     }
 
     function predictHATAirdropAddress(

@@ -86,6 +86,15 @@ contract("HATAirdrop", (accounts) => {
 
     assert.equal(tx.logs[0].event, "HATAirdropCreated");
     assert.equal(tx.logs[0].args._hatAirdrop, airdropAddress);
+    assert.equal(tx.logs[0].args._owner, accounts[0]);
+    assert.equal(tx.logs[0].args._merkleTreeIPFSRef, "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3");
+    assert.equal(tx.logs[0].args._root, merkleTree.getHexRoot());
+    assert.equal(tx.logs[0].args._startTime, startTime);
+    assert.equal(tx.logs[0].args._deadline, endTime);
+    assert.equal(tx.logs[0].args._lockEndTime, lockEndTime);
+    assert.equal(tx.logs[0].args._periods, periods);
+    assert.equal(tx.logs[0].args._token, token.address);
+    assert.equal(tx.logs[0].args._tokenLockFactory, tokenLockFactory.address);
     hatAirdrop = await HATAirdrop.at(airdropAddress);
 
     await token.mint(hatAirdrop.address, totalAmount);

@@ -94,7 +94,7 @@ function predictHATAirdropAddress(address _owner, string _merkleTreeIPFSRef, byt
 ### HATAirdropCreated
 
 ```solidity
-event HATAirdropCreated(address indexed _hatAirdrop)
+event HATAirdropCreated(address indexed _hatAirdrop, address _owner, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory)
 ```
 
 
@@ -106,6 +106,15 @@ event HATAirdropCreated(address indexed _hatAirdrop)
 | Name | Type | Description |
 |---|---|---|
 | _hatAirdrop `indexed` | address | undefined |
+| _owner  | address | undefined |
+| _merkleTreeIPFSRef  | string | undefined |
+| _root  | bytes32 | undefined |
+| _startTime  | uint256 | undefined |
+| _deadline  | uint256 | undefined |
+| _lockEndTime  | uint256 | undefined |
+| _periods  | uint256 | undefined |
+| _token  | contract IERC20Upgradeable | undefined |
+| _tokenLockFactory  | contract ITokenLockFactory | undefined |
 
 
 
