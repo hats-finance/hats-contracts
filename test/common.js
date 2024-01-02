@@ -12,6 +12,9 @@ const utils = require("./utils.js");
 const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const MAX_UINT16 = 65535;
+
 let epochRewardPerBlock = [
   web3.utils.toWei("441.3"),
   web3.utils.toWei("441.3"),
@@ -156,6 +159,8 @@ const setup = async function(
     isTokenLockRevocable: options.isTokenLockRevocable,
     maxBounty: options.maxBounty,
     bountySplit: options.bountySplit,
+    bountyGovernanceHAT: MAX_UINT16,
+    bountyHackerHATVested: MAX_UINT16,
     vestingDuration: 86400,
     vestingPeriods: 10
     }
@@ -264,5 +269,6 @@ module.exports = {
   advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
-  ZERO_ADDRESS
+  ZERO_ADDRESS,
+  MAX_UINT16
 };

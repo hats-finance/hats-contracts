@@ -43,7 +43,9 @@ contract VaultsManagerMock {
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
                                     vestingDuration: 86400,
-                                    vestingPeriods: 10
+                                    vestingPeriods: 10,
+                                    bountyGovernanceHAT: type(uint16).max,
+                                    bountyHackerHATVested: type(uint16).max
                                 }));
             _rewardController.setAllocPoint(vault, _allocPoint);
         }

@@ -31,6 +31,7 @@ const {
   advanceToNonSafetyPeriod,
   submitClaim,
   assertFunctionRaisesException,
+  MAX_UINT16
 } = require("./common.js");
 
 const setup = async function(
@@ -113,6 +114,8 @@ const setup = async function(
     isTokenLockRevocable: false,
     maxBounty: maxBounty,
     bountySplit: bountySplit,
+    bountyGovernanceHAT: MAX_UINT16,
+    bountyHackerHATVested: MAX_UINT16,
     vestingDuration: 86400,
     vestingPeriods: 10
     }
@@ -478,6 +481,8 @@ contract("HatTimelockController", (accounts) => {
       isTokenLockRevocable: false,
       maxBounty: maxBounty,
       bountySplit: bountySplit,
+      bountyGovernanceHAT: MAX_UINT16,
+      bountyHackerHATVested: MAX_UINT16,
       vestingDuration: 86400,
       vestingPeriods: 10
       }
