@@ -3,6 +3,8 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface ITokenLock {
     enum Revocability { NotSet, Enabled, Disabled }
 
@@ -11,6 +13,8 @@ interface ITokenLock {
     function release() external;
 
     function withdrawSurplus(uint256 _amount) external;
+
+    function sweepToken(IERC20 _token) external;
 
     function revoke() external;
 
