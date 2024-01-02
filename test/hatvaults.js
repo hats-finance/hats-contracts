@@ -5991,7 +5991,7 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     assert.isTrue(
       expectedHackerBalance.eq(await vestingTokenLock.managedAmount())
     );
-    assert.equal(await vestingTokenLock.revocable(), 2); //Disable
+    assert.equal(await vestingTokenLock.revocable(), false); //Disable
     assert.equal(await vestingTokenLock.canDelegate(), false);
 
     //hacker get also rewards via none vesting
