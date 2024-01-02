@@ -27,6 +27,30 @@ function deadline() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### initialize
+
+```solidity
+function initialize(address _owner, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _owner | address | undefined |
+| _merkleTreeIPFSRef | string | undefined |
+| _root | bytes32 | undefined |
+| _startTime | uint256 | undefined |
+| _deadline | uint256 | undefined |
+| _lockEndTime | uint256 | undefined |
+| _periods | uint256 | undefined |
+| _token | contract IERC20Upgradeable | undefined |
+| _tokenLockFactory | contract ITokenLockFactory | undefined |
+
 ### leafRedeemed
 
 ```solidity
@@ -48,6 +72,23 @@ function leafRedeemed(bytes32) external view returns (bool)
 | Name | Type | Description |
 |---|---|---|
 | _0 | bool | undefined |
+
+### lockEndTime
+
+```solidity
+function lockEndTime() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### owner
 
@@ -160,7 +201,7 @@ function startTime() external view returns (uint256)
 ### token
 
 ```solidity
-function token() external view returns (contract IERC20)
+function token() external view returns (contract IERC20Upgradeable)
 ```
 
 
@@ -172,12 +213,12 @@ function token() external view returns (contract IERC20)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract IERC20 | undefined |
+| _0 | contract IERC20Upgradeable | undefined |
 
 ### tokenLockFactory
 
 ```solidity
-function tokenLockFactory() external view returns (contract TokenLockFactory)
+function tokenLockFactory() external view returns (contract ITokenLockFactory)
 ```
 
 
@@ -189,7 +230,7 @@ function tokenLockFactory() external view returns (contract TokenLockFactory)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | contract TokenLockFactory | undefined |
+| _0 | contract ITokenLockFactory | undefined |
 
 ### transferOwnership
 
@@ -210,6 +251,22 @@ function transferOwnership(address newOwner) external nonpayable
 
 
 ## Events
+
+### Initialized
+
+```solidity
+event Initialized(uint8 version)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| version  | uint8 | undefined |
 
 ### MerkleTreeSet
 
