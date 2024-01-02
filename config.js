@@ -350,4 +350,29 @@ module.exports = {
             "deadline": null
         }
     },
+    "gnosis": {
+        "governance": "0xE650ba24115AE0260d8f723F89603DaF63b496cA",
+        "timelockDelay": 604800,
+        "executors": [
+            "0xfe46D9193BBCE8c590298d77b6f8dB0e619c7FF7",
+            "0xe24886AC31c25B544092542aD55aa484FbBF506B",
+            "0xe707ABbDA8146d2d3f3341E9B375Cb1fc78526d8",
+            "0x9Fb3d86157a9e2dC2a771C297f88FA9784fa4e31",
+            "0x2B6656e212f315D3C2DD477FE7EBFb3A86bb1c94",
+            "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
+            "0x42eefBC05794e71a0f7e7B63E5EcB52320345eBE"
+        ],
+        "rewardControllersConf": [],
+        "hatToken": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83", // USDC
+        "hatVaultsRegistryConf": {
+            "swapToken": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83", // USDC
+            "bountyGovernanceHAT": "1000",
+            "bountyHackerHATVested": "0"
+        },
+        "hatVaultsNFTConf": {
+            "merkleTreeIPFSRef": "",
+            "root": null,
+            "deadline": null
+        }
+    },
 };

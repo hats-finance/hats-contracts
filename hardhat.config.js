@@ -42,7 +42,8 @@ module.exports = {
       polygon: process.env.POLYGON_ETHERSCAN_API_KEY,
       arbitrum: process.env.ARBITRUM_ETHERSCAN_API_KEY,
       bnb: process.env.BNB_ETHERSCAN_API_KEY,
-      base: process.env.BASE_ETHERSCAN_API_KEY
+      base: process.env.BASE_ETHERSCAN_API_KEY,
+      gnosis: process.env.GNOSIS_ETHERSCAN_API_KEY
     }
   },
   gasReporter: {
@@ -123,6 +124,12 @@ module.exports = {
     meter: {
       url: `https://rpc.meter.io/`,
       accounts: [process.env.METER_PK],
+      gasPrice: "auto",
+      gas: "auto",
+    },
+    gnosis: {
+      url: `https://rpc.gnosischain.com`,
+      accounts: [process.env.GNOSIS_PK],
       gasPrice: "auto",
       gas: "auto",
     },
