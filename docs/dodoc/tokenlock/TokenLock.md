@@ -396,7 +396,7 @@ function renounceOwnership() external nonpayable
 ### revocable
 
 ```solidity
-function revocable() external view returns (enum ITokenLock.Revocability)
+function revocable() external view returns (bool)
 ```
 
 
@@ -408,7 +408,7 @@ function revocable() external view returns (enum ITokenLock.Revocability)
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | enum ITokenLock.Revocability | undefined |
+| _0 | bool | undefined |
 
 ### revoke
 
@@ -478,9 +478,9 @@ Gets surplus amount in the contract based on outstanding amount to release
 function sweepToken(contract IERC20 _token) external nonpayable
 ```
 
+Sweeps out accidentally sent tokens
 
 
-*sweeps out accidentally sent tokens*
 
 #### Parameters
 
@@ -697,6 +697,218 @@ event TokensWithdrawn(address indexed beneficiary, uint256 amount)
 |---|---|---|
 | beneficiary `indexed` | address | undefined |
 | amount  | uint256 | undefined |
+
+
+
+## Errors
+
+### AlreadyInitialized
+
+```solidity
+error AlreadyInitialized()
+```
+
+
+
+
+
+
+### AmountCannotBeZero
+
+```solidity
+error AmountCannotBeZero()
+```
+
+
+
+
+
+
+### AmountRequestedBiggerThanSurplus
+
+```solidity
+error AmountRequestedBiggerThanSurplus()
+```
+
+
+
+
+
+
+### BeneficiaryCannotBeZero
+
+```solidity
+error BeneficiaryCannotBeZero()
+```
+
+
+
+
+
+
+### CannotCancelAfterLockIsAccepted
+
+```solidity
+error CannotCancelAfterLockIsAccepted()
+```
+
+
+
+
+
+
+### CannotSweepVestedToken
+
+```solidity
+error CannotSweepVestedToken()
+```
+
+
+
+
+
+
+### CliffTimeMustBeBeforeEndTime
+
+```solidity
+error CliffTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### LockIsAlreadyRevoked
+
+```solidity
+error LockIsAlreadyRevoked()
+```
+
+
+
+
+
+
+### LockIsNonRevocable
+
+```solidity
+error LockIsNonRevocable()
+```
+
+
+
+
+
+
+### ManagedAmountCannotBeZero
+
+```solidity
+error ManagedAmountCannotBeZero()
+```
+
+
+
+
+
+
+### NoAmountAvailableToRelease
+
+```solidity
+error NoAmountAvailableToRelease()
+```
+
+
+
+
+
+
+### NoAvailableUnvestedAmount
+
+```solidity
+error NoAvailableUnvestedAmount()
+```
+
+
+
+
+
+
+### OnlyBeneficiary
+
+```solidity
+error OnlyBeneficiary()
+```
+
+
+
+
+
+
+### OnlySweeper
+
+```solidity
+error OnlySweeper()
+```
+
+
+
+
+
+
+### PeriodsCannotBeBelowMinimum
+
+```solidity
+error PeriodsCannotBeBelowMinimum()
+```
+
+
+
+
+
+
+### ReleaseStartTimeMustBeBeforeEndTime
+
+```solidity
+error ReleaseStartTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### StartTimeCannotBeZero
+
+```solidity
+error StartTimeCannotBeZero()
+```
+
+
+
+
+
+
+### StartTimeMustBeBeforeEndTime
+
+```solidity
+error StartTimeMustBeBeforeEndTime()
+```
+
+
+
+
+
+
+### TokenCannotBeZero
+
+```solidity
+error TokenCannotBeZero()
+```
+
+
+
+
 
 
 
