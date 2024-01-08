@@ -25,7 +25,9 @@ function hashTokens(account, amount) {
 
 contract("HATAirdrop", (accounts) => {
 
+  let hatAirdropFactory;
   let hatAirdrop;
+  let hatAirdropImplementation;
   let token;
   let merkleTree;
   let hashes = [];
@@ -57,11 +59,10 @@ contract("HATAirdrop", (accounts) => {
     }
     periods = 90;
 
-    let hatAirdropImplementation = await HATAirdrop.new();
-    let hatAirdropFactory = await HATAirdropFactory.new(hatAirdropImplementation.address);
+    hatAirdropImplementation = await HATAirdrop.new();
+    hatAirdropFactory = await HATAirdropFactory.new(hatAirdropImplementation.address);
 
     let airdropAddress = await hatAirdropFactory.predictHATAirdropAddress(
-      accounts[0],
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
@@ -73,39 +74,78 @@ contract("HATAirdrop", (accounts) => {
     );
 
     let tx = await hatAirdropFactory.createHATAirdrop(
-      accounts[0],
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
       endTime,
       lockEndTime,
       periods,
+      totalAmount,
       token.address,
       tokenLockFactory.address
     );
 
     assert.equal(tx.logs[0].event, "HATAirdropCreated");
     assert.equal(tx.logs[0].args._hatAirdrop, airdropAddress);
-    assert.equal(tx.logs[0].args._owner, accounts[0]);
     assert.equal(tx.logs[0].args._merkleTreeIPFSRef, "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3");
     assert.equal(tx.logs[0].args._root, merkleTree.getHexRoot());
     assert.equal(tx.logs[0].args._startTime, startTime);
     assert.equal(tx.logs[0].args._deadline, endTime);
     assert.equal(tx.logs[0].args._lockEndTime, lockEndTime);
     assert.equal(tx.logs[0].args._periods, periods);
+    assert.equal(tx.logs[0].args._totalAmount, totalAmount);
     assert.equal(tx.logs[0].args._token, token.address);
     assert.equal(tx.logs[0].args._tokenLockFactory, tokenLockFactory.address);
     hatAirdrop = await HATAirdrop.at(airdropAddress);
 
-    await token.mint(hatAirdrop.address, totalAmount);
+    await token.mint(hatAirdropFactory.address, totalAmount);
   }
+
+  it("Update implementation", async () => {
+    await setupHATAirdrop();
+
+    await assertFunctionRaisesException(
+      hatAirdropFactory.updateImplementation(
+        accounts[3],
+        { from: accounts[1] }
+      ),
+      "Ownable: caller is not the owner"
+    );
+
+    assert.equal(await hatAirdropFactory.implementation(), hatAirdropImplementation.address);
+
+    let tx = await hatAirdropFactory.updateImplementation(accounts[3]);
+    assert.equal(tx.logs[0].event, "ImplementationUpdated");
+    assert.equal(tx.logs[0].args._newImplementation, accounts[3]);
+
+    assert.equal(await hatAirdropFactory.implementation(), accounts[3]);
+  });
+
+  it("Only owner can create airdrops", async () => {
+    await setupHATAirdrop();
+
+    await assertFunctionRaisesException(
+      hatAirdropFactory.createHATAirdrop(
+        "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
+        merkleTree.getHexRoot(),
+        startTime,
+        endTime,
+        lockEndTime,
+        periods,
+        totalAmount,
+        token.address,
+        tokenLockFactory.address,
+        { from: accounts[1] }
+      ),
+      "Ownable: caller is not the owner"
+    );
+  });
 
   it("Cannot initialize twice", async () => {
     await setupHATAirdrop();
 
     try {
       await hatAirdrop.initialize(
-        await hatAirdrop.owner(),
         "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
         await hatAirdrop.root(),
         await hatAirdrop.startTime(),
@@ -127,16 +167,16 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     for (const [account, amount] of Object.entries(airdropData)) {
-      let currentBalance = await token.balanceOf(hatAirdrop.address);
+      let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
       let tx = await hatAirdrop.redeem(account, amount, proof);
-      assert.equal(tx.logs[1].event, "TokensRedeemed");
-      assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-      assert.equal(tx.logs[1].args._amount, amount);
-      assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
-      assert.equal((await token.balanceOf(hatAirdrop.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
+      assert.equal(tx.logs[0].event, "TokensRedeemed");
+      assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+      assert.equal(tx.logs[0].args._amount, amount);
+      assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
+      assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
 
-      let tokenLock = await HATTokenLock.at(tx.logs[1].args._tokenLock);
+      let tokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
       assert.equal(await tokenLock.startTime(), startTime);
       assert.equal(await tokenLock.endTime(), endTime);
       assert.equal(await tokenLock.periods(), periods);
@@ -150,7 +190,7 @@ contract("HATAirdrop", (accounts) => {
       assert.equal(await tokenLock.canDelegate(), true);
     }
 
-    assert.equal((await token.balanceOf(hatAirdrop.address)).toString(), "0");
+    assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), "0");
   });
 
   it("Redeem all no lock", async () => {
@@ -159,7 +199,7 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     for (const [account, amount] of Object.entries(airdropData)) {
-      let currentBalance = await token.balanceOf(hatAirdrop.address);
+      let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
       let tx = await hatAirdrop.redeem(account, amount, proof);
       assert.equal(tx.logs[0].event, "TokensRedeemed");
@@ -167,10 +207,10 @@ contract("HATAirdrop", (accounts) => {
       assert.equal(tx.logs[0].args._tokenLock, ZERO_ADDRESS);
       assert.equal(tx.logs[0].args._amount, amount);
       assert.equal(await token.balanceOf(account), amount);
-      assert.equal((await token.balanceOf(hatAirdrop.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
+      assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
     }
 
-    assert.equal((await token.balanceOf(hatAirdrop.address)).toString(), "0");
+    assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), "0");
   });
 
   it("Cannot redeem before start time", async () => {
@@ -186,10 +226,10 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     let tx = await hatAirdrop.redeem(account, amount, proof);
-    assert.equal(tx.logs[1].event, "TokensRedeemed");
-    assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-    assert.equal(tx.logs[1].args._amount, amount);
-    assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
+    assert.equal(tx.logs[0].event, "TokensRedeemed");
+    assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+    assert.equal(tx.logs[0].args._amount, amount);
+    assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
   });
 
   it("Cannot redeem after deadline", async () => {
@@ -201,10 +241,10 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     let tx = await hatAirdrop.redeem(account, amount, proof);
-    assert.equal(tx.logs[1].event, "TokensRedeemed");
-    assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-    assert.equal(tx.logs[1].args._amount, amount);
-    assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
+    assert.equal(tx.logs[0].event, "TokensRedeemed");
+    assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+    assert.equal(tx.logs[0].args._amount, amount);
+    assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
 
     await utils.increaseTime(365 * 24 * 3600);
 
@@ -226,10 +266,10 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     let tx = await hatAirdrop.redeem(account, amount, proof);
-    assert.equal(tx.logs[1].event, "TokensRedeemed");
-    assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-    assert.equal(tx.logs[1].args._amount, amount);
-    assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
+    assert.equal(tx.logs[0].event, "TokensRedeemed");
+    assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+    assert.equal(tx.logs[0].args._amount, amount);
+    assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
 
     await assertFunctionRaisesException(
       hatAirdrop.redeem(account, amount, proof),
@@ -257,23 +297,18 @@ contract("HATAirdrop", (accounts) => {
     );
 
     let tx = await hatAirdrop.redeem(account, amount, proof);
-    assert.equal(tx.logs[1].event, "TokensRedeemed");
-    assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-    assert.equal(tx.logs[1].args._amount, amount);    
-    assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
+    assert.equal(tx.logs[0].event, "TokensRedeemed");
+    assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+    assert.equal(tx.logs[0].args._amount, amount);    
+    assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
   });
 
-  it("Recover tokens", async () => {
+  it("Withdraw tokens", async () => {
     await setupHATAirdrop();
 
     await assertFunctionRaisesException(
-      hatAirdrop.recoverTokens({ from: accounts[1] }),
+      hatAirdropFactory.withdrawTokens(token.address, 1, { from: accounts[1] }),
       "Ownable: caller is not the owner"
-    );
-
-    await assertFunctionRaisesException(
-      hatAirdrop.recoverTokens(),
-      "CannotRecoverBeforeDeadline"
     );
 
     await utils.increaseTime(7 * 24 * 3600);
@@ -282,18 +317,18 @@ contract("HATAirdrop", (accounts) => {
     const proof = merkleTree.getHexProof(hashTokens(account, amount));
 
     let tx = await hatAirdrop.redeem(account, amount, proof);
-    assert.equal(tx.logs[1].event, "TokensRedeemed");
-    assert.equal(tx.logs[1].args._account.toLowerCase(), account.toLowerCase());
-    assert.equal(tx.logs[1].args._amount, amount);
-    assert.equal(await token.balanceOf(tx.logs[1].args._tokenLock), amount);
+    assert.equal(tx.logs[0].event, "TokensRedeemed");
+    assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+    assert.equal(tx.logs[0].args._amount, amount);
+    assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
 
     await utils.increaseTime(365 * 24 * 3600);
 
-    tx = await hatAirdrop.recoverTokens();
+    tx = await hatAirdropFactory.withdrawTokens(token.address, web3.utils.toBN((totalAmount - parseInt(amount))));
     
-    assert.equal(tx.logs[0].event, "TokensRecovered");
+    assert.equal(tx.logs[0].event, "TokensWithdrawn");
     assert.equal(tx.logs[0].args._owner.toLowerCase(), accounts[0].toLowerCase());
     assert.equal(tx.logs[0].args._amount.toString(), web3.utils.toBN((totalAmount - parseInt(amount))).toString());
-    assert.equal((await token.balanceOf(hatAirdrop.address)).toString(), "0");
+    assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), "0");
   });
 });

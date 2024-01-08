@@ -27,10 +27,27 @@ function deadline() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
+### factory
+
+```solidity
+function factory() external view returns (address)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+
 ### initialize
 
 ```solidity
-function initialize(address _owner, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable
+function initialize(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable
 ```
 
 
@@ -41,7 +58,6 @@ function initialize(address _owner, string _merkleTreeIPFSRef, bytes32 _root, ui
 
 | Name | Type | Description |
 |---|---|---|
-| _owner | address | undefined |
 | _merkleTreeIPFSRef | string | undefined |
 | _root | bytes32 | undefined |
 | _startTime | uint256 | undefined |
@@ -90,23 +106,6 @@ function lockEndTime() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### owner
-
-```solidity
-function owner() external view returns (address)
-```
-
-
-
-*Returns the address of the current owner.*
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-
 ### periods
 
 ```solidity
@@ -123,17 +122,6 @@ function periods() external view returns (uint256)
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
-
-### recoverTokens
-
-```solidity
-function recoverTokens() external nonpayable
-```
-
-
-
-
-
 
 ### redeem
 
@@ -152,17 +140,6 @@ function redeem(address _account, uint256 _amount, bytes32[] _proof) external no
 | _account | address | undefined |
 | _amount | uint256 | undefined |
 | _proof | bytes32[] | undefined |
-
-### renounceOwnership
-
-```solidity
-function renounceOwnership() external nonpayable
-```
-
-
-
-*Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
-
 
 ### root
 
@@ -232,22 +209,6 @@ function tokenLockFactory() external view returns (contract ITokenLockFactory)
 |---|---|---|
 | _0 | contract ITokenLockFactory | undefined |
 
-### transferOwnership
-
-```solidity
-function transferOwnership(address newOwner) external nonpayable
-```
-
-
-
-*Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| newOwner | address | undefined |
-
 
 
 ## Events
@@ -286,40 +247,6 @@ event MerkleTreeSet(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime
 | _root  | bytes32 | undefined |
 | _startTime  | uint256 | undefined |
 | _deadline  | uint256 | undefined |
-
-### OwnershipTransferred
-
-```solidity
-event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| previousOwner `indexed` | address | undefined |
-| newOwner `indexed` | address | undefined |
-
-### TokensRecovered
-
-```solidity
-event TokensRecovered(address indexed _owner, uint256 _amount)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _owner `indexed` | address | undefined |
-| _amount  | uint256 | undefined |
 
 ### TokensRedeemed
 

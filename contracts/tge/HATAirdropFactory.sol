@@ -3,20 +3,26 @@
 
 pragma solidity 0.8.16;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./HATAirdrop.sol";
 
-contract HATAirdropFactory {
-    address public immutable implementation;
+contract HATAirdropFactory is Ownable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    address public implementation;
+
+    event ImplementationUpdated(address indexed _newImplementation);
+    event TokensWithdrawn(address indexed _owner, uint256 _amount);
     event HATAirdropCreated(
         address indexed _hatAirdrop,
-        address _owner,
         string _merkleTreeIPFSRef,
         bytes32 _root,
         uint256 _startTime,
         uint256 _deadline,
         uint256 _lockEndTime,
         uint256 _periods,
+        uint256 _totalAmount,
         IERC20Upgradeable _token,
         ITokenLockFactory _tokenLockFactory
     );
@@ -25,19 +31,23 @@ contract HATAirdropFactory {
         implementation = _implementation;
     }
 
+        address owner = owner();
+        _token.safeTransfer(owner, _amount);
+        emit TokensWithdrawn(owner, _amount);
+    }
+
     function createHATAirdrop(
-        address _owner,
         string memory _merkleTreeIPFSRef,
         bytes32 _root,
         uint256 _startTime,
         uint256 _deadline,
         uint256 _lockEndTime,
         uint256 _periods,
+        uint256 _totalAmount,
         IERC20Upgradeable _token,
         ITokenLockFactory _tokenLockFactory
-    ) external returns (address result) {
+    ) external onlyOwner returns (address result) {
         result = Clones.cloneDeterministic(implementation, keccak256(abi.encodePacked(
-            _owner,
             _merkleTreeIPFSRef,
             _root,
             _startTime,
@@ -49,7 +59,6 @@ contract HATAirdropFactory {
         )));
 
         HATAirdrop(payable(result)).initialize(
-            _owner,
             _merkleTreeIPFSRef,
             _root,
             _startTime,
@@ -60,22 +69,23 @@ contract HATAirdropFactory {
             _tokenLockFactory
         );
 
+        _token.safeApprove(result, _totalAmount);
+
         emit HATAirdropCreated(
             result,
-            _owner,
             _merkleTreeIPFSRef,
             _root,
             _startTime,
             _deadline,
             _lockEndTime,
             _periods,
+            _totalAmount,
             _token,
             _tokenLockFactory
         );
     }
 
     function predictHATAirdropAddress(
-        address _owner,
         string memory _merkleTreeIPFSRef,
         bytes32 _root,
         uint256 _startTime,
@@ -84,9 +94,8 @@ contract HATAirdropFactory {
         uint256 _periods,
         IERC20 _token,
         ITokenLockFactory _tokenLockFactory
-    ) public view returns (address) {
+    ) external view returns (address) {
         return Clones.predictDeterministicAddress(implementation, keccak256(abi.encodePacked(
-            _owner,
             _merkleTreeIPFSRef,
             _root,
             _startTime,
