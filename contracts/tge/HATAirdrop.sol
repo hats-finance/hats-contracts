@@ -69,7 +69,8 @@ contract HATAirdrop is Initializable {
         leafRedeemed[leaf] = true;
 
         address _tokenLock = address(0);
-        if (lockEndTime != 0) {
+        // solhint-disable-next-line not-rely-on-time
+        if (lockEndTime > block.timestamp) {
             _tokenLock = tokenLockFactory.createTokenLock(
                 address(token),
                 0x0000000000000000000000000000000000000000,

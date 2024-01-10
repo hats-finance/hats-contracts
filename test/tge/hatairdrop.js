@@ -53,7 +53,7 @@ contract("HATAirdrop", (accounts) => {
     startTime = (await web3.eth.getBlock("latest")).timestamp + 7 * 24 * 3600;
     endTime = (await web3.eth.getBlock("latest")).timestamp + (7 + 365) * 24 * 3600;
     if (useLock) {
-      lockEndTime = (await web3.eth.getBlock("latest")).timestamp + (7 + 365) * 24 * 3600;
+      lockEndTime = (await web3.eth.getBlock("latest")).timestamp + 14 * 24 * 3600;
     } else {
       lockEndTime = 0;
     }
@@ -178,7 +178,7 @@ contract("HATAirdrop", (accounts) => {
 
       let tokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
       assert.equal(await tokenLock.startTime(), startTime);
-      assert.equal(await tokenLock.endTime(), endTime);
+      assert.equal(await tokenLock.endTime(), lockEndTime);
       assert.equal(await tokenLock.periods(), periods);
       assert.equal(await tokenLock.owner(), "0x0000000000000000000000000000000000000000");
       assert.equal((await tokenLock.beneficiary()).toLowerCase(), account.toLowerCase());
@@ -199,6 +199,53 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     for (const [account, amount] of Object.entries(airdropData)) {
+      let currentBalance = await token.balanceOf(hatAirdropFactory.address);
+      const proof = merkleTree.getHexProof(hashTokens(account, amount));
+      let tx = await hatAirdrop.redeem(account, amount, proof);
+      assert.equal(tx.logs[0].event, "TokensRedeemed");
+      assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+      assert.equal(tx.logs[0].args._tokenLock, ZERO_ADDRESS);
+      assert.equal(tx.logs[0].args._amount, amount);
+      assert.equal(await token.balanceOf(account), amount);
+      assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
+    }
+
+    assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), "0");
+  });
+
+  it("Redeem after lock ended does not deploy lock", async () => {
+    await setupHATAirdrop();
+
+    await utils.increaseTime(7 * 24 * 3600);
+
+    const dataLength = Object.entries(airdropData).length;
+    for (const [account, amount] of Object.entries(airdropData).slice(0, dataLength / 2)) {
+      let currentBalance = await token.balanceOf(hatAirdropFactory.address);
+      const proof = merkleTree.getHexProof(hashTokens(account, amount));
+      let tx = await hatAirdrop.redeem(account, amount, proof);
+      assert.equal(tx.logs[0].event, "TokensRedeemed");
+      assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
+      assert.equal(tx.logs[0].args._amount, amount);
+      assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
+      assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), currentBalance.sub(web3.utils.toBN(amount)).toString());
+
+      let tokenLock = await HATTokenLock.at(tx.logs[0].args._tokenLock);
+      assert.equal(await tokenLock.startTime(), startTime);
+      assert.equal(await tokenLock.endTime(), lockEndTime);
+      assert.equal(await tokenLock.periods(), periods);
+      assert.equal(await tokenLock.owner(), "0x0000000000000000000000000000000000000000");
+      assert.equal((await tokenLock.beneficiary()).toLowerCase(), account.toLowerCase());
+      assert.equal(await tokenLock.managedAmount(), amount);
+      assert.equal(await tokenLock.token(), token.address);
+      assert.equal(await tokenLock.releaseStartTime(), 0);
+      assert.equal(await tokenLock.vestingCliffTime(), 0);
+      assert.equal(await tokenLock.revocable(), false);
+      assert.equal(await tokenLock.canDelegate(), true);
+    }
+
+    await utils.increaseTime(7 * 24 * 3600);
+
+    for (const [account, amount] of Object.entries(airdropData).slice(dataLength / 2)) {
       let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
       let tx = await hatAirdrop.redeem(account, amount, proof);
