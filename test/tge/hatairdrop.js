@@ -60,9 +60,10 @@ contract("HATAirdrop", (accounts) => {
     periods = 90;
 
     hatAirdropImplementation = await HATAirdrop.new();
-    hatAirdropFactory = await HATAirdropFactory.new(hatAirdropImplementation.address);
+    hatAirdropFactory = await HATAirdropFactory.new();
 
     let airdropAddress = await hatAirdropFactory.predictHATAirdropAddress(
+      hatAirdropImplementation.address,
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
@@ -74,6 +75,7 @@ contract("HATAirdrop", (accounts) => {
     );
 
     let tx = await hatAirdropFactory.createHATAirdrop(
+      hatAirdropImplementation.address,
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
@@ -101,31 +103,12 @@ contract("HATAirdrop", (accounts) => {
     await token.mint(hatAirdropFactory.address, totalAmount);
   }
 
-  it("Update implementation", async () => {
-    await setupHATAirdrop();
-
-    await assertFunctionRaisesException(
-      hatAirdropFactory.updateImplementation(
-        accounts[3],
-        { from: accounts[1] }
-      ),
-      "Ownable: caller is not the owner"
-    );
-
-    assert.equal(await hatAirdropFactory.implementation(), hatAirdropImplementation.address);
-
-    let tx = await hatAirdropFactory.updateImplementation(accounts[3]);
-    assert.equal(tx.logs[0].event, "ImplementationUpdated");
-    assert.equal(tx.logs[0].args._newImplementation, accounts[3]);
-
-    assert.equal(await hatAirdropFactory.implementation(), accounts[3]);
-  });
-
   it("Only owner can create airdrops", async () => {
     await setupHATAirdrop();
 
     await assertFunctionRaisesException(
       hatAirdropFactory.createHATAirdrop(
+        hatAirdropImplementation.address,
         "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
         merkleTree.getHexRoot(),
         startTime,

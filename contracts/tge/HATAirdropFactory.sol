@@ -10,9 +10,6 @@ import "./HATAirdrop.sol";
 contract HATAirdropFactory is Ownable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    address public implementation;
-
-    event ImplementationUpdated(address indexed _newImplementation);
     event TokensWithdrawn(address indexed _owner, uint256 _amount);
     event HATAirdropCreated(
         address indexed _hatAirdrop,
@@ -27,15 +24,6 @@ contract HATAirdropFactory is Ownable {
         ITokenLockFactory _tokenLockFactory
     );
 
-    constructor (address _implementation) {
-        implementation = _implementation;
-    }
-
-    function updateImplementation(address _newImplementation) external onlyOwner {
-        implementation = _newImplementation;
-        emit ImplementationUpdated(_newImplementation);
-    }
-
     function withdrawTokens(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
         address owner = owner();
         _token.safeTransfer(owner, _amount);
@@ -43,6 +31,7 @@ contract HATAirdropFactory is Ownable {
     }
 
     function createHATAirdrop(
+        address _implementation,
         string memory _merkleTreeIPFSRef,
         bytes32 _root,
         uint256 _startTime,
@@ -53,7 +42,7 @@ contract HATAirdropFactory is Ownable {
         IERC20Upgradeable _token,
         ITokenLockFactory _tokenLockFactory
     ) external onlyOwner returns (address result) {
-        result = Clones.cloneDeterministic(implementation, keccak256(abi.encodePacked(
+        result = Clones.cloneDeterministic(_implementation, keccak256(abi.encodePacked(
             _merkleTreeIPFSRef,
             _root,
             _startTime,
@@ -92,6 +81,7 @@ contract HATAirdropFactory is Ownable {
     }
 
     function predictHATAirdropAddress(
+        address _implementation,
         string memory _merkleTreeIPFSRef,
         bytes32 _root,
         uint256 _startTime,
@@ -101,7 +91,7 @@ contract HATAirdropFactory is Ownable {
         IERC20 _token,
         ITokenLockFactory _tokenLockFactory
     ) external view returns (address) {
-        return Clones.predictDeterministicAddress(implementation, keccak256(abi.encodePacked(
+        return Clones.predictDeterministicAddress(_implementation, keccak256(abi.encodePacked(
             _merkleTreeIPFSRef,
             _root,
             _startTime,

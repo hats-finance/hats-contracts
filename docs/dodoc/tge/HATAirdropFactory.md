@@ -13,7 +13,7 @@
 ### createHATAirdrop
 
 ```solidity
-function createHATAirdrop(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, uint256 _totalAmount, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable returns (address result)
+function createHATAirdrop(address _implementation, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, uint256 _totalAmount, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable returns (address result)
 ```
 
 
@@ -24,6 +24,7 @@ function createHATAirdrop(string _merkleTreeIPFSRef, bytes32 _root, uint256 _sta
 
 | Name | Type | Description |
 |---|---|---|
+| _implementation | address | undefined |
 | _merkleTreeIPFSRef | string | undefined |
 | _root | bytes32 | undefined |
 | _startTime | uint256 | undefined |
@@ -39,23 +40,6 @@ function createHATAirdrop(string _merkleTreeIPFSRef, bytes32 _root, uint256 _sta
 | Name | Type | Description |
 |---|---|---|
 | result | address | undefined |
-
-### implementation
-
-```solidity
-function implementation() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### owner
 
@@ -77,7 +61,7 @@ function owner() external view returns (address)
 ### predictHATAirdropAddress
 
 ```solidity
-function predictHATAirdropAddress(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20 _token, contract ITokenLockFactory _tokenLockFactory) external view returns (address)
+function predictHATAirdropAddress(address _implementation, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20 _token, contract ITokenLockFactory _tokenLockFactory) external view returns (address)
 ```
 
 
@@ -88,6 +72,7 @@ function predictHATAirdropAddress(string _merkleTreeIPFSRef, bytes32 _root, uint
 
 | Name | Type | Description |
 |---|---|---|
+| _implementation | address | undefined |
 | _merkleTreeIPFSRef | string | undefined |
 | _root | bytes32 | undefined |
 | _startTime | uint256 | undefined |
@@ -129,22 +114,6 @@ function transferOwnership(address newOwner) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | newOwner | address | undefined |
-
-### updateImplementation
-
-```solidity
-function updateImplementation(address _newImplementation) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _newImplementation | address | undefined |
 
 ### withdrawTokens
 
@@ -191,22 +160,6 @@ event HATAirdropCreated(address indexed _hatAirdrop, string _merkleTreeIPFSRef, 
 | _totalAmount  | uint256 | undefined |
 | _token  | contract IERC20Upgradeable | undefined |
 | _tokenLockFactory  | contract ITokenLockFactory | undefined |
-
-### ImplementationUpdated
-
-```solidity
-event ImplementationUpdated(address indexed _newImplementation)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _newImplementation `indexed` | address | undefined |
 
 ### OwnershipTransferred
 
