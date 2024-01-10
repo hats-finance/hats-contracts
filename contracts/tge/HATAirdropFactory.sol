@@ -25,7 +25,7 @@ contract HATAirdropFactory is Ownable {
     );
 
     function withdrawTokens(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
-        address owner = owner();
+        address owner = msg.sender;
         _token.safeTransfer(owner, _amount);
         emit TokensWithdrawn(owner, _amount);
     }
