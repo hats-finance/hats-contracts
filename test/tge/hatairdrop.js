@@ -149,10 +149,12 @@ contract("HATAirdrop", (accounts) => {
 
     await utils.increaseTime(7 * 24 * 3600);
 
+    let i = 0;
     for (const [account, amount] of Object.entries(airdropData)) {
       let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
-      let tx = await hatAirdrop.redeem(account, amount, proof);
+      let tx = await hatAirdrop.redeem(amount, proof, { from: accounts[i] });
+      i++;
       assert.equal(tx.logs[0].event, "TokensRedeemed");
       assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
       assert.equal(tx.logs[0].args._amount, amount);
@@ -181,10 +183,12 @@ contract("HATAirdrop", (accounts) => {
 
     await utils.increaseTime(7 * 24 * 3600);
 
+    let i = 0;
     for (const [account, amount] of Object.entries(airdropData)) {
       let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
-      let tx = await hatAirdrop.redeem(account, amount, proof);
+      let tx = await hatAirdrop.redeem(amount, proof, { from: accounts[i] });
+      i++;
       assert.equal(tx.logs[0].event, "TokensRedeemed");
       assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
       assert.equal(tx.logs[0].args._tokenLock, ZERO_ADDRESS);
@@ -202,10 +206,12 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     const dataLength = Object.entries(airdropData).length;
+    let i = 0;
     for (const [account, amount] of Object.entries(airdropData).slice(0, dataLength / 2)) {
       let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
-      let tx = await hatAirdrop.redeem(account, amount, proof);
+      let tx = await hatAirdrop.redeem(amount, proof, { from: accounts[i] });
+      i++;
       assert.equal(tx.logs[0].event, "TokensRedeemed");
       assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
       assert.equal(tx.logs[0].args._amount, amount);
@@ -231,7 +237,8 @@ contract("HATAirdrop", (accounts) => {
     for (const [account, amount] of Object.entries(airdropData).slice(dataLength / 2)) {
       let currentBalance = await token.balanceOf(hatAirdropFactory.address);
       const proof = merkleTree.getHexProof(hashTokens(account, amount));
-      let tx = await hatAirdrop.redeem(account, amount, proof);
+      let tx = await hatAirdrop.redeem(amount, proof, { from: accounts[i] });
+      i++;
       assert.equal(tx.logs[0].event, "TokensRedeemed");
       assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
       assert.equal(tx.logs[0].args._tokenLock, ZERO_ADDRESS);
@@ -249,13 +256,13 @@ contract("HATAirdrop", (accounts) => {
     const [account, amount] = Object.entries(airdropData)[0];
     const proof = merkleTree.getHexProof(hashTokens(account, amount));
     await assertFunctionRaisesException(
-      hatAirdrop.redeem(account, amount, proof),
+      hatAirdrop.redeem(amount, proof),
       "CannotRedeemBeforeStartTime"
     );
 
     await utils.increaseTime(7 * 24 * 3600);
 
-    let tx = await hatAirdrop.redeem(account, amount, proof);
+    let tx = await hatAirdrop.redeem(amount, proof);
     assert.equal(tx.logs[0].event, "TokensRedeemed");
     assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
     assert.equal(tx.logs[0].args._amount, amount);
@@ -270,7 +277,7 @@ contract("HATAirdrop", (accounts) => {
 
     await utils.increaseTime(7 * 24 * 3600);
 
-    let tx = await hatAirdrop.redeem(account, amount, proof);
+    let tx = await hatAirdrop.redeem(amount, proof);
     assert.equal(tx.logs[0].event, "TokensRedeemed");
     assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
     assert.equal(tx.logs[0].args._amount, amount);
@@ -282,7 +289,7 @@ contract("HATAirdrop", (accounts) => {
     const proof2 = merkleTree.getHexProof(hashTokens(account2, amount2));
 
     await assertFunctionRaisesException(
-      hatAirdrop.redeem(account2, amount2, proof2),
+      hatAirdrop.redeem(amount2, proof2, { from: accounts[1] }),
       "CannotRedeemAfterDeadline"
     );
   });
@@ -295,14 +302,14 @@ contract("HATAirdrop", (accounts) => {
 
     await utils.increaseTime(7 * 24 * 3600);
 
-    let tx = await hatAirdrop.redeem(account, amount, proof);
+    let tx = await hatAirdrop.redeem(amount, proof);
     assert.equal(tx.logs[0].event, "TokensRedeemed");
     assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
     assert.equal(tx.logs[0].args._amount, amount);
     assert.equal(await token.balanceOf(tx.logs[0].args._tokenLock), amount);
 
     await assertFunctionRaisesException(
-      hatAirdrop.redeem(account, amount, proof),
+      hatAirdrop.redeem(amount, proof),
       "LeafAlreadyRedeemed"
     );
   });
@@ -315,18 +322,18 @@ contract("HATAirdrop", (accounts) => {
     await utils.increaseTime(7 * 24 * 3600);
 
     await assertFunctionRaisesException(
-      hatAirdrop.redeem(account, amount, [web3.utils.randomHex(32)]),
+      hatAirdrop.redeem(amount, [web3.utils.randomHex(32)]),
       "InvalidMerkleProof"
     );
 
     const proof = merkleTree.getHexProof(hashTokens(account, amount));
 
     await assertFunctionRaisesException(
-      hatAirdrop.redeem(account, "0", proof),
+      hatAirdrop.redeem("0", proof),
       "InvalidMerkleProof"
     );
 
-    let tx = await hatAirdrop.redeem(account, amount, proof);
+    let tx = await hatAirdrop.redeem(amount, proof);
     assert.equal(tx.logs[0].event, "TokensRedeemed");
     assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
     assert.equal(tx.logs[0].args._amount, amount);    
@@ -346,7 +353,7 @@ contract("HATAirdrop", (accounts) => {
     const [account, amount] = Object.entries(airdropData)[0];
     const proof = merkleTree.getHexProof(hashTokens(account, amount));
 
-    let tx = await hatAirdrop.redeem(account, amount, proof);
+    let tx = await hatAirdrop.redeem(amount, proof);
     assert.equal(tx.logs[0].event, "TokensRedeemed");
     assert.equal(tx.logs[0].args._account.toLowerCase(), account.toLowerCase());
     assert.equal(tx.logs[0].args._amount, amount);

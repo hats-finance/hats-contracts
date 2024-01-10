@@ -58,12 +58,13 @@ contract HATAirdrop is Initializable {
         emit MerkleTreeSet(_merkleTreeIPFSRef, _root, _startTime, _deadline);
     }
 
-    function redeem(address _account, uint256 _amount, bytes32[] calldata _proof) external {
+    function redeem(uint256 _amount, bytes32[] calldata _proof) external {
+        address account = msg.sender;
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < startTime) revert CannotRedeemBeforeStartTime();
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > deadline) revert CannotRedeemAfterDeadline();
-        bytes32 leaf = _leaf(_account, _amount);
+        bytes32 leaf = _leaf(account, _amount);
         if (leafRedeemed[leaf]) revert LeafAlreadyRedeemed();
         if(!_verify(_proof, leaf)) revert InvalidMerkleProof();
         leafRedeemed[leaf] = true;
@@ -74,7 +75,7 @@ contract HATAirdrop is Initializable {
             _tokenLock = tokenLockFactory.createTokenLock(
                 address(token),
                 0x0000000000000000000000000000000000000000,
-                _account,
+                account,
                 _amount,
                 startTime,
                 lockEndTime,
@@ -86,10 +87,10 @@ contract HATAirdrop is Initializable {
             );
             token.safeTransferFrom(factory, _tokenLock, _amount);
         } else {
-            token.safeTransferFrom(factory, _account, _amount);
+            token.safeTransferFrom(factory, account, _amount);
         }
        
-        emit TokensRedeemed(_account, _tokenLock, _amount);
+        emit TokensRedeemed(account, _tokenLock, _amount);
     }
 
     function _verify(bytes32[] calldata proof, bytes32 leaf) internal view returns (bool) {
