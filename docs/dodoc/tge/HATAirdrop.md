@@ -50,7 +50,7 @@ function factory() external view returns (address)
 function initialize(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable
 ```
 
-
+Initialize a HATAirdrop instance
 
 
 
@@ -58,14 +58,14 @@ function initialize(string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime
 
 | Name | Type | Description |
 |---|---|---|
-| _merkleTreeIPFSRef | string | undefined |
-| _root | bytes32 | undefined |
-| _startTime | uint256 | undefined |
-| _deadline | uint256 | undefined |
-| _lockEndTime | uint256 | undefined |
-| _periods | uint256 | undefined |
-| _token | contract IERC20Upgradeable | undefined |
-| _tokenLockFactory | contract ITokenLockFactory | undefined |
+| _merkleTreeIPFSRef | string | new merkle tree ipfs reference. |
+| _root | bytes32 | new merkle tree root to use for verifying airdrop data. |
+| _startTime | uint256 | start of the redeem period and of the token lock (if exists) |
+| _deadline | uint256 | end time to redeem from the contract |
+| _lockEndTime | uint256 | end time for the token lock contract (if exists) |
+| _periods | uint256 | number of periods of the token lock contract (if exists) |
+| _token | contract IERC20Upgradeable | the token to be airdropped |
+| _tokenLockFactory | contract ITokenLockFactory | the token lock factory to use to deploy the token locks |
 
 ### leafRedeemed
 

@@ -38,6 +38,17 @@ contract HATAirdrop is Initializable {
         _disableInitializers();
     }
 
+    /**
+    * @notice Initialize a HATAirdrop instance
+    * @param _merkleTreeIPFSRef new merkle tree ipfs reference.
+    * @param _root new merkle tree root to use for verifying airdrop data.
+    * @param _startTime start of the redeem period and of the token lock (if exists)
+    * @param _deadline end time to redeem from the contract
+    * @param _lockEndTime end time for the token lock contract (if exists)
+    * @param _periods number of periods of the token lock contract (if exists)
+    * @param _token the token to be airdropped
+    * @param _tokenLockFactory the token lock factory to use to deploy the token locks
+    */
     function initialize(
         string memory _merkleTreeIPFSRef,
         bytes32 _root,
