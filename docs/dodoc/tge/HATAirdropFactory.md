@@ -13,7 +13,7 @@
 ### createHATAirdrop
 
 ```solidity
-function createHATAirdrop(address _implementation, bytes _initData, contract IERC20Upgradeable _token, uint256 _totalAmount) external nonpayable returns (address result)
+function createHATAirdrop(address _implementation, bytes _initData, contract IERC20 _token, uint256 _totalAmount) external nonpayable returns (address result)
 ```
 
 
@@ -26,7 +26,7 @@ function createHATAirdrop(address _implementation, bytes _initData, contract IER
 |---|---|---|
 | _implementation | address | undefined |
 | _initData | bytes | undefined |
-| _token | contract IERC20Upgradeable | undefined |
+| _token | contract IERC20 | undefined |
 | _totalAmount | uint256 | undefined |
 
 #### Returns
@@ -100,7 +100,7 @@ function predictHATAirdropAddress(address _implementation, bytes _initData) exte
 ### redeemMultipleAirdrops
 
 ```solidity
-function redeemMultipleAirdrops(contract HATAirdrop[] _airdrops, uint256[] _amounts, bytes32[][] _proofs) external nonpayable
+function redeemMultipleAirdrops(contract IHATAirdrop[] _airdrops, uint256[] _amounts, bytes32[][] _proofs) external nonpayable
 ```
 
 
@@ -111,7 +111,7 @@ function redeemMultipleAirdrops(contract HATAirdrop[] _airdrops, uint256[] _amou
 
 | Name | Type | Description |
 |---|---|---|
-| _airdrops | contract HATAirdrop[] | undefined |
+| _airdrops | contract IHATAirdrop[] | undefined |
 | _amounts | uint256[] | undefined |
 | _proofs | bytes32[][] | undefined |
 
@@ -145,7 +145,7 @@ function transferOwnership(address newOwner) external nonpayable
 ### withdrawTokens
 
 ```solidity
-function withdrawTokens(contract IERC20Upgradeable _token, uint256 _amount) external nonpayable
+function withdrawTokens(contract IERC20 _token, uint256 _amount) external nonpayable
 ```
 
 
@@ -156,7 +156,7 @@ function withdrawTokens(contract IERC20Upgradeable _token, uint256 _amount) exte
 
 | Name | Type | Description |
 |---|---|---|
-| _token | contract IERC20Upgradeable | undefined |
+| _token | contract IERC20 | undefined |
 | _amount | uint256 | undefined |
 
 
@@ -166,7 +166,7 @@ function withdrawTokens(contract IERC20Upgradeable _token, uint256 _amount) exte
 ### HATAirdropCreated
 
 ```solidity
-event HATAirdropCreated(address indexed _hatAirdrop, bytes _initData, contract IERC20Upgradeable _token, uint256 _totalAmount)
+event HATAirdropCreated(address indexed _hatAirdrop, bytes _initData, contract IERC20 _token, uint256 _totalAmount)
 ```
 
 
@@ -179,7 +179,7 @@ event HATAirdropCreated(address indexed _hatAirdrop, bytes _initData, contract I
 |---|---|---|
 | _hatAirdrop `indexed` | address | undefined |
 | _initData  | bytes | undefined |
-| _token  | contract IERC20Upgradeable | undefined |
+| _token  | contract IERC20 | undefined |
 | _totalAmount  | uint256 | undefined |
 
 ### OwnershipTransferred

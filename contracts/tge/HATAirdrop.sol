@@ -6,11 +6,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "../tokenlock/ITokenLockFactory.sol";
+import "./interfaces/IHATAirdrop.sol";
 
 /*
 An airdrop contract that transfers tokens based on a merkle tree.
 */
-contract HATAirdrop is Initializable {
+contract HATAirdrop is IHATAirdrop, Initializable {
     error CannotRedeemBeforeStartTime();
     error CannotRedeemAfterDeadline();
     error LeafAlreadyRedeemed();
