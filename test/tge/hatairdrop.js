@@ -4,6 +4,7 @@ const TokenLockFactory = artifacts.require("./TokenLockFactory.sol");
 const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const HATAirdrop = artifacts.require("./HATAirdrop.sol");
 const HATAirdropFactory = artifacts.require("./HATAirdropFactory.sol");
+const IHATAirdrop = new ethers.utils.Interface(HATAirdrop.abi);
 const { contract, web3 } = require("hardhat");
 const {
   assertFunctionRaisesException, assertVMException, ZERO_ADDRESS,
@@ -37,6 +38,7 @@ contract("HATAirdrop", (accounts) => {
   let endTime;
   let lockEndTime;
   let periods;
+  let initData;
 
   async function setupHATAirdrop(useLock = true) {
     token = await ERC20Mock.new("Staking", "STK");
@@ -62,8 +64,7 @@ contract("HATAirdrop", (accounts) => {
     hatAirdropImplementation = await HATAirdrop.new();
     hatAirdropFactory = await HATAirdropFactory.new();
 
-    let airdropAddress = await hatAirdropFactory.predictHATAirdropAddress(
-      hatAirdropImplementation.address,
+    initData = IHATAirdrop.encodeFunctionData("initialize", [
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
@@ -72,32 +73,25 @@ contract("HATAirdrop", (accounts) => {
       periods,
       token.address,
       tokenLockFactory.address
+    ]);
+
+    let airdropAddress = await hatAirdropFactory.predictHATAirdropAddress(
+      hatAirdropImplementation.address,
+      initData
     );
 
     let tx = await hatAirdropFactory.createHATAirdrop(
       hatAirdropImplementation.address,
-      "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
-      merkleTree.getHexRoot(),
-      startTime,
-      endTime,
-      lockEndTime,
-      periods,
-      totalAmount,
+      initData,
       token.address,
-      tokenLockFactory.address
+      totalAmount
     );
 
     assert.equal(tx.logs[0].event, "HATAirdropCreated");
     assert.equal(tx.logs[0].args._hatAirdrop, airdropAddress);
-    assert.equal(tx.logs[0].args._merkleTreeIPFSRef, "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3");
-    assert.equal(tx.logs[0].args._root, merkleTree.getHexRoot());
-    assert.equal(tx.logs[0].args._startTime, startTime);
-    assert.equal(tx.logs[0].args._deadline, endTime);
-    assert.equal(tx.logs[0].args._lockEndTime, lockEndTime);
-    assert.equal(tx.logs[0].args._periods, periods);
-    assert.equal(tx.logs[0].args._totalAmount, totalAmount);
+    assert.equal(tx.logs[0].args._initData, initData);
     assert.equal(tx.logs[0].args._token, token.address);
-    assert.equal(tx.logs[0].args._tokenLockFactory, tokenLockFactory.address);
+    assert.equal(tx.logs[0].args._totalAmount, totalAmount);
     hatAirdrop = await HATAirdrop.at(airdropAddress);
 
     await token.mint(hatAirdropFactory.address, totalAmount);
@@ -109,15 +103,9 @@ contract("HATAirdrop", (accounts) => {
     await assertFunctionRaisesException(
       hatAirdropFactory.createHATAirdrop(
         hatAirdropImplementation.address,
-        "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
-        merkleTree.getHexRoot(),
-        startTime,
-        endTime,
-        lockEndTime,
-        periods,
-        totalAmount,
+        initData,
         token.address,
-        tokenLockFactory.address,
+        totalAmount,
         { from: accounts[1] }
       ),
       "Ownable: caller is not the owner"
@@ -181,17 +169,22 @@ contract("HATAirdrop", (accounts) => {
   it("Redeem all from multiple airdrops", async () => {
     await setupHATAirdrop();
 
-    let tx = await hatAirdropFactory.createHATAirdrop(
-      hatAirdropImplementation.address,
+    const initData2 = IHATAirdrop.encodeFunctionData("initialize", [
       "QmSUXfYsk9HgrMBa7tgp3MBm8FGwDF9hnVaR9C1PMoFdS3",
       merkleTree.getHexRoot(),
       startTime,
       endTime,
       lockEndTime + 1,
       periods,
-      totalAmount,
       token.address,
       tokenLockFactory.address
+    ]);
+
+    let tx = await hatAirdropFactory.createHATAirdrop(
+      hatAirdropImplementation.address,
+      initData2,
+      token.address,
+      totalAmount
     );
 
     const hatAirdrop2 = await HATAirdrop.at(tx.logs[0].args._hatAirdrop);
@@ -210,6 +203,20 @@ contract("HATAirdrop", (accounts) => {
     }
 
     assert.equal((await token.balanceOf(hatAirdropFactory.address)).toString(), "0");
+  });
+
+  it("Factory deployment fails if init fails", async () => {
+    await setupHATAirdrop();
+
+    await assertFunctionRaisesException(
+      hatAirdropFactory.createHATAirdrop(
+        hatAirdropFactory.address,
+        initData,
+        token.address,
+        totalAmount
+      ),
+      "HATAirdropInitializationFailed"
+    );
   });
 
   it("Cannot redeem with factory if contract is not deployed by the factory", async () => {

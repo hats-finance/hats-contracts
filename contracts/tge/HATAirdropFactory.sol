@@ -10,24 +10,14 @@ import "./HATAirdrop.sol";
 contract HATAirdropFactory is Ownable {
     error RedeemDataArraysLengthMismatch();
     error ContractIsNotHATAirdrop();
+    error HATAirdropInitializationFailed();
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     mapping(address => bool) public isAirdrop;
 
     event TokensWithdrawn(address indexed _owner, uint256 _amount);
-    event HATAirdropCreated(
-        address indexed _hatAirdrop,
-        string _merkleTreeIPFSRef,
-        bytes32 _root,
-        uint256 _startTime,
-        uint256 _deadline,
-        uint256 _lockEndTime,
-        uint256 _periods,
-        uint256 _totalAmount,
-        IERC20Upgradeable _token,
-        ITokenLockFactory _tokenLockFactory
-    );
+    event HATAirdropCreated(address indexed _hatAirdrop, bytes _initData, IERC20Upgradeable _token, uint256 _totalAmount);
 
     function withdrawTokens(IERC20Upgradeable _token, uint256 _amount) external onlyOwner {
         address owner = msg.sender;
@@ -56,77 +46,30 @@ contract HATAirdropFactory is Ownable {
 
     function createHATAirdrop(
         address _implementation,
-        string memory _merkleTreeIPFSRef,
-        bytes32 _root,
-        uint256 _startTime,
-        uint256 _deadline,
-        uint256 _lockEndTime,
-        uint256 _periods,
-        uint256 _totalAmount,
+        bytes calldata _initData,
         IERC20Upgradeable _token,
-        ITokenLockFactory _tokenLockFactory
+        uint256 _totalAmount
     ) external onlyOwner returns (address result) {
-        result = Clones.cloneDeterministic(_implementation, keccak256(abi.encodePacked(
-            _merkleTreeIPFSRef,
-            _root,
-            _startTime,
-            _deadline,
-            _lockEndTime,
-            _periods,
-            _token,
-            _tokenLockFactory
-        )));
+        result = Clones.cloneDeterministic(_implementation, keccak256(_initData));
 
-        // TODO: Change this to generic bytes instead of harcoded function signature
-        HATAirdrop(payable(result)).initialize(
-            _merkleTreeIPFSRef,
-            _root,
-            _startTime,
-            _deadline,
-            _lockEndTime,
-            _periods,
-            _token,
-            _tokenLockFactory
-        );
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success,) = result.call(_initData);
+
+        if (!success) {
+            revert HATAirdropInitializationFailed();
+        }
 
         isAirdrop[result] = true;
 
         _token.safeApprove(result, _totalAmount);
 
-        emit HATAirdropCreated(
-            result,
-            _merkleTreeIPFSRef,
-            _root,
-            _startTime,
-            _deadline,
-            _lockEndTime,
-            _periods,
-            _totalAmount,
-            _token,
-            _tokenLockFactory
-        );
+        emit HATAirdropCreated(result, _initData, _token, _totalAmount);
     }
 
     function predictHATAirdropAddress(
         address _implementation,
-        string memory _merkleTreeIPFSRef,
-        bytes32 _root,
-        uint256 _startTime,
-        uint256 _deadline,
-        uint256 _lockEndTime,
-        uint256 _periods,
-        IERC20 _token,
-        ITokenLockFactory _tokenLockFactory
+        bytes calldata _initData
     ) external view returns (address) {
-        return Clones.predictDeterministicAddress(_implementation, keccak256(abi.encodePacked(
-            _merkleTreeIPFSRef,
-            _root,
-            _startTime,
-            _deadline,
-            _lockEndTime,
-            _periods,
-            _token,
-            _tokenLockFactory
-        )));
+        return Clones.predictDeterministicAddress(_implementation, keccak256(_initData));
     }
 }

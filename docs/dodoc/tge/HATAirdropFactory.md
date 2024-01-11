@@ -13,7 +13,7 @@
 ### createHATAirdrop
 
 ```solidity
-function createHATAirdrop(address _implementation, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, uint256 _totalAmount, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory) external nonpayable returns (address result)
+function createHATAirdrop(address _implementation, bytes _initData, contract IERC20Upgradeable _token, uint256 _totalAmount) external nonpayable returns (address result)
 ```
 
 
@@ -25,15 +25,9 @@ function createHATAirdrop(address _implementation, string _merkleTreeIPFSRef, by
 | Name | Type | Description |
 |---|---|---|
 | _implementation | address | undefined |
-| _merkleTreeIPFSRef | string | undefined |
-| _root | bytes32 | undefined |
-| _startTime | uint256 | undefined |
-| _deadline | uint256 | undefined |
-| _lockEndTime | uint256 | undefined |
-| _periods | uint256 | undefined |
-| _totalAmount | uint256 | undefined |
+| _initData | bytes | undefined |
 | _token | contract IERC20Upgradeable | undefined |
-| _tokenLockFactory | contract ITokenLockFactory | undefined |
+| _totalAmount | uint256 | undefined |
 
 #### Returns
 
@@ -83,7 +77,7 @@ function owner() external view returns (address)
 ### predictHATAirdropAddress
 
 ```solidity
-function predictHATAirdropAddress(address _implementation, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, contract IERC20 _token, contract ITokenLockFactory _tokenLockFactory) external view returns (address)
+function predictHATAirdropAddress(address _implementation, bytes _initData) external view returns (address)
 ```
 
 
@@ -95,14 +89,7 @@ function predictHATAirdropAddress(address _implementation, string _merkleTreeIPF
 | Name | Type | Description |
 |---|---|---|
 | _implementation | address | undefined |
-| _merkleTreeIPFSRef | string | undefined |
-| _root | bytes32 | undefined |
-| _startTime | uint256 | undefined |
-| _deadline | uint256 | undefined |
-| _lockEndTime | uint256 | undefined |
-| _periods | uint256 | undefined |
-| _token | contract IERC20 | undefined |
-| _tokenLockFactory | contract ITokenLockFactory | undefined |
+| _initData | bytes | undefined |
 
 #### Returns
 
@@ -179,7 +166,7 @@ function withdrawTokens(contract IERC20Upgradeable _token, uint256 _amount) exte
 ### HATAirdropCreated
 
 ```solidity
-event HATAirdropCreated(address indexed _hatAirdrop, string _merkleTreeIPFSRef, bytes32 _root, uint256 _startTime, uint256 _deadline, uint256 _lockEndTime, uint256 _periods, uint256 _totalAmount, contract IERC20Upgradeable _token, contract ITokenLockFactory _tokenLockFactory)
+event HATAirdropCreated(address indexed _hatAirdrop, bytes _initData, contract IERC20Upgradeable _token, uint256 _totalAmount)
 ```
 
 
@@ -191,15 +178,9 @@ event HATAirdropCreated(address indexed _hatAirdrop, string _merkleTreeIPFSRef, 
 | Name | Type | Description |
 |---|---|---|
 | _hatAirdrop `indexed` | address | undefined |
-| _merkleTreeIPFSRef  | string | undefined |
-| _root  | bytes32 | undefined |
-| _startTime  | uint256 | undefined |
-| _deadline  | uint256 | undefined |
-| _lockEndTime  | uint256 | undefined |
-| _periods  | uint256 | undefined |
-| _totalAmount  | uint256 | undefined |
+| _initData  | bytes | undefined |
 | _token  | contract IERC20Upgradeable | undefined |
-| _tokenLockFactory  | contract ITokenLockFactory | undefined |
+| _totalAmount  | uint256 | undefined |
 
 ### OwnershipTransferred
 
@@ -243,6 +224,17 @@ event TokensWithdrawn(address indexed _owner, uint256 _amount)
 
 ```solidity
 error ContractIsNotHATAirdrop()
+```
+
+
+
+
+
+
+### HATAirdropInitializationFailed
+
+```solidity
+error HATAirdropInitializationFailed()
 ```
 
 
