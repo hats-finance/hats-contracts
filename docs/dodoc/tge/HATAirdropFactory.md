@@ -41,6 +41,28 @@ function createHATAirdrop(address _implementation, string _merkleTreeIPFSRef, by
 |---|---|---|
 | result | address | undefined |
 
+### isAirdrop
+
+```solidity
+function isAirdrop(address) external view returns (bool)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
 ### owner
 
 ```solidity
@@ -87,6 +109,24 @@ function predictHATAirdropAddress(address _implementation, string _merkleTreeIPF
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
+
+### redeemMultipleAirdrops
+
+```solidity
+function redeemMultipleAirdrops(contract HATAirdrop[] _airdrops, uint256[] _amounts, bytes32[][] _proofs) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _airdrops | contract HATAirdrop[] | undefined |
+| _amounts | uint256[] | undefined |
+| _proofs | bytes32[][] | undefined |
 
 ### renounceOwnership
 
@@ -194,6 +234,31 @@ event TokensWithdrawn(address indexed _owner, uint256 _amount)
 |---|---|---|
 | _owner `indexed` | address | undefined |
 | _amount  | uint256 | undefined |
+
+
+
+## Errors
+
+### ContractIsNotHATAirdrop
+
+```solidity
+error ContractIsNotHATAirdrop()
+```
+
+
+
+
+
+
+### RedeemDataArraysLengthMismatch
+
+```solidity
+error RedeemDataArraysLengthMismatch()
+```
+
+
+
+
 
 
 

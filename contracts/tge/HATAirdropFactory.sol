@@ -8,7 +8,12 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./HATAirdrop.sol";
 
 contract HATAirdropFactory is Ownable {
+    error RedeemDataArraysLengthMismatch();
+    error ContractIsNotHATAirdrop();
+
     using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    mapping(address => bool) public isAirdrop;
 
     event TokensWithdrawn(address indexed _owner, uint256 _amount);
     event HATAirdropCreated(
@@ -28,6 +33,25 @@ contract HATAirdropFactory is Ownable {
         address owner = msg.sender;
         _token.safeTransfer(owner, _amount);
         emit TokensWithdrawn(owner, _amount);
+    }
+
+    function redeemMultipleAirdrops(HATAirdrop[] calldata _airdrops, uint256[] calldata _amounts, bytes32[][] calldata _proofs) external {
+        if (_airdrops.length != _amounts.length || _airdrops.length != _proofs.length) {
+            revert RedeemDataArraysLengthMismatch();
+        }
+
+        address caller = msg.sender;
+        for (uint256 i = 0; i < _airdrops.length;) {
+            if (!isAirdrop[address(_airdrops[i])]) {
+                revert ContractIsNotHATAirdrop();
+            }
+
+            HATAirdrop(_airdrops[i]).redeem(caller, _amounts[i], _proofs[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function createHATAirdrop(
@@ -53,6 +77,7 @@ contract HATAirdropFactory is Ownable {
             _tokenLockFactory
         )));
 
+        // TODO: Change this to generic bytes instead of harcoded function signature
         HATAirdrop(payable(result)).initialize(
             _merkleTreeIPFSRef,
             _root,
@@ -63,6 +88,8 @@ contract HATAirdropFactory is Ownable {
             _token,
             _tokenLockFactory
         );
+
+        isAirdrop[result] = true;
 
         _token.safeApprove(result, _totalAmount);
 

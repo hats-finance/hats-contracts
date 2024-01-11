@@ -325,4 +325,15 @@ error LeafAlreadyRedeemed()
 
 
 
+### RedeemerMustBeBeneficiary
+
+```solidity
+error RedeemerMustBeBeneficiary()
+```
+
+
+
+
+
+
 

@@ -16,6 +16,7 @@ contract HATAirdrop is Initializable {
     error LeafAlreadyRedeemed();
     error InvalidMerkleProof();
     error CannotRecoverBeforeDeadline();
+    error RedeemerMustBeBeneficiary();
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -59,6 +60,9 @@ contract HATAirdrop is Initializable {
     }
 
     function redeem(address _account, uint256 _amount, bytes32[] calldata _proof) external {
+        if (msg.sender != _account && msg.sender != factory) {
+            revert RedeemerMustBeBeneficiary();
+        }
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < startTime) revert CannotRedeemBeforeStartTime();
         // solhint-disable-next-line not-rely-on-time
