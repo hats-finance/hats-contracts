@@ -126,7 +126,7 @@ function periods() external view returns (uint256)
 ### redeem
 
 ```solidity
-function redeem(uint256 _amount, bytes32[] _proof) external nonpayable
+function redeem(address _account, uint256 _amount, bytes32[] _proof) external nonpayable
 ```
 
 
@@ -137,6 +137,7 @@ function redeem(uint256 _amount, bytes32[] _proof) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
+| _account | address | undefined |
 | _amount | uint256 | undefined |
 | _proof | bytes32[] | undefined |
 
