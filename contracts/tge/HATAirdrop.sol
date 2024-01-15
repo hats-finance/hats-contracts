@@ -45,7 +45,7 @@ contract HATAirdrop is IHATAirdrop, Initializable {
     * @param _root new merkle tree root to use for verifying airdrop data.
     * @param _startTime start of the redeem period and of the token lock (if exists)
     * @param _deadline end time to redeem from the contract
-    * @param _lockEndTime end time for the token lock contract (if exists)
+    * @param _lockEndTime end time for the token lock contract. If this date is in the past, the tokens will be transferred directly to the user and no token lock will be created
     * @param _periods number of periods of the token lock contract (if exists)
     * @param _token the token to be airdropped
     * @param _tokenLockFactory the token lock factory to use to deploy the token locks
