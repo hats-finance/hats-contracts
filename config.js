@@ -341,9 +341,7 @@ module.exports = {
         "rewardControllersConf": [],
         "hatToken": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83", // USDC
         "hatVaultsRegistryConf": {
-            "swapToken": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83", // USDC
-            "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "governanceFee": "1000"
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
