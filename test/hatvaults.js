@@ -23,8 +23,7 @@ const {
   epochRewardPerBlock,
   setup,
   submitClaim,
-  ZERO_ADDRESS,
-  MAX_UINT16
+  ZERO_ADDRESS
 } = require("./common.js");
 const { assert } = require("chai");
 const { web3 } = require("hardhat");

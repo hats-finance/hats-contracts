@@ -27,8 +27,7 @@ const {
   advanceToSafetyPeriod,
   advanceToNonSafetyPeriod,
   submitClaim,
-  assertFunctionRaisesException,
-  MAX_UINT16
+  assertFunctionRaisesException
 } = require("./common.js");
 
 const setup = async function(
