@@ -36,13 +36,8 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: { 
       mainnet: process.env.ETHERSCAN_API_KEY,
-      goerli: process.env.ETHERSCAN_API_KEY,
-      optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
-      optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
-      polygon: process.env.POLYGON_ETHERSCAN_API_KEY,
-      arbitrum: process.env.ARBITRUM_ETHERSCAN_API_KEY,
-      bnb: process.env.BNB_ETHERSCAN_API_KEY,
-      base: process.env.BASE_ETHERSCAN_API_KEY
+      sepolia: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY
     }
   },
   gasReporter: {
