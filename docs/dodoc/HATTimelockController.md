@@ -650,6 +650,24 @@ function setEmergencyPaused(contract HATVaultsRegistry _registry, bool _isEmerge
 | _registry | contract HATVaultsRegistry | undefined |
 | _isEmergencyPaused | bool | undefined |
 
+### setHATBountySplit
+
+```solidity
+function setHATBountySplit(contract HATVault _vault, uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _vault | contract HATVault | undefined |
+| _bountyGovernanceHAT | uint16 | undefined |
+| _bountyHackerHATVested | uint16 | undefined |
+
 ### setVaultDescription
 
 ```solidity
