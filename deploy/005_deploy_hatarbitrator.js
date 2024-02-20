@@ -45,7 +45,7 @@ const func = async function (hre) {
     if ((await read('HATKlerosConnector', {}, 'owner')) !== (await deployments.get('HATTimelockController')).address) {
         await execute('HATKlerosConnector', { from: deployer, log: true }, 'transferOwnership', (await deployments.get('HATTimelockController')).address);
     }
-}
+};
 
 module.exports = func;
 func.tags = ['HATArbitrator'];
