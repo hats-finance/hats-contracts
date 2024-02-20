@@ -11,6 +11,7 @@ const func = async function (hre) {
     let bountyGovernanceHAT = config.hatVaultsRegistryConf.bountyGovernanceHAT;
     let bountyHackerHATVested = config.hatVaultsRegistryConf.bountyHackerHATVested;
     let swapToken = config.hatVaultsRegistryConf.swapToken;
+    let useKleros = config.hatVaultsRegistryConf.useKleros;
     if (!swapToken || swapToken === "HATToken") {
         swapToken = (await deployments.get('HATToken')).address;  
     }
@@ -21,7 +22,7 @@ const func = async function (hre) {
             (await deployments.get('HATVault')).address,
             (await deployments.get('HATClaimsManager')).address,
             (await deployments.get('HATTimelockController')).address,
-            (await deployments.get('HATGovernanceArbitrator')).address,
+            useKleros ? (await deployments.get('HATArbitrator')).address : (await deployments.get('HATGovernanceArbitrator')).address,
             swapToken,
             bountyGovernanceHAT,
             bountyHackerHATVested,
