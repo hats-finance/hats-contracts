@@ -47,8 +47,12 @@ async function main(addresses, config) {
   let rewardControllerImplementations = addresses["rewardControllerImplementations"];
   let hatVaultImplementation = addresses["hatVaultImplementation"];
 
-  let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
-  let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
+  let governanceFee = config["hatVaultsRegistryConf"]["governanceFee"];
+  let governanceFeeReceiver = config["hatVaultsRegistryConf"]["governanceFeeReceiver"];
+
+    if (!governanceFeeReceiver) {
+        governanceFeeReceiver = governance;
+    }
 
   await verifyContract(arbitrator, []);
   for (const rewardControllerImplementation of rewardControllerImplementations ) {
@@ -59,9 +63,8 @@ async function main(addresses, config) {
     hatVaultImplementation,
     hatTimelockController,
     arbitrator,
-    hatToken,
-    bountyGovernanceHAT,
-    bountyHackerHATVested,
+    governanceFee,
+    governanceFeeReceiver,
     tokenLockFactory
   ]);
 

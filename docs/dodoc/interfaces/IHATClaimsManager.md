@@ -139,40 +139,6 @@ Returns the address of the vault&#39;s arbitrator If no specific value for this 
 |---|---|---|
 | _0 | address | The address of the vault&#39;s arbitrator |
 
-### getBountyGovernanceHAT
-
-```solidity
-function getBountyGovernanceHAT() external view returns (uint16)
-```
-
-Returns the vault HAT bounty split part that goes to the governance If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that goes to the governance |
-
-### getBountyHackerHATVested
-
-```solidity
-function getBountyHackerHATVested() external view returns (uint16)
-```
-
-Returns the vault HAT bounty split part that is vested for the hacker If no specific value for this vault has been set, the registry&#39;s default value will be returned.
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The vault&#39;s HAT bounty split part that is vested for the hacker |
-
 ### getChallengePeriod
 
 ```solidity
@@ -206,6 +172,23 @@ Returns the period of time after which a claim for a bounty payout can be dismis
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint32 | The vault&#39;s challenge timeout period |
+
+### getGovernanceFee
+
+```solidity
+function getGovernanceFee() external view returns (uint16)
+```
+
+Returns the vault fee split that goes to the governance If no specific value for this vault has been set, the registry&#39;s default value will be returned.
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | The vault&#39;s fee split that goes to the governance |
 
 ### initialize
 
@@ -356,13 +339,13 @@ Set new committee address. Can be called by existing committee, or by the the va
 |---|---|---|
 | _committee | address | The address of the new committee  |
 
-### setHATBountySplit
+### setGovernanceFee
 
 ```solidity
-function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external nonpayable
+function setGovernanceFee(uint16 _governanceFee) external nonpayable
 ```
 
-Called by the registry&#39;s owner to set the vault HAT token bounty  split upon an approval. If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
+Called by the registry&#39;s owner to set the fee percentage for payouts  If the value passed is the special &quot;null&quot; value the vault will use the registry&#39;s default value.
 
 
 
@@ -370,8 +353,7 @@ Called by the registry&#39;s owner to set the vault HAT token bounty  split upon
 
 | Name | Type | Description |
 |---|---|---|
-| _bountyGovernanceHAT | uint16 | The HAT bounty for governance |
-| _bountyHackerHATVested | uint16 | The HAT bounty vested for the hacker |
+| _governanceFee | uint16 | The fee percentage for governance |
 
 ### setMaxBounty
 
@@ -608,10 +590,10 @@ event SetCommittee(address indexed _committee)
 |---|---|---|
 | _committee `indexed` | address | undefined |
 
-### SetHATBountySplit
+### SetGovernanceFee
 
 ```solidity
-event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested)
+event SetGovernanceFee(uint16 _governanceFee)
 ```
 
 
@@ -622,8 +604,7 @@ event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVe
 
 | Name | Type | Description |
 |---|---|---|
-| _bountyGovernanceHAT  | uint256 | undefined |
-| _bountyHackerHATVested  | uint256 | undefined |
+| _governanceFee  | uint16 | undefined |
 
 ### SetMaxBounty
 
@@ -813,6 +794,17 @@ error CommitteeBountyCannotBeMoreThanMax()
 
 ```solidity
 error DelayPeriodForSettingMaxBountyHadNotPassed()
+```
+
+
+
+
+
+
+### FeeCannotBeMoreThanMaxFee
+
+```solidity
+error FeeCannotBeMoreThanMaxFee()
 ```
 
 

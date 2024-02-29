@@ -46,25 +46,6 @@ contract HATTimelockController is TimelockController {
         _rewardController.setAllocPoint(address(_vault), _allocPoint);
     }
 
-    function swapAndSend(
-        IHATVaultsRegistry _registry,
-        address _asset,
-        address[] calldata _beneficiaries,
-        uint256 _amountOutMinimum,
-        address _routingContract,
-        bytes calldata _routingPayload
-    )
-    external
-    onlyRole(PROPOSER_ROLE) {
-        _registry.swapAndSend(
-            _asset,
-            _beneficiaries,
-            _amountOutMinimum,
-            _routingContract,
-            _routingPayload
-        );
-    }
-
     function setEmergencyPaused(IHATVaultsRegistry _registry, bool _isEmergencyPaused) external onlyRole(PROPOSER_ROLE) {
         _registry.setEmergencyPaused(_isEmergencyPaused);
     }

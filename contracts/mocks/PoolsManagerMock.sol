@@ -42,10 +42,9 @@ contract VaultsManagerMock {
                                     isTokenLockRevocable: false,
                                     maxBounty: _maxBounty,
                                     bountySplit: _bountySplit,
+                                    governanceFee: type(uint16).max,
                                     vestingDuration: 86400,
-                                    vestingPeriods: 10,
-                                    bountyGovernanceHAT: type(uint16).max,
-                                    bountyHackerHATVested: type(uint16).max
+                                    vestingPeriods: 10
                                 }));
             _rewardController.setAllocPoint(vault, _allocPoint);
         }

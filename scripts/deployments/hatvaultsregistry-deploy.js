@@ -88,8 +88,12 @@ async function main(config) {
         tokenLockFactory = "0x6E6578bC77984A1eF3469af009cFEC5529aEF9F3";
     }
 
-    let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
-    let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
+    let governanceFee = config["hatVaultsRegistryConf"]["governanceFee"];
+    let governanceFeeReceiver = config["hatVaultsRegistryConf"]["governanceFeeReceiver"];
+
+    if (!governanceFeeReceiver) {
+        governanceFeeReceiver = governance;
+    }
 
     const HATVaultsRegistry = await ethers.getContractFactory("HATVaultsRegistry");
     const hatVaultsRegistry = await HATVaultsRegistry.deploy(
@@ -97,9 +101,8 @@ async function main(config) {
         hatClaimsManagerImplementation.address,
         governance,
         arbitrator,
-        hatToken,
-        bountyGovernanceHAT,
-        bountyHackerHATVested,
+        governanceFee,
+        governanceFeeReceiver,
         tokenLockFactory,
     );
 

@@ -184,11 +184,12 @@ const func = async function (hre) {
 
     // Verify HATVaultsRegistry
 
-    let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
-    let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
-    let swapToken = config["hatVaultsRegistryConf"]["swapToken"];
-    if (!swapToken || swapToken === "HATToken") {
-        swapToken = (await deployments.get('HATToken')).address;  
+    let governanceFee = config["hatVaultsRegistryConf"]["governanceFee"];
+
+    let governanceFeeReceiver = config["hatVaultsRegistryConf"]["governanceFeeReceiver"];
+
+    if (!governanceFeeReceiver) {
+        governanceFeeReceiver = governance;
     }
 
     verify(
@@ -212,24 +213,15 @@ const func = async function (hre) {
     );
 
     verify(
-        (await read('HATVaultsRegistry', {}, 'tokenLockFactory')).toLowerCase() === (await deployments.get('TokenLockFactory')).address.toLowerCase(),
-        "HATVaultsRegistry TokenLockFactory is correct"
+        (await read('HATVaultsRegistry', {}, 'defaultGovernanceFee')).toString() === governanceFee.toString(),
+        "HATVaultsRegistry default governanceFee is correct (" + governanceFee + ")"
     );
 
     verify(
-        (await read('HATVaultsRegistry', {}, 'HAT')).toLowerCase() === swapToken.toLowerCase(),
-        "HATVaultsRegistry swap token is correct (" + swapToken + ")"
+        (await read('HATVaultsRegistry', {}, 'governanceFeeReceiver')).toString() === governanceFeeReceiver.toString(),
+        "HATVaultsRegistry governanceFeeReceiver is correct (" + governanceFeeReceiver + ")"
     );
 
-    verify(
-        (await read('HATVaultsRegistry', {}, 'defaultBountyGovernanceHAT')).toString() === bountyGovernanceHAT.toString(),
-        "HATVaultsRegistry default bountyGovernanceHAT is correct (" + bountyGovernanceHAT + ")"
-    );
-
-    verify(
-        (await read('HATVaultsRegistry', {}, 'defaultBountyHackerHATVested')).toString() === bountyHackerHATVested.toString(),
-        "HATVaultsRegistry default bountyHackerHATVested is correct (" + bountyHackerHATVested + ")"
-    );
     if (failures > 0) {
       throw Error(`${failures} checks failed!`);
     }

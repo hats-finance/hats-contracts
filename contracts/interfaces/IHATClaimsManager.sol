@@ -66,8 +66,7 @@ interface IHATClaimsManager {
         uint256 hacker;
         uint256 hackerVested;
         uint256 committee;
-        uint256 hackerHatVested;
-        uint256 governanceHat;
+        uint256 governanceFee;
     }
 
     struct Claim {
@@ -79,8 +78,7 @@ interface IHATClaimsManager {
         address committee;
         uint32 createdAt;
         uint32 challengedAt;
-        uint256 bountyGovernanceHAT;
-        uint256 bountyHackerHATVested;
+        uint16 governanceFee;
         address arbitrator;
         uint32 challengePeriod;
         uint32 challengeTimeOutPeriod;
@@ -108,8 +106,7 @@ interface IHATClaimsManager {
     * hacker vested, and committee.
     *   Each entry is a number between 0 and `HUNDRED_PERCENT`.
     *   Total splits should be equal to `HUNDRED_PERCENT`.
-    * @param bountyGovernanceHAT The HAT bounty for governance
-    * @param bountyHackerHATVested The HAT bounty vested for the hacker
+    * @param governanceFee the fee to be sent to governace of the total payout
     * @param asset The vault's native token
     * @param owner The address of the vault's owner 
     * @param committee The address of the vault's committee 
@@ -125,8 +122,7 @@ interface IHATClaimsManager {
         uint32 vestingPeriods;
         uint16 maxBounty;
         BountySplit bountySplit;
-        uint16 bountyGovernanceHAT;
-        uint16 bountyHackerHATVested;
+        uint16 governanceFee;
         address owner;
         address committee;
         address arbitrator;
@@ -198,6 +194,8 @@ interface IHATClaimsManager {
     error CannotSetToPerviousRewardController();
     // Payout must either be 100%, or up to the MAX_BOUNTY_LIMIT
     error PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
+    // Cannot set fee greater than the max fee
+    error FeeCannotBeMoreThanMaxFee();
 
 
     event SubmitClaim(
@@ -228,7 +226,7 @@ interface IHATClaimsManager {
     event CommitteeCheckedIn();
     event SetPendingMaxBounty(uint256 _maxBounty);
     event SetMaxBounty(uint256 _maxBounty);
-    event SetHATBountySplit(uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested);
+    event SetGovernanceFee(uint16 _governanceFee);
     event SetArbitrator(address indexed _arbitrator);
     event SetChallengePeriod(uint256 _challengePeriod);
     event SetChallengeTimeOutPeriod(uint256 _challengeTimeOutPeriod);
@@ -362,18 +360,12 @@ interface IHATClaimsManager {
     function setMaxBounty() external;
 
     /**
-    * @notice Called by the registry's owner to set the vault HAT token bounty 
-    * split upon an approval.
+    * @notice Called by the registry's owner to set the fee percentage for payouts 
     * If the value passed is the special "null" value the vault will use the
     * registry's default value.
-    * @param _bountyGovernanceHAT The HAT bounty for governance
-    * @param _bountyHackerHATVested The HAT bounty vested for the hacker
+    * @param _governanceFee The fee percentage for governance
     */
-    function setHATBountySplit(
-        uint16 _bountyGovernanceHAT,
-        uint16 _bountyHackerHATVested
-    ) 
-        external;
+    function setGovernanceFee(uint16 _governanceFee) external;
 
     /**
     * @notice Called by the registry's owner to set the vault arbitrator
@@ -447,20 +439,12 @@ interface IHATClaimsManager {
     function getActiveClaim() external view returns(Claim memory);
 
     /** 
-    * @notice Returns the vault HAT bounty split part that goes to the governance
+    * @notice Returns the vault fee split that goes to the governance
     * If no specific value for this vault has been set, the registry's default
     * value will be returned.
-    * @return The vault's HAT bounty split part that goes to the governance
+    * @return The vault's fee split that goes to the governance
     */
-    function getBountyGovernanceHAT() external view returns(uint16);
-    
-    /** 
-    * @notice Returns the vault HAT bounty split part that is vested for the hacker
-    * If no specific value for this vault has been set, the registry's default
-    * value will be returned.
-    * @return The vault's HAT bounty split part that is vested for the hacker
-    */
-    function getBountyHackerHATVested() external view returns(uint16);
+    function getGovernanceFee() external view returns(uint16);
 
     /** 
     * @notice Returns the address of the vault's arbitrator

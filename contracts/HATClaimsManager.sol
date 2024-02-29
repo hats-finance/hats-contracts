@@ -63,10 +63,8 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
     PendingMaxBounty public pendingMaxBounty;
 
-    // the percentage of the total bounty to be swapped to HATs and sent to governance (out of {HUNDRED_PERCENT})
-    uint16 internal bountyGovernanceHAT;
-    // the percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract (out of {HUNDRED_PERCENT})
-    uint16 internal bountyHackerHATVested;
+    // the fee percentage of the total bounty to be paid to the governance
+    uint16 internal governanceFee;
 
     // address of the arbitrator - which can dispute claims and override the committee's decisions
     address internal arbitrator;
@@ -122,11 +120,14 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     function initialize(IHATVault _vault, IHATClaimsManager.ClaimsManagerInitParams calldata _params) external initializer {
         if (_params.maxBounty > MAX_BOUNTY_LIMIT && _params.maxBounty != HUNDRED_PERCENT)
             revert MaxBountyCannotBeMoreThanMaxBountyLimit();
+        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
+        if (_params.governanceFee > _registry.MAX_GOVERNANCE_FEE() && _params.governanceFee != NULL_UINT16)
+            revert FeeCannotBeMoreThanMaxFee();
         _validateSplit(_params.bountySplit);
         _setVestingParams(_params.vestingDuration, _params.vestingPeriods);
-        HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
         maxBounty = _params.maxBounty;
         bountySplit = _params.bountySplit;
+        governanceFee = _params.governanceFee;
         committee = _params.committee;
         registry = _registry;
         vault = _vault;
@@ -138,7 +139,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         arbitratorCanChangeBeneficiary = _params.arbitratorCanChangeBeneficiary;
         arbitratorCanSubmitClaims = _params.arbitratorCanSubmitClaims;
         isTokenLockRevocable = _params.isTokenLockRevocable;
-        _setHATBountySplit(_params.bountyGovernanceHAT, _params.bountyHackerHATVested);
 
         // Set vault to use default registry values where applicable
         challengePeriod = NULL_UINT32;
@@ -175,8 +175,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             // solhint-disable-next-line not-rely-on-time
             createdAt: uint32(block.timestamp),
             challengedAt: 0,
-            bountyGovernanceHAT: getBountyGovernanceHAT(),
-            bountyHackerHATVested: getBountyHackerHATVested(),
+            governanceFee: getGovernanceFee(),
             arbitrator: arbitratorAddress,
             challengePeriod: getChallengePeriod(),
             challengeTimeOutPeriod: getChallengeTimeOutPeriod(),
@@ -254,17 +253,12 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         address tokenLock;
 
-        IHATClaimsManager.ClaimBounty memory claimBounty = _calcClaimBounty(
-            _claim.bountyPercentage,
-            _claim.bountyGovernanceHAT,
-            _claim.bountyHackerHATVested
-        );
+        IHATClaimsManager.ClaimBounty memory claimBounty = _calcClaimBounty(_claim.bountyPercentage, _claim.governanceFee);
 
         vault.makePayout(
             claimBounty.committee +
-            claimBounty.governanceHat +
+            claimBounty.governanceFee +
             claimBounty.hacker +
-            claimBounty.hackerHatVested +
             claimBounty.hackerVested
         );
 
@@ -292,19 +286,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         _asset.safeTransfer(_claim.beneficiary, claimBounty.hacker);
         _asset.safeTransfer(_claim.committee, claimBounty.committee);
 
-        // send to the registry the amount of tokens which should be swapped 
-        // to HAT so it could call swapAndSend in a separate tx.
-        IHATVaultsRegistry _registry = registry;
-        _asset.safeApprove(address(_registry), claimBounty.hackerHatVested + claimBounty.governanceHat);
-        _registry.addTokensToSwap(
-            _asset,
-            _claim.beneficiary,
-            claimBounty.hackerHatVested,
-            claimBounty.governanceHat
-        );
-
-        // make sure to reset approval
-        _asset.safeApprove(address(_registry), 0);
+        _asset.safeTransfer(registry.governanceFeeReceiver(), claimBounty.governanceFee);
 
         emit ApproveClaim(
             _claimId,
@@ -399,9 +381,15 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         emit SetMaxBounty(_maxBounty);
     }
     
-    /** @notice See {IHATClaimsManager-setHATBountySplit}. */
-    function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external onlyRegistryOwner {
-        _setHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
+    /** @notice See {IHATClaimsManager-setGoveranceFee}. */
+    function setGovernanceFee(uint16 _governanceFee) external onlyRegistryOwner {
+        if (_governanceFee > registry.MAX_GOVERNANCE_FEE() && _governanceFee != NULL_UINT16) {
+            revert FeeCannotBeMoreThanMaxFee();
+        }
+
+        governanceFee = _governanceFee;
+
+        emit SetGovernanceFee(_governanceFee);
     }
 
     /** @notice See {IHATClaimsManager-setArbitrator}. */
@@ -452,23 +440,13 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
     /* --------------------------------- Getters -------------------------------------- */
 
-    /** @notice See {IHATClaimsManager-getBountyGovernanceHAT}. */
-    function getBountyGovernanceHAT() public view returns(uint16) {
-        uint16 _bountyGovernanceHAT = bountyGovernanceHAT;
-        if (_bountyGovernanceHAT != NULL_UINT16) {
-            return _bountyGovernanceHAT;
+    /** @notice See {IHATClaimsManager-getGovernanceFee}. */
+    function getGovernanceFee() public view returns(uint16) {
+        uint16 _getGovernanceFee = governanceFee;
+        if (_getGovernanceFee != NULL_UINT16) {
+            return _getGovernanceFee;
         } else {
-            return registry.defaultBountyGovernanceHAT();
-        }
-    }
-
-    /** @notice See {IHATClaimsManager-getBountyHackerHATVested}. */
-    function getBountyHackerHATVested() public view returns(uint16) {
-        uint16 _bountyHackerHATVested = bountyHackerHATVested;
-        if (_bountyHackerHATVested != NULL_UINT16) {
-            return _bountyHackerHATVested;
-        } else {
-            return registry.defaultBountyHackerHATVested();
+            return registry.defaultGovernanceFee();
         }
     }
 
@@ -520,28 +498,17 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         emit SetVestingParams(_duration, _periods);
     }
 
-    function _setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) internal {
-        bountyGovernanceHAT = _bountyGovernanceHAT;
-        bountyHackerHATVested = _bountyHackerHATVested;
-
-        registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
-
-        emit SetHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
-    }
-
     /**
     * @dev calculate the specific bounty payout distribution, according to the
     * predefined bounty split and the given bounty percentage
     * @param _bountyPercentage The percentage of the vault's funds to be paid
     * out as bounty
-    * @param _bountyGovernanceHAT The bountyGovernanceHAT at the time the claim was submitted
-    * @param _bountyHackerHATVested The bountyHackerHATVested at the time the claim was submitted
+    * @param _governanceFee The governanceFee at the time the claim was submitted
     * @return claimBounty The bounty distribution for this specific claim
     */
     function _calcClaimBounty(
-        uint256 _bountyPercentage,
-        uint256 _bountyGovernanceHAT,
-        uint256 _bountyHackerHATVested
+        uint16 _bountyPercentage,
+        uint16 _governanceFee
     ) internal view returns(IHATClaimsManager.ClaimBounty memory claimBounty) {
         uint256 _totalAssets = vault.totalAssets();
         if (_totalAssets == 0) {
@@ -554,13 +521,11 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         uint256 _totalBountyAmount = _totalAssets * _bountyPercentage;
 
-        uint256 _governanceHatAmount = _totalBountyAmount.mulDiv(_bountyGovernanceHAT, HUNDRED_PERCENT_SQRD);
-        uint256 _hackerHatVestedAmount = _totalBountyAmount.mulDiv(_bountyHackerHATVested, HUNDRED_PERCENT_SQRD);
+        uint256 _governanceFeeAmount = _totalBountyAmount.mulDiv(_governanceFee, HUNDRED_PERCENT_SQRD);
 
-        _totalBountyAmount -= (_governanceHatAmount + _hackerHatVestedAmount) * HUNDRED_PERCENT;
+        _totalBountyAmount -= _governanceFeeAmount * HUNDRED_PERCENT;
 
-        claimBounty.governanceHat = _governanceHatAmount;
-        claimBounty.hackerHatVested = _hackerHatVestedAmount;
+        claimBounty.governanceFee = _governanceFeeAmount;
 
         uint256 _hackerVestedAmount = _totalBountyAmount.mulDiv(bountySplit.hackerVested, HUNDRED_PERCENT_SQRD);
         uint256 _hackerAmount = _totalBountyAmount.mulDiv(bountySplit.hacker, HUNDRED_PERCENT_SQRD);

@@ -11,8 +11,7 @@ contract HatVaultForConnectorMock {
         address committee;
         uint32 createdAt;
         uint32 challengedAt;
-        uint256 bountyGovernanceHAT;
-        uint256 bountyHackerHATVested;
+        uint256 governanceFee;
         address arbitrator;
         uint32 challengePeriod;
         uint32 challengeTimeOutPeriod;
@@ -67,8 +66,7 @@ contract HatVaultForConnectorMock {
             // solhint-disable-next-line not-rely-on-time
             createdAt: uint32(block.timestamp),
             challengedAt: 0,
-            bountyGovernanceHAT: 0,
-            bountyHackerHATVested: 0,
+            governanceFee: 0,
             arbitrator: arbitrator,
             challengePeriod: challengePeriod,
             challengeTimeOutPeriod: CHALLENGE_TIMEOUT_PERIOD,

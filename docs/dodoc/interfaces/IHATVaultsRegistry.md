@@ -10,24 +10,22 @@ The Hats.finance Vault Registry is used to deploy Hats.finance vaults and manage
 
 ## Methods
 
-### addTokensToSwap
+### MAX_GOVERNANCE_FEE
 
 ```solidity
-function addTokensToSwap(contract IERC20 _asset, address _hacker, uint256 _hackersHatReward, uint256 _governanceHatReward) external nonpayable
+function MAX_GOVERNANCE_FEE() external view returns (uint16)
 ```
 
-Transfer the part of the bounty that is supposed to be swapped into HAT tokens from the HATVault to the registry, and keep track of the amounts to be swapped and sent/burnt in a later transaction
+Get the max governance fee
 
 
 
-#### Parameters
+
+#### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| _asset | contract IERC20 | The vault&#39;s native token |
-| _hacker | address | The address of the beneficiary of the bounty |
-| _hackersHatReward | uint256 | The amount of the vault&#39;s native token to be swapped to HAT tokens and sent to the hacker via a vesting contract |
-| _governanceHatReward | uint256 | The amount of the vault&#39;s native token to be swapped to HAT tokens and sent to governance |
+| _0 | uint16 | The max governance fee |
 
 ### createVault
 
@@ -70,40 +68,6 @@ Get the default arbitrator address
 |---|---|---|
 | _0 | address | The default arbitrator address |
 
-### defaultBountyGovernanceHAT
-
-```solidity
-function defaultBountyGovernanceHAT() external view returns (uint16)
-```
-
-Get the default percentage of the total bounty to be swapped to HATs and sent to governance
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to governance |
-
-### defaultBountyHackerHATVested
-
-```solidity
-function defaultBountyHackerHATVested() external view returns (uint16)
-```
-
-Get the default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | The default percentage of the total bounty to be swapped to HATs and sent to the hacker via vesting contract |
-
 ### defaultChallengePeriod
 
 ```solidity
@@ -137,6 +101,23 @@ Get the default challenge time out period
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint32 | The default challenge time out period |
+
+### defaultGovernanceFee
+
+```solidity
+function defaultGovernanceFee() external view returns (uint16)
+```
+
+Get the default fee percentage of the total bounty
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | The default fee percentage of the total bounty |
 
 ### feeSetter
 
@@ -257,6 +238,23 @@ Returns the withdraw request pending period for all vaults - period of time that
 |---|---|---|
 | _0 | uint256 | Withdraw request pending period for all vaults |
 
+### governanceFeeReceiver
+
+```solidity
+function governanceFeeReceiver() external view returns (address)
+```
+
+Get the fee receiver address
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | The address of the fee receiver |
+
 ### isEmergencyPaused
 
 ```solidity
@@ -371,13 +369,13 @@ Called by governance to set the default challenge timeout
 |---|---|---|
 | _defaultChallengeTimeOutPeriod | uint32 | The Default challenge timeout |
 
-### setDefaultHATBountySplit
+### setDefaultGovernanceFee
 
 ```solidity
-function setDefaultHATBountySplit(uint16 _defaultBountyGovernanceHAT, uint16 _defaultBountyHackerHATVested) external nonpayable
+function setDefaultGovernanceFee(uint16 _defaultGovernanceFee) external nonpayable
 ```
 
-Called by governance to set the default percentage of each claim bounty that will be swapped for hats and sent to the governance or vested for the hacker
+Called by governance to set the default fee percentage
 
 
 
@@ -385,8 +383,7 @@ Called by governance to set the default percentage of each claim bounty that wil
 
 | Name | Type | Description |
 |---|---|---|
-| _defaultBountyGovernanceHAT | uint16 | The HAT bounty for governance |
-| _defaultBountyHackerHATVested | uint16 | The HAT bounty vested for the hacker |
+| _defaultGovernanceFee | uint16 | The fee for governance |
 
 ### setEmergencyPaused
 
@@ -420,6 +417,22 @@ Called by governance to set the fee setter role
 |---|---|---|
 | _feeSetter | address | Address of new fee setter |
 
+### setGovernanceFeeReceiver
+
+```solidity
+function setGovernanceFeeReceiver(address _governanceFeeReceiver) external nonpayable
+```
+
+Called by governance to set the fee receiver address
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _governanceFeeReceiver | address | The receiver of the fees from the payouts of the vaults |
+
 ### setHatVestingParams
 
 ```solidity
@@ -452,22 +465,6 @@ Called by governance to set the timelock delay for setting the max bounty (the t
 | Name | Type | Description |
 |---|---|---|
 | _delay | uint32 | The time period for the delay. Must be at least 2 days. |
-
-### setSwapToken
-
-```solidity
-function setSwapToken(address _swapToken) external nonpayable
-```
-
-Called by governance to set a new swap token
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _swapToken | address | the new swap token address |
 
 ### setVaultImplementations
 
@@ -537,26 +534,6 @@ Called by governance to set the withdraw period and safety period, which are alw
 | _withdrawPeriod | uint32 | Amount of time during which withdrawals are enabled, and the bounty split can be changed by the governance. Must be at least 1 hour. |
 | _safetyPeriod | uint32 | Amount of time during which claims for bounties  can be submitted and withdrawals are disabled. Must be at most 6 hours. |
 
-### swapAndSend
-
-```solidity
-function swapAndSend(address _asset, address[] _beneficiaries, uint256 _amountOutMinimum, address _routingContract, bytes _routingPayload) external nonpayable
-```
-
-Called by governance to swap the given asset to HAT tokens and  distribute the HAT tokens: Send to governance their share and send to beneficiaries their share through a vesting contract.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _asset | address | The address of the token to be swapped to HAT tokens |
-| _beneficiaries | address[] | Addresses of beneficiaries |
-| _amountOutMinimum | uint256 | Minimum amount of HAT tokens at swap |
-| _routingContract | address | Routing contract to call for the swap |
-| _routingPayload | bytes | Payload to send to the _routingContract for the swap |
-
 ### validateChallengePeriod
 
 ```solidity
@@ -589,23 +566,6 @@ Check that the given challenge timeout period is legal, meaning that it is great
 |---|---|---|
 | _challengeTimeOutPeriod | uint32 | The challenge timeout period to check |
 
-### validateHATSplit
-
-```solidity
-function validateHATSplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external pure
-```
-
-
-
-*Check that a given hats bounty split is legal, meaning that:   Each entry is a number between 0 and less than `MAX_HAT_SPLIT`.   Total splits should be less than `MAX_HAT_SPLIT`. function will revert in case the bounty split is not legal.*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _bountyGovernanceHAT | uint16 | The HAT bounty for governance |
-| _bountyHackerHATVested | uint16 | The HAT bounty vested for the hacker |
-
 
 
 ## Events
@@ -630,7 +590,7 @@ Emitted when a claim is logged
 ### RegistryCreated
 
 ```solidity
-event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _HAT, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint256 _bountyGovernanceHAT, uint256 _bountyHackerHATVested, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod)
+event RegistryCreated(address _hatVaultImplementation, address _hatClaimsManagerImplementation, address _tokenLockFactory, IHATVaultsRegistry.GeneralParameters _generalParameters, uint16 _defaultGovernanceFee, address _governanceFeeReceiver, address _hatGovernance, address _defaultArbitrator, uint256 _defaultChallengePeriod, uint256 _defaultChallengeTimeOutPeriod)
 ```
 
 Emitted on deployment of the registry
@@ -643,11 +603,10 @@ Emitted on deployment of the registry
 |---|---|---|
 | _hatVaultImplementation  | address | The HATVault implementation address |
 | _hatClaimsManagerImplementation  | address | The HATClaimsManager implementation address |
-| _HAT  | address | The HAT token address |
 | _tokenLockFactory  | address | The token lock factory address |
 | _generalParameters  | IHATVaultsRegistry.GeneralParameters | The registry&#39;s general parameters |
-| _bountyGovernanceHAT  | uint256 | The HAT bounty for governance |
-| _bountyHackerHATVested  | uint256 | The HAT bounty vested for the hacker |
+| _defaultGovernanceFee  | uint16 | The fee percentage for governance |
+| _governanceFeeReceiver  | address | The fee receiver address |
 | _hatGovernance  | address | The registry&#39;s governance |
 | _defaultArbitrator  | address | undefined |
 | _defaultChallengePeriod  | uint256 | The new default challenge period |
@@ -717,13 +676,13 @@ Emitted when a new default challenge timeout period is set
 |---|---|---|
 | _defaultChallengeTimeOutPeriod  | uint256 | The new default challenge timeout period |
 
-### SetDefaultHATBountySplit
+### SetDefaultGovernanceFee
 
 ```solidity
-event SetDefaultHATBountySplit(uint256 _defaultBountyGovernanceHAT, uint256 _defaultBountyHackerHATVested)
+event SetDefaultGovernanceFee(uint16 _defaultGovernanceFee)
 ```
 
-Emitted when a new default HAT bounty split is set
+Emitted when a new default governance fee is set
 
 
 
@@ -731,8 +690,7 @@ Emitted when a new default HAT bounty split is set
 
 | Name | Type | Description |
 |---|---|---|
-| _defaultBountyGovernanceHAT  | uint256 | The new default HAT bounty part sent to governance |
-| _defaultBountyHackerHATVested  | uint256 | The new default HAT bounty part vseted for the hacker |
+| _defaultGovernanceFee  | uint16 | The new default fee part sent to governance |
 
 ### SetEmergencyPaused
 
@@ -765,6 +723,22 @@ Emitted when a new fee setter is set
 | Name | Type | Description |
 |---|---|---|
 | _feeSetter `indexed` | address | The address of the new fee setter |
+
+### SetGovernanceFeeReceiver
+
+```solidity
+event SetGovernanceFeeReceiver(address indexed _governaceFeeReceiver)
+```
+
+Emitted when a new fee receiver address is set
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _governaceFeeReceiver `indexed` | address | The receiver of the fee from the payouts of the vaults |
 
 ### SetHATClaimsManagerImplementation
 
@@ -831,22 +805,6 @@ Emitted when a new timelock delay for setting the max bounty is set
 |---|---|---|
 | _delay  | uint256 | The time period for the delay |
 
-### SetSwapToken
-
-```solidity
-event SetSwapToken(address indexed _swapToken)
-```
-
-Emitted when a new swap token is set
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _swapToken `indexed` | address | The new swap token address |
-
 ### SetVaultVisibility
 
 ```solidity
@@ -898,25 +856,6 @@ Emitted when new durations are set for withdraw period and safety period
 | _withdrawPeriod  | uint256 | Amount of time during which withdrawals are enabled, and the bounty split can be changed by the governance |
 | _safetyPeriod  | uint256 | Amount of time during which claims for bounties  can be submitted and withdrawals are disabled |
 
-### SwapAndSend
-
-```solidity
-event SwapAndSend(address indexed _beneficiary, uint256 _amountSwapped, uint256 _amountSent, address indexed _tokenLock)
-```
-
-Emitted when a swap of vault tokens to HAT tokens is done and the HATS tokens are sent to beneficiary through vesting contract
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _beneficiary `indexed` | address | Address of beneficiary |
-| _amountSwapped  | uint256 | Amount of vault&#39;s native tokens that was swapped |
-| _amountSent  | uint256 | Amount of HAT tokens sent to beneficiary |
-| _tokenLock `indexed` | address | Address of the token lock contract that holds the HAT tokens (address(0) if no token lock is used) |
-
 ### VaultCreated
 
 ```solidity
@@ -939,28 +878,6 @@ event VaultCreated(address indexed _vault, address indexed _claimsManager, IHATV
 
 
 ## Errors
-
-### AmountSwappedLessThanMinimum
-
-```solidity
-error AmountSwappedLessThanMinimum()
-```
-
-Raised on {swapAndSend} if the amount that was recieved in the swap was less than the minimum amount specified
-
-
-
-
-### AmountToSwapIsZero
-
-```solidity
-error AmountToSwapIsZero()
-```
-
-Raised on {swapAndSend} if the amount to swap is zero
-
-
-
 
 ### ChallengePeriodTooLong
 
@@ -1028,6 +945,17 @@ Raised on {setMaxBountyDelay} if the max bounty to be set is shorter than 2 days
 
 
 
+### FeeCannotBeMoreThanMaxFee
+
+```solidity
+error FeeCannotBeMoreThanMaxFee()
+```
+
+Raised on {setDefaultGovernanceFee} if the fee to be set is greater than 35% (defined as 3500)
+
+
+
+
 ### HatVestingDurationSmallerThanPeriods
 
 ```solidity
@@ -1079,28 +1007,6 @@ error SafetyPeriodTooLong()
 ```
 
 Raised on {setWithdrawSafetyPeriod} if the safety period to be set is longer than 6 hours
-
-
-
-
-### SwapFailed
-
-```solidity
-error SwapFailed()
-```
-
-Raised on {swapAndSend} if the swap was not successful
-
-
-
-
-### TotalHatsSplitPercentageShouldBeUpToMaxHATSplit
-
-```solidity
-error TotalHatsSplitPercentageShouldBeUpToMaxHATSplit()
-```
-
-Raised on {setDefaultHATBountySplit} if the split to be set is greater than 20% (defined as 2000)
 
 
 
