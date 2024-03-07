@@ -138,10 +138,9 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         arbitratorCanChangeBeneficiary = _params.arbitratorCanChangeBeneficiary;
         arbitratorCanSubmitClaims = _params.arbitratorCanSubmitClaims;
         isTokenLockRevocable = _params.isTokenLockRevocable;
+        _setHATBountySplit(_params.bountyGovernanceHAT, _params.bountyHackerHATVested);
 
         // Set vault to use default registry values where applicable
-        bountyGovernanceHAT = NULL_UINT16;
-        bountyHackerHATVested = NULL_UINT16;
         challengePeriod = NULL_UINT32;
         challengeTimeOutPeriod = NULL_UINT32;
     }
@@ -402,12 +401,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     
     /** @notice See {IHATClaimsManager-setHATBountySplit}. */
     function setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) external onlyRegistryOwner {
-        bountyGovernanceHAT = _bountyGovernanceHAT;
-        bountyHackerHATVested = _bountyHackerHATVested;
-
-        registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
-
-        emit SetHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
+        _setHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
     }
 
     /** @notice See {IHATClaimsManager-setArbitrator}. */
@@ -524,6 +518,15 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         vestingDuration = _duration;
         vestingPeriods = _periods;
         emit SetVestingParams(_duration, _periods);
+    }
+
+    function _setHATBountySplit(uint16 _bountyGovernanceHAT, uint16 _bountyHackerHATVested) internal {
+        bountyGovernanceHAT = _bountyGovernanceHAT;
+        bountyHackerHATVested = _bountyHackerHATVested;
+
+        registry.validateHATSplit(getBountyGovernanceHAT(), getBountyHackerHATVested());
+
+        emit SetHATBountySplit(_bountyGovernanceHAT, _bountyHackerHATVested);
     }
 
     /**
