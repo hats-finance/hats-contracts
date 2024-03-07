@@ -509,6 +509,62 @@ contract("HatTimelockController", (accounts) => {
     await newVault.setCommittee(accounts[1], { from: accounts[2] });
   });
 
+  it("setHATBountySplit", async () => {
+    await setup(accounts);
+
+    //creat another vault with a different committee
+    let maxBounty = 8000;
+    let bountySplit = [7000, 2500, 500];
+    var stakingToken2 = await ERC20Mock.new("Staking", "STK");
+    let newVault = await HATVault.at((await hatVaultsRegistry.createVault({
+        asset: stakingToken2.address,
+        owner: await hatVaultsRegistry.owner(),
+        committee: accounts[3],
+        name: "VAULT",
+        symbol: "VLT",
+        rewardControllers: [rewardController.address],
+        maxBounty: maxBounty,
+        bountySplit: bountySplit,
+        descriptionHash: "_descriptionHash",
+        vestingDuration: 86400,
+        vestingPeriods: 10,
+        isPaused: false
+    })).receipt.rawLogs[0].address);
+
+    await hatTimelockController.setAllocPoint(
+      newVault.address,
+      rewardController.address,
+      100
+    );
+
+    assert.equal(
+      (await newVault.getBountyGovernanceHAT()).toString(),
+      "1000"
+    );
+    assert.equal(
+      (await newVault.getBountyHackerHATVested()).toString(),
+      "500"
+    );
+
+    try {
+      await newVault.setHATBountySplit(0, 800);
+      assert(false, "only governance");
+    } catch (ex) {
+      assertVMException(ex);
+    }
+
+    tx = await hatTimelockController.setHATBountySplit(newVault.address, 0, 800);
+    
+    assert.equal(
+      (await newVault.getBountyGovernanceHAT()).toString(),
+      "0"
+    );
+    assert.equal(
+      (await newVault.getBountyHackerHATVested()).toString(),
+      "800"
+    );
+  });
+
   it("setEmergencyPaused", async () => {
     await setup(accounts);
 
