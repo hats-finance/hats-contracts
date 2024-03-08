@@ -8,8 +8,10 @@ const HATTokenLock = artifacts.require("./HATTokenLock.sol");
 const VaultsManagerMock = artifacts.require("./VaultsManagerMock.sol");
 const EtherTransferFail = artifacts.require("./EtherTransferFail.sol");
 const RewardController = artifacts.require("./RewardController.sol");
+const FeeForwarder = artifacts.require("./FeeForwarder.sol");
 const utils = require("./utils.js");
 const ISwapRouter = new ethers.utils.Interface(UniSwapV3RouterMock.abi);
+const IFeeForwarder = new ethers.utils.Interface(FeeForwarder.abi);
 
 const { deployHATVaults } = require("../scripts/deployments/hatvaultsregistry-deploy");
 const {
@@ -4797,6 +4799,70 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
     } catch (ex) {
       assertVMException(ex, "AmountToSwapIsZero");
     }
+  });
+
+  it("swapAndSend to fee forwarder", async () => {
+    await setUpGlobalVars(accounts, 0, 8000, [8000, 2000, 0], [1000, 0]);
+
+    var staker = accounts[3];
+    var beneficiary1 = accounts[4];
+    var beneficiary2 = accounts[5];
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+    assert.equal(await hatToken.balanceOf(staker), 0);
+    await utils.increaseTime(7 * 24 * 3600);
+
+    await advanceToSafetyPeriod();
+    let tx = await vault.submitClaim(
+      beneficiary1,
+      8000,
+      "description hash",
+      {
+        from: accounts[1],
+      }
+    );
+
+    let claimId = tx.logs[0].args._claimId;
+
+    await vault.challengeClaim(claimId);
+
+    await vault.approveClaim(claimId, 8000);
+
+    let balanceOfGovBefore = await stakingToken.balanceOf(accounts[0]);
+
+    let feeForwarder = await FeeForwarder.new(accounts[0]);
+
+    let amount = await hatVaultsRegistry.governanceHatReward(stakingToken.address);
+    let payload = IFeeForwarder.encodeFunctionData("forwardFee", [stakingToken.address, amount.toString()]);
+    tx = await hatVaultsRegistry.swapAndSend(
+      stakingToken.address, 
+      [],
+      0,
+      feeForwarder.address,
+      payload
+    );
+    assert.equal(
+      await stakingToken.allowance(hatVaultsRegistry.address, await feeForwarder.address),
+      0
+    );
+    assert.equal(tx.logs[0].event, "SwapAndSend");
+    assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
+    assert.equal(tx.logs[0].args._tokenLock, "0x0000000000000000000000000000000000000000");
+    assert.equal(
+      (await stakingToken.balanceOf(accounts[0])).sub(balanceOfGovBefore).toString(),
+      amount.toString()
+    );
+    assert.equal(
+      (await stakingToken.balanceOf(hatVaultsRegistry.address)).toString(),
+      "0"
+    );
+    assert.equal(
+      tx.logs[0].args._amountSent.toString(),
+      "0"
+    );
   });
 
   it("approve + swapAndSend 2 vaults with same token", async () => {
