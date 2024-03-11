@@ -4806,7 +4806,6 @@ it("getVaultReward - no vault updates will return 0 ", async () => {
 
     var staker = accounts[3];
     var beneficiary1 = accounts[4];
-    var beneficiary2 = accounts[5];
     await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
       from: staker,
     });
