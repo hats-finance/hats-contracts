@@ -128,10 +128,26 @@ module.exports = {
             ],
             "rewardToken": "HATToken"
         }],
+        "hatArbitratorConf": {
+            "expertCommittee": "0x0000000000000000000000000000000000000001",
+            "token": "0x0000000000000000000000000000000000000002",
+            "bondsNeededToStartDispute": "1000000000000000000000",
+            "minBondAmount": "100000000000000000000",
+            "resolutionChallengePeriod": 60 * 60 * 24 * 7,
+            "submitClaimRequestReviewPeriod": 60 * 60 * 24 * 90,
+        },
+        "hatKlerosConnectorConf": {
+            "klerosArbitrator": "0x0000000000000000000000000000000000000003",
+            "arbitratorExtraData": "0x85",
+            "metaEvidence": "ipfs/X",
+            "winnerMultiplier": 3000,
+            "loserMultiplier": 7000
+        },
         "hatVaultsRegistryConf": {
             "bountyGovernanceHAT": "1000",
             "bountyHackerHATVested": "500",
-            "swapToken": "HATToken"
+            "swapToken": "HATToken",
+            "useKleros": false
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
