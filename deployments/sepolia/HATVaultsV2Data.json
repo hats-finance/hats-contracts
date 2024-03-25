@@ -1,5 +1,5 @@
 {
-  "address": "0xbF7866939bF1A24a757b79e6ABEbb61FD3c37C57",
+  "address": "0x65406F9cfbEcd3056d5c6208531b70416Bdd7b8C",
   "abi": [
     {
       "inputs": [
@@ -69,27 +69,27 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0xeb95b126a071d69747948489479c7cb69623cf122555b8af40d62c5042f4051e",
+  "transactionHash": "0x5d39e3ef9f662994a05ea4568f03edce70d5d7a709c63a24ddb4a364bfc2c676",
   "receipt": {
     "to": null,
     "from": "0x1885B7c7a3AE1F35BA71C0392C13153A95c4914f",
-    "contractAddress": "0xbF7866939bF1A24a757b79e6ABEbb61FD3c37C57",
-    "transactionIndex": 68,
+    "contractAddress": "0x65406F9cfbEcd3056d5c6208531b70416Bdd7b8C",
+    "transactionIndex": 126,
     "gasUsed": "229334",
     "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    "blockHash": "0x39c25e546d9b500a2d25df1b7f1b1024271fac2347b1e49239c0bf7d3c42b9c2",
-    "transactionHash": "0xeb95b126a071d69747948489479c7cb69623cf122555b8af40d62c5042f4051e",
+    "blockHash": "0x03e973b7d8495bfc567ef38c414dd66fd9b9e25dc70fab8d9514b97c635969b2",
+    "transactionHash": "0x5d39e3ef9f662994a05ea4568f03edce70d5d7a709c63a24ddb4a364bfc2c676",
     "logs": [],
-    "blockNumber": 5198375,
-    "cumulativeGasUsed": "4872136",
+    "blockNumber": 5558682,
+    "cumulativeGasUsed": "18036318",
     "status": 1,
     "byzantium": true
   },
   "args": [
-    "0xbc69Ca2Bb6486Dd75F76F427a62b507414f945eB"
+    "0x5d7A4fA7942681c570DdEAA6e2D203E15516AA93"
   ],
-  "numDeployments": 1,
-  "solcInputHash": "a88478e553c00767a3b8551e3701da57",
+  "numDeployments": 2,
+  "solcInputHash": "e2dd19fbd28890679930fe6b1d01ee82",
   "metadata": "{\"compiler\":{\"version\":\"0.8.16+commit.07a7930e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IHATVaultsV2\",\"name\":\"_hatVaults\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"getShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"}],\"name\":\"getTotalShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"hatVaults\",\"outputs\":[{\"internalType\":\"contract IHATVaultsV2\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/nft/HATVaultsV2Data.sol\":\"HATVaultsV2Data\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[],\"viaIR\":true},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `from` to `to` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(\\n        address from,\\n        address to,\\n        uint256 amount\\n    ) external returns (bool);\\n}\\n\",\"keccak256\":\"0x9750c6b834f7b43000631af5cc30001c5f547b3ceb3635488f140f60e897ea6b\",\"license\":\"MIT\"},\"contracts/interfaces/IHATVaultsData.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.16;\\n\\ninterface IHATVaultsData {\\n    \\n    function getTotalShares(uint256 _pid) external view returns (uint256 totalShares);\\n\\n    function getShares(uint256 _pid, address _user) external view returns (uint256 shares);\\n}\\n\",\"keccak256\":\"0x57f15b8f365e629dbf00096311db54274db0462be30cffc7653c23a824853f96\",\"license\":\"MIT\"},\"contracts/interfaces/IHATVaultsV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.16;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IHATVaultsV2 {\\n    function hatVaults(uint256 _pid) external view returns (IERC20 hatVault);\\n}\\n\",\"keccak256\":\"0xeadc99ac33e31a6e402f6c054e7855e7fe39734719b4f683fbb11ea7790a2e97\",\"license\":\"MIT\"},\"contracts/nft/HATVaultsV2Data.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.16;\\n\\nimport \\\"../interfaces/IHATVaultsV2.sol\\\";\\nimport \\\"../interfaces/IHATVaultsData.sol\\\";\\n\\ncontract HATVaultsV2Data is IHATVaultsData {\\n    IHATVaultsV2 public hatVaults;\\n\\n    constructor(IHATVaultsV2 _hatVaults) {\\n        hatVaults = _hatVaults;\\n    }\\n\\n    function getTotalShares(uint256 _pid) external view returns (uint256) {\\n        return hatVaults.hatVaults(_pid).totalSupply();\\n    }\\n\\n    function getShares(uint256 _pid, address _user) external view returns (uint256) {\\n        return hatVaults.hatVaults(_pid).balanceOf(_user);\\n    }\\n}\\n\",\"keccak256\":\"0x3d5e3bb979bb4c6bedf1330e15a270f1834d31840bc24629befc12b53a50fa9a\",\"license\":\"MIT\"}},\"version\":1}",
   "bytecode": "0x60803461007457601f61034d38819003918201601f19168301916001600160401b038311848410176100795780849260209460405283398101031261007457516001600160a01b0381169081900361007457600080546001600160a01b0319169190911790556040516102bd90816100908239f35b600080fd5b634e487b7160e01b600052604160045260246000fdfe608060408181526004918236101561001657600080fd5b600092833560e01c91826375c0b9fe1461016a5750816385fff85814610070575063b3dc5bde1461004657600080fd5b3461006c578160031936011261006c57905490516001600160a01b039091168152602090f35b5080fd5b83833461006c5760209283600319360112610166578254825162d8dc7760e31b81528235818401526001600160a01b0392909186908390602490829087165afa91821561015c5790869291869261012d575b5084516318160ddd60e01b81529384928391165afa9283156101225780936100ed575b505051908152f35b909192508382813d831161011b575b610106818361022b565b810103126101185750519083806100e5565b80fd5b503d6100fc565b8251903d90823e3d90fd5b61014e919250833d8511610155575b610146818361022b565b810190610263565b90876100c2565b503d61013c565b84513d87823e3d90fd5b8280fd5b848483346101665781600319360112610166576024356001600160a01b03818116929183900361022757908186939286541662d8dc7760e31b85528235838601528460246020998a935afa93841561021d57908793929187956101f9575b5090602491865195869485936370a0823160e01b8552840152165afa9283156101225780936100ed57505051908152f35b60249291955061021590853d871161015557610146818361022b565b9490916101c8565b85513d88823e3d90fd5b8480fd5b90601f8019910116810190811067ffffffffffffffff82111761024d57604052565b634e487b7160e01b600052604160045260246000fd5b9081602091031261028257516001600160a01b03811681036102825790565b600080fdfea26469706673582212202be59c1ca555a9f1fe2233b56233bffa0781ff4c4e2a25a7558a9fdabc59de0f64736f6c63430008100033",
   "deployedBytecode": "0x608060408181526004918236101561001657600080fd5b600092833560e01c91826375c0b9fe1461016a5750816385fff85814610070575063b3dc5bde1461004657600080fd5b3461006c578160031936011261006c57905490516001600160a01b039091168152602090f35b5080fd5b83833461006c5760209283600319360112610166578254825162d8dc7760e31b81528235818401526001600160a01b0392909186908390602490829087165afa91821561015c5790869291869261012d575b5084516318160ddd60e01b81529384928391165afa9283156101225780936100ed575b505051908152f35b909192508382813d831161011b575b610106818361022b565b810103126101185750519083806100e5565b80fd5b503d6100fc565b8251903d90823e3d90fd5b61014e919250833d8511610155575b610146818361022b565b810190610263565b90876100c2565b503d61013c565b84513d87823e3d90fd5b8280fd5b848483346101665781600319360112610166576024356001600160a01b03818116929183900361022757908186939286541662d8dc7760e31b85528235838601528460246020998a935afa93841561021d57908793929187956101f9575b5090602491865195869485936370a0823160e01b8552840152165afa9283156101225780936100ed57505051908152f35b60249291955061021590853d871161015557610146818361022b565b9490916101c8565b85513d88823e3d90fd5b8480fd5b90601f8019910116810190811067ffffffffffffffff82111761024d57604052565b634e487b7160e01b600052604160045260246000fd5b9081602091031261028257516001600160a01b03811681036102825790565b600080fdfea26469706673582212202be59c1ca555a9f1fe2233b56233bffa0781ff4c4e2a25a7558a9fdabc59de0f64736f6c63430008100033",
@@ -106,16 +106,16 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 27778,
+        "astId": 28306,
         "contract": "contracts/nft/HATVaultsV2Data.sol:HATVaultsV2Data",
         "label": "hatVaults",
         "offset": 0,
         "slot": "0",
-        "type": "t_contract(IHATVaultsV2)24079"
+        "type": "t_contract(IHATVaultsV2)24597"
       }
     ],
     "types": {
-      "t_contract(IHATVaultsV2)24079": {
+      "t_contract(IHATVaultsV2)24597": {
         "encoding": "inplace",
         "label": "contract IHATVaultsV2",
         "numberOfBytes": "20"

@@ -167,7 +167,8 @@ module.exports = {
         "hatVaultsRegistryConf": {
             // "swapToken": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // USDC
             "bountyGovernanceHAT": "1000",
-            "bountyHackerHATVested": "0"
+            "bountyHackerHATVested": "0",
+            "useKleros": false
         },
         "hatVaultsNFTConf": {
             "merkleTreeIPFSRef": "",
