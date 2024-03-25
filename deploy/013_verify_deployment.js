@@ -179,6 +179,8 @@ const func = async function (hre) {
     );
 
     // Verify HATArbitrator
+    let useKleros = config["hatVaultsRegistryConf"]["useKleros"];
+
     if (useKleros) {
         verify(
             await read('HATArbitrator', {}, 'owner') === (await deployments.get('HATTimelockController')).address,
@@ -255,7 +257,6 @@ const func = async function (hre) {
     let bountyGovernanceHAT = config["hatVaultsRegistryConf"]["bountyGovernanceHAT"];
     let bountyHackerHATVested = config["hatVaultsRegistryConf"]["bountyHackerHATVested"];
     let swapToken = config["hatVaultsRegistryConf"]["swapToken"];
-    let useKleros = config["hatVaultsRegistryConf"]["useKleros"];
     if (!swapToken || swapToken === "HATToken") {
         swapToken = (await deployments.get('HATToken')).address;  
     }
