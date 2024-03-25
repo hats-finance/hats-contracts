@@ -62,7 +62,7 @@ Initialize a HATAirdrop instance
 | _root | bytes32 | new merkle tree root to use for verifying airdrop data. |
 | _startTime | uint256 | start of the redeem period and of the token lock (if exists) |
 | _deadline | uint256 | end time to redeem from the contract |
-| _lockEndTime | uint256 | end time for the token lock contract (if exists) |
+| _lockEndTime | uint256 | end time for the token lock contract. If this date is in the past, the tokens will be transferred directly to the user and no token lock will be created |
 | _periods | uint256 | number of periods of the token lock contract (if exists) |
 | _token | contract IERC20Upgradeable | the token to be airdropped |
 | _tokenLockFactory | contract ITokenLockFactory | the token lock factory to use to deploy the token locks |

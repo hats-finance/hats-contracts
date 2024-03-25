@@ -104,7 +104,7 @@ module.exports = {
       gas: "auto",
     },
     sepolia: {
-      url: `https://rpc.sepolia.org`,
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.SEPOLIA_PK],
       gasPrice: "auto",
       gas: "auto",
