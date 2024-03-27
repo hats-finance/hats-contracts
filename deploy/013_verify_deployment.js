@@ -179,70 +179,70 @@ const func = async function (hre) {
     );
 
     // Verify HATArbitrator
-    // verify(
-    //     await read('HATArbitrator', {}, 'owner') === (await deployments.get('HATTimelockController')).address,
-    //     "Arbitrator owner is the HATTimelockController"
-    // );
+    verify(
+        await read('HATArbitrator', {}, 'owner') === (await deployments.get('HATTimelockController')).address,
+        "Arbitrator owner is the HATTimelockController"
+    );
     
-    // verify(
-    //     await read('HATArbitrator', {}, 'court') === (await deployments.get('HATKlerosConnector')).address,
-    //     "Arbitrator court is the HATKlerosConnector"
-    // );
+    verify(
+        await read('HATArbitrator', {}, 'court') === (await deployments.get('HATKlerosConnector')).address,
+        "Arbitrator court is the HATKlerosConnector"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'expertCommittee')) === config.hatArbitratorConf.expertCommittee,
-    //     "HATArbitrator expert committee is correct (" + config.hatArbitratorConf.expertCommittee + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'expertCommittee')) === config.hatArbitratorConf.expertCommittee,
+        "HATArbitrator expert committee is correct (" + config.hatArbitratorConf.expertCommittee + ")"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'token')) === config.hatArbitratorConf.token,
-    //     "HATArbitrator token is correct (" + config.hatArbitratorConf.token + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'token')) === config.hatArbitratorConf.token,
+        "HATArbitrator token is correct (" + config.hatArbitratorConf.token + ")"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'bondsNeededToStartDispute')).toString() === config.hatArbitratorConf.bondsNeededToStartDispute.toString(),
-    //     "HATArbitrator bondsNeededToStartDispute is correct (" + config.hatArbitratorConf.bondsNeededToStartDispute + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'bondsNeededToStartDispute')).toString() === config.hatArbitratorConf.bondsNeededToStartDispute.toString(),
+        "HATArbitrator bondsNeededToStartDispute is correct (" + config.hatArbitratorConf.bondsNeededToStartDispute + ")"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'minBondAmount')).toString() === config.hatArbitratorConf.minBondAmount.toString(),
-    //     "HATArbitrator minBondAmount is correct (" + config.hatArbitratorConf.minBondAmount + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'minBondAmount')).toString() === config.hatArbitratorConf.minBondAmount.toString(),
+        "HATArbitrator minBondAmount is correct (" + config.hatArbitratorConf.minBondAmount + ")"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'resolutionChallengePeriod')).toString() === config.hatArbitratorConf.resolutionChallengePeriod.toString(),
-    //     "HATArbitrator resolutionChallengePeriod is correct (" + config.hatArbitratorConf.resolutionChallengePeriod + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'resolutionChallengePeriod')).toString() === config.hatArbitratorConf.resolutionChallengePeriod.toString(),
+        "HATArbitrator resolutionChallengePeriod is correct (" + config.hatArbitratorConf.resolutionChallengePeriod + ")"
+    );
 
-    // verify(
-    //     (await read('HATArbitrator', {}, 'submitClaimRequestReviewPeriod')).toString() === config.hatArbitratorConf.submitClaimRequestReviewPeriod.toString(),
-    //     "HATArbitrator submitClaimRequestReviewPeriod is correct (" + config.hatArbitratorConf.submitClaimRequestReviewPeriod + ")"
-    // );
+    verify(
+        (await read('HATArbitrator', {}, 'submitClaimRequestReviewPeriod')).toString() === config.hatArbitratorConf.submitClaimRequestReviewPeriod.toString(),
+        "HATArbitrator submitClaimRequestReviewPeriod is correct (" + config.hatArbitratorConf.submitClaimRequestReviewPeriod + ")"
+    );
 
-    // verify(
-    //     (await read('HATKlerosConnector', {}, 'klerosArbitrator')) === config.hatKlerosConnectorConf.klerosArbitrator,
-    //     "HATKlerosConnector kleros arbitrator is correct (" + config.hatKlerosConnectorConf.klerosArbitrator + ")"
-    // );
+    verify(
+        (await read('HATKlerosConnector', {}, 'klerosArbitrator')) === config.hatKlerosConnectorConf.klerosArbitrator,
+        "HATKlerosConnector kleros arbitrator is correct (" + config.hatKlerosConnectorConf.klerosArbitrator + ")"
+    );
 
-    // verify(
-    //     (await read('HATKlerosConnector', {}, 'arbitratorExtraData')) === config.hatKlerosConnectorConf.arbitratorExtraData,
-    //     "HATKlerosConnector arbitratorExtraData is correct (" + config.hatKlerosConnectorConf.arbitratorExtraData + ")"
-    // );
+    verify(
+        (await read('HATKlerosConnector', {}, 'arbitratorExtraData')) === config.hatKlerosConnectorConf.arbitratorExtraData,
+        "HATKlerosConnector arbitratorExtraData is correct (" + config.hatKlerosConnectorConf.arbitratorExtraData + ")"
+    );
 
-    // verify(
-    //     (await read('HATKlerosConnector', {}, 'hatArbitrator')) === (await deployments.get('HATArbitrator')).address,
-    //     "HATKlerosConnector hatArbitrator is HATArbitrator"
-    // );
+    verify(
+        (await read('HATKlerosConnector', {}, 'hatArbitrator')) === (await deployments.get('HATArbitrator')).address,
+        "HATKlerosConnector hatArbitrator is HATArbitrator"
+    );
 
-    // verify(
-    //     (await read('HATKlerosConnector', {}, 'winnerMultiplier')).toString() === config.hatKlerosConnectorConf.winnerMultiplier.toString(),
-    //     "HATKlerosConnector winnerMultiplier is correct (" + config.hatKlerosConnectorConf.winnerMultiplier + ")"
-    // );
+    verify(
+        (await read('HATKlerosConnector', {}, 'winnerMultiplier')).toString() === config.hatKlerosConnectorConf.winnerMultiplier.toString(),
+        "HATKlerosConnector winnerMultiplier is correct (" + config.hatKlerosConnectorConf.winnerMultiplier + ")"
+    );
 
-    // verify(
-    //     (await read('HATKlerosConnector', {}, 'loserMultiplier')).toString() === config.hatKlerosConnectorConf.loserMultiplier.toString(),
-    //     "HATKlerosConnector loserMultiplier is correct (" + config.hatKlerosConnectorConf.loserMultiplier + ")"
-    // );
+    verify(
+        (await read('HATKlerosConnector', {}, 'loserMultiplier')).toString() === config.hatKlerosConnectorConf.loserMultiplier.toString(),
+        "HATKlerosConnector loserMultiplier is correct (" + config.hatKlerosConnectorConf.loserMultiplier + ")"
+    );
 
     // Verify Reward Controller
 
