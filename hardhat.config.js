@@ -36,6 +36,7 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: { 
       mainnet: process.env.ETHERSCAN_API_KEY,
+      sepolia: process.env.ETHERSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
       optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
