@@ -41,7 +41,7 @@ module.exports = {
       optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
       optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
       polygon: process.env.POLYGON_ETHERSCAN_API_KEY,
-      arbitrum: process.env.ARBITRUM_ETHERSCAN_API_KEY,
+      arbitrumOne: process.env.ARBITRUM_ETHERSCAN_API_KEY,
       bnb: process.env.BNB_ETHERSCAN_API_KEY,
       base: process.env.BASE_ETHERSCAN_API_KEY,
       gnosis: process.env.GNOSIS_ETHERSCAN_API_KEY

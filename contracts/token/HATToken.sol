@@ -21,7 +21,7 @@ contract HATToken is IHATToken, ERC20Votes, ERC20Capped, Ownable {
      * @param _governance The owner of the token
      */
     constructor(address _governance) 
-        ERC20("hats.finance", "HAT") 
+        ERC20("Hat", "HAT") 
         ERC20Capped(100000000e18) 
         ERC20Permit("hats.finance")
     {
