@@ -466,7 +466,7 @@ module.exports = {
             "0xF6aEF099e4473E08bed75E0BB1252C4cdAd96416",
             "0x42eefBC05794e71a0f7e7B63E5EcB52320345eBE"
         ],
-        "managers": [],
+        "managers": ["0x64792e23DfeDA2d153CF058507d71672aC1d09A0"],
         "rewardControllersConf": [],
         "hatToken": "0x0000000000000000000000000000000000000000", // USDC
         "hatVaultsRegistryConf": {
