@@ -1043,4 +1043,419 @@ contract("Registry Arbitrator", (accounts) => {
       "OnlyCallableIfChallenged"
     );
   });
+
+  it("arbitrator change proposal - approve claim with proposal after timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, false);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, newBounty, newBeneficiary, { from: arbitrator });
+
+    // Pass challenge timeout
+    await utils.increaseTime(challengeTimeOutPeriod);
+
+    // Claim with proposal can still be approved even after timeout
+    // new parameters arbitrator pass won't have effect
+    let tx = await claimsManager.approveClaim(claimId, 0, ZERO_ADDRESS, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+  });
+
+  // TODO: Do we want to allow the arbitrator to changed the proposed resolution after timeout or not allow that? (Anyone could front run it and approve before the arbitrator with the proposed parameters)
+  it("arbitrator change proposal - approve claim with proposal after timeout shound not change data (even with arbitrator)", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, false);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, newBounty, newBeneficiary, { from: arbitrator });
+
+    // Pass challenge timeout
+    await utils.increaseTime(challengeTimeOutPeriod);
+
+    // Claim with proposal can still be approved even after timeout
+    let finalBounty = 5000;
+    let finalBeneficiary = accounts[4];
+    let tx = await claimsManager.approveClaim(claimId, finalBounty, finalBeneficiary, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+  });
+
+  it("arbitrator change proposal - approve claim with proposal after timeout cannot change claim data if not arbitrator", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, false);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, newBounty, newBeneficiary, { from: arbitrator });
+
+    // Pass challenge timeout
+    await utils.increaseTime(challengeTimeOutPeriod);
+
+    // Claim with proposal can still be approved even after timeout
+    // new parameters user pass won't have effect
+    let finalBounty = 5000;
+    let finalBeneficiary = accounts[4];
+    let tx = await claimsManager.approveClaim(claimId, finalBounty, finalBeneficiary, { from: accounts[5] });
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+  });
+
+  it("arbitrator change proposal - only arbitrator can dismiss during timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const someAccount = accounts[5];
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, 6000, accounts[5], { from: arbitrator });
+
+    // During challenge timeout
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    // Arbitrator can dismiss during timeout
+    await claimsManager.dismissClaim(claimId, { from: arbitrator });
+  });
+
+  it("arbitrator change proposal - cannot dismiss after timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const someAccount = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, 6000, accounts[5], { from: arbitrator });
+
+    // Pass challenge timeout
+    await utils.increaseTime(challengeTimeOutPeriod);
+
+    // Nobody can dismiss after timeout if there's a proposal
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: arbitrator }),
+        "CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator"
+    );
+  });
+
+  it("arbitrator change proposal - approve claim with proposal before timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, newBounty, newBeneficiary, { from: arbitrator });
+
+    // Non-arbitrator cannot approve during timeout
+    await assertFunctionRaisesException(
+        claimsManager.approveClaim(claimId, 0, ZERO_ADDRESS, { from: accounts[3] }),
+        "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
+    );
+
+    let tx = await claimsManager.approveClaim(claimId, 0, ZERO_ADDRESS, { from: arbitrator });
+    
+    // Should use the proposal parameters instead of the provided ones
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+  });
+
+  it("arbitrator change proposal - approve claim with proposal before timeout and change final claim data", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, newBounty, newBeneficiary, { from: arbitrator });
+
+    // Non-arbitrator cannot approve during timeout
+    await assertFunctionRaisesException(
+        claimsManager.approveClaim(claimId, 0, ZERO_ADDRESS, { from: accounts[3] }),
+        "ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod"
+    );
+
+    let finalBounty = 5000;
+    let finalBeneficiary = accounts[4];
+    // Arbitrator can approve during timeout with different parameters
+    let tx = await claimsManager.approveClaim(claimId, finalBounty, finalBeneficiary, { from: arbitrator });
+    
+    // Should use the proposal parameters instead of the provided ones
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, finalBounty);
+    assert.equal(tx.logs[0].args._beneficiary, finalBeneficiary);
+  });
+
+  it("no arbitrator change proposal - anyone can dismiss after timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const someAccount = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim without proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.challengeClaim(claimId, { from: arbitrator });
+
+    // During challenge timeout only arbitrator can dismiss
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+
+    // After challenge timeout anyone can dismiss
+    await utils.increaseTime(challengeTimeOutPeriod);
+    await claimsManager.dismissClaim(claimId, { from: someAccount });
+  });
+
+  it("expired unchallenged claim can be dismissed by anyone", async () => {
+    const { registry, claimsManager } = await setup(accounts);
+    const someAccount = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit claim but don't challenge it
+    let claimId = await submitClaim(claimsManager, { accounts });
+
+    // Cannot dismiss before expiration
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "OnlyCallableIfChallenged"
+    );
+
+    // After total timeout anyone can dismiss
+    await utils.increaseTime(challengePeriod + challengeTimeOutPeriod);
+    await claimsManager.dismissClaim(claimId, { from: someAccount });
+  });
+
+  it("arbitrator change proposal with different arbitrator options", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    
+    // Test all combinations of options
+    const testCases = [
+        { canChangeBounty: false, canChangeBeneficiary: false },
+        { canChangeBounty: true, canChangeBeneficiary: false },
+        { canChangeBounty: false, canChangeBeneficiary: true },
+        { canChangeBounty: true, canChangeBeneficiary: true }
+    ];
+
+    for (const testCase of testCases) {
+        // Set arbitrator options
+        await claimsManager.setArbitratorOptions(
+            testCase.canChangeBounty, 
+            testCase.canChangeBeneficiary, 
+            true, 
+            { from: await registry.owner() }
+        );
+        await advanceToSafetyPeriod(registry);
+
+        // Submit claim
+        let claimId = await submitClaim(claimsManager, { accounts });
+
+        // Challenge with proposal
+        await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](
+            claimId, 
+            newBounty, 
+            newBeneficiary, 
+            { from: arbitrator }
+        );
+
+        // Check stored proposal
+        const proposal = await claimsManager.arbitratorChangeProposals(claimId);
+        
+        // Verify stored bounty
+        if (testCase.canChangeBounty) {
+            assert.equal(proposal.bountyPercentage, newBounty, 
+                "Bounty should be stored when arbitratorCanChangeBounty is true");
+        } else {
+            assert.equal(proposal.bountyPercentage, 0, 
+                "Bounty should be 0 when arbitratorCanChangeBounty is false");
+        }
+
+        // Verify stored beneficiary
+        if (testCase.canChangeBeneficiary) {
+            assert.equal(proposal.beneficiary, newBeneficiary, 
+                "Beneficiary should be stored when arbitratorCanChangeBeneficiary is true");
+        } else {
+            assert.equal(proposal.beneficiary, ZERO_ADDRESS, 
+                "Beneficiary should be zero address when arbitratorCanChangeBeneficiary is false");
+        }
+
+        // Clean up for next test
+        await claimsManager.dismissClaim(claimId, { from: arbitrator });
+    }
+  });
+
+  it("cannot approve expired claim without arbitrator proposal", async () => {
+      const { registry, claimsManager, arbitrator } = await setup(accounts);
+      const challengePeriod = 60*60*24*1;
+      const challengeTimeOutPeriod = 60*60*24*2;
+      await registry.setDefaultChallengePeriod(challengePeriod);
+      await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+      await advanceToSafetyPeriod(registry);
+
+      // Submit claim without challenge
+      let claimId = await submitClaim(claimsManager, { accounts });
+
+      // Pass total timeout (challenge period + timeout period)
+      await utils.increaseTime(challengePeriod + challengeTimeOutPeriod);
+
+      // Try to approve expired claim - should fail
+      await assertFunctionRaisesException(
+          claimsManager.approveClaim(claimId, 8000, ZERO_ADDRESS, { from: arbitrator }),
+          "ClaimExpired"
+      );
+
+      await claimsManager.dismissClaim(claimId);
+
+      // Submit and challenge claim without proposal
+      let claimId2 = await submitClaim(claimsManager, { accounts });
+      await claimsManager.challengeClaim(claimId2, { from: arbitrator });
+
+      // Pass total timeout
+      await utils.increaseTime(challengePeriod + challengeTimeOutPeriod);
+
+      // Try to approve expired challenged claim without proposal - should fail
+      await assertFunctionRaisesException(
+          claimsManager.approveClaim(claimId2, 8000, ZERO_ADDRESS, { from: arbitrator }),
+          "ClaimExpired"
+      );
+  });
+
+  it("arbitrator change proposal - cannot dismiss after timeout", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const someAccount = accounts[5];
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](claimId, 6000, accounts[5], { from: arbitrator });
+
+    // Pass challenge timeout
+    await utils.increaseTime(challengeTimeOutPeriod);
+
+    // Nobody can dismiss after timeout if there's a proposal
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod"
+    );
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: arbitrator }),
+        "CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator"
+    );
+
+    // Pass total timeout
+    await utils.increaseTime(challengePeriod);
+
+    // Still cannot dismiss after total timeout if there's a proposal
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: someAccount }),
+        "CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator"
+    );
+    await assertFunctionRaisesException(
+        claimsManager.dismissClaim(claimId, { from: arbitrator }),
+        "CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator"
+    );
+  });
+
+  it("can approve expired claim with arbitrator proposal", async () => {
+    const { registry, claimsManager, arbitrator } = await setup(accounts);
+    const challengePeriod = 60*60*24*1;
+    const challengeTimeOutPeriod = 60*60*24*2;
+    const newBounty = 6000;
+    const newBeneficiary = accounts[5];
+    await registry.setDefaultChallengePeriod(challengePeriod);
+    await registry.setDefaultChallengeTimeOutPeriod(challengeTimeOutPeriod);
+    await claimsManager.setArbitratorOptions(true, true, true);
+    await advanceToSafetyPeriod(registry);
+
+    // Submit and challenge claim with proposal
+    let claimId = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](
+        claimId, 
+        newBounty, 
+        newBeneficiary, 
+        { from: arbitrator }
+    );
+
+    // Pass total timeout (challenge period + timeout period)
+    await utils.increaseTime(challengePeriod + challengeTimeOutPeriod);
+
+    // Should still be able to approve claim with proposal after timeout
+    let tx = await claimsManager.approveClaim(claimId, 0, ZERO_ADDRESS, { from: arbitrator });
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+
+    // Try another claim to verify same behavior with non-arbitrator
+    let claimId2 = await submitClaim(claimsManager, { accounts });
+    await claimsManager.methods["challengeClaim(bytes32,uint16,address)"](
+        claimId2, 
+        newBounty, 
+        newBeneficiary, 
+        { from: arbitrator }
+    );
+
+    // Pass total timeout again
+    await utils.increaseTime(challengePeriod + challengeTimeOutPeriod);
+
+    // Non-arbitrator should also be able to approve with proposal parameters
+    tx = await claimsManager.approveClaim(claimId2, 1234, accounts[6], { from: accounts[3] });
+    assert.equal(tx.logs[0].event, "ApproveClaim");
+    assert.equal(tx.logs[0].args._bountyPercentage, newBounty);
+    assert.equal(tx.logs[0].args._beneficiary, newBeneficiary);
+  });
 });

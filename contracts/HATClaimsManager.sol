@@ -82,6 +82,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     bool public arbitratorCanSubmitClaims;
     // Can the committee revoke the token lock
     bool public isTokenLockRevocable;
+    mapping(bytes32 => ArbitratorChangeProposal) public arbitratorChangeProposals;
 
     modifier onlyRegistryOwner() {
         if (registry.owner() != msg.sender) revert OnlyRegistryOwner();
@@ -196,7 +197,16 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         );
     }
 
-    function challengeClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
+    function challengeClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external {
+        Claim memory _claim = activeClaim;
+        arbitratorChangeProposals[_claimId] = ArbitratorChangeProposal({
+            beneficiary: _claim.arbitratorCanChangeBeneficiary ? _beneficiary : address(0),
+            bountyPercentage: _claim.arbitratorCanChangeBounty ? _bountyPercentage : 0
+        });
+        challengeClaim(_claimId);
+    }
+
+    function challengeClaim(bytes32 _claimId) public isActiveClaim(_claimId) {
         if (msg.sender != activeClaim.arbitrator && msg.sender != registry.owner())
             revert OnlyArbitratorOrRegistryOwner();
         // solhint-disable-next-line not-rely-on-time
@@ -214,28 +224,47 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     function approveClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonReentrant isActiveClaim(_claimId) {
         Claim memory _claim = activeClaim;
         delete activeClaim;
-        
+
+        ArbitratorChangeProposal memory arbitratorChangeProposal = arbitratorChangeProposals[_claimId];
+        bool hasArbitratorProposal = arbitratorChangeProposal.beneficiary != address(0) || arbitratorChangeProposal.bountyPercentage != 0;
         
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp >= _claim.createdAt + _claim.challengePeriod + _claim.challengeTimeOutPeriod) {
-            // cannot approve an expired claim
-            revert ClaimExpired();
+            // cannot approve an expired claim unless there's an arbitrator proposal
+            if (!hasArbitratorProposal) {
+                revert ClaimExpired();
+            }
         } 
         if (_claim.challengedAt != 0) {
-            // the claim was challenged, and only the arbitrator can approve it, within the timeout period
-            if (
-                msg.sender != _claim.arbitrator ||
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp >= _claim.challengedAt + _claim.challengeTimeOutPeriod
-            )
+            bool isArbitrator = msg.sender == _claim.arbitrator;
+            bool afterChallengeTimeout = block.timestamp >= _claim.challengedAt + _claim.challengeTimeOutPeriod;
+
+            // the claim was challenged
+            if (afterChallengeTimeout) {
+                // after challenge timeout, can only approve if there's an arbitrator proposal
+                if (!hasArbitratorProposal) {
+                    revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
+                }
+            } else if (!isArbitrator) {
+                // during challenge timeout, only arbitrator can approve
                 revert ChallengedClaimCanOnlyBeApprovedByArbitratorUntilChallengeTimeoutPeriod();
-            // the arbitrator can update the bounty if needed
-            if (_claim.arbitratorCanChangeBounty && _bountyPercentage != 0) {
-                _claim.bountyPercentage = _bountyPercentage;
             }
 
-            if (_claim.arbitratorCanChangeBeneficiary && _beneficiary != address(0)) {
-                _claim.beneficiary = _beneficiary;
+            // the arbitrator can update the bounty if needed
+            if (_claim.arbitratorCanChangeBounty) {
+                if (isArbitrator && _bountyPercentage != 0 && !afterChallengeTimeout) {
+                    _claim.bountyPercentage = _bountyPercentage;
+                } else if (arbitratorChangeProposal.bountyPercentage != 0) {
+                    _claim.bountyPercentage = arbitratorChangeProposal.bountyPercentage;
+                }
+            }
+
+            if (_claim.arbitratorCanChangeBeneficiary) {
+                if (isArbitrator && _beneficiary != address(0) && !afterChallengeTimeout) {
+                    _claim.beneficiary = _beneficiary;
+                } else if (arbitratorChangeProposal.beneficiary != address(0)) {
+                    _claim.beneficiary = arbitratorChangeProposal.beneficiary;
+                }
             }
         } else {
             // the claim can be approved by anyone if the challengePeriod passed without a challenge
@@ -321,19 +350,35 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     function dismissClaim(bytes32 _claimId) external isActiveClaim(_claimId) {
         uint256 _challengeTimeOutPeriod = activeClaim.challengeTimeOutPeriod;
         uint256 _challengedAt = activeClaim.challengedAt;
+        ArbitratorChangeProposal memory arbitratorChangeProposal = arbitratorChangeProposals[_claimId];
+        bool hasArbitratorProposal = arbitratorChangeProposal.beneficiary != address(0) || arbitratorChangeProposal.bountyPercentage != 0;
+        
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <= activeClaim.createdAt + activeClaim.challengePeriod + _challengeTimeOutPeriod) {
-            if (_challengedAt == 0) revert OnlyCallableIfChallenged();
-            if (
-                // solhint-disable-next-line not-rely-on-time
-                block.timestamp <= _challengedAt + _challengeTimeOutPeriod && 
-                msg.sender != activeClaim.arbitrator
-            ) revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
-        } // else the claim is expired and should be dismissed
+            // During total timeout period
+            if (_challengedAt != 0) {
+                // Challenged claim
+                bool isInTimeoutPeriod = block.timestamp <= _challengedAt + _challengeTimeOutPeriod;
+                bool isArbitrator = msg.sender == activeClaim.arbitrator;
+                
+                if (!isArbitrator) {
+                    if (hasArbitratorProposal || isInTimeoutPeriod) {
+                        revert OnlyCallableByArbitratorOrAfterChallengeTimeOutPeriod();
+                    }
+                } else if (hasArbitratorProposal && !isInTimeoutPeriod) {
+                    revert CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator();
+                }
+            } else {
+                // Unchallenged claim cannot be dismissed during timeout period
+                revert OnlyCallableIfChallenged();
+            }
+        } else if (hasArbitratorProposal) {
+            // After timeout, if there's an arbitrator proposal it can only be approved
+            revert CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator();
+        } // else expired claim with no arbitrator proposal can be dismissed by anyone
+        
         delete activeClaim;
-
         vault.setWithdrawPaused(false);
-
         emit DismissClaim(_claimId);
     }
     /* -------------------------------------------------------------------------------- */

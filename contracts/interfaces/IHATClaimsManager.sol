@@ -93,6 +93,11 @@ interface IHATClaimsManager {
         uint32 timestamp;
     }
 
+    struct ArbitratorChangeProposal {
+        address beneficiary;
+        uint16 bountyPercentage;
+    }
+
     /**
     * @notice Initialization parameters for the vault
     * @param name The vault's name (concatenated as "Hats Vault " + name)
@@ -198,6 +203,8 @@ interface IHATClaimsManager {
     error CannotSetToPerviousRewardController();
     // Payout must either be 100%, or up to the MAX_BOUNTY_LIMIT
     error PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
+    // Cannot dismiss an arbitrator proposal after claim has expired or during timeout period if not arbitrator
+    error CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator();
 
 
     event SubmitClaim(
@@ -273,9 +280,20 @@ interface IHATClaimsManager {
     * payout that had been previously submitted by the committee.
     * Can only be called during the challenge period after submission of the
     * claim.
-    * @param _claimId The claim ID
     */
     function challengeClaim(bytes32 _claimId) external;
+
+    /**
+    * @notice Called by the arbitrator or governance to challenge a claim for a bounty
+    * payout that had been previously submitted by the committee.
+    * Can only be called during the challenge period after submission of the
+    * claim.
+    * @param _claimId The claim ID
+    * * @param _bountyPercentage The percentage of the vault's balance that will
+    * be sent as a bounty.
+    * @param _beneficiary where the bounty will be sent to.
+    */
+    function challengeClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external;
 
     /**
     * @notice Approve a claim for a bounty submitted by a committee, and

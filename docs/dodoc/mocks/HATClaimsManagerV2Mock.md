@@ -244,6 +244,29 @@ function arbitratorCanSubmitClaims() external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
+### arbitratorChangeProposals
+
+```solidity
+function arbitratorChangeProposals(bytes32) external view returns (address beneficiary, uint16 bountyPercentage)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| beneficiary | address | undefined |
+| bountyPercentage | uint16 | undefined |
+
 ### bountySplit
 
 ```solidity
@@ -277,7 +300,25 @@ Called by the arbitrator or governance to challenge a claim for a bounty payout 
 
 | Name | Type | Description |
 |---|---|---|
+| _claimId | bytes32 | undefined |
+
+### challengeClaim
+
+```solidity
+function challengeClaim(bytes32 _claimId, uint16 _bountyPercentage, address _beneficiary) external nonpayable
+```
+
+Called by the arbitrator or governance to challenge a claim for a bounty payout that had been previously submitted by the committee. Can only be called during the challenge period after submission of the claim.
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
 | _claimId | bytes32 | The claim ID |
+| _bountyPercentage | uint16 | The percentage of the vault&#39;s balance that will be sent as a bounty. |
+| _beneficiary | address | where the bounty will be sent to. |
 
 ### committee
 
@@ -1146,6 +1187,17 @@ error ActiveClaimExists()
 
 ```solidity
 error BountyPercentageHigherThanMaxBounty()
+```
+
+
+
+
+
+
+### CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator
+
+```solidity
+error CannotDismissArbitratorProposalAfterTimoutPeriodOrIfNotAbitrator()
 ```
 
 
