@@ -10,6 +10,23 @@
 
 ## Methods
 
+### DESTROY_VAULT_AFTER_LARGER_PAYOUT
+
+```solidity
+function DESTROY_VAULT_AFTER_LARGER_PAYOUT() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
 ### HUNDRED_PERCENT
 
 ```solidity
@@ -31,23 +48,6 @@ function HUNDRED_PERCENT() external view returns (uint256)
 
 ```solidity
 function HUNDRED_PERCENT_SQRD() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### MAX_BOUNTY_LIMIT
-
-```solidity
-function MAX_BOUNTY_LIMIT() external view returns (uint256)
 ```
 
 
@@ -1252,17 +1252,6 @@ error DelayPeriodForSettingMaxBountyHadNotPassed()
 
 
 
-### MaxBountyCannotBeMoreThanMaxBountyLimit
-
-```solidity
-error MaxBountyCannotBeMoreThanMaxBountyLimit()
-```
-
-
-
-
-
-
 ### NoActiveClaimExists
 
 ```solidity
@@ -1366,17 +1355,6 @@ error OnlyCommittee()
 
 ```solidity
 error OnlyRegistryOwner()
-```
-
-
-
-
-
-
-### PayoutMustBeUpToMaxBountyLimitOrHundredPercent
-
-```solidity
-error PayoutMustBeUpToMaxBountyLimitOrHundredPercent()
 ```
 
 

@@ -42,7 +42,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
     address public constant NULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
     uint256 public constant HUNDRED_PERCENT = 1e4;
     uint256 public constant HUNDRED_PERCENT_SQRD = 1e8;
-    uint256 public constant MAX_BOUNTY_LIMIT = 90e2; // Max bounty, can be up to 90%
+    uint256 public constant DESTROY_VAULT_AFTER_LARGER_PAYOUT = 90e2; // Max bounty above which vault deposits will be disabled forever, set to anything over 90%
     uint256 public constant MAX_COMMITTEE_BOUNTY = 10e2; // Max committee bounty can be up to 10%
 
     IHATVaultsRegistry public registry;
@@ -120,8 +120,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
     /** @notice See {IHATClaimsManager-initialize}. */
     function initialize(IHATVault _vault, IHATClaimsManager.ClaimsManagerInitParams calldata _params) external initializer {
-        if (_params.maxBounty > MAX_BOUNTY_LIMIT && _params.maxBounty != HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         _validateSplit(_params.bountySplit);
         _setVestingParams(_params.vestingDuration, _params.vestingPeriods);
         HATVaultsRegistry _registry = HATVaultsRegistry(msg.sender);
@@ -162,9 +160,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
             revert NotSafetyPeriod();
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-
-        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
-            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
 
         claimId = keccak256(abi.encodePacked(address(this), ++nonce));
         activeClaim = Claim({
@@ -248,7 +243,7 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
         vault.setWithdrawPaused(false);
 
-        if (_claim.bountyPercentage == HUNDRED_PERCENT) {
+        if (_claim.bountyPercentage > DESTROY_VAULT_AFTER_LARGER_PAYOUT) {
             vault.destroyVault();
         }
 
@@ -376,8 +371,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
 
     /** @notice See {IHATClaimsManager-setPendingMaxBounty}. */
     function setPendingMaxBounty(uint16 _maxBounty) external onlyOwner noActiveClaim {
-        if (_maxBounty > MAX_BOUNTY_LIMIT && _maxBounty != HUNDRED_PERCENT)
-            revert MaxBountyCannotBeMoreThanMaxBountyLimit();
         pendingMaxBounty.maxBounty = _maxBounty;
         // solhint-disable-next-line not-rely-on-time
         pendingMaxBounty.timestamp = uint32(block.timestamp);
@@ -549,8 +542,6 @@ contract HATClaimsManager is IHATClaimsManager, OwnableUpgradeable, ReentrancyGu
         }
         if (_bountyPercentage > maxBounty)
             revert BountyPercentageHigherThanMaxBounty();
-        if (maxBounty == HUNDRED_PERCENT && _bountyPercentage != HUNDRED_PERCENT && _bountyPercentage > MAX_BOUNTY_LIMIT)
-            revert PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
 
         uint256 _totalBountyAmount = _totalAssets * _bountyPercentage;
 

@@ -820,17 +820,6 @@ error DelayPeriodForSettingMaxBountyHadNotPassed()
 
 
 
-### MaxBountyCannotBeMoreThanMaxBountyLimit
-
-```solidity
-error MaxBountyCannotBeMoreThanMaxBountyLimit()
-```
-
-
-
-
-
-
 ### NoActiveClaimExists
 
 ```solidity
@@ -934,17 +923,6 @@ error OnlyCommittee()
 
 ```solidity
 error OnlyRegistryOwner()
-```
-
-
-
-
-
-
-### PayoutMustBeUpToMaxBountyLimitOrHundredPercent
-
-```solidity
-error PayoutMustBeUpToMaxBountyLimitOrHundredPercent()
 ```
 
 

@@ -168,8 +168,6 @@ interface IHATClaimsManager {
     error VestingPeriodsCannotBeZero();
     // Vesting duration smaller than periods
     error VestingDurationSmallerThanPeriods();
-    // Max bounty cannot be more than `MAX_BOUNTY_LIMIT` (unless if it is 100%)
-    error MaxBountyCannotBeMoreThanMaxBountyLimit();
     // Committee bounty split cannot be more than `MAX_COMMITTEE_BOUNTY`
     error CommitteeBountyCannotBeMoreThanMax();
     // Only registry owner
@@ -196,8 +194,6 @@ interface IHATClaimsManager {
     error SystemInEmergencyPause();
     // Cannot set a reward controller that was already used in the past
     error CannotSetToPerviousRewardController();
-    // Payout must either be 100%, or up to the MAX_BOUNTY_LIMIT
-    error PayoutMustBeUpToMaxBountyLimitOrHundredPercent();
 
 
     event SubmitClaim(

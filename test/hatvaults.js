@@ -1137,13 +1137,6 @@ contract("HatVaults", (accounts) => {
       assertVMException(ex, "TotalSplitPercentageShouldBeHundredPercent");
     }
 
-    try {
-      await setUpGlobalVars(accounts, 0, 9901, [8000, 1000, 1000], [100, 800]);
-      assert(false, "cannot init with max bounty > 10000");
-    } catch (ex) {
-      assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
-    }
-
     await setUpGlobalVars(accounts, 0, 9000, [8000, 1500, 500], [200, 700], 10, 0, 100, false, 2500000, 60 * 60 * 24 * 3);
     assert.equal((await claimsManager.maxBounty()).toString(), "9000");
     assert.equal(
@@ -1168,12 +1161,6 @@ contract("HatVaults", (accounts) => {
     );
 
     try {
-      await claimsManager.setPendingMaxBounty(9001);
-      assert(false, "max bounty can't be more than 9000");
-    } catch (ex) {
-      assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
-    }
-    try {
       await claimsManager.setPendingMaxBounty(9000, { from: accounts[1] });
       assert(false, "only owner");
     } catch (ex) {
@@ -1184,13 +1171,6 @@ contract("HatVaults", (accounts) => {
       assert(false, "no pending");
     } catch (ex) {
       assertVMException(ex, "NoPendingMaxBounty");
-    }
-
-    try {
-      await claimsManager.setPendingMaxBounty(9001);
-      assert(false, "bounty level should be less than or equal to 9000");
-    } catch (ex) {
-      assertVMException(ex, "MaxBountyCannotBeMoreThanMaxBountyLimit");
     }
 
     // bountylevel can be 9000 without throwing an error
@@ -1401,21 +1381,6 @@ contract("HatVaults", (accounts) => {
     assert.equal(logs[0].event, "VaultPayout");
     assert.equal(logs[0].args._amount, web3.utils.toWei("0.8001").toString());
 
-    // we cannot submit claims that are over MAX_BOUNY_LIMIT though
-    try {
-      await claimsManager.submitClaim(
-        accounts[2],
-        9500,
-        "description hash",
-        {
-         from: accounts[1],
-        }
-      );
-      assert(false, "cannot submit less than 100% when max bounty is 100% but more than MAX_BOUNTY_LIMIT");
-    } catch (ex) {
-      assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
-    }
-
     tx = await claimsManager.submitClaim(accounts[2], 10000, "description hash", {
       from: accounts[1],
     });
@@ -1423,15 +1388,6 @@ contract("HatVaults", (accounts) => {
     claimId = tx.logs[0].args._claimId;
 
     await claimsManager.challengeClaim(claimId);
-
-    try {
-      await claimsManager.approveClaim(claimId, 9500, ZERO_ADDRESS);
-      assert(false, "cannot approve less than 100% when max bounty is 100%  but more than MAX_BOUNTY_LIMIT");
-    } catch (ex) {
-      assertVMException(ex, "PayoutMustBeUpToMaxBountyLimitOrHundredPercent");
-    }
-
-    // assert.equal(await stakingToken.balanceOf(vault.address), web3.utils.toWei("1"));
 
     tx = await claimsManager.approveClaim(claimId, 10000, ZERO_ADDRESS);
 
@@ -1460,6 +1416,98 @@ contract("HatVaults", (accounts) => {
     } catch (ex) {
       assertVMException(ex, "CannotUnpauseDestroyedVault");
     }
+  });
+
+  it("bounty over 90% destroys vault", async () => {
+    await setUpGlobalVars(accounts, 0, 10000, [9000, 0, 1000], [100, 800]);
+
+    // bountylevel can be 10000 without throwing an error
+    let tx = await claimsManager.setPendingMaxBounty(9500);
+    assert.equal(tx.logs[0].event, "SetPendingMaxBounty");
+    assert.equal(tx.logs[0].args._maxBounty, 9500);
+
+    var staker = accounts[5];
+
+    await stakingToken.approve(vault.address, web3.utils.toWei("1"), {
+      from: staker,
+    });
+
+    await stakingToken.mint(staker, web3.utils.toWei("1"));
+    assert.equal(await stakingToken.balanceOf(staker), web3.utils.toWei("1"));
+    assert.equal(
+      await hatToken.balanceOf(rewardController.address),
+      web3.utils.toWei(rewardControllerExpectedHatsBalance.toString())
+    );
+
+    await vault.deposit(web3.utils.toWei("1"), staker, { from: staker });
+
+    await advanceToSafetyPeriod();
+
+       // any claims with values under MBX_BOUNY_LIMIT work as usual
+    tx = await claimsManager.submitClaim(accounts[2], 9000, "description hash", {
+      from: accounts[1],
+    });
+  
+    let claimId = tx.logs[0].args._claimId;
+  
+    await claimsManager.challengeClaim(claimId);
+  
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("1"));
+  
+    tx = await claimsManager.approveClaim(claimId, 9000, ZERO_ADDRESS);
+
+    let logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount, web3.utils.toWei("0.9000").toString());
+
+    tx = await claimsManager.submitClaim(accounts[2], 9001, "description hash", {
+      from: accounts[1],
+    });
+
+    claimId = tx.logs[0].args._claimId;
+
+    await claimsManager.challengeClaim(claimId);
+
+    tx = await claimsManager.approveClaim(claimId, 9001, ZERO_ADDRESS);
+
+    logs = await vault.getPastEvents('VaultPayout', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultPayout");
+    assert.equal(logs[0].args._amount.toString(), web3.utils.toWei("0.09001").toString());
+
+    logs = await vault.getPastEvents('VaultDestroyed', {
+      fromBlock: tx.blockNumber,
+      toBlock: tx.blockNumber
+    });
+
+    assert.equal(logs[0].event, "VaultDestroyed");
+
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), web3.utils.toWei("0.00999").toString());
+
+    assert.equal(await vault.depositPause(), true);
+
+    try {
+      await vault.setDepositPause(false);
+      assert(false, "cannot unpause deposits after vault was destroyed");
+    } catch (ex) {
+      assertVMException(ex, "CannotUnpauseDestroyedVault");
+    }
+
+    await safeWithdraw(vault, web3.utils.toWei("0.00999"), staker);
+
+    assert.equal(
+      (await stakingToken.balanceOf(staker)).toString(),
+      web3.utils.toWei("0.00999").toString()
+    );
+
+    assert.equal((await stakingToken.balanceOf(vault.address)).toString(), "0");
   });
 
   it("update default hatBountySplit", async () => {
